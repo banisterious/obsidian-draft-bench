@@ -1,0 +1,72 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Build output
+main.js
+main.js.map
+*.js.map
+
+# OS files
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+
+# Editor directories and files
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# External documentation and reference libraries (cloned repos for local reference)
+external/
+
+# Claude Code working files
+CLAUDE.md
+.session-restore.md
+ISSUES.md
+
+# Release packages
+drafting-table-v*.zip
+scriptorium-v*.zip
+
+# Personal deployment scripts
+deploy.sh
+dev-deploy.sh
+
+.claude/

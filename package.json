@@ -1,0 +1,49 @@
+{
+	"name": "obsidian-drafting-table",
+	"version": "0.0.1",
+	"description": "A full creative writing workflow for Obsidian: project creation, scene management, and manuscript compilation with frontmatter-native data and Bases compatibility.",
+	"main": "main.js",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "node ./node_modules/typescript/bin/tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"lint": "node ./node_modules/eslint/bin/eslint.js .",
+		"lint:fix": "node ./node_modules/eslint/bin/eslint.js . --fix",
+		"lint:css": "node ./node_modules/stylelint/bin/stylelint.js \"styles.css\"",
+		"lint:css:fix": "node ./node_modules/stylelint/bin/stylelint.js \"styles.css\" --fix",
+		"format:css": "node ./node_modules/prettier/bin/prettier.cjs --write \"styles.css\""
+	},
+	"keywords": [
+		"obsidian",
+		"plugin",
+		"writing",
+		"novel",
+		"manuscript",
+		"scrivener",
+		"longform",
+		"drafting-table"
+	],
+	"author": "banisterious",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/banisterious/obsidian-drafting-table.git"
+	},
+	"devDependencies": {
+		"@types/node": "^20.11.5",
+		"@typescript-eslint/eslint-plugin": "^8.50.0",
+		"@typescript-eslint/parser": "^8.50.0",
+		"builtin-modules": "^3.3.0",
+		"esbuild": "0.19.11",
+		"eslint": "^9.39.2",
+		"eslint-plugin-obsidianmd": "^0.1.9",
+		"globals": "^15.14.0",
+		"obsidian": "latest",
+		"prettier": "^3.6.2",
+		"stylelint": "^14.16.1",
+		"stylelint-config-prettier": "^9.0.5",
+		"stylelint-config-standard": "^29.0.0",
+		"tslib": "2.6.2",
+		"typescript": "5.3.3"
+	}
+}

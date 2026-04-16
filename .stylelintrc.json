@@ -1,0 +1,69 @@
+{
+  "extends": [
+    "stylelint-config-standard",
+    "stylelint-config-prettier"
+  ],
+  "rules": {
+    "custom-property-pattern": null,
+    "selector-class-pattern": [
+      "^(dt|drafting-table)-[a-z0-9-]+(__[a-z0-9-]+)?(--[a-z0-9-]+)?$",
+      {
+        "message": "Expected class selector to use BEM format with dt-/drafting-table- prefix (selector-class-pattern)"
+      }
+    ],
+    "declaration-empty-line-before": [
+      "always",
+      {
+        "except": ["after-declaration", "first-nested"],
+        "ignore": ["after-comment", "inside-single-line-block"]
+      }
+    ],
+    "comment-empty-line-before": [
+      "always",
+      {
+        "except": ["first-nested"],
+        "ignore": ["stylelint-commands"]
+      }
+    ],
+    "rule-empty-line-before": [
+      "always-multi-line",
+      {
+        "except": ["first-nested"],
+        "ignore": ["after-comment"]
+      }
+    ],
+    "at-rule-empty-line-before": [
+      "always",
+      {
+        "except": ["blockless-after-same-name-blockless", "first-nested"],
+        "ignore": ["after-comment"]
+      }
+    ],
+    "max-nesting-depth": 3,
+    "no-descending-specificity": null,
+    "font-family-no-missing-generic-family-keyword": null,
+    "property-no-vendor-prefix": null,
+    "value-no-vendor-prefix": null,
+    "selector-no-vendor-prefix": null,
+    "media-feature-name-no-vendor-prefix": null,
+    "at-rule-no-vendor-prefix": null,
+    "length-zero-no-unit": true,
+    "color-hex-length": "short",
+    "color-hex-case": "lower",
+    "string-quotes": "double",
+    "unit-case": "lower",
+    "value-keyword-case": "lower",
+    "function-name-case": "lower",
+    "property-case": "lower",
+    "selector-pseudo-class-case": "lower",
+    "selector-pseudo-element-case": "lower",
+    "selector-type-case": "lower",
+    "at-rule-name-case": "lower",
+    "media-feature-name-case": "lower"
+  },
+  "ignoreFiles": [
+    "**/*.min.css",
+    "**/node_modules/**",
+    "external/**"
+  ]
+}

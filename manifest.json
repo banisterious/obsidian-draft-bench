@@ -1,0 +1,14 @@
+{
+	"id": "drafting-table",
+	"name": "Drafting Table",
+	"version": "0.0.1",
+	"minAppVersion": "1.7.2",
+	"description": "A full creative writing workflow for Obsidian: project creation, scene management, and manuscript compilation with frontmatter-native data and Bases compatibility.",
+	"author": "banisterious",
+	"authorUrl": "https://github.com/banisterious",
+	"isDesktopOnly": true,
+	"fundingUrl": {
+		"Buy Me a Coffee": "https://www.buymeacoffee.com/banisterious",
+		"GitHub Sponsor": "https://github.com/sponsors/banisterious"
+	}
+}

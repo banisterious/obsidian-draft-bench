@@ -1,6 +1,6 @@
 {
-	"id": "drafting-table",
-	"name": "Drafting Table",
+	"id": "draft-bench",
+	"name": "Draft Bench",
 	"version": "0.0.1",
 	"minAppVersion": "1.7.2",
 	"description": "A full creative writing workflow for Obsidian: project creation, scene management, and manuscript compilation with frontmatter-native data and Bases compatibility.",

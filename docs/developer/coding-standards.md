@@ -29,7 +29,7 @@
 
 ## 1. Overview
 
-This document defines coding standards for Drafting Table to ensure consistency and maintainability. These standards are enforced by ESLint (TypeScript) and Stylelint (CSS).
+This document defines coding standards for Draft Bench to ensure consistency and maintainability. These standards are enforced by ESLint (TypeScript) and Stylelint (CSS).
 
 **Key Principles:**
 - Write code that passes linting before committing
@@ -51,11 +51,11 @@ This document defines coding standards for Drafting Table to ensure consistency 
 
 | Type | Convention | Example |
 |------|------------|---------|
-| **Interfaces** | PascalCase | `SceneData`, `DraftingTableSettings` |
+| **Interfaces** | PascalCase | `SceneData`, `DraftBenchSettings` |
 | **Classes** | PascalCase | `ControlCenterModal`, `ProjectPicker` |
 | **Functions** | camelCase | `createSceneNote()`, `loadProject()` |
 | **Variables** | camelCase | `frontmatter`, `sceneCount` |
-| **Constants** | SCREAMING_SNAKE_CASE | `DEFAULT_SETTINGS`, `DT_PROPERTY_PREFIX` |
+| **Constants** | SCREAMING_SNAKE_CASE | `DEFAULT_SETTINGS`, `DB_PROPERTY_PREFIX` |
 | **Type Parameters** | Single uppercase letter or PascalCase | `T`, `TNode`, `SceneType` |
 
 #### Settings Properties
@@ -64,7 +64,7 @@ This document defines coding standards for Drafting Table to ensure consistency 
 
 ```typescript
 // ✅ CORRECT
-export interface DraftingTableSettings {
+export interface DraftBenchSettings {
   defaultProjectFolder: string;
   templatesFolder: string;
   defaultStatus: string;
@@ -72,7 +72,7 @@ export interface DraftingTableSettings {
 }
 
 // ❌ WRONG - Do NOT use Sentence Case or spaces
-export interface DraftingTableSettings {
+export interface DraftBenchSettings {
   "Default Project Folder": string;  // Never do this!
   default_status: string;             // Avoid snake_case in TS
 }
@@ -100,15 +100,15 @@ new Setting(containerEl)
 
 #### Frontmatter Properties
 
-All plugin-managed frontmatter keys are namespaced with the `dt-` prefix:
+All plugin-managed frontmatter keys are namespaced with the `db-` prefix:
 
 ```typescript
-// ✅ CORRECT - dt- prefix on plugin-managed properties
+// ✅ CORRECT - db- prefix on plugin-managed properties
 await this.app.fileManager.processFrontMatter(file, (fm) => {
-  fm['dt-type'] = 'scene';
-  fm['dt-project'] = projectName;
-  fm['dt-order'] = nextOrder;
-  fm['dt-status'] = 'draft';
+  fm['db-type'] = 'scene';
+  fm['db-project'] = projectName;
+  fm['db-order'] = nextOrder;
+  fm['db-status'] = 'draft';
 });
 
 // ❌ WRONG - Bare keys collide with user/other-plugin properties
@@ -116,7 +116,7 @@ fm.type = 'scene';
 fm.project = projectName;
 ```
 
-The `dt-` namespace is enforced by convention, not by ESLint. Reviewing diffs for property names is part of code review.
+The `db-` namespace is enforced by convention, not by ESLint. Reviewing diffs for property names is part of code review.
 
 ### 2.2. Code Style
 
@@ -171,15 +171,15 @@ const frontmatter: Record<string, any> = {};
 
 // ✅ PREFER - Be specific
 interface SceneFrontmatter {
-  'dt-type': 'scene';
-  'dt-project': string;
-  'dt-order': number;
-  'dt-status'?: string;
+  'db-type': 'scene';
+  'db-project': string;
+  'db-order': number;
+  'db-status'?: string;
 }
 const frontmatter: SceneFrontmatter = {
-  'dt-type': 'scene',
-  'dt-project': projectName,
-  'dt-order': order
+  'db-type': 'scene',
+  'db-project': projectName,
+  'db-order': order
 };
 
 // ✅ ACCEPTABLE - For truly dynamic data, use unknown
@@ -280,24 +280,24 @@ const buffer = createBuffer();  // ESLint error if never used
 #### BEM Methodology
 All CSS classes MUST follow BEM (Block__Element--Modifier) with project prefix:
 
-**Pattern:** `(dt|drafting-table)-[block](__[element])?(--[modifier])?`
+**Pattern:** `(dt|draft-bench)-[block](__[element])?(--[modifier])?`
 
 ```css
 /* ✅ CORRECT - Block */
-.dt-modal-container { }
-.drafting-table-card { }
+.db-modal-container { }
+.draft-bench-card { }
 
 /* ✅ CORRECT - Block + Element */
-.dt-card__header { }
-.drafting-table-card__title { }
-.dt-nav-item__icon { }
+.db-card__header { }
+.draft-bench-card__title { }
+.db-nav-item__icon { }
 
 /* ✅ CORRECT - Block + Modifier */
-.dt-btn--primary { }
-.drafting-table-nav-item--active { }
+.db-btn--primary { }
+.draft-bench-nav-item--active { }
 
 /* ✅ CORRECT - Block + Element + Modifier */
-.dt-nav-item__icon--disabled { }
+.db-nav-item__icon--disabled { }
 
 /* ❌ WRONG - Missing prefix */
 .modal-container { }  /* Stylelint error */
@@ -306,37 +306,37 @@ All CSS classes MUST follow BEM (Block__Element--Modifier) with project prefix:
 .dtModalContainer { }  /* Stylelint error */
 
 /* ❌ WRONG - Sentence case or spaces */
-.dt-modal container { }  /* Stylelint error */
+.db-modal container { }  /* Stylelint error */
 ```
 
 **Allowed Prefixes:**
-- `dt-` (Drafting Table) - Short prefix, preferred for most cases
-- `drafting-table-` - Long form, use when collision risk warrants explicitness
+- `db-` (Draft Bench) - Short prefix, preferred for most cases
+- `draft-bench-` - Long form, use when collision risk warrants explicitness
 
 #### Class Naming Examples
 
 | Component | Class Name |
 |-----------|------------|
-| Modal container | `.dt-modal-container` |
-| Card header | `.dt-card__header` |
-| Primary button | `.dt-btn--primary` |
-| Active nav item | `.dt-nav-item--active` |
-| Scene picker | `.dt-scene-picker` |
-| Manuscript list | `.dt-manuscript-list` |
-| Compile preset row | `.dt-compile-preset-row` |
+| Modal container | `.db-modal-container` |
+| Card header | `.db-card__header` |
+| Primary button | `.db-btn--primary` |
+| Active nav item | `.db-nav-item--active` |
+| Scene picker | `.db-scene-picker` |
+| Manuscript list | `.db-manuscript-list` |
+| Compile preset row | `.db-compile-preset-row` |
 
 ### 3.2. Custom Properties
 
 #### Variable Naming
 Custom properties (CSS variables) MUST use kebab-case with prefix:
 
-**Pattern:** `--dt-[name]`
+**Pattern:** `--db-[name]`
 
 ```css
-/* ✅ CORRECT - Drafting Table variables */
---dt-scene-card-width: 240px;
---dt-spacing-horizontal: 16px;
---dt-status-color-draft: #888;
+/* ✅ CORRECT - Draft Bench variables */
+--db-scene-card-width: 240px;
+--db-spacing-horizontal: 16px;
+--db-status-color-draft: #888;
 
 /* ❌ WRONG - Missing prefix */
 --modal-width: 800px;  /* Stylelint error */
@@ -352,7 +352,7 @@ Custom properties (CSS variables) MUST use kebab-case with prefix:
 
 ```css
 /* ✅ CORRECT - Using Obsidian variables */
-.dt-modal {
+.db-modal {
   background: var(--background-primary);
   color: var(--text-normal);
   border: 1px solid var(--background-modifier-border);
@@ -364,13 +364,13 @@ Custom properties (CSS variables) MUST use kebab-case with prefix:
 #### General Rules
 ```css
 /* ✅ CORRECT - Lowercase everything */
-.dt-button {
+.db-button {
   color: #3498db;
   font-family: sans-serif;
 }
 
 /* ✅ CORRECT - Double quotes for strings */
-.dt-icon::before {
+.db-icon::before {
   content: "→";
 }
 
@@ -387,7 +387,7 @@ padding: 0 24px 24px 24px;  /* Use: padding: 0 24px 24px; */
 #### Spacing and Line Breaks
 ```css
 /* ✅ CORRECT - Empty line before declarations */
-.dt-card {
+.db-card {
   padding: 16px;
 
   background: var(--background-secondary);
@@ -395,11 +395,11 @@ padding: 0 24px 24px 24px;  /* Use: padding: 0 24px 24px; */
 }
 
 /* ✅ CORRECT - Empty line before rules */
-.dt-card__header {
+.db-card__header {
   font-weight: bold;
 }
 
-.dt-card__content {
+.db-card__content {
   padding: 8px;
 }
 ```
@@ -407,20 +407,20 @@ padding: 0 24px 24px 24px;  /* Use: padding: 0 24px 24px; */
 #### Nesting Depth
 ```css
 /* ✅ CORRECT - Max 3 levels */
-.dt-modal {
-  .dt-modal__content {
-    .dt-modal__header {
+.db-modal {
+  .db-modal__content {
+    .db-modal__header {
       /* This is the maximum depth */
     }
   }
 }
 
 /* ❌ WRONG - Exceeds max depth */
-.dt-modal {
-  .dt-level1 {
-    .dt-level2 {
-      .dt-level3 {
-        .dt-level4 { /* Stylelint error */ }
+.db-modal {
+  .db-level1 {
+    .db-level2 {
+      .db-level3 {
+        .db-level4 { /* Stylelint error */ }
       }
     }
   }
@@ -457,7 +457,7 @@ When Obsidian provides a native CSS class for standard UI elements, prefer using
 select.className = 'dropdown';
 
 // ❌ AVOID - Custom class layered with native class
-select.className = 'dt-status-select dropdown';
+select.className = 'db-status-select dropdown';
 ```
 
 **Rationale:**
@@ -486,13 +486,13 @@ select.className = 'dt-status-select dropdown';
 
 ```typescript
 // ✅ CORRECT - Custom class on container, native class on element
-const container = containerEl.createDiv({ cls: 'dt-status-picker' });
+const container = containerEl.createDiv({ cls: 'db-status-picker' });
 const select = container.createEl('select', { cls: 'dropdown' });
 ```
 
 ```css
 /* Custom layout on container only */
-.dt-status-picker {
+.db-status-picker {
   display: flex;
   gap: 8px;
   align-items: center;
@@ -518,7 +518,7 @@ This section documents critical requirements from [Obsidian's Plugin Guidelines]
 const file = app.vault.getAbstractFileByPath(path);
 
 // ✅ CORRECT - Plugin instance reference
-export default class DraftingTablePlugin extends Plugin {
+export default class DraftBenchPlugin extends Plugin {
   async onload() {
     const file = this.app.vault.getAbstractFileByPath(path);
   }
@@ -556,21 +556,21 @@ logger.error('Failed to process scene', error);
 ```typescript
 // ❌ WRONG - Security vulnerability!
 function showTitle(title: string) {
-  let container = document.querySelector('.dt-container');
+  let container = document.querySelector('.db-container');
   container.innerHTML = `<div><b>Scene: </b>${title}</div>`;
   // If title = "<script>alert('XSS')</script>", this executes!
 }
 
 // ✅ CORRECT - Use DOM API or Obsidian helpers
 function showTitle(title: string) {
-  let container = document.querySelector('.dt-container');
+  let container = document.querySelector('.db-container');
   let div = container.createDiv();
   div.createEl('b', { text: 'Scene: ' });
   div.appendText(title);  // Safe - text is escaped
 }
 
 // ✅ BETTER - Obsidian createEl helper
-containerEl.createDiv({ cls: 'dt-container' }, (div) => {
+containerEl.createDiv({ cls: 'db-container' }, (div) => {
   div.createEl('b', { text: 'Scene: ' });
   div.appendText(title);
 });
@@ -603,7 +603,7 @@ if (editor) {
 
 ```typescript
 // ❌ WRONG - Creates memory leaks
-export default class DraftingTablePlugin extends Plugin {
+export default class DraftBenchPlugin extends Plugin {
   private view: ManuscriptView;
 
   onload() {
@@ -612,7 +612,7 @@ export default class DraftingTablePlugin extends Plugin {
 }
 
 // ✅ CORRECT - Let Obsidian manage the reference
-export default class DraftingTablePlugin extends Plugin {
+export default class DraftBenchPlugin extends Plugin {
   onload() {
     this.registerView(MANUSCRIPT_VIEW_TYPE, () => new ManuscriptView());
   }
@@ -666,20 +666,20 @@ await this.app.vault.process(file, (content) => {
 
 #### Prefer `FileManager.processFrontMatter` for Frontmatter
 
-This is a hard rule for Drafting Table — every plugin-managed frontmatter write goes through `processFrontMatter`. We never hand-parse YAML.
+This is a hard rule for Draft Bench — every plugin-managed frontmatter write goes through `processFrontMatter`. We never hand-parse YAML.
 
 ```typescript
 // ❌ WRONG - Manual YAML parsing
 const content = await this.app.vault.read(file);
 const match = content.match(/^---\n([\s\S]*?)\n---/);
 const yaml = parseYAML(match[1]);
-yaml['dt-status'] = 'draft';
+yaml['db-status'] = 'draft';
 const newContent = content.replace(match[0], `---\n${stringifyYAML(yaml)}\n---`);
 await this.app.vault.modify(file, newContent);
 
 // ✅ CORRECT - Atomic, consistent YAML formatting
 await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-  frontmatter['dt-status'] = 'draft';
+  frontmatter['db-status'] = 'draft';
 });
 ```
 
@@ -687,7 +687,7 @@ await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
 - Atomic (no conflicts)
 - Consistent YAML layout
 - Automatic error handling
-- Preserves user-authored properties Drafting Table doesn't manage
+- Preserves user-authored properties Draft Bench doesn't manage
 
 #### Prefer Vault API over Adapter API
 
@@ -753,7 +753,7 @@ const file = this.app.vault.getAbstractFileByPath(path);
 
 ```typescript
 // ✅ CORRECT - Use register methods for automatic cleanup
-export default class DraftingTablePlugin extends Plugin {
+export default class DraftBenchPlugin extends Plugin {
   onload() {
     // Auto-cleaned when plugin unloads
     this.registerEvent(
@@ -773,7 +773,7 @@ export default class DraftingTablePlugin extends Plugin {
 }
 
 // ❌ WRONG - Manual cleanup required
-export default class DraftingTablePlugin extends Plugin {
+export default class DraftBenchPlugin extends Plugin {
   private eventRef: EventRef;
 
   onload() {
@@ -893,12 +893,12 @@ el.style.color = 'white';
 el.style.backgroundColor = 'red';
 
 // ✅ CORRECT - Use CSS classes
-const el = containerEl.createDiv({ cls: 'dt-warning' });
+const el = containerEl.createDiv({ cls: 'db-warning' });
 ```
 
 **In your CSS file:**
 ```css
-.dt-warning {
+.db-warning {
   color: var(--text-normal);
   background-color: var(--background-modifier-error);
 }
@@ -959,7 +959,7 @@ When the settings tab grows beyond a few sections, decompose `display()` into pr
 
 ```typescript
 // ✅ CORRECT - Decomposed settings tab structure
-export class DraftingTableSettingTab extends PluginSettingTab {
+export class DraftBenchSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
@@ -1108,7 +1108,7 @@ The following proper nouns should **remain capitalized** even in sentence case c
 
 | Category | Examples |
 |----------|----------|
-| **Plugin name** | Drafting Table (and *Scriptorium* if the rename happens) |
+| **Plugin name** | Draft Bench |
 | **Feature names** | Control Center, Manuscript, Compile, Book Builder |
 | **Third-party plugins / products** | Obsidian Bases, Templater, Dataview, Longform, Excalidraw |
 | **External tools** | Pandoc |
@@ -1116,7 +1116,7 @@ The following proper nouns should **remain capitalized** even in sentence case c
 
 ```typescript
 // ✅ CORRECT - Proper nouns stay capitalized
-.setTitle('Drafting Table: Open Control Center')  // Plugin name capitalized
+.setTitle('Draft Bench: Open Control Center')  // Plugin name capitalized
 .setName('Compile to PDF')                         // Acronym
 .setName('Export with Pandoc')                     // External tool
 .setName('Open in Bases view')                     // Obsidian Bases is a feature/product name
@@ -1146,7 +1146,7 @@ The following proper nouns should **remain capitalized** even in sentence case c
 
 ```typescript
 // ✅ CORRECT - Settings structure
-export class DraftingTableSettingTab extends PluginSettingTab {
+export class DraftBenchSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
@@ -1168,13 +1168,13 @@ export class DraftingTableSettingTab extends PluginSettingTab {
 }
 
 // ❌ WRONG - Common mistakes
-export class DraftingTableSettingTab extends PluginSettingTab {
+export class DraftBenchSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
 
     // ❌ Don't add top-level heading
-    containerEl.createEl('h2', { text: 'Drafting Table Settings' });
+    containerEl.createEl('h2', { text: 'Draft Bench Settings' });
 
     // ❌ Title Case
     containerEl.createEl('h3', { text: 'Advanced Settings' });
@@ -1280,9 +1280,9 @@ const data: any = getValue();
 
 // ✅ Fix 1: Use a proper type
 interface SceneFrontmatter {
-  'dt-type': 'scene';
-  'dt-project': string;
-  'dt-order': number;
+  'db-type': 'scene';
+  'db-project': string;
+  'db-order': number;
 }
 const data: SceneFrontmatter = getValue();
 
@@ -1325,16 +1325,16 @@ const pattern = /^ {2}- (.+)$/gm;
 /* ❌ Error: Expected ".xyz-modal" to match pattern */
 .xyz-modal { }
 
-/* ✅ Fix: Use 'dt-' or 'drafting-table-' prefix */
-.dt-modal { }
-.drafting-table-modal { }
+/* ✅ Fix: Use 'db-' or 'draft-bench-' prefix */
+.db-modal { }
+.draft-bench-modal { }
 
 /* ❌ Error: Expected ".modalContainer" to match pattern */
 .modalContainer { }
 
 /* ✅ Fix: Use kebab-case with prefix */
-.dt-modal-container { }
-.drafting-table-modal-container { }
+.db-modal-container { }
+.draft-bench-modal-container { }
 ```
 
 #### Issue: Custom property pattern error
@@ -1344,9 +1344,9 @@ const pattern = /^ {2}- (.+)$/gm;
   --modal-width: 800px;
 }
 
-/* ✅ Fix: Add 'dt-' prefix */
+/* ✅ Fix: Add 'db-' prefix */
 :root {
-  --dt-modal-width: 800px;
+  --db-modal-width: 800px;
 }
 ```
 
@@ -1372,7 +1372,7 @@ padding: 0 24px 24px;
 
 ## 8. Shared Utilities and Factories
 
-**Status (2026-04-16):** Drafting Table is pre-implementation. There are no shared utilities yet. This section is a placeholder for the pattern to follow once Phase 1+ work begins.
+**Status (2026-04-16):** Draft Bench is pre-implementation. There are no shared utilities yet. This section is a placeholder for the pattern to follow once Phase 1+ work begins.
 
 ### When to extract a shared utility
 

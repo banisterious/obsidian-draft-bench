@@ -6,9 +6,9 @@
   "rules": {
     "custom-property-pattern": null,
     "selector-class-pattern": [
-      "^(dt|drafting-table)-[a-z0-9-]+(__[a-z0-9-]+)?(--[a-z0-9-]+)?$",
+      "^(db|draft-bench)-[a-z0-9-]+(__[a-z0-9-]+)?(--[a-z0-9-]+)?$",
       {
-        "message": "Expected class selector to use BEM format with dt-/drafting-table- prefix (selector-class-pattern)"
+        "message": "Expected class selector to use BEM format with db-/draft-bench- prefix (selector-class-pattern)"
       }
     ],
     "declaration-empty-line-before": [

@@ -1,6 +1,6 @@
-# Drafting Table — Plugin Specification
+# Draft Bench — Plugin Specification
 
-**Working title:** Drafting Table (may be renamed to *Scriptorium* before community release)
+**Working title:** Draft Bench
 **Author:** John Banister
 **Status:** Initial specification / pre-development
 **Date:** April 16, 2026
@@ -9,7 +9,7 @@
 
 ## Overview
 
-Drafting Table is an Obsidian plugin for writers that supports a full creative writing workflow — from project creation through scene management to manuscript compilation. It is inspired by [Longform](https://github.com/kevboh/longform) but aims to be more user-friendly and more feature-complete, with better onboarding, richer scene/project metadata, native compatibility with Obsidian Bases, and a compile system that requires no JavaScript knowledge.
+Draft Bench is an Obsidian plugin for writers that supports a full creative writing workflow — from project creation through scene management to manuscript compilation. It is inspired by [Longform](https://github.com/kevboh/longform) but aims to be more user-friendly and more feature-complete, with better onboarding, richer scene/project metadata, native compatibility with Obsidian Bases, and a compile system that requires no JavaScript knowledge.
 
 ## Design Principles
 
@@ -27,17 +27,17 @@ Drafting Table is an Obsidian plugin for writers that supports a full creative w
 
 ### Note Types
 
-Every note managed by Drafting Table carries a set of frontmatter properties that identify its type and its relationships. The core properties are:
+Every note managed by Draft Bench carries a set of frontmatter properties that identify its type and its relationships. The core properties are:
 
 | Property | Type | Description |
 |---|---|---|
-| `dt-type` | string | The note's role: `project`, `scene`, `beat`, etc. |
-| `dt-project` | string | The project this note belongs to (matches the project note's title or ID). |
-| `dt-parent` | string (optional) | The parent note (e.g., a scene's chapter, a beat's scene). |
-| `dt-order` | number | Sort position among siblings. |
-| `dt-status` | string (optional) | Workflow status (e.g., `idea`, `draft`, `revision`, `final`). |
+| `db-type` | string | The note's role: `project`, `scene`, `beat`, etc. |
+| `db-project` | string | The project this note belongs to (matches the project note's title or ID). |
+| `db-parent` | string (optional) | The parent note (e.g., a scene's chapter, a beat's scene). |
+| `db-order` | number | Sort position among siblings. |
+| `db-status` | string (optional) | Workflow status (e.g., `idea`, `draft`, `revision`, `final`). |
 
-The `dt-` prefix namespaces plugin properties to avoid collisions with user properties or other plugins.
+The `db-` prefix namespaces plugin properties to avoid collisions with user properties or other plugins.
 
 ### V1 Type Vocabulary
 
@@ -63,22 +63,22 @@ The following types are anticipated but not shipped in initial builds. The type 
 
 ### Project Structure on Disk
 
-A project is a folder. Every note inside that folder (recursively) with `dt-project` set to the project name belongs to that project. There is no index file that lists scenes in order — ordering comes from the `dt-order` property on each note, and membership comes from the `dt-project` property.
+A project is a folder. Every note inside that folder (recursively) with `db-project` set to the project name belongs to that project. There is no index file that lists scenes in order — ordering comes from the `db-order` property on each note, and membership comes from the `db-project` property.
 
 Example folder structure:
 
 ```
 My Novel/
-├── My Novel.md              ← dt-type: project
-├── Chapter 1 - Arrival.md   ← dt-type: scene, dt-order: 1
-├── Chapter 2 - The Search.md← dt-type: scene, dt-order: 2
-├── Chapter 3 - Descent.md   ← dt-type: scene, dt-order: 3
+├── My Novel.md              ← db-type: project
+├── Chapter 1 - Arrival.md   ← db-type: scene, db-order: 1
+├── Chapter 2 - The Search.md← db-type: scene, db-order: 2
+├── Chapter 3 - Descent.md   ← db-type: scene, db-order: 3
 └── ...
 ```
 
 This approach:
 - Plays well with Bases (filter by folder, by type, by status)
-- Supports drag-and-drop reordering in the plugin UI (updates `dt-order`)
+- Supports drag-and-drop reordering in the plugin UI (updates `db-order`)
 - Doesn't break when users rename files
 - Doesn't require users to maintain an external scene list
 
@@ -98,7 +98,7 @@ A tabbed modal accessible via ribbon icon, command palette, or context menu. Tab
 
 Right-click actions on files and folders:
 
-- **Create Drafting Table Project** (on folders)
+- **Create Draft Bench Project** (on folders)
 - **New Scene** / **New [Type]** (within project folders)
 - **Add to Project as…** (on any existing note — applies frontmatter via modal)
 - **Set Status** (quick status change)
@@ -153,7 +153,7 @@ Modeled on the Charted Roots Book Builder. The user assembles a compile configur
 - **Title page** generation (optional)
 - **Frontmatter stripping** — remove YAML from compiled output
 - **Heading transformation** — e.g., convert scene titles to chapter headings
-- **Scene ordering** — uses `dt-order` by default; manual override available
+- **Scene ordering** — uses `db-order` by default; manual override available
 
 ### Output Formats
 
@@ -170,11 +170,11 @@ Compile configurations are saved as named presets. Presets can be duplicated, ed
 
 ## Bases Integration
 
-Because every note carries typed frontmatter properties (`dt-type`, `dt-project`, `dt-status`, `dt-order`, etc.), Obsidian Bases views work automatically:
+Because every note carries typed frontmatter properties (`db-type`, `db-project`, `db-status`, `db-order`, etc.), Obsidian Bases views work automatically:
 
-- A **table view** filtered by `dt-type: scene` and sorted by `dt-order` becomes a scene outline
+- A **table view** filtered by `db-type: scene` and sorted by `db-order` becomes a scene outline
 - A **cards view** becomes a corkboard
-- Filtering by `dt-status: draft` creates a revision queue
+- Filtering by `db-status: draft` creates a revision queue
 - Future types like `character` or `location` become their own Bases views with no plugin changes
 
 No custom Bases view registration is required for v1. The plugin may ship template `.base` files as a stretch goal.
@@ -204,18 +204,18 @@ TBD. Desktop-first is assumed. Mobile compatibility to be evaluated — mobile O
 
 ### Performance
 
-Target: comfortable operation on vaults with multiple projects totaling hundreds of scenes. Property reads via Obsidian's metadata cache (not raw file parsing). Scene reordering updates only the affected notes' `dt-order` values.
+Target: comfortable operation on vaults with multiple projects totaling hundreds of scenes. Property reads via Obsidian's metadata cache (not raw file parsing). Scene reordering updates only the affected notes' `db-order` values.
 
 ### Distribution
 
-- Fresh repository: `S:\Projects\obsidian-plugins\drafting-table`
+- Fresh repository: `S:\Projects\obsidian-plugins\draft-bench`
 - Community plugin directory submission when ready
 - BRAT-compatible for beta testing
 - License: TBD
 
 ### Relation to Existing Plugins
 
-Drafting Table is a standalone plugin. It does not share code with Oneirometrics, Sonigraph, or Charted Roots, but follows their established UI patterns (Control Center, settings conventions, modal design language). Compile/export code from Charted Roots' Book Builder may be studied and adapted.
+Draft Bench is a standalone plugin. It does not share code with Oneirometrics, Sonigraph, or Charted Roots, but follows their established UI patterns (Control Center, settings conventions, modal design language). Compile/export code from Charted Roots' Book Builder may be studied and adapted.
 
 ## Open Questions
 
@@ -235,15 +235,13 @@ These decisions are deferred and will be resolved as development progresses:
 
 7. **Status vocabulary** — Is the status workflow (`idea` → `draft` → `revision` → `final`) hardcoded, user-configurable, or both (defaults with override)?
 
-8. **Naming** — Working title is Drafting Table. May be renamed to Scriptorium before community submission.
-
 ## Development Phases (Rough)
 
 ### Phase 1 — Foundation
 - Project creation (folder + project note with frontmatter)
 - Scene creation (notes with typed frontmatter)
 - Control Center skeleton (Project and Manuscript tabs)
-- Scene reordering (drag-and-drop in Manuscript tab, updates `dt-order`)
+- Scene reordering (drag-and-drop in Manuscript tab, updates `db-order`)
 - Context menu actions (create project, new scene, add to project)
 - Basic onboarding (welcome modal, guided first project)
 

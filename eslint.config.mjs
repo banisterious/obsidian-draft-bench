@@ -100,9 +100,8 @@ export default [
 					"JavaScript", "TypeScript", "Node.js",
 					"npm", "pnpm", "Yarn", "Git", "GitHub", "GitLab",
 					"VS Code", "Visual Studio Code",
-					// Drafting Table specific
-					"Drafting Table",
-					"Scriptorium",
+					// Draft Bench specific
+					"Draft Bench",
 					"Bases",
 					"Longform",
 					"Templater",
@@ -117,7 +116,7 @@ export default [
 					"SDK", "IDE", "CLI", "GUI", "REST",
 					"UI", "OK", "ID", "UUID", "GUID",
 					"DOM", "CDN", "FAQ", "AI", "ML",
-					// Drafting Table specific
+					// Draft Bench specific
 					"ODT",
 					"MD",
 					"BRAT",

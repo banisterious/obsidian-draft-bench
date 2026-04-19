@@ -62,8 +62,7 @@ CLAUDE.md
 ISSUES.md
 
 # Release packages
-drafting-table-v*.zip
-scriptorium-v*.zip
+draft-bench-v*.zip
 
 # Personal deployment scripts
 deploy.sh

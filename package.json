@@ -1,5 +1,5 @@
 {
-	"name": "obsidian-drafting-table",
+	"name": "obsidian-draft-bench",
 	"version": "0.0.1",
 	"description": "A full creative writing workflow for Obsidian: project creation, scene management, and manuscript compilation with frontmatter-native data and Bases compatibility.",
 	"main": "main.js",
@@ -21,13 +21,13 @@
 		"manuscript",
 		"scrivener",
 		"longform",
-		"drafting-table"
+		"draft-bench"
 	],
 	"author": "banisterious",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/banisterious/obsidian-drafting-table.git"
+		"url": "https://github.com/banisterious/obsidian-draft-bench.git"
 	},
 	"devDependencies": {
 		"@types/node": "^20.11.5",

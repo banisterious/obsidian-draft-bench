@@ -1,0 +1,39 @@
+/*
+ * Base utilities, animations, and shared primitives for Draft Bench.
+ *
+ * Component-specific styles live in their own files (control-center.css,
+ * modals.css, notes.css, etc.). This file holds only the pieces those
+ * components reference.
+ */
+
+/*
+ * Loading-state spinner animation. Reused by any loading surface
+ * (Control Center first-scan, picker modals, batch operations).
+ */
+
+@keyframes dbench-spin {
+	from {
+		transform: rotate(0deg);
+	}
+
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.dbench-spinner {
+	animation: dbench-spin 1s linear infinite;
+}
+
+/*
+ * Utility classes. Prefixed with dbench- for namespace isolation.
+ * Keep minimal: prefer semantic component classes elsewhere.
+ */
+
+.dbench-hidden {
+	display: none;
+}
+
+.dbench-clickable {
+	cursor: pointer;
+}

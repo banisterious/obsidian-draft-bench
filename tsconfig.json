@@ -25,6 +25,8 @@
 	"exclude": [
 		"node_modules",
 		"docs",
-		"external"
+		"external",
+		"tests",
+		"dev-vault"
 	]
 }

@@ -1,1 +1,139 @@
-/* Draft Bench — plugin styles */
+/* ==========================================================================
+   Draft Bench Plugin Stylesheet (BUILT)
+   ==========================================================================
+
+   This file is generated from component files in styles/.
+   Do not edit directly. Edit the component files, then run:
+     npm run build:css
+
+   Generated: 2026-04-20 22:14:49 UTC
+   Components: 9
+*/
+
+
+/* --------------------------------------------------------------------------
+   VARIABLES.CSS  (59 lines, 1.78 KB)
+   -------------------------------------------------------------------------- */
+
+/*
+ * CSS custom properties for Draft Bench.
+ *
+ * Scales (spacing, radius, transitions) define the visual rhythm used
+ * throughout the plugin. Feature-specific variables (scene / draft leaf
+ * styling) are exposed via Style Settings for user customization.
+ *
+ * Reference Obsidian's native variables (--background-primary, --text-normal,
+ * --interactive-accent, etc.) for anything color- or theme-related so the
+ * plugin inherits the user's theme automatically.
+ */
+
+.dbench-scope {
+	/* Spacing scale */
+	--dbench-spacing-xs: 4px;
+	--dbench-spacing-sm: 8px;
+	--dbench-spacing-md: 12px;
+	--dbench-spacing-lg: 16px;
+	--dbench-spacing-xl: 24px;
+
+	/* Border-radius scale */
+	--dbench-radius-xs: 2px;
+	--dbench-radius-sm: 4px;
+	--dbench-radius-md: 6px;
+	--dbench-radius-lg: 8px;
+
+	/* Transition scale */
+	--dbench-transition-fast: 100ms ease-out;
+	--dbench-transition-normal: 200ms ease-out;
+	--dbench-transition-slow: 300ms ease-out;
+}
+
+/*
+ * Scene-leaf variables (exposed via Style Settings). Applied to any editor
+ * leaf displaying a note with dbench-type: scene. Defaults inherit Obsidian's
+ * theme colors so the plugin looks correct without configuration.
+ */
+
+.dbench-scene {
+	--dbench-scene-font-family: inherit;
+	--dbench-scene-font-size: inherit;
+	--dbench-scene-line-height: inherit;
+	--dbench-scene-max-width: none;
+	--dbench-scene-background: transparent;
+	--dbench-scene-text-color: var(--text-normal);
+}
+
+/*
+ * Draft-leaf variables (exposed via Style Settings). Applied to any editor
+ * leaf displaying a note with dbench-type: draft. Defaults signal "archived
+ * snapshot, not the live scene" with a subtle visual cue.
+ */
+
+.dbench-draft {
+	--dbench-draft-background: var(--background-secondary);
+	--dbench-draft-text-color: var(--text-muted);
+	--dbench-draft-border-left: 3px solid var(--text-faint);
+}
+
+
+/* End of variables.css */
+
+/* --------------------------------------------------------------------------
+   BASE.CSS  (40 lines, 0.75 KB)
+   -------------------------------------------------------------------------- */
+
+/*
+ * Base utilities, animations, and shared primitives for Draft Bench.
+ *
+ * Component-specific styles live in their own files (control-center.css,
+ * modals.css, notes.css, etc.). This file holds only the pieces those
+ * components reference.
+ */
+
+/*
+ * Loading-state spinner animation. Reused by any loading surface
+ * (Control Center first-scan, picker modals, batch operations).
+ */
+
+@keyframes dbench-spin {
+	from {
+		transform: rotate(0deg);
+	}
+
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.dbench-spinner {
+	animation: dbench-spin 1s linear infinite;
+}
+
+/*
+ * Utility classes. Prefixed with dbench- for namespace isolation.
+ * Keep minimal: prefer semantic component classes elsewhere.
+ */
+
+.dbench-hidden {
+	display: none;
+}
+
+.dbench-clickable {
+	cursor: pointer;
+}
+
+
+/* End of base.css */
+
+/* ==========================================================================
+   BUILD SUMMARY
+   ==========================================================================
+
+   Built:      2026-04-20 22:14:49 UTC
+   Components: 2
+   Total:      99 lines, 2.53 KB
+   Duration:   0.03s
+   - variables.css: 59 lines, 1.78 KB
+   - base.css: 40 lines, 0.75 KB
+*/
+
+/* End of generated stylesheet */

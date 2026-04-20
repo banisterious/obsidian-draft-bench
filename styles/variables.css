@@ -1,0 +1,58 @@
+/*
+ * CSS custom properties for Draft Bench.
+ *
+ * Scales (spacing, radius, transitions) define the visual rhythm used
+ * throughout the plugin. Feature-specific variables (scene / draft leaf
+ * styling) are exposed via Style Settings for user customization.
+ *
+ * Reference Obsidian's native variables (--background-primary, --text-normal,
+ * --interactive-accent, etc.) for anything color- or theme-related so the
+ * plugin inherits the user's theme automatically.
+ */
+
+.dbench-scope {
+	/* Spacing scale */
+	--dbench-spacing-xs: 4px;
+	--dbench-spacing-sm: 8px;
+	--dbench-spacing-md: 12px;
+	--dbench-spacing-lg: 16px;
+	--dbench-spacing-xl: 24px;
+
+	/* Border-radius scale */
+	--dbench-radius-xs: 2px;
+	--dbench-radius-sm: 4px;
+	--dbench-radius-md: 6px;
+	--dbench-radius-lg: 8px;
+
+	/* Transition scale */
+	--dbench-transition-fast: 100ms ease-out;
+	--dbench-transition-normal: 200ms ease-out;
+	--dbench-transition-slow: 300ms ease-out;
+}
+
+/*
+ * Scene-leaf variables (exposed via Style Settings). Applied to any editor
+ * leaf displaying a note with dbench-type: scene. Defaults inherit Obsidian's
+ * theme colors so the plugin looks correct without configuration.
+ */
+
+.dbench-scene {
+	--dbench-scene-font-family: inherit;
+	--dbench-scene-font-size: inherit;
+	--dbench-scene-line-height: inherit;
+	--dbench-scene-max-width: none;
+	--dbench-scene-background: transparent;
+	--dbench-scene-text-color: var(--text-normal);
+}
+
+/*
+ * Draft-leaf variables (exposed via Style Settings). Applied to any editor
+ * leaf displaying a note with dbench-type: draft. Defaults signal "archived
+ * snapshot, not the live scene" with a subtle visual cue.
+ */
+
+.dbench-draft {
+	--dbench-draft-background: var(--background-secondary);
+	--dbench-draft-text-color: var(--text-muted);
+	--dbench-draft-border-left: 3px solid var(--text-faint);
+}

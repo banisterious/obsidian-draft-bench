@@ -64,6 +64,7 @@
   "ignoreFiles": [
     "**/*.min.css",
     "**/node_modules/**",
-    "external/**"
+    "external/**",
+    "styles.css"
   ]
 }

@@ -9,7 +9,7 @@ Currently, security updates are provided for the latest release version only.
 | 0.0.x (pre-release) | Design-phase; no public releases yet. |
 | < 0.0.1 | Not applicable. |
 
-This table will be updated once V1 ships.
+This table will be updated once V1 ships. For the broader versioning policy (what counts as breaking, when 1.0 ships, BRAT vs. Community Plugins), see [VERSIONING.md](VERSIONING.md).
 
 ## Data handled by the plugin
 

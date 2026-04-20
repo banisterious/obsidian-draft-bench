@@ -334,7 +334,7 @@ This section describes what the UI surfaces do. For **how** to build them — co
 
 ### Control Center
 
-A tabbed non-transient modal accessible via ribbon icon, command palette, or context menu. Tabs:
+A tabbed non-transient modal accessible via ribbon icon (lucide `pencil-line` glyph), command palette, or context menu. Tabs:
 
 - **Project**: Overview, metadata, synopsis, word count summary.
 - **Manuscript**: Ordered scene list (sorted by `dbench-order`) with status and prior-draft count per scene. Click-through opens the scene. A toolbar along the top of this tab surfaces primary project actions as buttons: **New scene**, **New draft of current scene**, **Reorder scenes**, **Compile** (Phase 3+). This tab is the canonical story-order view; ordering is read-only in the list itself: the Reorder scenes button opens the dedicated modal (see § Scene reordering).
@@ -422,15 +422,33 @@ This matches Charted Roots' feedback shape for cross-plugin consistency.
 
 ### Command palette
 
+All commands are registered with the `Draft Bench:` prefix (matching Obsidian's plugin command convention). The command palette filters by prefix when users type "Draft Bench" or "db".
+
 All context menu actions are also available as commands, plus:
 
-- Open Control Center
-- Open current project's Control Center
-- Create new project
-- New draft of this scene
-- Reorder scenes
-- Compile current project (Phase 3+)
-- Jump to next/previous scene
+- `Draft Bench: Open Control Center`
+- `Draft Bench: Open current project's Control Center`
+- `Draft Bench: Create project`
+- `Draft Bench: New scene in project`
+- `Draft Bench: New draft of this scene`
+- `Draft Bench: Reorder scenes`
+- `Draft Bench: Repair project links`
+- `Draft Bench: Set as project / scene / draft` (retrofit actions)
+- `Draft Bench: Complete essential properties`
+- `Draft Bench: Add dbench-id`
+- `Draft Bench: Compile current project` (Phase 3+)
+- `Draft Bench: Jump to next scene` / `Draft Bench: Jump to previous scene`
+
+### Notice conventions
+
+Draft Bench uses Obsidian's `Notice` API for all user-visible feedback. Conventions:
+
+- **Success.** Prefix with `\u2713`. Use domain nouns (scene, project, draft), not internal terms (frontmatter, linker). Example: "\u2713 Created Draft 2 of Tempting Waters."
+- **Progress.** Plain text ending in `...` while async work runs. Example: "Repairing project links..."
+- **Failure.** Start with "Could not" and state what was attempted. Follow with what the user can do, if actionable. Stack traces never appear in a notice; they go to the developer console at error level. Example: "Could not write Drafts folder. Check that the folder path in Settings is valid."
+- **Batch summary.** `<Action>: <n> <result>, <n> <result>, <n> errors`. Example: "Set as scene: 5 updated, 3 already typed, 1 error."
+- **Plain tone.** No apology language ("Sorry, we couldn't..."), no exclamation marks (even for success), no internal jargon in user-facing text. Say "draft" not "snapshot file," "project" not "project note," "scene" not "markdown file with dbench-type: scene."
+- **Pluralization.** Use a `pluralize` helper so grammar matches the count (`1 scene` vs. `5 scenes`).
 
 ### Keyboard accessibility
 
@@ -452,7 +470,27 @@ Guided onboarding (welcome modal, first-project walkthrough, example-project gen
 
 ### Built-in library (V1)
 
-V1 ships with a single built-in scene template that includes generic planning sections by default (e.g., "Source passages," "Beat outline," "Open questions") above a blank draft area. The template is applied automatically when "New scene in project" runs. Writers who don't plan before drafting can override with a leaner template in Phase 2 (see below).
+V1 ships with a single built-in scene template, applied automatically when "New scene in project" runs. The template body is:
+
+```markdown
+## Source passages
+
+## Beat outline
+
+## Open questions
+
+## Draft
+
+```
+
+The four section headings are deliberate, matching the UC-01 short-story-from-sources archetype that's the V1 first-wave target:
+
+- **Source passages**: places to paste or link to reference material the scene draws on (transcripts, research notes, historical sources).
+- **Beat outline**: structural beats of the scene before prose drafting begins.
+- **Open questions**: unresolved choices the writer wants to flag for later.
+- **Draft**: where the actual prose lives; the body below this heading is what the "new draft" command snapshots.
+
+Frontmatter is stamped by the plugin (not by the template itself). The template file lives at a configurable path in the vault; writers can edit it directly to change defaults. Writers who don't plan before drafting can delete the headings in the template file, or use a leaner template from the Phase 2 multi-template system.
 
 ### User-defined templates (Phase 2+)
 
@@ -599,6 +637,24 @@ For very large mixed-purpose vaults where scan time becomes user-visible, the op
 
 Draft Bench is a standalone plugin. It does not share code with Oneirometrics, Sonigraph, or Charted Roots, but follows their established UI patterns (Control Center, settings conventions, modal design language). Compile/export code from Charted Roots' Book Builder may be studied and adapted.
 
+### Plugin compatibility
+
+Draft Bench is designed to coexist with plugins writers commonly use. Before each release, we verify interaction with:
+
+| Plugin | Tested interaction |
+|---|---|
+| Templater | Stretch goal for V1: if installed, user-defined templates are processed through Templater for dynamic content. Built-in template is plain markdown regardless. |
+| Style Settings | If installed, Draft Bench exposes scene- and draft-leaf styling variables. See § Styling and Style Settings Integration. |
+| Obsidian Bases | Every `dbench-*` property is Bases-queryable. Template `.base` files ship as a Phase 2 stretch goal. |
+| Dataview | Alternative query layer; `dbench-*` properties work in Dataview queries for writers who prefer it. |
+| Longform | Coexists (different namespaces: `longform-*` vs. `dbench-*`). Writers migrating between plugins need a conversion step; no automated migration is shipped. |
+| Custom file-explorer sort plugins | A plugin that reads frontmatter keys can sort by `dbench-order` to restore filesystem-sort = story-order if desired. See [D-02](../planning/decisions/D-02-ordering-and-filesystem-sort.md). |
+
+**Known-caution combinations:**
+
+- Plugins that auto-modify frontmatter in bulk (tag-adders, linters) may touch `dbench-*` properties. The integrity service can usually repair after the fact, but users running such plugins should be aware.
+- Plugins that replace the file explorer tree may not render `dbench-status` / `dbench-order` unless they read those properties natively.
+
 ## Open Questions
 
 These decisions are deferred and will be resolved as development progresses:
@@ -607,15 +663,16 @@ These decisions are deferred and will be resolved as development progresses:
 
 2. **Beat granularity**: Beats-as-headings is the default. How much UI support do beats-as-separate-notes need in v1? Is it enough to allow the `beat` type and let power users create them manually, or does it need first-class modal/template support?
 
-3. **Template library contents**: What specific templates ship with the plugin? What frontmatter fields and body structures do they include?
+3. **Custom Bases views**: Should the plugin register a custom Bases view type (e.g., a manuscript/storyboard view), or is the property schema sufficient for users to build their own?
 
-4. **Custom Bases views**: Should the plugin register a custom Bases view type (e.g., a manuscript/storyboard view), or is the property schema sufficient for users to build their own?
+4. **Templater integration depth**: Detection and passthrough, or deeper integration (e.g., plugin-aware Templater commands)?
 
-5. **Templater integration depth**: Detection and passthrough, or deeper integration (e.g., plugin-aware Templater commands)?
+5. **Mobile support (post-V1)**: V1 is desktop-only. Whether to invest in mobile Obsidian compatibility is deferred; the decision depends on whether mobile becomes a meaningful portion of the user base once V1 ships.
 
-6. **Mobile support (post-V1)**: V1 is desktop-only. Whether to invest in mobile Obsidian compatibility is deferred; the decision depends on whether mobile becomes a meaningful portion of the user base once V1 ships.
+### Resolved
 
-7. **Status vocabulary**: Is the status workflow (`idea` -> `draft` -> `revision` -> `final`) hardcoded, user-configurable, or both (defaults with override)?
+- **Template library contents** (former #3): V1 ships with a single built-in scene template (see § Scene Templates). User-defined multi-template management is Phase 2+.
+- **Status vocabulary** (former #7): V1 hardcodes the workflow `idea -> draft -> revision -> final` applied to `dbench-status` on project and scene notes. User-configurable vocabulary (custom values, custom count, per-project overrides) is deferred to Phase 2, where the settings surface and status-change UI both need to exist.
 
 ## Documentation
 

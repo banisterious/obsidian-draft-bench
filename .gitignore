@@ -61,6 +61,12 @@ CLAUDE.md
 .session-restore.md
 ISSUES.md
 
+# Personal planning — use-case drafts with real writing content
+docs/planning/use-cases/
+
+# Personal planning — architecture decisions (live locally until promoted)
+docs/planning/decisions/
+
 # Release packages
 draft-bench-v*.zip
 

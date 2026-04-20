@@ -100,15 +100,15 @@ new Setting(containerEl)
 
 #### Frontmatter Properties
 
-All plugin-managed frontmatter keys are namespaced with the `db-` prefix:
+All plugin-managed frontmatter keys are namespaced with the `dbench-` prefix:
 
 ```typescript
-// ✅ CORRECT - db- prefix on plugin-managed properties
+// ✅ CORRECT - dbench- prefix on plugin-managed properties
 await this.app.fileManager.processFrontMatter(file, (fm) => {
-  fm['db-type'] = 'scene';
-  fm['db-project'] = projectName;
-  fm['db-order'] = nextOrder;
-  fm['db-status'] = 'draft';
+  fm['dbench-type'] = 'scene';
+  fm['dbench-project'] = projectName;
+  fm['dbench-order'] = nextOrder;
+  fm['dbench-status'] = 'draft';
 });
 
 // ❌ WRONG - Bare keys collide with user/other-plugin properties
@@ -116,7 +116,7 @@ fm.type = 'scene';
 fm.project = projectName;
 ```
 
-The `db-` namespace is enforced by convention, not by ESLint. Reviewing diffs for property names is part of code review.
+The `dbench-` namespace is enforced by convention, not by ESLint. Reviewing diffs for property names is part of code review.
 
 ### 2.2. Code Style
 
@@ -156,7 +156,7 @@ export async function createSceneNote(/* ... */) {
 
 #### Import Organization
 ```typescript
-// ✅ Group imports: external → Obsidian → internal
+// ✅ Group imports: external -> Obsidian -> internal
 import { App, TFile, normalizePath } from 'obsidian';
 import { buildSceneFrontmatter } from './frontmatter';
 import { getLogger } from './logging';
@@ -171,15 +171,15 @@ const frontmatter: Record<string, any> = {};
 
 // ✅ PREFER - Be specific
 interface SceneFrontmatter {
-  'db-type': 'scene';
-  'db-project': string;
-  'db-order': number;
-  'db-status'?: string;
+  'dbench-type': 'scene';
+  'dbench-project': string;
+  'dbench-order': number;
+  'dbench-status'?: string;
 }
 const frontmatter: SceneFrontmatter = {
-  'db-type': 'scene',
-  'db-project': projectName,
-  'db-order': order
+  'dbench-type': 'scene',
+  'dbench-project': projectName,
+  'dbench-order': order
 };
 
 // ✅ ACCEPTABLE - For truly dynamic data, use unknown
@@ -284,20 +284,20 @@ All CSS classes MUST follow BEM (Block__Element--Modifier) with project prefix:
 
 ```css
 /* ✅ CORRECT - Block */
-.db-modal-container { }
+.dbench-modal-container { }
 .draft-bench-card { }
 
 /* ✅ CORRECT - Block + Element */
-.db-card__header { }
+.dbench-card__header { }
 .draft-bench-card__title { }
-.db-nav-item__icon { }
+.dbench-nav-item__icon { }
 
 /* ✅ CORRECT - Block + Modifier */
-.db-btn--primary { }
+.dbench-btn--primary { }
 .draft-bench-nav-item--active { }
 
 /* ✅ CORRECT - Block + Element + Modifier */
-.db-nav-item__icon--disabled { }
+.dbench-nav-item__icon--disabled { }
 
 /* ❌ WRONG - Missing prefix */
 .modal-container { }  /* Stylelint error */
@@ -306,37 +306,37 @@ All CSS classes MUST follow BEM (Block__Element--Modifier) with project prefix:
 .dtModalContainer { }  /* Stylelint error */
 
 /* ❌ WRONG - Sentence case or spaces */
-.db-modal container { }  /* Stylelint error */
+.dbench-modal container { }  /* Stylelint error */
 ```
 
 **Allowed Prefixes:**
-- `db-` (Draft Bench) - Short prefix, preferred for most cases
+- `dbench-` (Draft Bench) - Short prefix, preferred for most cases
 - `draft-bench-` - Long form, use when collision risk warrants explicitness
 
 #### Class Naming Examples
 
 | Component | Class Name |
 |-----------|------------|
-| Modal container | `.db-modal-container` |
-| Card header | `.db-card__header` |
-| Primary button | `.db-btn--primary` |
-| Active nav item | `.db-nav-item--active` |
-| Scene picker | `.db-scene-picker` |
-| Manuscript list | `.db-manuscript-list` |
-| Compile preset row | `.db-compile-preset-row` |
+| Modal container | `.dbench-modal-container` |
+| Card header | `.dbench-card__header` |
+| Primary button | `.dbench-btn--primary` |
+| Active nav item | `.dbench-nav-item--active` |
+| Scene picker | `.dbench-scene-picker` |
+| Manuscript list | `.dbench-manuscript-list` |
+| Compile preset row | `.dbench-compile-preset-row` |
 
 ### 3.2. Custom Properties
 
 #### Variable Naming
 Custom properties (CSS variables) MUST use kebab-case with prefix:
 
-**Pattern:** `--db-[name]`
+**Pattern:** `--dbench-[name]`
 
 ```css
 /* ✅ CORRECT - Draft Bench variables */
---db-scene-card-width: 240px;
---db-spacing-horizontal: 16px;
---db-status-color-draft: #888;
+--dbench-scene-card-width: 240px;
+--dbench-spacing-horizontal: 16px;
+--dbench-status-color-draft: #888;
 
 /* ❌ WRONG - Missing prefix */
 --modal-width: 800px;  /* Stylelint error */
@@ -352,7 +352,7 @@ Custom properties (CSS variables) MUST use kebab-case with prefix:
 
 ```css
 /* ✅ CORRECT - Using Obsidian variables */
-.db-modal {
+.dbench-modal {
   background: var(--background-primary);
   color: var(--text-normal);
   border: 1px solid var(--background-modifier-border);
@@ -364,14 +364,14 @@ Custom properties (CSS variables) MUST use kebab-case with prefix:
 #### General Rules
 ```css
 /* ✅ CORRECT - Lowercase everything */
-.db-button {
+.dbench-button {
   color: #3498db;
   font-family: sans-serif;
 }
 
 /* ✅ CORRECT - Double quotes for strings */
-.db-icon::before {
-  content: "→";
+.dbench-icon::before {
+  content: "->";
 }
 
 /* ✅ CORRECT - Shorthand hex colors */
@@ -387,7 +387,7 @@ padding: 0 24px 24px 24px;  /* Use: padding: 0 24px 24px; */
 #### Spacing and Line Breaks
 ```css
 /* ✅ CORRECT - Empty line before declarations */
-.db-card {
+.dbench-card {
   padding: 16px;
 
   background: var(--background-secondary);
@@ -395,11 +395,11 @@ padding: 0 24px 24px 24px;  /* Use: padding: 0 24px 24px; */
 }
 
 /* ✅ CORRECT - Empty line before rules */
-.db-card__header {
+.dbench-card__header {
   font-weight: bold;
 }
 
-.db-card__content {
+.dbench-card__content {
   padding: 8px;
 }
 ```
@@ -407,20 +407,20 @@ padding: 0 24px 24px 24px;  /* Use: padding: 0 24px 24px; */
 #### Nesting Depth
 ```css
 /* ✅ CORRECT - Max 3 levels */
-.db-modal {
-  .db-modal__content {
-    .db-modal__header {
+.dbench-modal {
+  .dbench-modal__content {
+    .dbench-modal__header {
       /* This is the maximum depth */
     }
   }
 }
 
 /* ❌ WRONG - Exceeds max depth */
-.db-modal {
-  .db-level1 {
-    .db-level2 {
-      .db-level3 {
-        .db-level4 { /* Stylelint error */ }
+.dbench-modal {
+  .dbench-level1 {
+    .dbench-level2 {
+      .dbench-level3 {
+        .dbench-level4 { /* Stylelint error */ }
       }
     }
   }
@@ -457,7 +457,7 @@ When Obsidian provides a native CSS class for standard UI elements, prefer using
 select.className = 'dropdown';
 
 // ❌ AVOID - Custom class layered with native class
-select.className = 'db-status-select dropdown';
+select.className = 'dbench-status-select dropdown';
 ```
 
 **Rationale:**
@@ -486,13 +486,13 @@ select.className = 'db-status-select dropdown';
 
 ```typescript
 // ✅ CORRECT - Custom class on container, native class on element
-const container = containerEl.createDiv({ cls: 'db-status-picker' });
+const container = containerEl.createDiv({ cls: 'dbench-status-picker' });
 const select = container.createEl('select', { cls: 'dropdown' });
 ```
 
 ```css
 /* Custom layout on container only */
-.db-status-picker {
+.dbench-status-picker {
   display: flex;
   gap: 8px;
   align-items: center;
@@ -556,21 +556,21 @@ logger.error('Failed to process scene', error);
 ```typescript
 // ❌ WRONG - Security vulnerability!
 function showTitle(title: string) {
-  let container = document.querySelector('.db-container');
+  let container = document.querySelector('.dbench-container');
   container.innerHTML = `<div><b>Scene: </b>${title}</div>`;
   // If title = "<script>alert('XSS')</script>", this executes!
 }
 
 // ✅ CORRECT - Use DOM API or Obsidian helpers
 function showTitle(title: string) {
-  let container = document.querySelector('.db-container');
+  let container = document.querySelector('.dbench-container');
   let div = container.createDiv();
   div.createEl('b', { text: 'Scene: ' });
   div.appendText(title);  // Safe - text is escaped
 }
 
 // ✅ BETTER - Obsidian createEl helper
-containerEl.createDiv({ cls: 'db-container' }, (div) => {
+containerEl.createDiv({ cls: 'dbench-container' }, (div) => {
   div.createEl('b', { text: 'Scene: ' });
   div.appendText(title);
 });
@@ -673,13 +673,13 @@ This is a hard rule for Draft Bench — every plugin-managed frontmatter write g
 const content = await this.app.vault.read(file);
 const match = content.match(/^---\n([\s\S]*?)\n---/);
 const yaml = parseYAML(match[1]);
-yaml['db-status'] = 'draft';
+yaml['dbench-status'] = 'draft';
 const newContent = content.replace(match[0], `---\n${stringifyYAML(yaml)}\n---`);
 await this.app.vault.modify(file, newContent);
 
 // ✅ CORRECT - Atomic, consistent YAML formatting
 await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-  frontmatter['db-status'] = 'draft';
+  frontmatter['dbench-status'] = 'draft';
 });
 ```
 
@@ -893,12 +893,12 @@ el.style.color = 'white';
 el.style.backgroundColor = 'red';
 
 // ✅ CORRECT - Use CSS classes
-const el = containerEl.createDiv({ cls: 'db-warning' });
+const el = containerEl.createDiv({ cls: 'dbench-warning' });
 ```
 
 **In your CSS file:**
 ```css
-.db-warning {
+.dbench-warning {
   color: var(--text-normal);
   background-color: var(--background-modifier-error);
 }
@@ -1003,17 +1003,17 @@ The following rules are active in `eslint.config.mjs`:
 | Rule | What it catches |
 |------|-----------------|
 | `obsidianmd/no-forbidden-elements` | Attaching forbidden elements to the DOM |
-| `obsidianmd/no-static-styles-assignment` | Setting `.style.*` directly on DOM elements — use CSS classes instead |
-| `obsidianmd/vault/iterate` | Iterating all files to find one by path — use `getAbstractFileByPath()` |
+| `obsidianmd/no-static-styles-assignment` | Setting `.style.*` directly on DOM elements: use CSS classes instead |
+| `obsidianmd/vault/iterate` | Iterating all files to find one by path: use `getAbstractFileByPath()` |
 | `obsidianmd/detach-leaves` | Detaching leaves in `onunload` (Obsidian handles this) |
 | `obsidianmd/hardcoded-config-path` | Hard-coded `.obsidian/` paths |
-| `obsidianmd/no-plugin-as-component` | Passing the plugin instance as a `Component` to `MarkdownRenderer.render` — causes memory leaks |
+| `obsidianmd/no-plugin-as-component` | Passing the plugin instance as a `Component` to `MarkdownRenderer.render`: causes memory leaks |
 | `obsidianmd/no-sample-code` | Unmodified sample-plugin boilerplate remaining in the codebase |
-| `obsidianmd/no-tfile-tfolder-cast` | Casting to `TFile`/`TFolder` — use `instanceof` checks instead |
-| `obsidianmd/no-view-references-in-plugin` | Storing view references on the plugin instance — causes memory leaks |
-| `obsidianmd/platform` | Using the `navigator` API for OS detection — use Obsidian's `Platform` helper |
-| `obsidianmd/prefer-file-manager-trash-file` *(warn)* | Using `Vault.trash()`/`Vault.delete()` — prefer `FileManager.trashFile()` so the user's "move to trash" preference is respected |
-| `obsidianmd/regex-lookbehind` | Regex lookbehinds — not supported on some iOS versions |
+| `obsidianmd/no-tfile-tfolder-cast` | Casting to `TFile`/`TFolder`: use `instanceof` checks instead |
+| `obsidianmd/no-view-references-in-plugin` | Storing view references on the plugin instance: causes memory leaks |
+| `obsidianmd/platform` | Using the `navigator` API for OS detection: use Obsidian's `Platform` helper |
+| `obsidianmd/prefer-file-manager-trash-file` *(warn)* | Using `Vault.trash()`/`Vault.delete()`: prefer `FileManager.trashFile()` so the user's "move to trash" preference is respected |
+| `obsidianmd/regex-lookbehind` | Regex lookbehinds: not supported on some iOS versions |
 | `obsidianmd/sample-names` | Sample plugin class names (`MyPlugin`, `MyPluginSettingTab`) left unchanged |
 
 #### Command rules
@@ -1030,7 +1030,7 @@ The following rules are active in `eslint.config.mjs`:
 
 | Rule | What it catches |
 |------|-----------------|
-| `obsidianmd/settings-tab/no-manual-html-headings` | `<h1>`/`<h2>`/etc. for settings headings — use `new Setting().setHeading()` (see § 5.4) |
+| `obsidianmd/settings-tab/no-manual-html-headings` | `<h1>`/`<h2>`/etc. for settings headings: use `new Setting().setHeading()` (see § 5.4) |
 | `obsidianmd/settings-tab/no-problematic-settings-headings` | Anti-patterns in settings headings (Title Case, plugin name in heading, etc.) |
 
 #### UI rules
@@ -1050,7 +1050,7 @@ The `obsidianmd/ui/sentence-case` rule produces false positives in any non-trivi
 - Code identifiers and CSS class names
 - Separator characters (`, `, ` | `)
 - Example/placeholder text (e.g., `e.g., Chapter 1`)
-- Navigation symbols (`←`, `→`)
+- Navigation symbols (`←`, `->`)
 
 **Usually skip (intentional Title Case):**
 
@@ -1060,7 +1060,7 @@ The `obsidianmd/ui/sentence-case` rule produces false positives in any non-trivi
 
 **Review and potentially fix:**
 
-- Generic title-cased phrases that should be sentence case: `Compile Preset` → `Compile preset`
+- Generic title-cased phrases that should be sentence case: `Compile Preset` -> `Compile preset`
 - Product references: use `Obsidian Bases` (the feature is a proper noun) but `manuscript` (generic noun) not `Manuscript`
 
 **To add recurring false positives permanently:** Edit `eslint.config.mjs` and add terms to the `brands` or `acronyms` arrays in the sentence-case rule config. These arrays REPLACE defaults, so essential defaults are already included.
@@ -1280,9 +1280,9 @@ const data: any = getValue();
 
 // ✅ Fix 1: Use a proper type
 interface SceneFrontmatter {
-  'db-type': 'scene';
-  'db-project': string;
-  'db-order': number;
+  'dbench-type': 'scene';
+  'dbench-project': string;
+  'dbench-order': number;
 }
 const data: SceneFrontmatter = getValue();
 
@@ -1325,15 +1325,15 @@ const pattern = /^ {2}- (.+)$/gm;
 /* ❌ Error: Expected ".xyz-modal" to match pattern */
 .xyz-modal { }
 
-/* ✅ Fix: Use 'db-' or 'draft-bench-' prefix */
-.db-modal { }
+/* ✅ Fix: Use 'dbench-' or 'draft-bench-' prefix */
+.dbench-modal { }
 .draft-bench-modal { }
 
 /* ❌ Error: Expected ".modalContainer" to match pattern */
 .modalContainer { }
 
 /* ✅ Fix: Use kebab-case with prefix */
-.db-modal-container { }
+.dbench-modal-container { }
 .draft-bench-modal-container { }
 ```
 
@@ -1344,9 +1344,9 @@ const pattern = /^ {2}- (.+)$/gm;
   --modal-width: 800px;
 }
 
-/* ✅ Fix: Add 'db-' prefix */
+/* ✅ Fix: Add 'dbench-' prefix */
 :root {
-  --db-modal-width: 800px;
+  --dbench-modal-width: 800px;
 }
 ```
 
@@ -1380,8 +1380,8 @@ When the same inline pattern appears in three or more places (formatting, normal
 
 - A short description
 - The import path
-- A `// ✅ CORRECT — use shared utility` example showing the recommended call
-- A `// ❌ WRONG — inline duplication` example showing the anti-pattern it replaces
+- A `// ✅ CORRECT: use shared utility` example showing the recommended call
+- A `// ❌ WRONG: inline duplication` example showing the anti-pattern it replaces
 
 ### When to use plugin factory/getter methods
 
@@ -1401,6 +1401,6 @@ Add rows here as services are introduced.
 - [.stylelintrc.json](../../.stylelintrc.json) - Stylelint configuration
 - [.prettierrc.json](../../.prettierrc.json) - Prettier configuration
 - [obsidian-plugin-ui skill](../../.claude/skills/obsidian-plugin-ui/SKILL.md) - Obsidian UI patterns, theming, accessibility
-- [SPEC.md](../planning/SPEC.md) - Plugin specification (data model, UI, phased plan)
+- [specification.md](../planning/specification.md) - Plugin specification (data model, UI, phased plan)
 - [Obsidian API Documentation](https://docs.obsidian.md/Reference/TypeScript+API)
 - [Obsidian Plugin Guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines)

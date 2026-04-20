@@ -13,7 +13,9 @@ Draft Bench works with writing content that is often personal, unpublished, or s
 - **Do not** include the text of unpublished drafts, scenes, or project notes in screenshots.
 - Use dummy / placeholder content when demonstrating the issue (e.g., "Lorem ipsum," a public-domain text, or a nonsense project titled "Test Project").
 - Redact any writing content visible in screenshots.
-- Console error messages and logs are generally safe to share — they reference file paths and property names, not body text. Review before pasting.
+- Console error messages and logs are generally safe to share; they reference file paths and property names, not body text. Review before pasting.
+
+For security issues (data exposure, writing-content leakage, anything with confidentiality implications), **do not** open a public issue. See [SECURITY.md](https://github.com/banisterious/obsidian-draft-bench/blob/main/SECURITY.md) for private reporting.
 
 ---
 

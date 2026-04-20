@@ -28,6 +28,11 @@ node_modules/
 # Optional eslint cache
 .eslintcache
 
+# Test coverage and cache output
+coverage/
+.vitest/
+.vitest-cache/
+
 # Build output
 main.js
 main.js.map
@@ -66,6 +71,9 @@ docs/planning/use-cases/
 
 # Personal planning — architecture decisions (live locally until promoted)
 docs/planning/decisions/
+
+# Local dev / test vault with dummy projects (recreate per docs/developer/dev-vault.md)
+dev-vault/
 
 # Release packages
 draft-bench-v*.zip

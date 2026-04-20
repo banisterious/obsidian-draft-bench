@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/banisterious/obsidian-draft-bench/blob/main/SECURITY.md
+    about: For security issues (data exposure, writing-content leakage, anything with confidentiality implications), please follow the security policy for private disclosure rather than opening a public issue.
   - name: Questions & Discussion
     url: https://github.com/banisterious/obsidian-draft-bench/discussions
-    about: For general questions, help, or discussion about Draft Bench — including workflow ideas, integration with other plugins, and feature-design conversations before opening a formal request.
+    about: For general questions, help, or discussion about Draft Bench (including workflow ideas, integration with other plugins, and feature-design conversations before opening a formal request).

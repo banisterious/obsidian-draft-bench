@@ -1,0 +1,36 @@
+import type { DbenchId, DbenchStatus, ProjectShape } from './types';
+
+/**
+ * Frontmatter shape for a Draft Bench project note (`dbench-type: project`).
+ *
+ * All fields are stamped by `stampProjectEssentials` at note creation
+ * (or retrofit). The reverse arrays (`dbench-scenes`, `dbench-scene-ids`)
+ * are maintained by the linker.
+ *
+ * The interface lists what a fully-stamped project looks like; the
+ * `isProjectFrontmatter` guard checks the discriminator and the
+ * presence of `dbench-id`. Other fields may be missing on partially-
+ * typed notes, in which case the integrity service surfaces them
+ * during repair.
+ */
+export interface ProjectFrontmatter {
+	'dbench-type': 'project';
+	'dbench-id': DbenchId;
+	'dbench-project': string;
+	'dbench-project-id': DbenchId;
+	'dbench-project-shape': ProjectShape;
+	'dbench-status': DbenchStatus;
+	'dbench-scenes': string[];
+	'dbench-scene-ids': DbenchId[];
+}
+
+/**
+ * Type guard: true iff `value` is an object whose `dbench-type` is
+ * `"project"` and whose `dbench-id` is a string. Sufficient for
+ * filtering vault scans by note type.
+ */
+export function isProjectFrontmatter(value: unknown): value is ProjectFrontmatter {
+	if (typeof value !== 'object' || value === null) return false;
+	const fm = value as Record<string, unknown>;
+	return fm['dbench-type'] === 'project' && typeof fm['dbench-id'] === 'string';
+}

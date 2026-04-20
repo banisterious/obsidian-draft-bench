@@ -1,0 +1,87 @@
+/**
+ * Plugin settings shape and defaults.
+ *
+ * Settings are persisted via Obsidian's `loadData()` / `saveData()`
+ * APIs into `<vault>/.obsidian/plugins/draft-bench/data.json`.
+ *
+ * The Settings tab UI in `ui/settings/` reads and writes these.
+ */
+
+/**
+ * Where the drafts folder lives relative to projects in the vault.
+ *
+ * - `project-local` (default): `<draftsFolderName>/` inside each
+ *   project folder.
+ * - `per-scene`: `<Scene> - <draftsFolderName>/` sibling folder per
+ *   scene, for writers who want draft history tightly co-located.
+ * - `vault-wide`: a single `<draftsFolderName>/` at the vault root,
+ *   with filenames disambiguated by project.
+ */
+export type DraftsFolderPlacement = 'project-local' | 'per-scene' | 'vault-wide';
+
+/**
+ * The persisted plugin settings.
+ *
+ * Per Obsidian style: TypeScript identifiers are camelCase even though
+ * UI labels (set via `Setting.setName()`) are sentence case.
+ */
+export interface DraftBenchSettings {
+	/**
+	 * Default folder template for new projects. Supports the `{project}`
+	 * token, replaced with the project's title at creation time.
+	 */
+	projectsFolder: string;
+
+	/**
+	 * Default folder template for new scenes within a project. Supports
+	 * the `{project}` token. Default places scenes at the project's
+	 * root, alongside the project note.
+	 */
+	scenesFolder: string;
+
+	/**
+	 * Where the drafts folder lives. See `DraftsFolderPlacement`.
+	 */
+	draftsFolderPlacement: DraftsFolderPlacement;
+
+	/**
+	 * The drafts folder's name (used by `project-local` and `vault-wide`
+	 * placements; ignored by `per-scene` which derives the name from the
+	 * scene title).
+	 */
+	draftsFolderName: string;
+
+	/**
+	 * Folder where scene templates live. The built-in V1 template is
+	 * created here on first project creation if absent.
+	 */
+	templatesFolder: string;
+
+	/**
+	 * Master toggle for the bidirectional linker. When off, the live
+	 * sync service is dormant (manual repair via the "Repair project
+	 * links" command still works).
+	 */
+	enableBidirectionalSync: boolean;
+
+	/**
+	 * When true, the linker listens to `vault.on('modify')` events
+	 * and reconciles forward / reverse references in real time. Can
+	 * be disabled for performance in very large vaults.
+	 */
+	syncOnFileModify: boolean;
+}
+
+/**
+ * Default settings applied on first plugin load. Merged with whatever
+ * the user has saved (user settings take precedence).
+ */
+export const DEFAULT_SETTINGS: DraftBenchSettings = {
+	projectsFolder: 'Draft Bench/{project}/',
+	scenesFolder: '{project}/',
+	draftsFolderPlacement: 'project-local',
+	draftsFolderName: 'Drafts',
+	templatesFolder: 'Draft Bench/Templates/',
+	enableBidirectionalSync: true,
+	syncOnFileModify: true,
+};

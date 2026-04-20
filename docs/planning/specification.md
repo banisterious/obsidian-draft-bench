@@ -659,20 +659,16 @@ Draft Bench is designed to coexist with plugins writers commonly use. Before eac
 
 These decisions are deferred and will be resolved as development progresses:
 
-1. **Auxiliary content scope**: When (if ever) do character cards, location cards, research folders, and synopsis layers enter the picture? The type registry supports them; the question is prioritization.
-
-2. **Beat granularity**: Beats-as-headings is the default. How much UI support do beats-as-separate-notes need in v1? Is it enough to allow the `beat` type and let power users create them manually, or does it need first-class modal/template support?
-
-3. **Custom Bases views**: Should the plugin register a custom Bases view type (e.g., a manuscript/storyboard view), or is the property schema sufficient for users to build their own?
-
-4. **Templater integration depth**: Detection and passthrough, or deeper integration (e.g., plugin-aware Templater commands)?
-
-5. **Mobile support (post-V1)**: V1 is desktop-only. Whether to invest in mobile Obsidian compatibility is deferred; the decision depends on whether mobile becomes a meaningful portion of the user base once V1 ships.
+1. **Auxiliary content scope**: When (if ever) do character cards, location cards, research folders, and synopsis layers enter the picture? The type registry supports them; the question is prioritization. Waits for V1 user signal to answer.
 
 ### Resolved
 
-- **Template library contents** (former #3): V1 ships with a single built-in scene template (see § Scene Templates). User-defined multi-template management is Phase 2+.
-- **Status vocabulary** (former #7): V1 hardcodes the workflow `idea -> draft -> revision -> final` applied to `dbench-status` on project and scene notes. User-configurable vocabulary (custom values, custom count, per-project overrides) is deferred to Phase 2, where the settings surface and status-change UI both need to exist.
+- **Template library contents**: V1 ships with a single built-in scene template (see § Scene Templates). User-defined multi-template management is Phase 2+.
+- **Status vocabulary**: V1 hardcodes the workflow `idea -> draft -> revision -> final` applied to `dbench-status` on project and scene notes. User-configurable vocabulary (custom values, custom count, per-project overrides) is deferred to Phase 2, where the settings surface and status-change UI both need to exist.
+- **Beat granularity**: V1 default is beats-as-headings inside scene notes. The `beat` type remains on the post-V1 type list for writers who need per-beat word counts or Bases queryability, but it stays "available if you want it, not first-class UI." No V1 modal or template support.
+- **Custom Bases views**: The plugin does not register a custom Bases view type. The property schema is sufficient: every `dbench-*` property is Bases-queryable, and writers build manuscript tables, status queues, and corkboards with vanilla Bases. Phase 2 ships template `.base` files as starters.
+- **Templater integration depth**: Deferred. The stretch-goal pass-through behavior (see § Scene Templates) stands; the depth question (deeper integration, plugin-aware Templater commands) is set aside until Templater integration is actively on the implementation agenda.
+- **Mobile support**: V1 is desktop-only (`isDesktopOnly: true` in `manifest.json`). Post-V1 re-evaluation of mobile compatibility is deferred; the decision depends on whether mobile becomes a meaningful portion of the user base once V1 ships.
 
 ## Documentation
 
@@ -724,5 +720,4 @@ The specific page inventory for each tree will emerge as features land. This sec
 - Additional note types (character, location, research, etc.).
 - Optional folder filter: scoped vault scanning for mixed-purpose vaults. Off by default; writers with large or diverse vaults can restrict Draft Bench's discovery to include/exclude folder lists. Matches Charted Roots' `FolderFilterService` pattern.
 - Templater integration (deeper than pass-through, if warranted).
-- Custom Bases view types (if warranted).
 - Mobile support (if warranted).

@@ -16,7 +16,20 @@ export default [
 			"node_modules/**",
 			"docs/**",
 			"external/**",
+			"dev-vault/**",
+			"tests/**",
 		],
+	},
+
+	// Node.js build scripts at the project root
+	{
+		files: ["build-css.js"],
+		languageOptions: {
+			sourceType: "commonjs",
+			globals: {
+				...globals.node,
+			},
+		},
 	},
 
 	// TypeScript files configuration

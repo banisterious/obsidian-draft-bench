@@ -1,4 +1,12 @@
-import { App, Modal, Platform, Setting, setIcon } from 'obsidian';
+import {
+	App,
+	Modal,
+	Platform,
+	Setting,
+	TFile,
+	setIcon,
+	type EventRef,
+} from 'obsidian';
 import type DraftBenchPlugin from '../../../main';
 import {
 	findProjects,
@@ -43,6 +51,10 @@ export class ControlCenterModal extends Modal {
 	private navEl: HTMLElement | null = null;
 	private contentAreaEl: HTMLElement | null = null;
 
+	private modifyListener: EventRef | null = null;
+	private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+	private static readonly REFRESH_DEBOUNCE_MS = 300;
+
 	constructor(
 		app: App,
 		plugin: DraftBenchPlugin,
@@ -79,13 +91,42 @@ export class ControlCenterModal extends Modal {
 
 		this.renderNav();
 		this.renderActiveTab();
+
+		this.modifyListener = this.app.vault.on('modify', (file) => {
+			if (!(file instanceof TFile) || file.extension !== 'md') return;
+			this.plugin.wordCounts.invalidate(file.path);
+			if (this.isRelevantFile(file)) this.scheduleRefresh();
+		});
 	}
 
 	onClose(): void {
+		if (this.modifyListener) {
+			this.app.vault.offref(this.modifyListener);
+			this.modifyListener = null;
+		}
+		if (this.refreshTimer !== null) {
+			clearTimeout(this.refreshTimer);
+			this.refreshTimer = null;
+		}
 		this.contentEl.empty();
 		this.cachedScenes = null;
 		this.navEl = null;
 		this.contentAreaEl = null;
+	}
+
+	private isRelevantFile(file: TFile): boolean {
+		if (!this.selectedProject) return false;
+		if (this.selectedProject.file.path === file.path) return true;
+		if (!this.cachedScenes) return false;
+		return this.cachedScenes.some((s) => s.file.path === file.path);
+	}
+
+	private scheduleRefresh(): void {
+		if (this.refreshTimer !== null) clearTimeout(this.refreshTimer);
+		this.refreshTimer = setTimeout(() => {
+			this.refreshTimer = null;
+			this.renderActiveTab();
+		}, ControlCenterModal.REFRESH_DEBOUNCE_MS);
 	}
 
 	private renderHeader(parent: HTMLElement): void {

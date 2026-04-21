@@ -3,6 +3,7 @@ import type { DraftBenchSettings } from '../model/settings';
 import type { DraftBenchLinker } from '../core/linker';
 import { registerCreateProjectCommand } from './create-project';
 import { registerNewSceneCommand } from './new-scene';
+import { registerNewDraftCommand } from './new-draft';
 
 /**
  * Central command registration. Called from `main.ts` once during
@@ -23,4 +24,5 @@ export function registerCommands(
 ): void {
 	registerCreateProjectCommand(plugin, getSettings);
 	registerNewSceneCommand(plugin, getSettings, linker);
+	registerNewDraftCommand(plugin, getSettings, linker);
 }

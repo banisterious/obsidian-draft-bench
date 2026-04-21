@@ -5,9 +5,16 @@
  * because DB doesn't have a property-alias system (see
  * [bases-reference.md § DB commitments](../../docs/planning/bases-reference.md)).
  *
- * Bases filter syntax: hyphenated property names are accessed via
- * bracket notation (`note["dbench-type"]`) per
- * [external/obsidian-help/en/Bases/Bases syntax.md:113].
+ * Property reference conventions per Obsidian's Bases syntax docs
+ * ([external/obsidian-help/en/Bases/Bases syntax.md]):
+ *
+ *   - `order:` entries and `properties:` keys use the bare shorthand
+ *     for note properties: `dbench-status`, not `note["dbench-status"]`.
+ *     This lets Bases resolve the displayName override correctly.
+ *   - Filter expressions still need `note["dbench-type"]` bracket
+ *     notation because hyphens aren't valid in dot-notation JS
+ *     expressions.
+ *   - Formulas follow the same rule: expressions use `note["..."]`.
  */
 
 export interface BaseTemplate {
@@ -26,9 +33,9 @@ const PROJECTS_BASE = `filters:
     - 'note["dbench-type"] == "project"'
 
 properties:
-  note["dbench-status"]:
+  dbench-status:
     displayName: Status
-  note["dbench-project-shape"]:
+  dbench-project-shape:
     displayName: Shape
 
 views:
@@ -36,8 +43,8 @@ views:
     name: All projects
     order:
       - file.name
-      - note["dbench-status"]
-      - note["dbench-project-shape"]
+      - dbench-status
+      - dbench-project-shape
       - file.mtime
 
   - type: table
@@ -47,7 +54,7 @@ views:
         - 'note["dbench-status"] != "final"'
     order:
       - file.name
-      - note["dbench-status"]
+      - dbench-status
       - file.mtime
 `;
 
@@ -59,11 +66,11 @@ formulas:
   draft_count: 'if(note["dbench-drafts"], note["dbench-drafts"].length, 0)'
 
 properties:
-  note["dbench-order"]:
+  dbench-order:
     displayName: Order
-  note["dbench-status"]:
+  dbench-status:
     displayName: Status
-  note["dbench-project"]:
+  dbench-project:
     displayName: Project
   formula.draft_count:
     displayName: Drafts
@@ -72,10 +79,10 @@ views:
   - type: table
     name: Manuscript outline
     order:
-      - note["dbench-order"]
+      - dbench-order
       - file.name
-      - note["dbench-status"]
-      - note["dbench-project"]
+      - dbench-status
+      - dbench-project
       - formula.draft_count
 
   - type: table
@@ -84,20 +91,20 @@ views:
       and:
         - 'note["dbench-project-id"] == this["dbench-id"]'
     order:
-      - note["dbench-order"]
+      - dbench-order
       - file.name
-      - note["dbench-status"]
+      - dbench-status
       - formula.draft_count
 
   - type: table
     name: By status
     groupBy:
-      property: note["dbench-status"]
+      property: dbench-status
       direction: ASC
     order:
       - file.name
-      - note["dbench-order"]
-      - note["dbench-project"]
+      - dbench-order
+      - dbench-project
 
   - type: table
     name: Revision queue
@@ -106,15 +113,15 @@ views:
         - 'note["dbench-status"] == "revision"'
     order:
       - file.name
-      - note["dbench-project"]
-      - note["dbench-order"]
+      - dbench-project
+      - dbench-order
 
   - type: cards
     name: Corkboard
     order:
       - file.name
-      - note["dbench-status"]
-      - note["dbench-project"]
+      - dbench-status
+      - dbench-project
 `;
 
 const DRAFTS_BASE = `filters:
@@ -122,9 +129,9 @@ const DRAFTS_BASE = `filters:
     - 'note["dbench-type"] == "draft"'
 
 properties:
-  note["dbench-scene"]:
+  dbench-scene:
     displayName: Scene
-  note["dbench-project"]:
+  dbench-project:
     displayName: Project
   file.ctime:
     displayName: Created
@@ -134,8 +141,8 @@ views:
     name: All drafts
     order:
       - file.name
-      - note["dbench-scene"]
-      - note["dbench-project"]
+      - dbench-scene
+      - dbench-project
       - file.ctime
 
   - type: table

@@ -14,7 +14,7 @@ export default class DraftBenchPlugin extends Plugin {
 		this.linker.start();
 		this.register(() => this.linker.stop());
 
-		registerCommands(this, () => this.settings);
+		registerCommands(this, () => this.settings, this.linker);
 	}
 
 	onunload(): void {

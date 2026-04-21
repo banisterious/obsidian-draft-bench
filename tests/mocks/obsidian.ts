@@ -153,6 +153,33 @@ export class Vault {
 		this.content.set(file.path, content);
 	}
 
+	/**
+	 * Test helper: simulate Obsidian's rename behavior. Moves the file's
+	 * vault entries, mutates its `path` and `basename`, and moves the
+	 * metadata-cache entry under the new path. Does not fire the rename
+	 * event — the caller decides when to do that via `_fire`.
+	 */
+	_rename(file: TFile, newPath: string): string {
+		const oldPath = file.path;
+		const content = this.content.get(oldPath) ?? '';
+		this.files.delete(oldPath);
+		this.content.delete(oldPath);
+
+		const filename = newPath.split('/').pop() ?? '';
+		const dotIdx = filename.lastIndexOf('.');
+		file.path = newPath;
+		file.basename = dotIdx > 0 ? filename.slice(0, dotIdx) : filename;
+		file.extension = dotIdx > 0 ? filename.slice(dotIdx + 1) : '';
+
+		this.files.set(newPath, file);
+		this.content.set(newPath, content);
+
+		if (this.cacheRef) {
+			this.cacheRef._moveCacheEntry(oldPath, newPath);
+		}
+		return oldPath;
+	}
+
 	// Test helper: fire an event manually (for testing event-driven code).
 	_fire(event: 'modify', file: TFile): void;
 	_fire(event: 'delete', file: TFile): void;
@@ -185,6 +212,15 @@ export class MetadataCache {
 	// Test helper: seed metadata for a file.
 	_setFrontmatter(file: TFile, frontmatter: Record<string, unknown>): void {
 		this.cache.set(file.path, { frontmatter });
+	}
+
+	// Internal: used by Vault._rename to re-key a cache entry.
+	_moveCacheEntry(oldPath: string, newPath: string): void {
+		const entry = this.cache.get(oldPath);
+		if (entry) {
+			this.cache.set(newPath, entry);
+			this.cache.delete(oldPath);
+		}
 	}
 }
 

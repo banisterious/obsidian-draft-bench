@@ -174,15 +174,300 @@ describe('DraftBenchLinker — event dispatch', () => {
 	});
 
 	it('handlers do not run while suspended', async () => {
-		// Once per-relationship handlers land, this test will assert that
-		// suspended events don't trigger reverse-array updates. For now
-		// we just confirm dispatch is gated by the suspend counter and
-		// no exceptions surface.
 		const file = makeFile('Test.md');
 		await linker.withSuspended(async () => {
 			expect(() => app.vault._fire('modify', file)).not.toThrow();
 			expect(() => app.vault._fire('delete', file)).not.toThrow();
 			expect(() => app.vault._fire('rename', file, 'OldPath.md')).not.toThrow();
 		});
+	});
+});
+
+describe('DraftBenchLinker — scene<->project sync', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	/**
+	 * Flush fire-and-forget async work launched by the event handlers.
+	 * `setTimeout(0)` is enough to let any pending microtasks / promises
+	 * from inside `onModify` etc. resolve.
+	 */
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedProject(
+		path: string,
+		id: string,
+		title: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'project',
+			'dbench-id': id,
+			'dbench-project': `[[${title}]]`,
+			'dbench-project-id': id,
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+		});
+		return file;
+	}
+
+	async function seedScene(
+		path: string,
+		id: string,
+		parentTitle: string,
+		parentId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'scene',
+			'dbench-id': id,
+			'dbench-project': `[[${parentTitle}]]`,
+			'dbench-project-id': parentId,
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	function patchCache(file: TFile, updates: Record<string, unknown>): void {
+		const current = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
+		app.metadataCache._setFrontmatter(file, { ...current, ...updates });
+	}
+
+	it('modify: adds scene to declared parent project reverse arrays', async () => {
+		const project = await seedProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		const scene = await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		// Starting state: project has empty reverse arrays (desynced).
+		expect(
+			app.metadataCache.getFileCache(project)?.frontmatter?.['dbench-scenes']
+		).toEqual([]);
+
+		app.vault._fire('modify', scene);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-scenes']).toEqual(['[[Opening]]']);
+		expect(fm?.['dbench-scene-ids']).toEqual(['sc1-001-tst-001']);
+	});
+
+	it('modify: moves scene between projects (removes from old, adds to new)', async () => {
+		const oldProject = await seedProject(
+			'Old/Old.md',
+			'prj-old-tst-001',
+			'Old'
+		);
+		const newProject = await seedProject(
+			'New/New.md',
+			'prj-new-tst-002',
+			'New'
+		);
+		const scene = await seedScene(
+			'Old/Scene.md',
+			'sc1-001-tst-001',
+			'Old',
+			'prj-old-tst-001'
+		);
+
+		// Old project already references the scene.
+		patchCache(oldProject, {
+			'dbench-scenes': ['[[Scene]]'],
+			'dbench-scene-ids': ['sc1-001-tst-001'],
+		});
+
+		// Writer reassigns the scene's parent pointer.
+		patchCache(scene, {
+			'dbench-project': '[[New]]',
+			'dbench-project-id': 'prj-new-tst-002',
+		});
+
+		app.vault._fire('modify', scene);
+		await flush();
+
+		const oldFm = app.metadataCache.getFileCache(oldProject)?.frontmatter;
+		const newFm = app.metadataCache.getFileCache(newProject)?.frontmatter;
+		expect(oldFm?.['dbench-scenes']).toEqual([]);
+		expect(oldFm?.['dbench-scene-ids']).toEqual([]);
+		expect(newFm?.['dbench-scenes']).toEqual(['[[Scene]]']);
+		expect(newFm?.['dbench-scene-ids']).toEqual(['sc1-001-tst-001']);
+	});
+
+	it('modify: idempotent — no writes when already in sync', async () => {
+		const project = await seedProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const scene = await seedScene(
+			'Novel/Scene.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		patchCache(project, {
+			'dbench-scenes': ['[[Scene]]'],
+			'dbench-scene-ids': ['sc1-001-tst-001'],
+		});
+
+		app.vault._fire('modify', scene);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-scenes']).toEqual(['[[Scene]]']);
+		expect(fm?.['dbench-scene-ids']).toEqual(['sc1-001-tst-001']);
+	});
+
+	it('modify: skipped when suspended', async () => {
+		const project = await seedProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const scene = await seedScene(
+			'Novel/Scene.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		await linker.withSuspended(async () => {
+			app.vault._fire('modify', scene);
+			await flush();
+		});
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		// Reverse arrays remain empty because the handler was gated.
+		expect(fm?.['dbench-scenes']).toEqual([]);
+	});
+
+	it('delete: removes scene from project reverse arrays', async () => {
+		const project = await seedProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const scene = await seedScene(
+			'Novel/Scene.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		patchCache(project, {
+			'dbench-scenes': ['[[Scene]]'],
+			'dbench-scene-ids': ['sc1-001-tst-001'],
+		});
+
+		app.vault._fire('delete', scene);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-scenes']).toEqual([]);
+		expect(fm?.['dbench-scene-ids']).toEqual([]);
+	});
+
+	it('delete: only removes matching entry (leaves siblings)', async () => {
+		const project = await seedProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const sceneA = await seedScene(
+			'Novel/A.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		await seedScene(
+			'Novel/B.md',
+			'sc2-002-tst-002',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		patchCache(project, {
+			'dbench-scenes': ['[[A]]', '[[B]]'],
+			'dbench-scene-ids': ['sc1-001-tst-001', 'sc2-002-tst-002'],
+		});
+
+		app.vault._fire('delete', sceneA);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-scenes']).toEqual(['[[B]]']);
+		expect(fm?.['dbench-scene-ids']).toEqual(['sc2-002-tst-002']);
+	});
+
+	it('rename: updates wikilink entry in parent reverse array', async () => {
+		const project = await seedProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const scene = await seedScene(
+			'Novel/OldName.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		patchCache(project, {
+			'dbench-scenes': ['[[OldName]]'],
+			'dbench-scene-ids': ['sc1-001-tst-001'],
+		});
+
+		// Simulate Obsidian's rename: vault entries + cache key both move.
+		const oldPath = app.vault._rename(scene, 'Novel/NewName.md');
+
+		app.vault._fire('rename', scene, oldPath);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-scenes']).toEqual(['[[NewName]]']);
+		// Id companion is stable — should be unchanged.
+		expect(fm?.['dbench-scene-ids']).toEqual(['sc1-001-tst-001']);
+	});
+
+	it('rename: does nothing for a non-scene file', async () => {
+		const project = await seedProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+
+		// A rename on the project note itself should not touch reverse arrays
+		// (they reference scenes, not the project itself).
+		patchCache(project, {
+			'dbench-scenes': ['[[Scene]]'],
+			'dbench-scene-ids': ['sc1-001-tst-001'],
+		});
+
+		const oldPath = app.vault._rename(project, 'Novel/NewNovel.md');
+
+		app.vault._fire('rename', project, oldPath);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-scenes']).toEqual(['[[Scene]]']);
 	});
 });

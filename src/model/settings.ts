@@ -69,6 +69,13 @@ export interface DraftBenchSettings {
 	sceneTemplatePath: string;
 
 	/**
+	 * Folder where generated starter Bases (`.base` files) are written.
+	 * The install command creates the folder if absent and skips any
+	 * file that already exists at the target path (no overwrite).
+	 */
+	basesFolder: string;
+
+	/**
 	 * Master toggle for the bidirectional linker. When off, the live
 	 * sync service is dormant (manual repair via the "Repair project
 	 * links" command still works).
@@ -94,6 +101,7 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	draftsFolderName: 'Drafts',
 	templatesFolder: 'Draft Bench/Templates/',
 	sceneTemplatePath: '',
+	basesFolder: 'Draft Bench/Bases',
 	enableBidirectionalSync: true,
 	syncOnFileModify: true,
 };

@@ -516,7 +516,7 @@ If the Templater plugin is installed, user-defined templates may use Templater s
 
 ## Compile / Book Builder
 
-Modeled on the Charted Roots Book Builder. The user assembles a compile configuration through a form-based UI — no JavaScript required.
+Modeled on the Charted Roots Book Builder. The user assembles a compile configuration through a form-based UI — no JavaScript required. Book Builder runs entirely in-process: no Pandoc, no LaTeX, no external toolchain. Writers export on any platform with Obsidian installed.
 
 ### Core Capabilities
 
@@ -525,20 +525,37 @@ Modeled on the Charted Roots Book Builder. The user assembles a compile configur
 - **Title page** generation (optional)
 - **Frontmatter stripping**: remove YAML from compiled output
 - **Heading transformation**: e.g., convert scene titles to chapter headings
-- **Scene ordering**: uses `dbench-order` by default; manual override available
+- **Scene ordering**: uses `dbench-order` by default; manual override available (drag-handle + keyboard reorder, reusing the primitive from § Scene reordering)
+
+### Granularity tiers
+
+Three levels of "what to include":
+
+- **Scene-level** (default): pick whole scenes via checkbox list, filter by status / type / manual selection.
+- **Heading-scoped within each scene**: extract only content under a specified heading (e.g., the `## Draft` section of each included scene). Useful for compiling only prose, leaving planning sections out of the submitted manuscript.
+- **Draft-version cross-section**: instead of live-scene bodies, pull a specific historical draft from each scene (e.g., "Draft 2 across the manuscript"). Uses the scene's `dbench-drafts` array. Useful for snapshotting a complete revision state or comparing past drafts as unified manuscripts.
 
 ### Output Formats
 
-- **Vault (MD)**: compiled manuscript as a new note in the vault
-- **Saved MD**: markdown file saved outside the vault
-- **ODT**: OpenDocument Text
-- **PDF**: direct PDF export
+- **Vault (MD)**: compiled manuscript as a new note in the vault.
+- **Saved MD**: markdown file saved outside the vault. Obsidian's native save dialog lets the user pick the destination (matching Charted Roots' pattern).
+- **ODT**: OpenDocument Text.
+- **PDF**: direct PDF export via [pdfmake](https://pdfmake.github.io/docs/). Dynamically imported on first compile so the ~200KB library and ~1.5MB font VFS (Roboto for body + DejaVu Sans Mono for monospace) don't affect plugin load time. Matches Charted Roots' rendering stack; jsPDF is not shipped in V1 (considered only if a future image-first export feature is added).
 
-Implementation note: ODT and PDF export will likely reuse patterns from the Charted Roots Book Builder. Pandoc integration is a possibility for extended format support if the user has it installed, with graceful degradation if not.
+### Content-handling rules (deferred to D-06)
+
+When concatenating scene bodies, Book Builder needs explicit rules for how to handle constructs that cross scene boundaries or have multiple reasonable interpretations in a compiled output: in-body headings, horizontal rules, dinkuses, footnote renumbering, raw HTML, Obsidian embeds, wikilinks, callouts, Tasks checkboxes, tags. The enumerated rule set, their default behaviors, and which rules are overridable at global / per-preset scope are tracked in [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md).
 
 ### Compile Presets
 
 Compile configurations are saved as named presets. Presets can be duplicated, edited, and shared. Each project can have multiple presets (e.g., "Draft for workshop," "Final manuscript," "Synopsis only").
+
+**Storage format: deferred to D-06.** Three paths are under consideration: plugin `data.json` keyed by project id, a sidecar file in the project folder, or first-class preset notes (`dbench-type: compile-preset`). D-06 locks the choice before Phase 3 implementation.
+
+### Invocation
+
+- **Command palette**: `Draft Bench: Compile current project`. When the active file is a scene or project note, the command resolves the parent project and opens the Compile tab of that project's Control Center. When the active file is not plugin-managed, the command falls back to a project picker modal (same pattern as `Draft Bench: Reorder scenes`).
+- **Control Center toolbar**: the Compile button on the Manuscript tab opens the Compile tab directly for the currently-open project.
 
 ## Bases Integration
 

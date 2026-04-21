@@ -389,7 +389,15 @@ Per-type helpers are named "Set as X" rather than "Add essential X properties" (
 
 **Empty string / empty array for missing references.** Wikilink fields (`dbench-project`, `dbench-scene`) that cannot be auto-determined are added as empty strings. The note becomes "orphan" from the plugin's perspective — it has the right type but no project membership — until the writer fills in the property via Obsidian's Properties panel. Phase 2 will add a picker modal ("Add this scene to project…") that resolves empty wikilinks in one step.
 
-**Filename defaults.** For properties where the filename is a natural default (e.g., a project's self-link), the action uses the file's basename.
+**Folder-based inference at retrofit time.** When the note's file location unambiguously implies a parent project, the retrofit actions use that context:
+
+- **Set as scene:** if the immediate parent folder contains exactly one `dbench-type: project` note, `dbench-project`, `dbench-project-id`, and `dbench-order` (as `max(existing) + 1`) are populated from it.
+- **Set as draft:** walks up the folder hierarchy looking for exactly one project note at some ancestor level (handles the common `<project>/Drafts/<file>.md` layout). Populates `dbench-project` and `dbench-project-id`.
+- **Complete essential properties (on type scene or draft):** the same inference runs, but only upgrades fields that are empty / still at the `9999` placeholder. Non-empty existing values are never overwritten.
+
+Any ambiguity — zero or multiple project notes at a given level — falls back to the empty-placeholder behavior above. Inference is creation-time only; it does not change how existing scenes or drafts are *discovered* (discovery remains frontmatter-based per D-04).
+
+**Filename defaults.** For properties where the filename is a natural default (e.g., a project's self-link), the action uses the file's basename. The `dbench-draft-number` value is also inferred by parsing a `Draft N` pattern from the basename, falling back to `1`.
 
 #### Smart menu visibility
 

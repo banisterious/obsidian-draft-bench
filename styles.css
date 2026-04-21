@@ -117,7 +117,7 @@ settings:
         title: Scene and draft typography
         description: Applies to both scene and draft leaves. Scene- and draft-specific color overrides are below.
         type: heading
-        level: 0
+        level: 1
         collapsed: false
     -
         id: --dbench-scene-font-family
@@ -148,7 +148,7 @@ settings:
         title: Scene leaf
         description: Scene-specific appearance.
         type: heading
-        level: 0
+        level: 1
         collapsed: true
     -
         id: --dbench-scene-background
@@ -167,7 +167,7 @@ settings:
         title: Draft leaf (archival)
         description: Draft-specific appearance. Distinguishing archived snapshots from the live scene helps writers avoid accidentally editing archives.
         type: heading
-        level: 0
+        level: 1
         collapsed: true
     -
         id: --dbench-draft-background

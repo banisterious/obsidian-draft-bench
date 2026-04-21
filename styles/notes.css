@@ -1,0 +1,23 @@
+/*
+ * Per-note-type styling for plugin-managed editor leaves.
+ *
+ * Classes are applied by ui/leaf-styles.ts based on `dbench-type`:
+ * `.dbench-project`, `.dbench-scene`, `.dbench-draft` (each paired
+ * with its `.draft-bench-*` long-form sibling). V1 ships exactly one
+ * default rule — the draft archival cue — because it has a specific
+ * documented UX purpose (distinguishing archived snapshots from the
+ * live scene so writers don't accidentally edit the archive). Every
+ * other aspect of typography, background, and reading width is left
+ * to the writer's theme or a personal CSS snippet.
+ *
+ * Style Settings variables declared in variables.css (scene font,
+ * background, etc.) are scaffolding for Phase 2 — they're not yet
+ * consumed by any rule here, so setting them has no visible effect
+ * until Phase 2 adds their consuming rules.
+ */
+
+/* Draft leaves — archival cue -------------------------------------- */
+
+.dbench-draft {
+	border-left: var(--dbench-draft-border-left);
+}

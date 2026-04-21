@@ -6,9 +6,9 @@
   "rules": {
     "custom-property-pattern": null,
     "selector-class-pattern": [
-      "^(dbench|draft-bench)-[a-z0-9-]+(__[a-z0-9-]+)?(--[a-z0-9-]+)?$",
+      "^(dbench|draft-bench)-[a-z0-9-]+(__[a-z0-9-]+)?(--[a-z0-9-]+)?$|^(markdown|cm|workspace|view|nav|is|mod)-[a-z0-9-]+$",
       {
-        "message": "Expected class selector to use BEM format with dbench-/draft-bench- prefix (selector-class-pattern)"
+        "message": "Expected class selector to use BEM format with dbench-/draft-bench- prefix, or target a known Obsidian class (markdown-, cm-, workspace-, view-, nav-, is-, mod-) (selector-class-pattern)"
       }
     ],
     "declaration-empty-line-before": [

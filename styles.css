@@ -6,7 +6,7 @@
    Do not edit directly. Edit the component files, then run:
      npm run build:css
 
-   Generated: 2026-04-21 03:46:33 UTC
+   Generated: 2026-04-21 04:12:55 UTC
    Components: 9
 */
 
@@ -125,6 +125,37 @@
 /* End of base.css */
 
 /* --------------------------------------------------------------------------
+   NOTES.CSS  (24 lines, 0.98 KB)
+   -------------------------------------------------------------------------- */
+
+/*
+ * Per-note-type styling for plugin-managed editor leaves.
+ *
+ * Classes are applied by ui/leaf-styles.ts based on `dbench-type`:
+ * `.dbench-project`, `.dbench-scene`, `.dbench-draft` (each paired
+ * with its `.draft-bench-*` long-form sibling). V1 ships exactly one
+ * default rule — the draft archival cue — because it has a specific
+ * documented UX purpose (distinguishing archived snapshots from the
+ * live scene so writers don't accidentally edit the archive). Every
+ * other aspect of typography, background, and reading width is left
+ * to the writer's theme or a personal CSS snippet.
+ *
+ * Style Settings variables declared in variables.css (scene font,
+ * background, etc.) are scaffolding for Phase 2 — they're not yet
+ * consumed by any rule here, so setting them has no visible effect
+ * until Phase 2 adds their consuming rules.
+ */
+
+/* Draft leaves — archival cue -------------------------------------- */
+
+.dbench-draft {
+	border-left: var(--dbench-draft-border-left);
+}
+
+
+/* End of notes.css */
+
+/* --------------------------------------------------------------------------
    REORDER-MODAL.CSS  (103 lines, 2.31 KB)
    -------------------------------------------------------------------------- */
 
@@ -238,12 +269,13 @@
    BUILD SUMMARY
    ==========================================================================
 
-   Built:      2026-04-21 03:46:33 UTC
-   Components: 3
-   Total:      202 lines, 4.85 KB
-   Duration:   0.06s
+   Built:      2026-04-21 04:12:55 UTC
+   Components: 4
+   Total:      226 lines, 5.82 KB
+   Duration:   0.07s
    - variables.css: 59 lines, 1.78 KB
    - base.css: 40 lines, 0.75 KB
+   - notes.css: 24 lines, 0.98 KB
    - reorder-modal.css: 103 lines, 2.31 KB
 */
 

@@ -1,0 +1,427 @@
+import { type App, type TFile } from 'obsidian';
+import {
+	findDraftsOfProject,
+	findDraftsOfScene,
+	findNoteById,
+	findScenesInProject,
+	type ProjectNote,
+} from './discovery';
+
+/**
+ * `DraftBenchIntegrityService` — batch scan and repair for project
+ * relationship integrity.
+ *
+ * Per spec § Relationship Integrity: the `DraftBenchLinker` performs
+ * live reconciliation on vault events, but relies on events actually
+ * firing. Notes edited outside Obsidian (external tools, sync engines,
+ * manual YAML edits via a text editor) bypass the linker and can drift.
+ * This service performs a full scan of a project and its transitive
+ * children (scenes, drafts), reporting mismatches classified as
+ * auto-repairable or requiring manual review.
+ *
+ * Categories of issues detected:
+ *
+ * - **Missing reverse entry**: a child (scene/draft) declares this
+ *   parent but the parent's reverse arrays don't list it. Auto-repair:
+ *   append to both arrays.
+ * - **Stale reverse entry**: parent's reverse array references a note
+ *   that doesn't exist, or exists but no longer declares this parent.
+ *   Auto-repair: remove from both arrays.
+ * - **Wikilink / id-companion conflict**: reverse array position i has
+ *   a wikilink pointing at note A and an id companion pointing at
+ *   note B. The writer's intent is ambiguous; flag for manual review
+ *   rather than auto-picking one.
+ *
+ * The scan is project-scoped: call `scanProject(app, project)` for one
+ * project at a time. Vault-wide repair is a composition of per-project
+ * scans (driven by the UI).
+ */
+
+export type IntegrityIssueKind =
+	| 'scene-missing-in-project'
+	| 'stale-scene-in-project'
+	| 'scene-project-conflict'
+	| 'draft-missing-in-scene'
+	| 'stale-draft-in-scene'
+	| 'scene-draft-conflict'
+	| 'draft-missing-in-project'
+	| 'stale-draft-in-project'
+	| 'project-draft-conflict';
+
+export interface IntegrityIssue {
+	kind: IntegrityIssueKind;
+	autoRepairable: boolean;
+	/** Human-readable summary for the preview UI. */
+	description: string;
+	/** Machine-actionable repair payload. Present iff `autoRepairable`. */
+	repair?: RepairPayload;
+}
+
+export type RepairPayload =
+	| {
+			kind: 'add-to-reverse';
+			parent: TFile;
+			wikilink: string;
+			id: string;
+			wikilinkField: string;
+			idField: string;
+		}
+	| {
+			kind: 'remove-from-reverse';
+			parent: TFile;
+			wikilink: string;
+			id: string;
+			wikilinkField: string;
+			idField: string;
+		};
+
+export interface IntegrityReport {
+	project: ProjectNote;
+	issues: IntegrityIssue[];
+}
+
+export interface IntegrityRepairResult {
+	repaired: number;
+	conflictsSkipped: number;
+	errors: number;
+}
+
+/**
+ * Scan `project` for relationship-integrity issues and return a
+ * report. Pure-read (no writes); safe to call anytime.
+ */
+export function scanProject(app: App, project: ProjectNote): IntegrityReport {
+	const issues: IntegrityIssue[] = [];
+	const projectId = project.frontmatter['dbench-id'];
+	const shape = project.frontmatter['dbench-project-shape'];
+
+	// Scene <-> project. Always checked (folder projects have scenes;
+	// single-scene projects should have none, but a stale reverse entry
+	// here is still worth surfacing).
+	issues.push(
+		...scanRelationship({
+			app,
+			parent: {
+				file: project.file,
+				frontmatter: project.frontmatter as unknown as Record<string, unknown>,
+			},
+			parentId: projectId,
+			wikilinkField: 'dbench-scenes',
+			idField: 'dbench-scene-ids',
+			declaredChildren: findScenesInProject(app, projectId).map(toGeneric),
+			childDeclaresParent: (fm) => fm['dbench-project-id'] === projectId,
+			childTypeLabel: 'Scene',
+			kinds: {
+				missing: 'scene-missing-in-project',
+				stale: 'stale-scene-in-project',
+				conflict: 'scene-project-conflict',
+			},
+		})
+	);
+
+	// Scene <-> draft. One relationship pass per scene in the project.
+	for (const scene of findScenesInProject(app, projectId)) {
+		issues.push(
+			...scanRelationship({
+				app,
+				parent: {
+					file: scene.file,
+					frontmatter: scene.frontmatter as unknown as Record<
+						string,
+						unknown
+					>,
+				},
+				parentId: scene.frontmatter['dbench-id'],
+				wikilinkField: 'dbench-drafts',
+				idField: 'dbench-draft-ids',
+				declaredChildren: findDraftsOfScene(
+					app,
+					scene.frontmatter['dbench-id']
+				).map(toGeneric),
+				childDeclaresParent: (fm) =>
+					fm['dbench-scene-id'] === scene.frontmatter['dbench-id'],
+				childTypeLabel: 'Draft',
+				kinds: {
+					missing: 'draft-missing-in-scene',
+					stale: 'stale-draft-in-scene',
+					conflict: 'scene-draft-conflict',
+				},
+			})
+		);
+	}
+
+	// Project <-> draft (single-scene projects only — folder projects
+	// don't hold drafts directly).
+	if (shape === 'single') {
+		issues.push(
+			...scanRelationship({
+				app,
+				parent: {
+					file: project.file,
+					frontmatter: project.frontmatter as unknown as Record<
+						string,
+						unknown
+					>,
+				},
+				parentId: projectId,
+				wikilinkField: 'dbench-drafts',
+				idField: 'dbench-draft-ids',
+				declaredChildren: findDraftsOfProject(app, projectId)
+					.filter(
+						(d) =>
+							// Only drafts without a scene parent attach directly
+							// to the project. Drafts with a scene parent belong
+							// to the scene<->draft relationship above.
+							!d.frontmatter['dbench-scene-id']
+					)
+					.map(toGeneric),
+				childDeclaresParent: (fm) =>
+					fm['dbench-project-id'] === projectId &&
+					!fm['dbench-scene-id'],
+				childTypeLabel: 'Draft',
+				kinds: {
+					missing: 'draft-missing-in-project',
+					stale: 'stale-draft-in-project',
+					conflict: 'project-draft-conflict',
+				},
+			})
+		);
+	}
+
+	return { project, issues };
+}
+
+/**
+ * Apply auto-repairable issues from `report`. Conflicts and non-
+ * repairable entries are counted into `conflictsSkipped`. Errors from
+ * frontmatter writes are counted into `errors`.
+ *
+ * Repairs targeting the same parent file are batched into a single
+ * `processFrontMatter` call so the file is written at most once per
+ * parent.
+ */
+export async function applyRepairs(
+	app: App,
+	report: IntegrityReport
+): Promise<IntegrityRepairResult> {
+	const byParent = new Map<string, RepairPayload[]>();
+	let conflictsSkipped = 0;
+
+	for (const issue of report.issues) {
+		if (!issue.autoRepairable || !issue.repair) {
+			conflictsSkipped++;
+			continue;
+		}
+		const key = issue.repair.parent.path;
+		if (!byParent.has(key)) byParent.set(key, []);
+		byParent.get(key)!.push(issue.repair);
+	}
+
+	let repaired = 0;
+	let errors = 0;
+
+	for (const [, payloads] of byParent) {
+		const parentFile = payloads[0].parent;
+		try {
+			await app.fileManager.processFrontMatter(parentFile, (fm) => {
+				for (const p of payloads) {
+					if (p.kind === 'add-to-reverse') {
+						const warr = readArray(fm[p.wikilinkField]);
+						const iarr = readArray(fm[p.idField]);
+						if (!warr.includes(p.wikilink)) warr.push(p.wikilink);
+						if (!iarr.includes(p.id)) iarr.push(p.id);
+						fm[p.wikilinkField] = warr;
+						fm[p.idField] = iarr;
+					} else {
+						// remove-from-reverse — filter by value, not index, so
+						// multiple removals against the same parent don't
+						// interfere.
+						const warr = readArray(fm[p.wikilinkField]).filter(
+							(x) => x !== p.wikilink
+						);
+						const iarr = readArray(fm[p.idField]).filter(
+							(x) => x !== p.id
+						);
+						fm[p.wikilinkField] = warr;
+						fm[p.idField] = iarr;
+					}
+				}
+			});
+			repaired += payloads.length;
+		} catch {
+			errors += payloads.length;
+		}
+	}
+
+	return { repaired, conflictsSkipped, errors };
+}
+
+/**
+ * Single-relationship scan. Detects missing-reverse, stale-reverse,
+ * and wikilink/id-companion conflicts for one forward-ref pair.
+ */
+interface RelationshipScan {
+	app: App;
+	parent: { file: TFile; frontmatter: Record<string, unknown> };
+	parentId: string;
+	wikilinkField: string;
+	idField: string;
+	/** All children whose forward-ref points at this parent. */
+	declaredChildren: Array<{ file: TFile; frontmatter: Record<string, unknown> }>;
+	/** Given a child's frontmatter, does it still declare this parent? */
+	childDeclaresParent: (fm: Record<string, unknown>) => boolean;
+	childTypeLabel: string;
+	kinds: {
+		missing: IntegrityIssueKind;
+		stale: IntegrityIssueKind;
+		conflict: IntegrityIssueKind;
+	};
+}
+
+function scanRelationship(scan: RelationshipScan): IntegrityIssue[] {
+	const issues: IntegrityIssue[] = [];
+	const wikilinks = readArray(scan.parent.frontmatter[scan.wikilinkField]);
+	const ids = readArray(scan.parent.frontmatter[scan.idField]);
+
+	// Missing: child declares parent but isn't listed in parent's reverse arrays.
+	for (const child of scan.declaredChildren) {
+		const childWikilink = `[[${child.file.basename}]]`;
+		const childId = readString(child.frontmatter['dbench-id']);
+		const hasWikilink = wikilinks.includes(childWikilink);
+		const hasId = ids.includes(childId);
+		if (!hasWikilink || !hasId) {
+			issues.push({
+				kind: scan.kinds.missing,
+				autoRepairable: true,
+				description: `${scan.childTypeLabel} "${child.file.basename}" declares ${scan.parent.file.basename} but is missing from its ${scan.wikilinkField}.`,
+				repair: {
+					kind: 'add-to-reverse',
+					parent: scan.parent.file,
+					wikilink: childWikilink,
+					id: childId,
+					wikilinkField: scan.wikilinkField,
+					idField: scan.idField,
+				},
+			});
+		}
+	}
+
+	// Stale + conflict: walk parent's reverse arrays.
+	const maxLen = Math.max(wikilinks.length, ids.length);
+	for (let i = 0; i < maxLen; i++) {
+		const wikilink = wikilinks[i];
+		const id = ids[i];
+
+		const wikilinkTarget = wikilink
+			? resolveWikilinkToFile(scan.app, wikilink)
+			: null;
+		const idTarget = id ? findNoteById(scan.app, id) : null;
+
+		// Conflict: both resolve, but to different files.
+		if (
+			wikilinkTarget &&
+			idTarget &&
+			wikilinkTarget.file.path !== idTarget.file.path
+		) {
+			issues.push({
+				kind: scan.kinds.conflict,
+				autoRepairable: false,
+				description: `${scan.parent.file.basename}'s ${scan.wikilinkField}[${i}]: wikilink "${wikilink}" -> ${wikilinkTarget.file.basename}, but id "${id}" -> ${idTarget.file.basename}.`,
+			});
+			continue;
+		}
+
+		const actualTarget = wikilinkTarget ?? idTarget;
+
+		if (!actualTarget) {
+			// Stale: neither wikilink nor id resolves. Only flag if at
+			// least one value is present (empty paired entries in a new
+			// reverse array aren't issues).
+			if (wikilink || id) {
+				issues.push({
+					kind: scan.kinds.stale,
+					autoRepairable: true,
+					description: `${scan.parent.file.basename}'s ${scan.wikilinkField}[${i}]="${wikilink ?? ''}" does not resolve to an existing note.`,
+					repair: {
+						kind: 'remove-from-reverse',
+						parent: scan.parent.file,
+						wikilink: wikilink ?? '',
+						id: id ?? '',
+						wikilinkField: scan.wikilinkField,
+						idField: scan.idField,
+					},
+				});
+			}
+			continue;
+		}
+
+		// Target resolves — verify it still declares this parent.
+		if (!scan.childDeclaresParent(actualTarget.frontmatter)) {
+			issues.push({
+				kind: scan.kinds.stale,
+				autoRepairable: true,
+				description: `${scan.parent.file.basename}'s ${scan.wikilinkField}[${i}]="${wikilink ?? ''}" no longer declares ${scan.parent.file.basename} as its parent.`,
+				repair: {
+					kind: 'remove-from-reverse',
+					parent: scan.parent.file,
+					wikilink: wikilink ?? '',
+					id: id ?? '',
+					wikilinkField: scan.wikilinkField,
+					idField: scan.idField,
+				},
+			});
+		}
+	}
+
+	return issues;
+}
+
+/**
+ * Resolve a wikilink string like `[[Target]]` to its file in the vault
+ * by basename match. Returns the file + its cached frontmatter, or
+ * null if no file has that basename.
+ *
+ * Simpler than Obsidian's `getFirstLinkpathDest` (which handles
+ * aliasing / path-qualified links); sufficient for the reverse-array
+ * integrity scan where we store `[[basename]]` literally.
+ */
+function resolveWikilinkToFile(
+	app: App,
+	wikilink: string
+): { file: TFile; frontmatter: Record<string, unknown> } | null {
+	const m = wikilink.match(/^\[\[(.+?)\]\]$/);
+	if (!m) return null;
+	const target = m[1];
+	for (const f of app.vault.getMarkdownFiles()) {
+		if (f.basename === target) {
+			const fm = app.metadataCache.getFileCache(f)?.frontmatter ?? {};
+			return { file: f, frontmatter: fm as Record<string, unknown> };
+		}
+	}
+	return null;
+}
+
+/**
+ * Narrow typed discovery results (ProjectNote / SceneNote / DraftNote)
+ * into the generic shape `scanRelationship` expects. The typed
+ * frontmatters don't satisfy `Record<string, unknown>` directly (their
+ * literal keys conflict with the index signature), so we go through
+ * `unknown` to shed the specific type.
+ */
+function toGeneric(note: {
+	file: TFile;
+	frontmatter: object;
+}): { file: TFile; frontmatter: Record<string, unknown> } {
+	return {
+		file: note.file,
+		frontmatter: note.frontmatter as unknown as Record<string, unknown>,
+	};
+}
+
+function readArray(value: unknown): string[] {
+	return Array.isArray(value) ? (value as string[]) : [];
+}
+
+function readString(value: unknown): string {
+	return typeof value === 'string' ? value : '';
+}

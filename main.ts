@@ -1,12 +1,19 @@
 import { Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS, type DraftBenchSettings } from './src/model/settings';
 import { registerCommands } from './src/commands/register';
+import { DraftBenchLinker } from './src/core/linker';
 
 export default class DraftBenchPlugin extends Plugin {
 	settings!: DraftBenchSettings;
+	linker!: DraftBenchLinker;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
+
+		this.linker = new DraftBenchLinker(this.app, () => this.settings);
+		this.linker.start();
+		this.register(() => this.linker.stop());
+
 		registerCommands(this, () => this.settings);
 	}
 

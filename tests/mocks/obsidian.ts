@@ -5,18 +5,42 @@
  * core/ and model/ code paths", not full fidelity with the real runtime.
  */
 
-export interface TFile {
+export class TFile {
 	path: string;
 	basename: string;
 	extension: string;
 	stat: { mtime: number; ctime: number; size: number };
 	parent: TFolder | null;
+
+	constructor(args: {
+		path: string;
+		basename: string;
+		extension: string;
+		stat?: { mtime: number; ctime: number; size: number };
+		parent?: TFolder | null;
+	}) {
+		this.path = args.path;
+		this.basename = args.basename;
+		this.extension = args.extension;
+		this.stat = args.stat ?? { mtime: 0, ctime: 0, size: 0 };
+		this.parent = args.parent ?? null;
+	}
 }
 
-export interface TFolder {
+export class TFolder {
 	path: string;
 	name: string;
 	children: (TFile | TFolder)[];
+
+	constructor(args: {
+		path: string;
+		name: string;
+		children?: (TFile | TFolder)[];
+	}) {
+		this.path = args.path;
+		this.name = args.name;
+		this.children = args.children ?? [];
+	}
 }
 
 export interface CachedMetadata {
@@ -24,11 +48,28 @@ export interface CachedMetadata {
 	frontmatterPosition?: { start: unknown; end: unknown };
 }
 
+/**
+ * Vault event names supported by the mock. Real Obsidian has more
+ * (`create`, `closed`, etc.); add as tests need them.
+ */
+export type VaultEventName = 'modify' | 'delete' | 'rename';
+
+/**
+ * Opaque handle returned by `Vault.on()`. Used with `offref()` to
+ * remove the listener.
+ */
+export interface EventRef {
+	event: VaultEventName;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	callback: (...args: any[]) => void;
+}
+
 export class Vault {
 	files = new Map<string, TFile>();
 	folders = new Map<string, TFolder>();
 	private content = new Map<string, string>();
 	private cacheRef: MetadataCache | null = null;
+	private listeners = new Map<VaultEventName, Set<EventRef>>();
 
 	getMarkdownFiles(): TFile[] {
 		return [...this.files.values()].filter((f) => f.extension === 'md');
@@ -44,6 +85,7 @@ export class Vault {
 
 	async modify(file: TFile, data: string): Promise<void> {
 		this.content.set(file.path, data);
+		this._fire('modify', file);
 	}
 
 	async create(path: string, data: string): Promise<TFile> {
@@ -52,13 +94,12 @@ export class Vault {
 		}
 		const filename = path.split('/').pop() ?? path;
 		const dotIdx = filename.lastIndexOf('.');
-		const file: TFile = {
+		const file = new TFile({
 			path,
 			basename: dotIdx > 0 ? filename.slice(0, dotIdx) : filename,
 			extension: dotIdx > 0 ? filename.slice(dotIdx + 1) : '',
 			stat: { mtime: Date.now(), ctime: Date.now(), size: data.length },
-			parent: null,
-		};
+		});
 		this.files.set(path, file);
 		this.content.set(path, data);
 		return file;
@@ -70,9 +111,31 @@ export class Vault {
 			return this.folders.get(normalized)!;
 		}
 		const name = normalized.split('/').pop() ?? normalized;
-		const folder: TFolder = { path: normalized, name, children: [] };
+		const folder = new TFolder({ path: normalized, name });
 		this.folders.set(normalized, folder);
 		return folder;
+	}
+
+	on(event: 'modify', callback: (file: TFile) => void): EventRef;
+	on(event: 'delete', callback: (file: TFile) => void): EventRef;
+	on(event: 'rename', callback: (file: TFile, oldPath: string) => void): EventRef;
+	on(
+		event: VaultEventName,
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		callback: (...args: any[]) => void
+	): EventRef {
+		const ref: EventRef = { event, callback };
+		let set = this.listeners.get(event);
+		if (!set) {
+			set = new Set();
+			this.listeners.set(event, set);
+		}
+		set.add(ref);
+		return ref;
+	}
+
+	offref(ref: EventRef): void {
+		this.listeners.get(ref.event)?.delete(ref);
 	}
 
 	// Wire up the metadata cache so that processFrontMatter can keep it in sync.
@@ -88,6 +151,22 @@ export class Vault {
 	_addFile(file: TFile, content = ''): void {
 		this.files.set(file.path, file);
 		this.content.set(file.path, content);
+	}
+
+	// Test helper: fire an event manually (for testing event-driven code).
+	_fire(event: 'modify', file: TFile): void;
+	_fire(event: 'delete', file: TFile): void;
+	_fire(event: 'rename', file: TFile, oldPath: string): void;
+	_fire(event: VaultEventName, ...args: unknown[]): void {
+		const set = this.listeners.get(event);
+		if (!set) return;
+		for (const ref of set) {
+			ref.callback(...args);
+		}
+	}
+
+	_listenerCount(event: VaultEventName): number {
+		return this.listeners.get(event)?.size ?? 0;
 	}
 }
 

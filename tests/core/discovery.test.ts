@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { App, type TFile } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import {
 	findDrafts,
 	findDraftsOfProject,
@@ -16,13 +16,11 @@ import {
 function makeFile(path: string): TFile {
 	const filename = path.split('/').pop() ?? '';
 	const dotIdx = filename.lastIndexOf('.');
-	return {
+	return new TFile({
 		path,
 		basename: dotIdx > 0 ? filename.slice(0, dotIdx) : filename,
 		extension: dotIdx > 0 ? filename.slice(dotIdx + 1) : '',
-		stat: { mtime: 0, ctime: 0, size: 0 },
-		parent: null,
-	};
+	});
 }
 
 /**

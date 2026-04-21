@@ -77,30 +77,60 @@ describe('substituteTokens', () => {
 });
 
 describe('resolveSceneTemplatePath', () => {
+	function withFolder(templatesFolder: string): DraftBenchSettings {
+		return { ...DEFAULT_SETTINGS, templatesFolder, sceneTemplatePath: '' };
+	}
+
+	function withOverride(sceneTemplatePath: string): DraftBenchSettings {
+		return { ...DEFAULT_SETTINGS, sceneTemplatePath };
+	}
+
 	it('joins the folder and filename with trailing slash', () => {
-		expect(resolveSceneTemplatePath('Draft Bench/Templates/')).toBe(
+		expect(resolveSceneTemplatePath(withFolder('Draft Bench/Templates/'))).toBe(
 			`Draft Bench/Templates/${SCENE_TEMPLATE_FILENAME}`
 		);
 	});
 
 	it('joins the folder and filename without trailing slash', () => {
-		expect(resolveSceneTemplatePath('Draft Bench/Templates')).toBe(
+		expect(resolveSceneTemplatePath(withFolder('Draft Bench/Templates'))).toBe(
 			`Draft Bench/Templates/${SCENE_TEMPLATE_FILENAME}`
 		);
 	});
 
 	it('strips leading slashes', () => {
-		expect(resolveSceneTemplatePath('/Templates/')).toBe(
+		expect(resolveSceneTemplatePath(withFolder('/Templates/'))).toBe(
 			`Templates/${SCENE_TEMPLATE_FILENAME}`
 		);
 	});
 
 	it('places the file at the vault root for an empty folder', () => {
-		expect(resolveSceneTemplatePath('')).toBe(SCENE_TEMPLATE_FILENAME);
+		expect(resolveSceneTemplatePath(withFolder(''))).toBe(
+			SCENE_TEMPLATE_FILENAME
+		);
 	});
 
 	it('treats a slash-only value as vault root', () => {
-		expect(resolveSceneTemplatePath('/')).toBe(SCENE_TEMPLATE_FILENAME);
+		expect(resolveSceneTemplatePath(withFolder('/'))).toBe(
+			SCENE_TEMPLATE_FILENAME
+		);
+	});
+
+	it('honors sceneTemplatePath override when set', () => {
+		expect(
+			resolveSceneTemplatePath(withOverride('Shared/custom.md'))
+		).toBe('Shared/custom.md');
+	});
+
+	it('override trims whitespace and ignores blank values', () => {
+		expect(resolveSceneTemplatePath(withOverride('   '))).toBe(
+			`Draft Bench/Templates/${SCENE_TEMPLATE_FILENAME}`
+		);
+	});
+
+	it('override strips a single leading slash', () => {
+		expect(
+			resolveSceneTemplatePath(withOverride('/custom/path.md'))
+		).toBe('custom/path.md');
 	});
 });
 
@@ -118,7 +148,7 @@ describe('loadSceneTemplateBody', () => {
 
 		expect(body).toBe(BUILTIN_SCENE_TEMPLATE);
 
-		const path = resolveSceneTemplatePath(settings.templatesFolder);
+		const path = resolveSceneTemplatePath(settings);
 		const seeded = app.vault.getAbstractFileByPath(path);
 		expect(seeded).toBeInstanceOf(TFile);
 		expect(await app.vault.read(seeded as TFile)).toBe(
@@ -135,7 +165,7 @@ describe('loadSceneTemplateBody', () => {
 
 	it('returns the existing template body without reseeding', async () => {
 		const customBody = '## Custom\n\n{{scene_title}}\n';
-		const path = resolveSceneTemplatePath(settings.templatesFolder);
+		const path = resolveSceneTemplatePath(settings);
 		const folder = path.slice(0, path.lastIndexOf('/'));
 		await app.vault.createFolder(folder);
 		await app.vault.create(path, customBody);
@@ -166,7 +196,7 @@ describe('resolveSceneTemplate', () => {
 
 	it('loads the template and substitutes tokens end to end', async () => {
 		const customBody = '# {{scene_title}} ({{scene_order}})\n\n{{date}}\n';
-		const path = resolveSceneTemplatePath(settings.templatesFolder);
+		const path = resolveSceneTemplatePath(settings);
 		const folder = path.slice(0, path.lastIndexOf('/'));
 		await app.vault.createFolder(folder);
 		await app.vault.create(path, customBody);

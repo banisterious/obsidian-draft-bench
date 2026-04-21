@@ -77,12 +77,18 @@ export function substituteTokens(
 }
 
 /**
- * Resolve the scene-template file path from the configured folder.
- * Normalizes leading / trailing slashes so `'Templates'`, `'Templates/'`,
- * and `'/Templates/'` all produce the same result.
+ * Resolve the scene-template file path. Uses `sceneTemplatePath` when
+ * set (trimmed), otherwise falls back to
+ * `<templatesFolder>/scene-template.md`. Normalizes leading / trailing
+ * slashes so `'Templates'`, `'Templates/'`, and `'/Templates/'` all
+ * produce the same result.
  */
-export function resolveSceneTemplatePath(templatesFolder: string): string {
-	const normalized = templatesFolder.replace(/^\/+|\/+$/g, '');
+export function resolveSceneTemplatePath(settings: DraftBenchSettings): string {
+	const override = settings.sceneTemplatePath.trim();
+	if (override !== '') {
+		return override.replace(/^\/+/, '');
+	}
+	const normalized = settings.templatesFolder.replace(/^\/+|\/+$/g, '');
 	return normalized === ''
 		? SCENE_TEMPLATE_FILENAME
 		: `${normalized}/${SCENE_TEMPLATE_FILENAME}`;
@@ -90,8 +96,8 @@ export function resolveSceneTemplatePath(templatesFolder: string): string {
 
 /**
  * Load the scene-template body from disk, seeding the file with
- * `BUILTIN_SCENE_TEMPLATE` if it doesn't exist. The templates folder
- * is created on demand.
+ * `BUILTIN_SCENE_TEMPLATE` if it doesn't exist. The parent folder is
+ * created on demand.
  *
  * Returns the raw body (pre-substitution). Callers chain
  * `substituteTokens` to produce the final body, or use
@@ -101,7 +107,7 @@ export async function loadSceneTemplateBody(
 	app: App,
 	settings: DraftBenchSettings
 ): Promise<string> {
-	const path = resolveSceneTemplatePath(settings.templatesFolder);
+	const path = resolveSceneTemplatePath(settings);
 	const existing = app.vault.getAbstractFileByPath(path);
 
 	if (existing !== null && isFile(existing)) {

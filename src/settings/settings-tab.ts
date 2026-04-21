@@ -1,6 +1,7 @@
 import { PluginSettingTab, Setting, type App } from 'obsidian';
 import type DraftBenchPlugin from '../../main';
 import type { DraftsFolderPlacement } from '../model/settings';
+import { FileSuggest } from './suggesters/file-suggest';
 import { FolderSuggest } from './suggesters/folder-suggest';
 
 /**
@@ -32,6 +33,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 
 		this.renderFolders();
 		this.renderDrafts();
+		this.renderTemplates();
 		this.renderSync();
 		this.renderAbout();
 	}
@@ -128,6 +130,29 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+	}
+
+	private renderTemplates(): void {
+		const { containerEl } = this;
+		const { settings } = this.plugin;
+
+		new Setting(containerEl).setName('Templates').setHeading();
+
+		new Setting(containerEl)
+			.setName('Scene template')
+			.setDesc(
+				'Markdown file used for new scenes. Leave empty to use scene-template.md inside the templates folder; set to override with any markdown file in the vault. Plugin tokens like {{scene_title}} and {{project_title}} are substituted at creation time.'
+			)
+			.addText((text) => {
+				text
+					.setPlaceholder('Draft Bench/Templates/scene-template.md')
+					.setValue(settings.sceneTemplatePath)
+					.onChange(async (value) => {
+						settings.sceneTemplatePath = value;
+						await this.plugin.saveSettings();
+					});
+				new FileSuggest(this.app, text.inputEl);
+			});
 	}
 
 	private renderSync(): void {

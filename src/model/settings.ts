@@ -53,10 +53,20 @@ export interface DraftBenchSettings {
 	draftsFolderName: string;
 
 	/**
-	 * Folder where scene templates live. The built-in V1 template is
-	 * created here on first project creation if absent.
+	 * Folder where scene templates live. The built-in V1 scene template
+	 * is seeded here on first scene creation if `sceneTemplatePath` is
+	 * empty and the file is absent.
 	 */
 	templatesFolder: string;
+
+	/**
+	 * Override path for the scene template file. When empty (default),
+	 * the plugin uses `<templatesFolder>/scene-template.md`. Set to any
+	 * markdown file path to override — useful for writers who keep
+	 * templates outside the default folder or share a template across
+	 * projects.
+	 */
+	sceneTemplatePath: string;
 
 	/**
 	 * Master toggle for the bidirectional linker. When off, the live
@@ -83,6 +93,7 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	draftsFolderPlacement: 'project-local',
 	draftsFolderName: 'Drafts',
 	templatesFolder: 'Draft Bench/Templates/',
+	sceneTemplatePath: '',
 	enableBidirectionalSync: true,
 	syncOnFileModify: true,
 };

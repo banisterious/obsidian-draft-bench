@@ -30,6 +30,8 @@
 
 **Gap in CR to close in DB:** Explicit arrow-key navigation between tabs. CR relies on browser-default Tab key. DB's keyboard accessibility section ([specification § Keyboard accessibility](specification.md)) commits to keyboard-first navigation, so implement arrow-up/arrow-down within the sidebar tab list, with Home/End for first/last tab.
 
+**Further reading:** [control-center-reference.md](control-center-reference.md) — depth-first architectural summary of CR's Control Center (drawer shell, tab dispatcher, two-tier cache, Tools group, extension model). Reference material for a later DB Control Center design pass; not a blueprint for Phase 1.
+
 ---
 
 ## 2. Modal patterns

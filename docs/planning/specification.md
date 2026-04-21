@@ -342,6 +342,8 @@ A tabbed non-transient modal accessible via ribbon icon (lucide `pencil-line` gl
 - **Compile**: Book Builder interface (see Compile section). Placeholder in V1; populated in Phase 3.
 - **Settings**: Plugin configuration (drafts folder placement, template selection, style variables, etc.).
 
+For a deeper Charted Roots architectural reference (drawer shell, tab dispatcher, cache tiers, Tools group, mobile drawer behavior) that may inform a later DB Control Center design pass, see [control-center-reference.md](control-center-reference.md). V1 ships the minimal skeleton described above; the reference doc is context for later evolution, not a blueprint for Phase 1.
+
 ### Scene reordering
 
 Scene reordering happens in a dedicated modal, not inline in the Manuscript tab. Rationale: reorder is a deliberate, occasional act, not a constant one. A focused modal gives it room, simplifies keyboard accessibility, and keeps the Manuscript tab uncluttered.

@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS, type DraftBenchSettings } from './src/model/settings'
 import { registerCommands } from './src/commands/register';
 import { registerContextMenu } from './src/context-menu/register';
 import { DraftBenchLinker } from './src/core/linker';
+import { DraftBenchSettingTab } from './src/settings/settings-tab';
 import { LeafStyles } from './src/ui/leaf-styles';
 
 export default class DraftBenchPlugin extends Plugin {
@@ -22,6 +23,8 @@ export default class DraftBenchPlugin extends Plugin {
 
 		registerCommands(this, () => this.settings, this.linker);
 		registerContextMenu(this);
+
+		this.addSettingTab(new DraftBenchSettingTab(this.app, this));
 	}
 
 	onunload(): void {

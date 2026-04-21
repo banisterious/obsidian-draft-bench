@@ -477,6 +477,8 @@ The README ships with a suggested-hotkey list (not auto-bound) so writers have a
 
 Guided onboarding (welcome modal, first-project walkthrough, example-project generator) is deferred to Phase 3 or later. V1 would be onboarding users to features that don't yet exist. Early builds ship with README documentation and a short settings-level note pointing to the command palette for the available actions.
 
+When onboarding lands, it is likely to be wizard-shaped (multi-step flow with resumable state, since users may abandon midway and return). For the full architectural reference on wizard modals (step model, validation gates, `ModalStatePersistence<T>` for resume, branching vs. linear flows) drawn from Charted Roots, see [wizards-reference.md](wizards-reference.md). The reference doc is context for later evolution, not a blueprint.
+
 ## Scene Templates
 
 ### Built-in library (V1)

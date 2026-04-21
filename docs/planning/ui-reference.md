@@ -64,6 +64,8 @@
 - Disable action buttons during async work and update button text ("Applying changes...").
 - For multi-step flows (none in V1 but likely in Phase 3 compile UI), persist form state to settings; strip `TFile` references before serialization.
 
+**Further reading:** [wizards-reference.md](wizards-reference.md) — depth-first architectural summary of CR's wizard-modal patterns (step model, validation gates, step indicators, footer layout, `ModalStatePersistence<T>` for resume-across-restart, branching vs. linear flows). Reference material for Phase 3+ wizard work (onboarding, compile preset editor if D-06 resolves that way); not a blueprint for Phase 1 or Phase 2.
+
 ---
 
 ## 3. Settings UI

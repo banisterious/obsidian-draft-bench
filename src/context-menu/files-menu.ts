@@ -62,8 +62,8 @@ export function buildFilesMenuItems(
 	}
 
 	if (anyMissingId) {
-		addRetrofitMenuItem(menu, 'Add dbench-id', 'hash', () =>
-			runBatch(app, files, addDbenchId, { action: 'Add dbench-id' })
+		addRetrofitMenuItem(menu, 'Add identifier', 'hash', () =>
+			runBatch(app, files, addDbenchId, { action: 'Add identifier' })
 		);
 	}
 }

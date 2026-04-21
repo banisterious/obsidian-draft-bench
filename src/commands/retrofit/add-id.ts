@@ -3,16 +3,15 @@ import { addDbenchId } from '../../core/retrofit';
 import { activeMarkdownFile, noticeForResult } from './shared';
 
 /**
- * Register `Draft Bench: Add dbench-id`. Stamps an id on the active
- * file (typed or untyped) if one is missing; otherwise skips.
+ * Register `Draft Bench: Add identifier`. Stamps a stable `dbench-id`
+ * on the active file (typed or untyped) if one is missing; otherwise
+ * skips. Named "Add identifier" rather than the literal property name
+ * for sentence-case compatibility with Obsidian's plugin UI guidelines.
  */
 export function registerAddIdCommand(plugin: Plugin): void {
 	plugin.addCommand({
 		id: 'add-dbench-id',
-		// "dbench-id" is a literal plugin frontmatter property name —
-		// writers recognize it by that exact spelling.
-		// eslint-disable-next-line obsidianmd/ui/sentence-case
-		name: 'Add dbench-id',
+		name: 'Add identifier',
 		checkCallback: (checking) => {
 			const file = activeMarkdownFile(plugin);
 			if (!file) return false;
@@ -20,8 +19,8 @@ export function registerAddIdCommand(plugin: Plugin): void {
 				void (async () => {
 					const result = await addDbenchId(plugin.app, file);
 					noticeForResult(result, {
-						success: 'Added dbench-id',
-						failureVerb: 'add dbench-id',
+						success: 'Added identifier',
+						failureVerb: 'add identifier',
 					});
 				})();
 			}

@@ -361,7 +361,7 @@ Right-click actions on files and folders:
 - **Create Draft Bench project** (on folders): opens the new-project modal.
 - **New scene in project** (inside a project folder): opens the new-scene modal.
 - **New draft of this scene** (on a scene note): snapshots and carries forward per § Draft Management.
-- **Set as…** / **Complete essential properties** / **Add dbench-id**: context-sensitive retrofit actions for bringing existing notes under plugin management. See § Applying Draft Bench properties to existing notes below.
+- **Set as…** / **Complete essential properties** / **Add identifier**: context-sensitive retrofit actions for bringing existing notes under plugin management. See § Applying Draft Bench properties to existing notes below.
 - **Set status** (quick status change).
 - **Reorder scenes** (anywhere inside a project): opens the reorder modal.
 
@@ -377,7 +377,7 @@ Three per-type helpers plus one standalone ID helper:
 - **Set as scene**: stamps scene essentials on an untyped note: `dbench-type: scene`, `dbench-id`, `dbench-project: ''`, `dbench-project-id: ''`, `dbench-order: 9999` (sorts to the end until user adjusts), `dbench-status: idea`, `dbench-drafts: []`, `dbench-draft-ids: []`.
 - **Set as draft**: stamps draft essentials on an untyped note: `dbench-type: draft`, `dbench-id`, `dbench-project: ''`, `dbench-scene: ''`, `dbench-scene-id: ''`, `dbench-draft-number: 1`. Draft number defaults to 1; writers retrofitting a non-first draft can adjust via the Properties panel (or via "Complete essential properties" after setting `dbench-draft-number` manually).
 - **Complete essential properties**: applies to a note that already has `dbench-type` but is missing other essentials for its type. Fills in only the missing fields.
-- **Add dbench-id**: standalone ID stamp, for notes that have `dbench-type` but lack an identifier.
+- **Add identifier**: standalone ID stamp, for notes that have `dbench-type` but lack an identifier.
 
 Per-type helpers are named "Set as X" rather than "Add essential X properties" (CR's phrasing) because DB's version also sets the `dbench-type` discriminator; the action converts an untyped note into a typed note in one step.
 
@@ -403,7 +403,7 @@ Any ambiguity — zero or multiple project notes at a given level — falls back
 
 The context menu pre-scans the selection and only shows actions that would actually do something:
 
-- A note with `dbench-type` already set: offer "Complete essential properties" only if something is missing. Offer "Add dbench-id" only if the ID is absent.
+- A note with `dbench-type` already set: offer "Complete essential properties" only if something is missing. Offer "Add identifier" only if the ID is absent.
 - A note without `dbench-type`: offer "Set as project / scene / draft" as a submenu (flat menu on mobile per Platform detection, following CR).
 - A note with all properties present: show no Draft Bench menu items.
 
@@ -443,7 +443,7 @@ All context menu actions are also available as commands, plus:
 - `Draft Bench: Repair project links`
 - `Draft Bench: Set as project / scene / draft` (retrofit actions)
 - `Draft Bench: Complete essential properties`
-- `Draft Bench: Add dbench-id`
+- `Draft Bench: Add identifier`
 - `Draft Bench: Compile current project` (Phase 3+)
 - `Draft Bench: Jump to next scene` / `Draft Bench: Jump to previous scene`
 
@@ -719,7 +719,7 @@ The specific page inventory for each tree will emerge as features land. This sec
 - Relationship integrity: `DraftBenchLinker` live sync service + `DraftBenchIntegrityService` batch repair (see § Relationship Integrity).
 - Control Center skeleton (Project and Manuscript tabs; Manuscript tab is read-only for order).
 - Scene reordering modal (updates `dbench-order`, no file renames).
-- Property retrofit actions: "Set as project / scene / draft," "Complete essential properties," "Add dbench-id" (see § Applying Draft Bench properties to existing notes). Single-file, multi-file, and folder scopes.
+- Property retrofit actions: "Set as project / scene / draft," "Complete essential properties," "Add identifier" (see § Applying Draft Bench properties to existing notes). Single-file, multi-file, and folder scopes.
 - Context menu actions (create project, new scene, new draft, add to project, reorder scenes, retrofit actions).
 - CSS class tagging of plugin-managed editor leaves (`.dbench-project`, `.dbench-scene`, `.dbench-draft` / long-form equivalents).
 - Minimal Style Settings integration (scene font, line height, max-width, paper tint, text color, draft archival cue).

@@ -1,4 +1,5 @@
 import { TFile, TFolder, type App, type Menu, type TAbstractFile } from 'obsidian';
+import type { DraftBenchLinker } from '../core/linker';
 import {
 	addDbenchId,
 	collectMarkdownFiles,
@@ -10,6 +11,8 @@ import {
 	setAsProject,
 	setAsScene,
 } from '../core/retrofit';
+import { isProjectFrontmatter } from '../model/project';
+import { RepairProjectModal } from '../ui/modals/repair-project-modal';
 import {
 	addRetrofitMenuItem,
 	noticeForSingleFile,
@@ -29,6 +32,7 @@ import {
  */
 export function buildFileMenuItems(
 	app: App,
+	linker: DraftBenchLinker,
 	menu: Menu,
 	target: TAbstractFile
 ): void {
@@ -37,12 +41,34 @@ export function buildFileMenuItems(
 		return;
 	}
 	if (target instanceof TFile && target.extension === 'md') {
-		buildSingleFileItems(app, menu, target);
+		buildSingleFileItems(app, linker, menu, target);
 	}
 }
 
-function buildSingleFileItems(app: App, menu: Menu, file: TFile): void {
+function buildSingleFileItems(
+	app: App,
+	linker: DraftBenchLinker,
+	menu: Menu,
+	file: TFile
+): void {
 	const type = readDbenchType(app, file);
+
+	if (type === 'project') {
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		if (isProjectFrontmatter(fm)) {
+			addRetrofitMenuItem(
+				menu,
+				'Repair project links',
+				'wrench',
+				() => {
+					new RepairProjectModal(app, linker, {
+						file,
+						frontmatter: fm,
+					}).open();
+				}
+			);
+		}
+	}
 
 	if (type === null) {
 		addRetrofitMenuItem(menu, 'Set as project', 'folder', async () => {
@@ -85,11 +111,11 @@ function buildSingleFileItems(app: App, menu: Menu, file: TFile): void {
 	}
 
 	if (hasMissingId(app, file)) {
-		addRetrofitMenuItem(menu, 'Add dbench-id', 'hash', async () => {
+		addRetrofitMenuItem(menu, 'Add identifier', 'hash', async () => {
 			const result = await addDbenchId(app, file);
 			noticeForSingleFile(result, {
-				success: 'Added dbench-id',
-				failureVerb: 'add dbench-id',
+				success: 'Added identifier',
+				failureVerb: 'add identifier',
 			});
 		});
 	}
@@ -117,7 +143,7 @@ function buildFolderItems(app: App, menu: Menu, folder: TFolder): void {
 				action: 'Complete essential properties',
 			})
 	);
-	addRetrofitMenuItem(menu, 'Add dbench-id', 'hash', () =>
-		runBatch(app, files, addDbenchId, { action: 'Add dbench-id' })
+	addRetrofitMenuItem(menu, 'Add identifier', 'hash', () =>
+		runBatch(app, files, addDbenchId, { action: 'Add identifier' })
 	);
 }

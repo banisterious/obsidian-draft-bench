@@ -22,7 +22,7 @@ export default class DraftBenchPlugin extends Plugin {
 		this.leafStyles.start();
 
 		registerCommands(this, () => this.settings, this.linker);
-		registerContextMenu(this);
+		registerContextMenu(this, this.linker);
 
 		this.addSettingTab(new DraftBenchSettingTab(this.app, this));
 	}

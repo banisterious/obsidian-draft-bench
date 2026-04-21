@@ -5,6 +5,7 @@ import { registerCreateProjectCommand } from './create-project';
 import { registerNewSceneCommand } from './new-scene';
 import { registerNewDraftCommand } from './new-draft';
 import { registerReorderScenesCommand } from './reorder-scenes';
+import { registerRepairProjectCommand } from './repair-project';
 import { registerSetAsProjectCommand } from './retrofit/set-as-project';
 import { registerSetAsSceneCommand } from './retrofit/set-as-scene';
 import { registerSetAsDraftCommand } from './retrofit/set-as-draft';
@@ -32,6 +33,7 @@ export function registerCommands(
 	registerNewSceneCommand(plugin, getSettings, linker);
 	registerNewDraftCommand(plugin, getSettings, linker);
 	registerReorderScenesCommand(plugin, linker);
+	registerRepairProjectCommand(plugin, linker);
 	registerSetAsProjectCommand(plugin);
 	registerSetAsSceneCommand(plugin);
 	registerSetAsDraftCommand(plugin);

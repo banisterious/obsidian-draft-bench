@@ -1,4 +1,5 @@
 import type { Plugin } from 'obsidian';
+import type { DraftBenchLinker } from '../core/linker';
 import { buildFileMenuItems } from './file-menu';
 import { buildFilesMenuItems } from './files-menu';
 
@@ -8,11 +9,17 @@ import { buildFilesMenuItems } from './files-menu';
  * Hooks Obsidian's `file-menu` (single file or folder) and
  * `files-menu` (multi-selection) events via `plugin.registerEvent`
  * so Obsidian tears down the listeners when the plugin unloads.
+ *
+ * The `linker` is threaded through because project-context entries
+ * (like "Repair project links") run inside `linker.withSuspended(...)`.
  */
-export function registerContextMenu(plugin: Plugin): void {
+export function registerContextMenu(
+	plugin: Plugin,
+	linker: DraftBenchLinker
+): void {
 	plugin.registerEvent(
 		plugin.app.workspace.on('file-menu', (menu, target) => {
-			buildFileMenuItems(plugin.app, menu, target);
+			buildFileMenuItems(plugin.app, linker, menu, target);
 		})
 	);
 

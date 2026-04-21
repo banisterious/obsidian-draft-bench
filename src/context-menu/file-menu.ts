@@ -1,0 +1,123 @@
+import { TFile, TFolder, type App, type Menu, type TAbstractFile } from 'obsidian';
+import {
+	addDbenchId,
+	collectMarkdownFiles,
+	completeEssentials,
+	hasMissingEssentials,
+	hasMissingId,
+	readDbenchType,
+	setAsDraft,
+	setAsProject,
+	setAsScene,
+} from '../core/retrofit';
+import {
+	addRetrofitMenuItem,
+	noticeForSingleFile,
+	runBatch,
+} from './shared';
+
+/**
+ * Populate the `file-menu` event's menu for a single file or folder.
+ *
+ * Smart visibility per spec § Smart menu visibility:
+ * - Untyped markdown: show Set as project / scene / draft.
+ * - Typed markdown: show Complete / Add id when something is missing.
+ * - Fully-stamped markdown: no retrofit items.
+ * - Folder: always show all five retrofit items (batch). Each action
+ *   skips non-applicable files and aggregates results into a summary
+ *   notice.
+ */
+export function buildFileMenuItems(
+	app: App,
+	menu: Menu,
+	target: TAbstractFile
+): void {
+	if (target instanceof TFolder) {
+		buildFolderItems(app, menu, target);
+		return;
+	}
+	if (target instanceof TFile && target.extension === 'md') {
+		buildSingleFileItems(app, menu, target);
+	}
+}
+
+function buildSingleFileItems(app: App, menu: Menu, file: TFile): void {
+	const type = readDbenchType(app, file);
+
+	if (type === null) {
+		addRetrofitMenuItem(menu, 'Set as project', 'folder', async () => {
+			const result = await setAsProject(app, file);
+			noticeForSingleFile(result, {
+				success: 'Set as project',
+				failureVerb: 'set as project',
+			});
+		});
+		addRetrofitMenuItem(menu, 'Set as scene', 'align-left', async () => {
+			const result = await setAsScene(app, file);
+			noticeForSingleFile(result, {
+				success: 'Set as scene',
+				failureVerb: 'set as scene',
+			});
+		});
+		addRetrofitMenuItem(menu, 'Set as draft', 'file-text', async () => {
+			const result = await setAsDraft(app, file);
+			noticeForSingleFile(result, {
+				success: 'Set as draft',
+				failureVerb: 'set as draft',
+			});
+		});
+		return;
+	}
+
+	if (hasMissingEssentials(app, file)) {
+		addRetrofitMenuItem(
+			menu,
+			'Complete essential properties',
+			'check-circle',
+			async () => {
+				const result = await completeEssentials(app, file);
+				noticeForSingleFile(result, {
+					success: 'Completed essential properties',
+					failureVerb: 'complete essential properties',
+				});
+			}
+		);
+	}
+
+	if (hasMissingId(app, file)) {
+		addRetrofitMenuItem(menu, 'Add dbench-id', 'hash', async () => {
+			const result = await addDbenchId(app, file);
+			noticeForSingleFile(result, {
+				success: 'Added dbench-id',
+				failureVerb: 'add dbench-id',
+			});
+		});
+	}
+}
+
+function buildFolderItems(app: App, menu: Menu, folder: TFolder): void {
+	const files = collectMarkdownFiles(app, folder);
+	if (files.length === 0) return;
+
+	addRetrofitMenuItem(menu, 'Set as project', 'folder', () =>
+		runBatch(app, files, setAsProject, { action: 'Set as project' })
+	);
+	addRetrofitMenuItem(menu, 'Set as scene', 'align-left', () =>
+		runBatch(app, files, setAsScene, { action: 'Set as scene' })
+	);
+	addRetrofitMenuItem(menu, 'Set as draft', 'file-text', () =>
+		runBatch(app, files, setAsDraft, { action: 'Set as draft' })
+	);
+	addRetrofitMenuItem(
+		menu,
+		'Complete essential properties',
+		'check-circle',
+		() =>
+			runBatch(app, files, completeEssentials, {
+				action: 'Complete essential properties',
+			})
+	);
+	addRetrofitMenuItem(menu, 'Add dbench-id', 'hash', () =>
+		runBatch(app, files, addDbenchId, { action: 'Add dbench-id' })
+	);
+}

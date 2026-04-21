@@ -1,6 +1,7 @@
 import { Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS, type DraftBenchSettings } from './src/model/settings';
 import { registerCommands } from './src/commands/register';
+import { registerContextMenu } from './src/context-menu/register';
 import { DraftBenchLinker } from './src/core/linker';
 
 export default class DraftBenchPlugin extends Plugin {
@@ -15,6 +16,7 @@ export default class DraftBenchPlugin extends Plugin {
 		this.register(() => this.linker.stop());
 
 		registerCommands(this, () => this.settings, this.linker);
+		registerContextMenu(this);
 	}
 
 	onunload(): void {

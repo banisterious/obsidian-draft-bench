@@ -90,7 +90,7 @@ export class NewSceneModal extends Modal {
 			.setDesc('Initial workflow status.')
 			.addDropdown((dropdown) => {
 				for (const s of DBENCH_STATUSES) {
-					dropdown.addOption(s, s);
+					dropdown.addOption(s, capitalize(s));
 				}
 				dropdown.setValue(this.status).onChange((value) => {
 					this.status = value as DbenchStatus;
@@ -164,4 +164,9 @@ export class NewSceneModal extends Modal {
 		const leaf = this.app.workspace.getLeaf(false);
 		await leaf.openFile(file);
 	}
+}
+
+function capitalize(s: string): string {
+	if (s.length === 0) return s;
+	return s.charAt(0).toUpperCase() + s.slice(1);
 }

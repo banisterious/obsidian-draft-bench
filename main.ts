@@ -4,6 +4,7 @@ import { registerCommands } from './src/commands/register';
 import { registerContextMenu } from './src/context-menu/register';
 import { DraftBenchLinker } from './src/core/linker';
 import { DraftBenchSettingTab } from './src/settings/settings-tab';
+import { ControlCenterModal } from './src/ui/control-center/control-center-modal';
 import { LeafStyles } from './src/ui/leaf-styles';
 
 export default class DraftBenchPlugin extends Plugin {
@@ -23,6 +24,10 @@ export default class DraftBenchPlugin extends Plugin {
 
 		registerCommands(this, () => this.settings, this.linker);
 		registerContextMenu(this, this.linker);
+
+		this.addRibbonIcon('pencil-line', 'Open Draft Bench control center', () => {
+			new ControlCenterModal(this.app, this, this.linker).open();
+		});
 
 		this.addSettingTab(new DraftBenchSettingTab(this.app, this));
 	}

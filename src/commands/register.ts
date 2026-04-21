@@ -1,9 +1,10 @@
-import type { Plugin } from 'obsidian';
+import type DraftBenchPlugin from '../../main';
 import type { DraftBenchSettings } from '../model/settings';
 import type { DraftBenchLinker } from '../core/linker';
 import { registerCreateProjectCommand } from './create-project';
 import { registerNewSceneCommand } from './new-scene';
 import { registerNewDraftCommand } from './new-draft';
+import { registerOpenControlCenterCommand } from './open-control-center';
 import { registerReorderScenesCommand } from './reorder-scenes';
 import { registerRepairProjectCommand } from './repair-project';
 import { registerSetAsProjectCommand } from './retrofit/set-as-project';
@@ -25,13 +26,14 @@ import { registerAddIdCommand } from './retrofit/add-id';
  * receive it directly.
  */
 export function registerCommands(
-	plugin: Plugin,
+	plugin: DraftBenchPlugin,
 	getSettings: () => DraftBenchSettings,
 	linker: DraftBenchLinker
 ): void {
 	registerCreateProjectCommand(plugin, getSettings);
 	registerNewSceneCommand(plugin, getSettings, linker);
 	registerNewDraftCommand(plugin, getSettings, linker);
+	registerOpenControlCenterCommand(plugin, () => plugin, linker);
 	registerReorderScenesCommand(plugin, linker);
 	registerRepairProjectCommand(plugin, linker);
 	registerSetAsProjectCommand(plugin);

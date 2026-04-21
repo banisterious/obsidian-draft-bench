@@ -1,4 +1,4 @@
-import type { Plugin } from 'obsidian';
+import type DraftBenchPlugin from '../../main';
 import type { DraftBenchLinker } from '../core/linker';
 import { buildFileMenuItems } from './file-menu';
 import { buildFilesMenuItems } from './files-menu';
@@ -14,12 +14,12 @@ import { buildFilesMenuItems } from './files-menu';
  * (like "Repair project links") run inside `linker.withSuspended(...)`.
  */
 export function registerContextMenu(
-	plugin: Plugin,
+	plugin: DraftBenchPlugin,
 	linker: DraftBenchLinker
 ): void {
 	plugin.registerEvent(
 		plugin.app.workspace.on('file-menu', (menu, target) => {
-			buildFileMenuItems(plugin.app, linker, menu, target);
+			buildFileMenuItems(plugin, linker, menu, target);
 		})
 	);
 

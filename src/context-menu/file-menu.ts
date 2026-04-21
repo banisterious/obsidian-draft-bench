@@ -1,4 +1,5 @@
-import { TFile, TFolder, type App, type Menu, type TAbstractFile } from 'obsidian';
+import { TFile, TFolder, type Menu, type TAbstractFile } from 'obsidian';
+import type DraftBenchPlugin from '../../main';
 import type { DraftBenchLinker } from '../core/linker';
 import {
 	addDbenchId,
@@ -12,6 +13,7 @@ import {
 	setAsScene,
 } from '../core/retrofit';
 import { isProjectFrontmatter } from '../model/project';
+import { ControlCenterModal } from '../ui/control-center/control-center-modal';
 import { RepairProjectModal } from '../ui/modals/repair-project-modal';
 import {
 	addRetrofitMenuItem,
@@ -31,31 +33,43 @@ import {
  *   notice.
  */
 export function buildFileMenuItems(
-	app: App,
+	plugin: DraftBenchPlugin,
 	linker: DraftBenchLinker,
 	menu: Menu,
 	target: TAbstractFile
 ): void {
 	if (target instanceof TFolder) {
-		buildFolderItems(app, menu, target);
+		buildFolderItems(plugin, menu, target);
 		return;
 	}
 	if (target instanceof TFile && target.extension === 'md') {
-		buildSingleFileItems(app, linker, menu, target);
+		buildSingleFileItems(plugin, linker, menu, target);
 	}
 }
 
 function buildSingleFileItems(
-	app: App,
+	plugin: DraftBenchPlugin,
 	linker: DraftBenchLinker,
 	menu: Menu,
 	file: TFile
 ): void {
+	const app = plugin.app;
 	const type = readDbenchType(app, file);
 
 	if (type === 'project') {
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		if (isProjectFrontmatter(fm)) {
+			addRetrofitMenuItem(
+				menu,
+				'Open control center',
+				'pencil-line',
+				() => {
+					new ControlCenterModal(app, plugin, linker, {
+						file,
+						frontmatter: fm,
+					}).open();
+				}
+			);
 			addRetrofitMenuItem(
 				menu,
 				'Repair project links',
@@ -121,7 +135,12 @@ function buildSingleFileItems(
 	}
 }
 
-function buildFolderItems(app: App, menu: Menu, folder: TFolder): void {
+function buildFolderItems(
+	plugin: DraftBenchPlugin,
+	menu: Menu,
+	folder: TFolder
+): void {
+	const app = plugin.app;
 	const files = collectMarkdownFiles(app, folder);
 	if (files.length === 0) return;
 

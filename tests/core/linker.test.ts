@@ -471,3 +471,429 @@ describe('DraftBenchLinker — scene<->project sync', () => {
 		expect(fm?.['dbench-scenes']).toEqual(['[[Scene]]']);
 	});
 });
+
+describe('DraftBenchLinker — scene<->draft sync', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedFolderProject(
+		path: string,
+		id: string,
+		title: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'project',
+			'dbench-id': id,
+			'dbench-project': `[[${title}]]`,
+			'dbench-project-id': id,
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+		});
+		return file;
+	}
+
+	async function seedScene(
+		path: string,
+		id: string,
+		parentTitle: string,
+		parentId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'scene',
+			'dbench-id': id,
+			'dbench-project': `[[${parentTitle}]]`,
+			'dbench-project-id': parentId,
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	async function seedDraftOfScene(
+		path: string,
+		id: string,
+		sceneTitle: string,
+		sceneId: string,
+		projectTitle: string,
+		projectId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'draft',
+			'dbench-id': id,
+			'dbench-project': `[[${projectTitle}]]`,
+			'dbench-project-id': projectId,
+			'dbench-scene': `[[${sceneTitle}]]`,
+			'dbench-scene-id': sceneId,
+			'dbench-draft-number': 1,
+		});
+		return file;
+	}
+
+	function patchCache(file: TFile, updates: Record<string, unknown>): void {
+		const current = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
+		app.metadataCache._setFrontmatter(file, { ...current, ...updates });
+	}
+
+	it('modify: adds draft to declared parent scene reverse arrays', async () => {
+		const project = await seedFolderProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const scene = await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		const draft = await seedDraftOfScene(
+			'Novel/Drafts/Opening - Draft 1 (20260420).md',
+			'drf-001-tst-001',
+			'Opening',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		expect(
+			app.metadataCache.getFileCache(scene)?.frontmatter?.['dbench-drafts']
+		).toEqual([]);
+
+		app.vault._fire('modify', draft);
+		await flush();
+
+		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(sceneFm?.['dbench-drafts']).toEqual([
+			'[[Opening - Draft 1 (20260420)]]',
+		]);
+		expect(sceneFm?.['dbench-draft-ids']).toEqual(['drf-001-tst-001']);
+
+		// Project's draft arrays remain empty — folder projects don't hold drafts.
+		const projectFm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(projectFm?.['dbench-drafts']).toBeUndefined();
+	});
+
+	it('modify: moves draft between scenes', async () => {
+		const project = await seedFolderProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const oldScene = await seedScene(
+			'Novel/Old.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		const newScene = await seedScene(
+			'Novel/New.md',
+			'sc2-002-tst-002',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		const draft = await seedDraftOfScene(
+			'Novel/Drafts/Old - Draft 1.md',
+			'drf-001-tst-001',
+			'Old',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		// Old scene already references the draft.
+		patchCache(oldScene, {
+			'dbench-drafts': ['[[Old - Draft 1]]'],
+			'dbench-draft-ids': ['drf-001-tst-001'],
+		});
+
+		// Writer re-parents the draft to the new scene.
+		patchCache(draft, {
+			'dbench-scene': '[[New]]',
+			'dbench-scene-id': 'sc2-002-tst-002',
+		});
+
+		app.vault._fire('modify', draft);
+		await flush();
+
+		const oldFm = app.metadataCache.getFileCache(oldScene)?.frontmatter;
+		const newFm = app.metadataCache.getFileCache(newScene)?.frontmatter;
+		expect(oldFm?.['dbench-drafts']).toEqual([]);
+		expect(newFm?.['dbench-drafts']).toEqual(['[[Old - Draft 1]]']);
+		expect(newFm?.['dbench-draft-ids']).toEqual(['drf-001-tst-001']);
+
+		// Parameter for unused `project` — quiet the linter.
+		void project;
+	});
+
+	it('delete: removes draft from scene reverse arrays', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		const scene = await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		const draft = await seedDraftOfScene(
+			'Novel/Drafts/Opening - Draft 1.md',
+			'drf-001-tst-001',
+			'Opening',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		patchCache(scene, {
+			'dbench-drafts': ['[[Opening - Draft 1]]'],
+			'dbench-draft-ids': ['drf-001-tst-001'],
+		});
+
+		app.vault._fire('delete', draft);
+		await flush();
+
+		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(sceneFm?.['dbench-drafts']).toEqual([]);
+		expect(sceneFm?.['dbench-draft-ids']).toEqual([]);
+	});
+
+	it('rename: updates wikilink entry in parent scene reverse array', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		const scene = await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		const draft = await seedDraftOfScene(
+			'Novel/Drafts/Opening - Draft 1.md',
+			'drf-001-tst-001',
+			'Opening',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		patchCache(scene, {
+			'dbench-drafts': ['[[Opening - Draft 1]]'],
+			'dbench-draft-ids': ['drf-001-tst-001'],
+		});
+
+		const oldPath = app.vault._rename(
+			draft,
+			'Novel/Drafts/Opening - Draft 1 (renamed).md'
+		);
+
+		app.vault._fire('rename', draft, oldPath);
+		await flush();
+
+		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(sceneFm?.['dbench-drafts']).toEqual([
+			'[[Opening - Draft 1 (renamed)]]',
+		]);
+		expect(sceneFm?.['dbench-draft-ids']).toEqual(['drf-001-tst-001']);
+	});
+});
+
+describe('DraftBenchLinker — single-scene-project<->draft sync', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedSingleProject(
+		path: string,
+		id: string,
+		title: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'project',
+			'dbench-id': id,
+			'dbench-project': `[[${title}]]`,
+			'dbench-project-id': id,
+			'dbench-project-shape': 'single',
+			'dbench-status': 'draft',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	async function seedFolderProject(
+		path: string,
+		id: string,
+		title: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'project',
+			'dbench-id': id,
+			'dbench-project': `[[${title}]]`,
+			'dbench-project-id': id,
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+		});
+		return file;
+	}
+
+	async function seedDraftOfProject(
+		path: string,
+		id: string,
+		projectTitle: string,
+		projectId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'draft',
+			'dbench-id': id,
+			'dbench-project': `[[${projectTitle}]]`,
+			'dbench-project-id': projectId,
+			'dbench-scene': '',
+			'dbench-scene-id': '',
+			'dbench-draft-number': 1,
+		});
+		return file;
+	}
+
+	it('modify: adds draft to single-scene project reverse arrays', async () => {
+		const project = await seedSingleProject(
+			'Flash.md',
+			'prj-001-tst-001',
+			'Flash'
+		);
+		const draft = await seedDraftOfProject(
+			'Flash - Drafts/Flash - Draft 1.md',
+			'drf-001-tst-001',
+			'Flash',
+			'prj-001-tst-001'
+		);
+
+		expect(
+			app.metadataCache.getFileCache(project)?.frontmatter?.['dbench-drafts']
+		).toEqual([]);
+
+		app.vault._fire('modify', draft);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-drafts']).toEqual(['[[Flash - Draft 1]]']);
+		expect(fm?.['dbench-draft-ids']).toEqual(['drf-001-tst-001']);
+	});
+
+	it('modify: does NOT add draft to folder projects (shape filter)', async () => {
+		const folderProject = await seedFolderProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		// Orphan draft whose project-id happens to match a folder project.
+		// Folder projects don't hold drafts directly — draft should not appear
+		// in the folder project's frontmatter.
+		const draft = await seedDraftOfProject(
+			'Novel/Drafts/Orphan.md',
+			'drf-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		app.vault._fire('modify', draft);
+		await flush();
+
+		// The folder project doesn't have dbench-drafts field at all.
+		const fm = app.metadataCache.getFileCache(folderProject)?.frontmatter;
+		expect(fm?.['dbench-drafts']).toBeUndefined();
+	});
+
+	it('delete: removes draft from single-scene project reverse arrays', async () => {
+		const project = await seedSingleProject(
+			'Flash.md',
+			'prj-001-tst-001',
+			'Flash'
+		);
+		const draft = await seedDraftOfProject(
+			'Flash - Drafts/Flash - Draft 1.md',
+			'drf-001-tst-001',
+			'Flash',
+			'prj-001-tst-001'
+		);
+
+		const current =
+			app.metadataCache.getFileCache(project)?.frontmatter ?? {};
+		app.metadataCache._setFrontmatter(project, {
+			...current,
+			'dbench-drafts': ['[[Flash - Draft 1]]'],
+			'dbench-draft-ids': ['drf-001-tst-001'],
+		});
+
+		app.vault._fire('delete', draft);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-drafts']).toEqual([]);
+		expect(fm?.['dbench-draft-ids']).toEqual([]);
+	});
+
+	it('rename: updates wikilink entry in single-scene project reverse array', async () => {
+		const project = await seedSingleProject(
+			'Flash.md',
+			'prj-001-tst-001',
+			'Flash'
+		);
+		const draft = await seedDraftOfProject(
+			'Flash - Drafts/Flash - Draft 1.md',
+			'drf-001-tst-001',
+			'Flash',
+			'prj-001-tst-001'
+		);
+
+		const current =
+			app.metadataCache.getFileCache(project)?.frontmatter ?? {};
+		app.metadataCache._setFrontmatter(project, {
+			...current,
+			'dbench-drafts': ['[[Flash - Draft 1]]'],
+			'dbench-draft-ids': ['drf-001-tst-001'],
+		});
+
+		const oldPath = app.vault._rename(
+			draft,
+			'Flash - Drafts/Flash - Draft 1 (v2).md'
+		);
+
+		app.vault._fire('rename', draft, oldPath);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-drafts']).toEqual(['[[Flash - Draft 1 (v2)]]']);
+		expect(fm?.['dbench-draft-ids']).toEqual(['drf-001-tst-001']);
+	});
+});

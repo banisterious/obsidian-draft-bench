@@ -1,7 +1,6 @@
 import { TFile, type App, type EventRef } from 'obsidian';
 import type { DraftBenchSettings } from '../model/settings';
-import { findNoteById, findProjects, type ProjectNote } from './discovery';
-import { isProjectFrontmatter } from '../model/project';
+import { findNoteById, findProjects, findScenes } from './discovery';
 
 /**
  * `DraftBenchLinker` — live bidirectional sync service.
@@ -134,13 +133,16 @@ export class DraftBenchLinker {
 		return this.suspended > 0;
 	}
 
-	// Per-relationship handlers dispatch on `dbench-type`. Scene<->project
-	// is wired here (P1.A). Scene<->draft and project<->draft land in P1.B.
-	//
 	// Handlers launch async work fire-and-forget: vault events are
 	// synchronous listeners so we can't await from inside them. Errors
 	// are logged to the console; the integrity service (P1.C) catches
 	// any inconsistencies that slip through.
+	//
+	// Per-relationship logic is driven by the RELATIONSHIPS table
+	// (declared below) rather than per-type hardcoded branches. A single
+	// file's type may map to multiple configs — e.g., a draft has a
+	// config for its scene parent AND for its project parent (single-
+	// scene projects). Each config is idempotent and independent.
 
 	private handleModify(file: TFile): void {
 		void this.onModify(file).catch((err) => {
@@ -164,98 +166,106 @@ export class DraftBenchLinker {
 		const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
 		if (!fm || typeof fm !== 'object') return;
 		const type = (fm as Record<string, unknown>)['dbench-type'];
-		if (type === 'scene') {
-			await this.reconcileSceneProject(file, fm as Record<string, unknown>);
+		if (typeof type !== 'string') return;
+		const configs = RELATIONSHIPS[type];
+		if (!configs) return;
+		for (const config of configs) {
+			await this.reconcileChildInParent(
+				file,
+				fm as Record<string, unknown>,
+				config
+			);
 		}
-		// P1.B: extend with draft reconciliation here.
 	}
 
 	/**
-	 * Bring the project<->scene relationship for `sceneFile` into sync
-	 * with its declared `dbench-project-id`:
-	 *
-	 *   - Remove this scene's entry from every project's reverse array
-	 *     that isn't the currently-declared parent.
-	 *   - Ensure the declared parent's reverse array includes this scene.
-	 *
-	 * Scan-based (rather than diff-based) so no prior-state cache is
-	 * needed. Idempotent: calling repeatedly on an already-in-sync
-	 * scene produces no writes.
+	 * Scan-based reconciliation. For the child's declared parent id,
+	 * ensure the parent's reverse arrays include this child. For every
+	 * other candidate parent that currently references this child,
+	 * remove the stale entry. Idempotent; no writes when already in sync.
 	 */
-	private async reconcileSceneProject(
-		sceneFile: TFile,
-		sceneFm: Record<string, unknown>
+	private async reconcileChildInParent(
+		childFile: TFile,
+		childFm: Record<string, unknown>,
+		config: RelationshipConfig
 	): Promise<void> {
-		const sceneId = readString(sceneFm['dbench-id']);
-		if (sceneId === '') return;
+		const childId = readString(childFm['dbench-id']);
+		if (childId === '') return;
 
-		const declaredParentId = readString(sceneFm['dbench-project-id']);
-		const sceneWikilink = `[[${sceneFile.basename}]]`;
+		const declaredParentId = readString(childFm[config.childParentIdField]);
+		const childWikilink = `[[${childFile.basename}]]`;
 
-		for (const project of findProjects(this.app)) {
+		for (const candidate of config.candidateParents(this.app)) {
 			const isDeclaredParent =
 				declaredParentId !== '' &&
-				project.frontmatter['dbench-id'] === declaredParentId;
+				candidate.frontmatter['dbench-id'] === declaredParentId;
 
 			if (isDeclaredParent) {
-				await this.ensureSceneInReverse(project, sceneWikilink, sceneId);
+				await this.ensureChildInReverse(
+					candidate.file,
+					childWikilink,
+					childId,
+					config
+				);
 			} else {
-				// Only touch projects that actually reference this scene;
-				// skip the rest so we don't churn every unrelated project.
+				// Only touch parents that actually reference this child;
+				// skip the rest so we don't churn every unrelated note.
 				if (
 					!containsWikilinkOrId(
-						project.frontmatter['dbench-scenes'],
-						project.frontmatter['dbench-scene-ids'],
-						sceneWikilink,
-						sceneId
+						candidate.frontmatter[config.parentWikilinkField],
+						candidate.frontmatter[config.parentIdField],
+						childWikilink,
+						childId
 					)
 				) {
 					continue;
 				}
-				await this.removeSceneFromReverse(
-					project,
-					sceneWikilink,
-					sceneId
+				await this.removeChildFromReverse(
+					candidate.file,
+					childWikilink,
+					childId,
+					config
 				);
 			}
 		}
 	}
 
-	private async ensureSceneInReverse(
-		project: ProjectNote,
-		sceneWikilink: string,
-		sceneId: string
+	private async ensureChildInReverse(
+		parent: TFile,
+		childWikilink: string,
+		childId: string,
+		config: RelationshipConfig
 	): Promise<void> {
-		const scenes = project.frontmatter['dbench-scenes'] ?? [];
-		const ids = project.frontmatter['dbench-scene-ids'] ?? [];
-		if (scenes.includes(sceneWikilink) && ids.includes(sceneId)) return;
-
-		await this.app.fileManager.processFrontMatter(project.file, (fm) => {
-			const sarr = readArray(fm['dbench-scenes']);
-			const iarr = readArray(fm['dbench-scene-ids']);
-			if (!sarr.includes(sceneWikilink)) sarr.push(sceneWikilink);
-			if (!iarr.includes(sceneId)) iarr.push(sceneId);
-			fm['dbench-scenes'] = sarr;
-			fm['dbench-scene-ids'] = iarr;
+		await this.app.fileManager.processFrontMatter(parent, (fm) => {
+			const warr = readArray(fm[config.parentWikilinkField]);
+			const iarr = readArray(fm[config.parentIdField]);
+			const hasWikilink = warr.includes(childWikilink);
+			const hasId = iarr.includes(childId);
+			if (hasWikilink && hasId) return; // already in sync; no write
+			if (!hasWikilink) warr.push(childWikilink);
+			if (!hasId) iarr.push(childId);
+			fm[config.parentWikilinkField] = warr;
+			fm[config.parentIdField] = iarr;
 		});
 	}
 
-	private async removeSceneFromReverse(
-		project: ProjectNote,
-		sceneWikilink: string,
-		sceneId: string
+	private async removeChildFromReverse(
+		parent: TFile,
+		childWikilink: string,
+		childId: string,
+		config: RelationshipConfig
 	): Promise<void> {
-		await this.app.fileManager.processFrontMatter(project.file, (fm) => {
-			const sarr = readArray(fm['dbench-scenes']);
-			const iarr = readArray(fm['dbench-scene-ids']);
-			const filteredScenes = sarr.filter((x) => x !== sceneWikilink);
-			const filteredIds = iarr.filter((x) => x !== sceneId);
+		await this.app.fileManager.processFrontMatter(parent, (fm) => {
+			const warr = readArray(fm[config.parentWikilinkField]);
+			const iarr = readArray(fm[config.parentIdField]);
+			const filteredWikilinks = warr.filter((x) => x !== childWikilink);
+			const filteredIds = iarr.filter((x) => x !== childId);
 			if (
-				filteredScenes.length !== sarr.length ||
+				filteredWikilinks.length !== warr.length ||
 				filteredIds.length !== iarr.length
 			) {
-				fm['dbench-scenes'] = filteredScenes;
-				fm['dbench-scene-ids'] = filteredIds;
+				fm[config.parentWikilinkField] = filteredWikilinks;
+				fm[config.parentIdField] = filteredIds;
 			}
 		});
 	}
@@ -263,25 +273,31 @@ export class DraftBenchLinker {
 	private async onDelete(file: TFile): Promise<void> {
 		// Cache may already be cleared on delete; rely on the file's
 		// basename (which we still have) to match reverse-array entries.
+		// Walk every parent candidate that could reference this file,
+		// regardless of the deleted file's type (we may not know it).
 		const wikilink = `[[${file.basename}]]`;
+		const configs = Object.values(RELATIONSHIPS).flat();
 
-		for (const project of findProjects(this.app)) {
-			const scenes = readArray(project.frontmatter['dbench-scenes']);
-			const idx = scenes.indexOf(wikilink);
-			if (idx < 0) continue;
+		for (const config of configs) {
+			for (const parent of config.candidateParents(this.app)) {
+				const wikilinks = readArray(
+					parent.frontmatter[config.parentWikilinkField]
+				);
+				if (!wikilinks.includes(wikilink)) continue;
 
-			await this.app.fileManager.processFrontMatter(project.file, (fm) => {
-				const sarr = readArray(fm['dbench-scenes']);
-				const iarr = readArray(fm['dbench-scene-ids']);
-				const i = sarr.indexOf(wikilink);
-				if (i >= 0) {
-					sarr.splice(i, 1);
-					// Parallel arrays: remove companion id at the same index.
-					if (i < iarr.length) iarr.splice(i, 1);
-					fm['dbench-scenes'] = sarr;
-					fm['dbench-scene-ids'] = iarr;
-				}
-			});
+				await this.app.fileManager.processFrontMatter(parent.file, (fm) => {
+					const warr = readArray(fm[config.parentWikilinkField]);
+					const iarr = readArray(fm[config.parentIdField]);
+					const i = warr.indexOf(wikilink);
+					if (i >= 0) {
+						warr.splice(i, 1);
+						// Parallel arrays: remove companion id at same index.
+						if (i < iarr.length) iarr.splice(i, 1);
+						fm[config.parentWikilinkField] = warr;
+						fm[config.parentIdField] = iarr;
+					}
+				});
+			}
 		}
 	}
 
@@ -295,26 +311,108 @@ export class DraftBenchLinker {
 		const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
 		if (!fm || typeof fm !== 'object') return;
 		const type = (fm as Record<string, unknown>)['dbench-type'];
-		if (type !== 'scene') return;
+		if (typeof type !== 'string') return;
+		const configs = RELATIONSHIPS[type];
+		if (!configs) return;
 
-		const parentId = readString(
-			(fm as Record<string, unknown>)['dbench-project-id']
-		);
-		if (parentId === '') return;
+		for (const config of configs) {
+			const parentId = readString(
+				(fm as Record<string, unknown>)[config.childParentIdField]
+			);
+			if (parentId === '') continue;
 
-		const parent = findNoteById(this.app, parentId);
-		if (!parent || !isProjectFrontmatter(parent.frontmatter)) return;
+			const parent = findNoteById(this.app, parentId);
+			if (!parent) continue;
 
-		await this.app.fileManager.processFrontMatter(parent.file, (pfm) => {
-			const scenes = readArray(pfm['dbench-scenes']);
-			const idx = scenes.indexOf(oldWikilink);
-			if (idx >= 0) {
-				scenes[idx] = newWikilink;
-				pfm['dbench-scenes'] = scenes;
-			}
-		});
+			await this.app.fileManager.processFrontMatter(parent.file, (pfm) => {
+				const wikilinks = readArray(pfm[config.parentWikilinkField]);
+				const idx = wikilinks.indexOf(oldWikilink);
+				if (idx >= 0) {
+					wikilinks[idx] = newWikilink;
+					pfm[config.parentWikilinkField] = wikilinks;
+				}
+			});
+		}
 	}
 }
+
+/**
+ * Describes one forward-reference / reverse-array pair the linker
+ * reconciles. A single child type (e.g., `draft`) can have multiple
+ * configs — one for each distinct parent type it may point to.
+ */
+interface RelationshipConfig {
+	/** Field on the child holding the parent's stable id, e.g., `dbench-project-id`. */
+	childParentIdField: string;
+	/** Reverse-array field on the parent holding wikilinks, e.g., `dbench-scenes`. */
+	parentWikilinkField: string;
+	/** Reverse-array field on the parent holding stable ids, e.g., `dbench-scene-ids`. */
+	parentIdField: string;
+	/**
+	 * Enumerate candidate parents. Filtering (e.g., project-shape ==
+	 * 'single' for the draft->project case) happens here so the
+	 * reconciler stays generic.
+	 */
+	candidateParents: (
+		app: App
+	) => Array<{ file: TFile; frontmatter: Record<string, unknown> }>;
+}
+
+/**
+ * Per-type reconciliation rules. Keyed by `dbench-type` of the child.
+ *
+ * - `scene`: one parent, the enclosing project.
+ * - `draft`: two possible parents depending on the declared fields.
+ *   Scene-parented drafts live in folder projects; project-parented
+ *   drafts live in single-scene projects. Both configs run on every
+ *   draft modify; the one whose declared parent id doesn't resolve
+ *   is a no-op on adds but still cleans up any stale references —
+ *   which lets the linker recover when a writer converts a project
+ *   between folder and single-scene shapes.
+ */
+const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
+	scene: [
+		{
+			childParentIdField: 'dbench-project-id',
+			parentWikilinkField: 'dbench-scenes',
+			parentIdField: 'dbench-scene-ids',
+			candidateParents: (app) =>
+				findProjects(app).map((p) => ({
+					file: p.file,
+					frontmatter: p.frontmatter as unknown as Record<string, unknown>,
+				})),
+		},
+	],
+	draft: [
+		{
+			childParentIdField: 'dbench-scene-id',
+			parentWikilinkField: 'dbench-drafts',
+			parentIdField: 'dbench-draft-ids',
+			candidateParents: (app) =>
+				findScenes(app).map((s) => ({
+					file: s.file,
+					frontmatter: s.frontmatter as unknown as Record<string, unknown>,
+				})),
+		},
+		{
+			childParentIdField: 'dbench-project-id',
+			parentWikilinkField: 'dbench-drafts',
+			parentIdField: 'dbench-draft-ids',
+			candidateParents: (app) =>
+				findProjects(app)
+					.filter(
+						(p) => p.frontmatter['dbench-project-shape'] === 'single'
+					)
+					.map((p) => ({
+						file: p.file,
+						frontmatter: p.frontmatter as unknown as Record<
+							string,
+							unknown
+						>,
+					})),
+		},
+	],
+};
 
 /**
  * Defensive array reader: returns the array as-is, or `[]` if the value

@@ -587,11 +587,14 @@ If the [Style Settings](https://github.com/mgmeyers/obsidian-style-settings) com
 
 **Draft-leaf only (archival cue):**
 
-These variables ship with sensible defaults that signal "archive" without requiring Style Settings configuration. A writer who installs Style Settings can override; a writer who doesn't still sees a visually distinct draft leaf.
+V1 ships exactly one default style rule — `--dbench-draft-border-left`, a thin `3px solid var(--text-faint)` rule on the left edge of draft leaves. It's the subtle "archive, not live" cue that motivated the class tagging in the first place, and it doesn't impose any colors that would fight with user themes.
 
-- `--dbench-draft-background`: default subtly muted vs. scene background. Signals "this is an archived snapshot, not the live scene."
-- `--dbench-draft-text-color`: default slightly dimmed (e.g., `var(--text-muted)`).
-- `--dbench-draft-border-left`: default `3px solid var(--text-faint)`, a thin vertical rule down the left edge of the leaf. On by default; set to `none` to disable.
+The remaining draft-leaf variables are declared but not consumed by default rules in V1:
+
+- `--dbench-draft-background`: available for writers who want a muted background on draft leaves; no default visual effect.
+- `--dbench-draft-text-color`: available for writers who want dimmed draft text; no default visual effect.
+
+Writers who want these to take effect can either install Style Settings and author a theme that consumes them via a snippet, or wait for Phase 2 when the plugin ships the consuming rules with opinionated defaults.
 
 Style Settings integration is opt-in — Draft Bench does not require the plugin. Without it, the CSS classes are still applied; users can style them via their theme or a CSS snippet.
 
@@ -601,7 +604,7 @@ Styling drafts distinctively reduces but doesn't eliminate the "I accidentally e
 
 ### Scope
 
-CSS class tagging is V1-scoped. Style Settings integration is V1 with the shared, scene, and draft variable groups above; additional variables can be added as writer feedback clarifies what's worth exposing.
+CSS class tagging is V1-scoped. V1 ships exactly one default style rule — the draft border-left archival cue — so the plugin imposes no typography or color defaults on writers' themes. The Style Settings variable declarations for scene typography and draft background/text are scaffolding; their consuming rules land in Phase 2 together with opinionated defaults. Additional variables can be added as writer feedback clarifies what's worth exposing.
 
 ## Writing Sessions, Goals, and Revision Snapshots
 

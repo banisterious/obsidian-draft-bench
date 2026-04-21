@@ -6,7 +6,7 @@
    Do not edit directly. Edit the component files, then run:
      npm run build:css
 
-   Generated: 2026-04-21 01:50:58 UTC
+   Generated: 2026-04-21 02:51:18 UTC
    Components: 9
 */
 
@@ -124,16 +124,127 @@
 
 /* End of base.css */
 
+/* --------------------------------------------------------------------------
+   REORDER-MODAL.CSS  (103 lines, 2.31 KB)
+   -------------------------------------------------------------------------- */
+
+/*
+ * Scene reordering modal (keyboard-first).
+ *
+ * Per spec § Scene reordering: a scrollable list of scenes in current
+ * dbench-order with per-row move affordances. The list has role=listbox
+ * and each row role=option; roving tabindex is handled in TS, this file
+ * only styles the visual layout and focus cues.
+ */
+
+.dbench-reorder-modal__hint {
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+	margin: var(--dbench-spacing-sm) 0 var(--dbench-spacing-md);
+}
+
+.dbench-reorder-modal__list {
+	list-style: none;
+	margin: 0 0 var(--dbench-spacing-md);
+	padding: 0;
+	max-height: 50vh;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+}
+
+.dbench-reorder-modal__row {
+	display: flex;
+	gap: var(--dbench-spacing-sm);
+	align-items: center;
+	padding: var(--dbench-spacing-sm) var(--dbench-spacing-md);
+	border-top: 2px solid transparent;
+	border-bottom: 1px solid var(--background-modifier-border);
+	cursor: default;
+	outline: none;
+}
+
+.dbench-reorder-modal__row:last-child {
+	border-bottom: none;
+}
+
+.dbench-reorder-modal__row:focus {
+	background-color: var(--background-modifier-hover);
+	box-shadow: inset 2px 0 0 var(--interactive-accent);
+}
+
+.dbench-reorder-modal__row[aria-selected="true"] {
+	background-color: var(--background-modifier-hover);
+}
+
+.dbench-reorder-modal__row--dragging {
+	opacity: 0.5;
+}
+
+.dbench-reorder-modal__row--drop-before {
+	border-top-color: var(--interactive-accent);
+}
+
+.dbench-reorder-modal__row--drop-after {
+	border-bottom-color: var(--interactive-accent);
+	border-bottom-width: 2px;
+}
+
+.dbench-reorder-modal__handle {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--text-muted);
+	cursor: grab;
+	padding: var(--dbench-spacing-xs);
+}
+
+.dbench-reorder-modal__handle:active {
+	cursor: grabbing;
+}
+
+.dbench-reorder-modal__position {
+	flex: 0 0 auto;
+	min-width: 2.5em;
+	color: var(--text-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.dbench-reorder-modal__title {
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dbench-reorder-modal__status {
+	flex: 0 0 auto;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+	text-transform: capitalize;
+}
+
+.dbench-reorder-modal__empty {
+	padding: var(--dbench-spacing-lg);
+	color: var(--text-muted);
+	text-align: center;
+}
+
+
+/* End of reorder-modal.css */
+
 /* ==========================================================================
    BUILD SUMMARY
    ==========================================================================
 
-   Built:      2026-04-21 01:50:58 UTC
-   Components: 2
-   Total:      99 lines, 2.53 KB
-   Duration:   0.04s
+   Built:      2026-04-21 02:51:18 UTC
+   Components: 3
+   Total:      202 lines, 4.85 KB
+   Duration:   0.06s
    - variables.css: 59 lines, 1.78 KB
    - base.css: 40 lines, 0.75 KB
+   - reorder-modal.css: 103 lines, 2.31 KB
 */
 
 /* End of generated stylesheet */

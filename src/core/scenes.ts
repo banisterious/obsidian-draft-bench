@@ -1,15 +1,17 @@
 import type { App, TFile } from 'obsidian';
 import type { DbenchId, DbenchStatus } from '../model/types';
 import type { DraftBenchSettings } from '../model/settings';
-import type { ProjectNote } from './discovery';
+import type { ProjectNote, SceneNote } from './discovery';
 import { findScenesInProject } from './discovery';
 import { stampSceneEssentials } from './essentials';
+import { isoDate, resolveSceneTemplate } from './templates';
 
 /**
- * Scene creation: resolves the target file path, creates the scene
- * note with the V1 template body, stamps essentials linked to the
- * parent project, and appends to the project's `dbench-scenes` /
- * `dbench-scene-ids` reverse arrays.
+ * Scene creation: resolves the target file path, renders the scene
+ * template (seeding the built-in default if the user's template file
+ * is absent), stamps essentials linked to the parent project, and
+ * appends to the project's `dbench-scenes` / `dbench-scene-ids`
+ * reverse arrays.
  *
  * Per the spec's "suspended states" list, callers should run this
  * inside `linker.withSuspended(...)` so the linker doesn't try to
@@ -19,16 +21,6 @@ import { stampSceneEssentials } from './essentials';
  */
 
 const FILENAME_FORBIDDEN_CHARS = /[\\/:*?"<>|]/;
-
-const V1_SCENE_TEMPLATE = `## Source passages
-
-## Beat outline
-
-## Open questions
-
-## Draft
-
-`;
 
 export interface CreateSceneOptions {
 	/** The project this scene belongs to. */
@@ -159,7 +151,16 @@ export async function createScene(
 	const order = options.order ?? nextSceneOrder(app, projectId);
 	const status = options.status ?? 'idea';
 
-	const file = await app.vault.create(filePath, V1_SCENE_TEMPLATE);
+	const templateBody = await resolveSceneTemplate(app, settings, {
+		project: projectWikilink,
+		projectTitle: options.project.file.basename,
+		sceneTitle: options.title.trim(),
+		sceneOrder: order,
+		date: isoDate(),
+		previousSceneTitle: previousSceneTitleAt(app, projectId, order),
+	});
+
+	const file = await app.vault.create(filePath, templateBody);
 
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Pre-set scene-specific fields so stampSceneEssentials' setIfMissing
@@ -195,4 +196,31 @@ export async function createScene(
 function readArray(value: unknown): string[] {
 	if (Array.isArray(value)) return value as string[];
 	return [];
+}
+
+/**
+ * Return the basename of the scene whose `dbench-order` is the largest
+ * value strictly less than `order` within `projectId`, or `''` if
+ * `order` is the first scene in the project.
+ *
+ * Used to populate the `{{previous_scene_title}}` template token; a
+ * pure projection over `findScenesInProject`, so no vault writes here.
+ */
+function previousSceneTitleAt(
+	app: App,
+	projectId: DbenchId,
+	order: number
+): string {
+	const scenes = findScenesInProject(app, projectId).filter(
+		(s) => s.frontmatter['dbench-order'] < order
+	);
+	if (scenes.length === 0) return '';
+	const previous = scenes.reduce<SceneNote>(
+		(best, current) =>
+			current.frontmatter['dbench-order'] > best.frontmatter['dbench-order']
+				? current
+				: best,
+		scenes[0]
+	);
+	return previous.file.basename;
 }

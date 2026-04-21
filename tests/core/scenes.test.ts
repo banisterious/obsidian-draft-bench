@@ -17,6 +17,11 @@ async function seedProject(app: App, settings: DraftBenchSettings, title: string
 	return projects[projects.length - 1];
 }
 
+function stripFrontmatter(content: string): string {
+	const match = content.match(/^---\n[\s\S]*?\n---\n([\s\S]*)$/);
+	return match ? match[1] : content;
+}
+
 describe('resolveScenePaths', () => {
 	const settings: DraftBenchSettings = { ...DEFAULT_SETTINGS };
 
@@ -187,6 +192,52 @@ describe('createScene', () => {
 		expect(content).toContain('## Beat outline');
 		expect(content).toContain('## Open questions');
 		expect(content).toContain('## Draft');
+	});
+
+	it('seeds scene-template.md in templatesFolder on first scene creation', async () => {
+		const project = await seedProject(app, settings, 'Project');
+		await createScene(app, settings, { project, title: 'First' });
+
+		const templatePath = `${settings.templatesFolder.replace(/\/+$/, '')}/scene-template.md`;
+		const seeded = app.vault.getAbstractFileByPath(templatePath);
+		expect(seeded).not.toBeNull();
+	});
+
+	it('honors a user-customized scene-template.md when present', async () => {
+		const project = await seedProject(app, settings, 'Project');
+		const templatePath = `${settings.templatesFolder.replace(/\/+$/, '')}/scene-template.md`;
+		const folder = templatePath.slice(0, templatePath.lastIndexOf('/'));
+		await app.vault.createFolder(folder);
+		await app.vault.create(templatePath, '# {{scene_title}}\n\nProject: {{project_title}}\n');
+
+		const scene = await createScene(app, settings, {
+			project,
+			title: 'Custom',
+		});
+		const body = stripFrontmatter(await app.vault.read(scene));
+		expect(body).toContain('# Custom');
+		expect(body).toContain('Project: Project');
+	});
+
+	it('populates {{previous_scene_title}} on subsequent scenes', async () => {
+		const project = await seedProject(app, settings, 'Project');
+		const templatePath = `${settings.templatesFolder.replace(/\/+$/, '')}/scene-template.md`;
+		const folder = templatePath.slice(0, templatePath.lastIndexOf('/'));
+		await app.vault.createFolder(folder);
+		await app.vault.create(templatePath, 'Previous: {{previous_scene_title}}\n');
+
+		const first = await createScene(app, settings, { project, title: 'First' });
+		expect(stripFrontmatter(await app.vault.read(first))).toContain(
+			'Previous: '
+		);
+		expect(stripFrontmatter(await app.vault.read(first))).not.toContain(
+			'Previous: First'
+		);
+
+		const second = await createScene(app, settings, { project, title: 'Second' });
+		expect(stripFrontmatter(await app.vault.read(second))).toContain(
+			'Previous: First'
+		);
 	});
 
 	it('refuses to overwrite an existing file', async () => {

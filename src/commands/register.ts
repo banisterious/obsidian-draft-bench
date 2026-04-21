@@ -5,6 +5,11 @@ import { registerCreateProjectCommand } from './create-project';
 import { registerNewSceneCommand } from './new-scene';
 import { registerNewDraftCommand } from './new-draft';
 import { registerReorderScenesCommand } from './reorder-scenes';
+import { registerSetAsProjectCommand } from './retrofit/set-as-project';
+import { registerSetAsSceneCommand } from './retrofit/set-as-scene';
+import { registerSetAsDraftCommand } from './retrofit/set-as-draft';
+import { registerCompleteEssentialsCommand } from './retrofit/complete-essentials';
+import { registerAddIdCommand } from './retrofit/add-id';
 
 /**
  * Central command registration. Called from `main.ts` once during
@@ -27,4 +32,9 @@ export function registerCommands(
 	registerNewSceneCommand(plugin, getSettings, linker);
 	registerNewDraftCommand(plugin, getSettings, linker);
 	registerReorderScenesCommand(plugin, linker);
+	registerSetAsProjectCommand(plugin);
+	registerSetAsSceneCommand(plugin);
+	registerSetAsDraftCommand(plugin);
+	registerCompleteEssentialsCommand(plugin);
+	registerAddIdCommand(plugin);
 }

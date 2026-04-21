@@ -115,6 +115,49 @@
 	font-variant-numeric: tabular-nums;
 }
 
+.dbench-control-center__word-counts {
+	margin-top: var(--dbench-spacing-lg);
+}
+
+.dbench-control-center__word-counts h3 {
+	margin-top: 0;
+	margin-bottom: var(--dbench-spacing-sm);
+}
+
+.dbench-control-center__word-counts-total {
+	display: flex;
+	align-items: baseline;
+	gap: var(--dbench-spacing-sm);
+	margin-bottom: var(--dbench-spacing-md);
+}
+
+.dbench-control-center__word-counts-total-value {
+	font-size: var(--h2-size);
+	font-weight: var(--font-semibold);
+	font-variant-numeric: tabular-nums;
+}
+
+.dbench-control-center__word-counts-total-label {
+	color: var(--text-muted);
+}
+
+.dbench-control-center__status-breakdown {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: var(--dbench-spacing-xs) var(--dbench-spacing-md);
+	margin: 0;
+}
+
+.dbench-control-center__status-label {
+	color: var(--text-muted);
+	text-transform: capitalize;
+}
+
+.dbench-control-center__status-value {
+	margin: 0;
+	font-variant-numeric: tabular-nums;
+}
+
 /* Manuscript tab */
 
 .dbench-control-center__toolbar {

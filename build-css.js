@@ -55,7 +55,6 @@ async function getFileInfo(filePath) {
 }
 
 function generateHeader(componentCount) {
-	const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
 	return `/* ==========================================================================
    Draft Bench Plugin Stylesheet (BUILT)
    ==========================================================================
@@ -64,7 +63,6 @@ function generateHeader(componentCount) {
    Do not edit directly. Edit the component files, then run:
      npm run build:css
 
-   Generated: ${timestamp}
    Components: ${componentCount}
 */
 
@@ -81,16 +79,13 @@ function generateComponentHeader(name, info) {
 }
 
 function generateFooter(stats, breakdown) {
-	const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
 	let footer = `
 /* ==========================================================================
    BUILD SUMMARY
    ==========================================================================
 
-   Built:      ${timestamp}
    Components: ${stats.componentCount}
    Total:      ${stats.totalLines} lines, ${stats.totalKB} KB
-   Duration:   ${stats.buildDuration}s
 `;
 	breakdown.forEach((c) => {
 		footer += `   - ${c.name}: ${c.lines} lines, ${c.sizeKB} KB\n`;

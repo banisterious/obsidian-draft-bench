@@ -1240,6 +1240,21 @@ npm run dev
 
 The build script invokes `tsc` and `esbuild` via direct `node ./node_modules/<pkg>/bin/<entry>` paths because the project lives on a Windows drive accessed through WSL2's DrvFS, which doesn't support Linux-style symlinks for `node_modules/.bin`. Don't change scripts to bare tool names — `npm install --no-bin-links` (the required install mode) leaves `.bin/` empty.
 
+### Generated files
+
+Three build artifacts live at the repo root and are committed to git so BRAT installs from GitHub work without a release workflow:
+
+- **`styles.css`** — concatenated from `styles/*.css` by `build-css.js` (`npm run build:css`).
+- **`main.js`** — bundled from `main.ts` + `src/` by esbuild (`npm run build`).
+- **`main.js.map`** — source map, emitted alongside `main.js`.
+
+Rules:
+
+- **Never hand-edit these files.** Edit the sources (`styles/*.css`, `main.ts`, `src/**/*.ts`) and rebuild.
+- **Builds are deterministic.** `build-css.js` emits no timestamps; esbuild is reproducible. A diff in any of the three artifacts therefore signals a real content change and should be committed alongside the source change that caused it.
+- **Keep the repo state consistent.** When committing source changes, run `npm run build` first so the committed artifacts match the committed sources. If `git status` shows no-op diffs in the artifacts alone, regenerate once to reconcile and commit everything together. Never commit a source change without the matching rebuild.
+- **`styles.css` is out of scope for Stylelint and Prettier.** `npm run lint:css` and `npm run format:css` target `styles/**/*.css` (the sources). `.stylelintrc.json` explicitly ignores `styles.css`.
+
 ---
 
 ## 7. Common Issues and Solutions

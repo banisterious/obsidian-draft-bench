@@ -316,7 +316,7 @@ Composable with Templater rather than a replacement for it. Writers without Temp
   - Manuscript tab: word-count badge per scene row.
 - Optional per-project and per-scene target settings (stored in frontmatter as `dbench-target-words: N`).
 
-**P2.C — Bases starter views.**
+**P2.C — Bases starter views.** Patterns drawn from Charted Roots: see [bases-reference.md](../planning/bases-reference.md) for the orchestration pattern (`createBaseFile`, `isBasesAvailable`, soft availability gate, "already exists" guard) plus the DB commitments section for decisions already locked (static templates, no property aliases, user-triggered install, no cross-entity bases in V1).
 
 - Ship `.base` files in the plugin's repo (not auto-installed):
   - All projects (sorted by status).

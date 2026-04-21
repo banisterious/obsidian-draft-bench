@@ -576,6 +576,8 @@ Note the disambiguation: `dbench-type: draft` identifies a note's role (it's an 
 
 No custom Bases view registration is required for V1. The plugin may ship template `.base` files in Phase 2 (see § Development Phases).
 
+For the full Charted Roots architectural reference on `.base` generation (orchestration module, availability detection, template styles, view conventions, "already exists" guard) that informs the P2.C implementation, see [bases-reference.md](bases-reference.md). V1 adopts the orchestration pattern wholesale but ships a much smaller view palette and drops the property-alias system (DB doesn't have one).
+
 ## Styling and Style Settings Integration
 
 Draft Bench tags editor leaves with type-identifying CSS classes, giving writers (and vault themes) a reliable hook for styling plugin-managed notes differently from ordinary notes. This mirrors Longform's `.longform-leaf` pattern.

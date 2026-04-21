@@ -349,7 +349,7 @@ Scene reordering happens in a dedicated modal, not inline in the Manuscript tab.
 **Reorder scenes modal:**
 
 - Shows scenes in current order, one row per scene.
-- Row affordances: up/down buttons, a "move to position" input, keyboard shortcuts (arrows or J/K to move a focused row, Enter to commit).
+- Row affordances: a drag handle on the left edge for mouse users; keyboard users focus a row and use arrow keys (or J/K) to move it. Drag-and-drop and keyboard each cover the full reorder surface.
 - Preview of the new sequence before commit.
 - Commit writes `dbench-order` on each affected scene via `FileManager.processFrontMatter`. No file or folder renames.
 - Triggered from: Control Center's Manuscript tab, the scene context menu, or the command palette.

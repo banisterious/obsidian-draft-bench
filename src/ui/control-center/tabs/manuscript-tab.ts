@@ -6,15 +6,7 @@ import { NewDraftModal } from '../../modals/new-draft-modal';
 import { ReorderScenesModal } from '../../modals/reorder-scenes-modal';
 import type { TabContext, TabDefinition } from './types';
 
-/**
- * Pure sort helper: returns a copy of `scenes` sorted by `dbench-order`
- * ascending. Exported for unit testing.
- */
-export function sortScenesByOrder(scenes: SceneNote[]): SceneNote[] {
-	return [...scenes].sort(
-		(a, b) => a.frontmatter['dbench-order'] - b.frontmatter['dbench-order']
-	);
-}
+export { sortScenesByOrder } from './sort-scenes';
 
 function render(container: HTMLElement, context: TabContext): void {
 	renderToolbar(container, context);

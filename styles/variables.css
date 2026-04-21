@@ -1,13 +1,21 @@
 /*
  * CSS custom properties for Draft Bench.
  *
- * Scales (spacing, radius, transitions) define the visual rhythm used
- * throughout the plugin. Feature-specific variables (scene / draft leaf
- * styling) are exposed via Style Settings for user customization.
+ * Two layers:
  *
- * Reference Obsidian's native variables (--background-primary, --text-normal,
- * --interactive-accent, etc.) for anything color- or theme-related so the
- * plugin inherits the user's theme automatically.
+ *   1. `.dbench-scope` — plugin-internal scales (spacing, radius,
+ *      transitions) used by modals and other scoped UI. Not
+ *      user-configurable; lives class-scoped so it doesn't leak into
+ *      unrelated parts of the DOM.
+ *   2. `body` — per-note-type styling (scene/draft typography,
+ *      colors, archival cue). Declared at body scope so Style Settings
+ *      overrides (injected at body or body[data-style-settings]
+ *      specificity) can cleanly take precedence. Consumed in
+ *      `notes.css` via `.dbench-scene ...` / `.dbench-draft ...`
+ *      selectors that read these variables by inheritance.
+ *
+ * Color values reference Obsidian's native variables so the plugin
+ * inherits the user's theme automatically.
  */
 
 .dbench-scope {
@@ -30,29 +38,33 @@
 	--dbench-transition-slow: 300ms ease-out;
 }
 
-/*
- * Scene-leaf variables (exposed via Style Settings). Applied to any editor
- * leaf displaying a note with dbench-type: scene. Defaults inherit Obsidian's
- * theme colors so the plugin looks correct without configuration.
- */
-
-.dbench-scene {
+body {
+	/*
+	 * Scene and draft typography — shared across both leaf types.
+	 * Defaults match the user's theme (no visible change unless
+	 * overridden via Style Settings or a CSS snippet).
+	 */
 	--dbench-scene-font-family: inherit;
 	--dbench-scene-font-size: inherit;
 	--dbench-scene-line-height: inherit;
 	--dbench-scene-max-width: none;
-	--dbench-scene-background: transparent;
+
+	/*
+	 * Scene-leaf only. Defaults to "match theme" — the consuming
+	 * rules apply these values but the values themselves are the
+	 * same Obsidian vars the theme already uses, so no visible
+	 * change until the user customizes.
+	 */
+	--dbench-scene-background: var(--background-primary);
 	--dbench-scene-text-color: var(--text-normal);
-}
 
-/*
- * Draft-leaf variables (exposed via Style Settings). Applied to any editor
- * leaf displaying a note with dbench-type: draft. Defaults signal "archived
- * snapshot, not the live scene" with a subtle visual cue.
- */
-
-.dbench-draft {
-	--dbench-draft-background: var(--background-secondary);
-	--dbench-draft-text-color: var(--text-muted);
+	/*
+	 * Draft-leaf only. The border-left is the archival cue that
+	 * motivated leaf tagging in the first place — subtle default
+	 * that reads sensibly in light and dark themes. Background and
+	 * text color default to "match theme" as above.
+	 */
+	--dbench-draft-background: var(--background-primary);
+	--dbench-draft-text-color: var(--text-normal);
 	--dbench-draft-border-left: 3px solid var(--text-faint);
 }

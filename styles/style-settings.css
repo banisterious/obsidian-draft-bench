@@ -1,0 +1,97 @@
+/*
+ * Style Settings manifest for Draft Bench.
+ *
+ * Parsed by the Style Settings community plugin
+ * (mgmeyers/obsidian-style-settings). When that plugin is installed,
+ * a UI under Settings → Style Settings → Draft Bench exposes the
+ * variables declared here, writing overrides to a body-level style
+ * block. The variable defaults live in variables.css; this file only
+ * declares the UI surface.
+ *
+ * When Style Settings isn't installed, this CSS comment block has no
+ * effect — the variables still have their default values, and users
+ * can still override via a personal CSS snippet.
+ */
+
+/* @settings
+
+name: Draft Bench
+id: draft-bench
+settings:
+    -
+        id: dbench-typography-heading
+        title: Scene and draft typography
+        description: Applies to both scene and draft leaves. Scene- and draft-specific color overrides are below.
+        type: heading
+        level: 0
+        collapsed: false
+    -
+        id: --dbench-scene-font-family
+        title: Font family
+        description: Font for scene and draft note bodies. Use "inherit" to match your theme.
+        type: variable-text
+        default: inherit
+    -
+        id: --dbench-scene-font-size
+        title: Font size
+        description: 1em / 16px / 1.1rem / etc. Use "inherit" to match your theme.
+        type: variable-text
+        default: inherit
+    -
+        id: --dbench-scene-line-height
+        title: Line height
+        description: 1.5, 1.6, 1.8, etc. Use "inherit" to match your theme.
+        type: variable-text
+        default: inherit
+    -
+        id: --dbench-scene-max-width
+        title: Reading width
+        description: Max content width. 65ch, 800px, or "none" for no limit.
+        type: variable-text
+        default: none
+    -
+        id: dbench-scene-heading
+        title: Scene leaf
+        description: Scene-specific appearance.
+        type: heading
+        level: 0
+        collapsed: true
+    -
+        id: --dbench-scene-background
+        title: Background color
+        description: CSS color value. Use "var(--background-primary)" to match your theme.
+        type: variable-text
+        default: var(--background-primary)
+    -
+        id: --dbench-scene-text-color
+        title: Text color
+        description: CSS color value. Use "var(--text-normal)" to match your theme.
+        type: variable-text
+        default: var(--text-normal)
+    -
+        id: dbench-draft-heading
+        title: Draft leaf (archival)
+        description: Draft-specific appearance. Distinguishing archived snapshots from the live scene helps writers avoid accidentally editing archives.
+        type: heading
+        level: 0
+        collapsed: true
+    -
+        id: --dbench-draft-background
+        title: Background color
+        description: CSS color value. "var(--background-secondary)" gives a subtle archival tint.
+        type: variable-text
+        default: var(--background-primary)
+    -
+        id: --dbench-draft-text-color
+        title: Text color
+        description: CSS color value. "var(--text-muted)" dims draft text.
+        type: variable-text
+        default: var(--text-normal)
+    -
+        id: --dbench-draft-border-left
+        title: Border-left (archival cue)
+        description: CSS border shorthand. Default is a thin theme-muted line. Set to "none" to remove.
+        type: variable-text
+        default: 3px solid var(--text-faint)
+
+*/

@@ -3,21 +3,59 @@
  *
  * Classes are applied by ui/leaf-styles.ts based on `dbench-type`:
  * `.dbench-project`, `.dbench-scene`, `.dbench-draft` (each paired
- * with its `.draft-bench-*` long-form sibling). V1 ships exactly one
- * default rule — the draft archival cue — because it has a specific
- * documented UX purpose (distinguishing archived snapshots from the
- * live scene so writers don't accidentally edit the archive). Every
- * other aspect of typography, background, and reading width is left
- * to the writer's theme or a personal CSS snippet.
+ * with its `.draft-bench-*` long-form sibling).
  *
- * Style Settings variables declared in variables.css (scene font,
- * background, etc.) are scaffolding for Phase 2 — they're not yet
- * consumed by any rule here, so setting them has no visible effect
- * until Phase 2 adds their consuming rules.
+ * Variables are declared at `body` scope in variables.css and
+ * exposed via the Style Settings manifest in style-settings.css so
+ * users can override them without writing a CSS snippet. Defaults
+ * read sensibly in Obsidian's default light and dark themes, and
+ * match theme vars where possible (meaning no visible change by
+ * default — the plugin doesn't fight the theme unless the user
+ * customizes).
  */
 
-/* Draft leaves — archival cue -------------------------------------- */
+/* ---- Shared typography for scene and draft leaves ---- */
+
+.dbench-scene .cm-editor,
+.dbench-scene .markdown-preview-view,
+.dbench-draft .cm-editor,
+.dbench-draft .markdown-preview-view {
+	font-family: var(--dbench-scene-font-family);
+	font-size: var(--dbench-scene-font-size);
+	line-height: var(--dbench-scene-line-height);
+}
+
+.dbench-scene .cm-sizer,
+.dbench-scene .markdown-preview-sizer,
+.dbench-draft .cm-sizer,
+.dbench-draft .markdown-preview-sizer {
+	max-width: var(--dbench-scene-max-width);
+}
+
+/* ---- Scene leaf colors ---- */
+
+.dbench-scene .markdown-source-view,
+.dbench-scene .markdown-reading-view {
+	background-color: var(--dbench-scene-background);
+}
+
+.dbench-scene .cm-editor,
+.dbench-scene .markdown-preview-view {
+	color: var(--dbench-scene-text-color);
+}
+
+/* ---- Draft leaf colors + archival cue ---- */
 
 .dbench-draft {
 	border-left: var(--dbench-draft-border-left);
+}
+
+.dbench-draft .markdown-source-view,
+.dbench-draft .markdown-reading-view {
+	background-color: var(--dbench-draft-background);
+}
+
+.dbench-draft .cm-editor,
+.dbench-draft .markdown-preview-view {
+	color: var(--dbench-draft-text-color);
 }

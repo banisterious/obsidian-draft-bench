@@ -11,19 +11,27 @@
 
 
 /* --------------------------------------------------------------------------
-   VARIABLES.CSS  (59 lines, 1.78 KB)
+   VARIABLES.CSS  (71 lines, 2.32 KB)
    -------------------------------------------------------------------------- */
 
 /*
  * CSS custom properties for Draft Bench.
  *
- * Scales (spacing, radius, transitions) define the visual rhythm used
- * throughout the plugin. Feature-specific variables (scene / draft leaf
- * styling) are exposed via Style Settings for user customization.
+ * Two layers:
  *
- * Reference Obsidian's native variables (--background-primary, --text-normal,
- * --interactive-accent, etc.) for anything color- or theme-related so the
- * plugin inherits the user's theme automatically.
+ *   1. `.dbench-scope` — plugin-internal scales (spacing, radius,
+ *      transitions) used by modals and other scoped UI. Not
+ *      user-configurable; lives class-scoped so it doesn't leak into
+ *      unrelated parts of the DOM.
+ *   2. `body` — per-note-type styling (scene/draft typography,
+ *      colors, archival cue). Declared at body scope so Style Settings
+ *      overrides (injected at body or body[data-style-settings]
+ *      specificity) can cleanly take precedence. Consumed in
+ *      `notes.css` via `.dbench-scene ...` / `.dbench-draft ...`
+ *      selectors that read these variables by inheritance.
+ *
+ * Color values reference Obsidian's native variables so the plugin
+ * inherits the user's theme automatically.
  */
 
 .dbench-scope {
@@ -46,35 +54,144 @@
 	--dbench-transition-slow: 300ms ease-out;
 }
 
-/*
- * Scene-leaf variables (exposed via Style Settings). Applied to any editor
- * leaf displaying a note with dbench-type: scene. Defaults inherit Obsidian's
- * theme colors so the plugin looks correct without configuration.
- */
-
-.dbench-scene {
+body {
+	/*
+	 * Scene and draft typography — shared across both leaf types.
+	 * Defaults match the user's theme (no visible change unless
+	 * overridden via Style Settings or a CSS snippet).
+	 */
 	--dbench-scene-font-family: inherit;
 	--dbench-scene-font-size: inherit;
 	--dbench-scene-line-height: inherit;
 	--dbench-scene-max-width: none;
-	--dbench-scene-background: transparent;
+
+	/*
+	 * Scene-leaf only. Defaults to "match theme" — the consuming
+	 * rules apply these values but the values themselves are the
+	 * same Obsidian vars the theme already uses, so no visible
+	 * change until the user customizes.
+	 */
+	--dbench-scene-background: var(--background-primary);
 	--dbench-scene-text-color: var(--text-normal);
-}
 
-/*
- * Draft-leaf variables (exposed via Style Settings). Applied to any editor
- * leaf displaying a note with dbench-type: draft. Defaults signal "archived
- * snapshot, not the live scene" with a subtle visual cue.
- */
-
-.dbench-draft {
-	--dbench-draft-background: var(--background-secondary);
-	--dbench-draft-text-color: var(--text-muted);
+	/*
+	 * Draft-leaf only. The border-left is the archival cue that
+	 * motivated leaf tagging in the first place — subtle default
+	 * that reads sensibly in light and dark themes. Background and
+	 * text color default to "match theme" as above.
+	 */
+	--dbench-draft-background: var(--background-primary);
+	--dbench-draft-text-color: var(--text-normal);
 	--dbench-draft-border-left: 3px solid var(--text-faint);
 }
 
 
 /* End of variables.css */
+
+/* --------------------------------------------------------------------------
+   STYLE-SETTINGS.CSS  (98 lines, 3.32 KB)
+   -------------------------------------------------------------------------- */
+
+/*
+ * Style Settings manifest for Draft Bench.
+ *
+ * Parsed by the Style Settings community plugin
+ * (mgmeyers/obsidian-style-settings). When that plugin is installed,
+ * a UI under Settings → Style Settings → Draft Bench exposes the
+ * variables declared here, writing overrides to a body-level style
+ * block. The variable defaults live in variables.css; this file only
+ * declares the UI surface.
+ *
+ * When Style Settings isn't installed, this CSS comment block has no
+ * effect — the variables still have their default values, and users
+ * can still override via a personal CSS snippet.
+ */
+
+/* @settings
+
+name: Draft Bench
+id: draft-bench
+settings:
+    -
+        id: dbench-typography-heading
+        title: Scene and draft typography
+        description: Applies to both scene and draft leaves. Scene- and draft-specific color overrides are below.
+        type: heading
+        level: 0
+        collapsed: false
+    -
+        id: --dbench-scene-font-family
+        title: Font family
+        description: Font for scene and draft note bodies. Use "inherit" to match your theme.
+        type: variable-text
+        default: inherit
+    -
+        id: --dbench-scene-font-size
+        title: Font size
+        description: 1em / 16px / 1.1rem / etc. Use "inherit" to match your theme.
+        type: variable-text
+        default: inherit
+    -
+        id: --dbench-scene-line-height
+        title: Line height
+        description: 1.5, 1.6, 1.8, etc. Use "inherit" to match your theme.
+        type: variable-text
+        default: inherit
+    -
+        id: --dbench-scene-max-width
+        title: Reading width
+        description: Max content width. 65ch, 800px, or "none" for no limit.
+        type: variable-text
+        default: none
+    -
+        id: dbench-scene-heading
+        title: Scene leaf
+        description: Scene-specific appearance.
+        type: heading
+        level: 0
+        collapsed: true
+    -
+        id: --dbench-scene-background
+        title: Background color
+        description: CSS color value. Use "var(--background-primary)" to match your theme.
+        type: variable-text
+        default: var(--background-primary)
+    -
+        id: --dbench-scene-text-color
+        title: Text color
+        description: CSS color value. Use "var(--text-normal)" to match your theme.
+        type: variable-text
+        default: var(--text-normal)
+    -
+        id: dbench-draft-heading
+        title: Draft leaf (archival)
+        description: Draft-specific appearance. Distinguishing archived snapshots from the live scene helps writers avoid accidentally editing archives.
+        type: heading
+        level: 0
+        collapsed: true
+    -
+        id: --dbench-draft-background
+        title: Background color
+        description: CSS color value. "var(--background-secondary)" gives a subtle archival tint.
+        type: variable-text
+        default: var(--background-primary)
+    -
+        id: --dbench-draft-text-color
+        title: Text color
+        description: CSS color value. "var(--text-muted)" dims draft text.
+        type: variable-text
+        default: var(--text-normal)
+    -
+        id: --dbench-draft-border-left
+        title: Border-left (archival cue)
+        description: CSS border shorthand. Default is a thin theme-muted line. Set to "none" to remove.
+        type: variable-text
+        default: 3px solid var(--text-faint)
+
+*/
+
+
+/* End of style-settings.css */
 
 /* --------------------------------------------------------------------------
    BASE.CSS  (40 lines, 0.75 KB)
@@ -124,7 +241,7 @@
 /* End of base.css */
 
 /* --------------------------------------------------------------------------
-   NOTES.CSS  (24 lines, 0.98 KB)
+   NOTES.CSS  (62 lines, 1.76 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -132,23 +249,61 @@
  *
  * Classes are applied by ui/leaf-styles.ts based on `dbench-type`:
  * `.dbench-project`, `.dbench-scene`, `.dbench-draft` (each paired
- * with its `.draft-bench-*` long-form sibling). V1 ships exactly one
- * default rule — the draft archival cue — because it has a specific
- * documented UX purpose (distinguishing archived snapshots from the
- * live scene so writers don't accidentally edit the archive). Every
- * other aspect of typography, background, and reading width is left
- * to the writer's theme or a personal CSS snippet.
+ * with its `.draft-bench-*` long-form sibling).
  *
- * Style Settings variables declared in variables.css (scene font,
- * background, etc.) are scaffolding for Phase 2 — they're not yet
- * consumed by any rule here, so setting them has no visible effect
- * until Phase 2 adds their consuming rules.
+ * Variables are declared at `body` scope in variables.css and
+ * exposed via the Style Settings manifest in style-settings.css so
+ * users can override them without writing a CSS snippet. Defaults
+ * read sensibly in Obsidian's default light and dark themes, and
+ * match theme vars where possible (meaning no visible change by
+ * default — the plugin doesn't fight the theme unless the user
+ * customizes).
  */
 
-/* Draft leaves — archival cue -------------------------------------- */
+/* ---- Shared typography for scene and draft leaves ---- */
+
+.dbench-scene .cm-editor,
+.dbench-scene .markdown-preview-view,
+.dbench-draft .cm-editor,
+.dbench-draft .markdown-preview-view {
+	font-family: var(--dbench-scene-font-family);
+	font-size: var(--dbench-scene-font-size);
+	line-height: var(--dbench-scene-line-height);
+}
+
+.dbench-scene .cm-sizer,
+.dbench-scene .markdown-preview-sizer,
+.dbench-draft .cm-sizer,
+.dbench-draft .markdown-preview-sizer {
+	max-width: var(--dbench-scene-max-width);
+}
+
+/* ---- Scene leaf colors ---- */
+
+.dbench-scene .markdown-source-view,
+.dbench-scene .markdown-reading-view {
+	background-color: var(--dbench-scene-background);
+}
+
+.dbench-scene .cm-editor,
+.dbench-scene .markdown-preview-view {
+	color: var(--dbench-scene-text-color);
+}
+
+/* ---- Draft leaf colors + archival cue ---- */
 
 .dbench-draft {
 	border-left: var(--dbench-draft-border-left);
+}
+
+.dbench-draft .markdown-source-view,
+.dbench-draft .markdown-reading-view {
+	background-color: var(--dbench-draft-background);
+}
+
+.dbench-draft .cm-editor,
+.dbench-draft .markdown-preview-view {
+	color: var(--dbench-draft-text-color);
 }
 
 
@@ -544,11 +699,12 @@
    BUILD SUMMARY
    ==========================================================================
 
-   Components: 5
-   Total:      495 lines, 11.77 KB
-   - variables.css: 59 lines, 1.78 KB
+   Components: 6
+   Total:      643 lines, 16.41 KB
+   - variables.css: 71 lines, 2.32 KB
+   - style-settings.css: 98 lines, 3.32 KB
    - base.css: 40 lines, 0.75 KB
-   - notes.css: 24 lines, 0.98 KB
+   - notes.css: 62 lines, 1.76 KB
    - control-center.css: 269 lines, 5.95 KB
    - reorder-modal.css: 103 lines, 2.31 KB
 */

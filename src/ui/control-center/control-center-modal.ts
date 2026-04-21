@@ -10,7 +10,6 @@ import type { DraftBenchLinker } from '../../core/linker';
 import { compileTab } from './tabs/compile-tab';
 import { manuscriptTab, sortScenesByOrder } from './tabs/manuscript-tab';
 import { projectTab } from './tabs/project-tab';
-import { settingsTab } from './tabs/settings-tab';
 import { templatesTab } from './tabs/templates-tab';
 import type { TabDefinition } from './tabs/types';
 
@@ -19,7 +18,6 @@ export const CONTROL_CENTER_TABS: readonly TabDefinition[] = [
 	manuscriptTab,
 	templatesTab,
 	compileTab,
-	settingsTab,
 ] as const;
 
 const DEFAULT_TAB_ID = 'project';

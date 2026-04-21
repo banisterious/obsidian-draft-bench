@@ -43,7 +43,6 @@ src/
         manuscript-tab.ts             Ordered scene list + toolbar
         templates-tab.ts              Template management
         compile-tab.ts                Placeholder (Phase 3+)
-        settings-tab.ts               Inline settings (mirrors main Settings tab)
     modals/
       new-project-modal.ts            Create-project flow
       new-scene-modal.ts              Create-scene flow
@@ -274,8 +273,8 @@ Extend the handler bodies to draft relationships:
   - **Manuscript**: ordered scene list (read-only; sorted by `dbench-order`). Status and draft-count badges per row. Toolbar along the top with buttons: "New scene", "New draft of current scene", "Reorder scenes", "Compile" (Phase 3+ placeholder). Buttons invoke the existing commands.
   - **Templates**: placeholder ("Template management — Phase 2").
   - **Compile**: placeholder ("Book Builder — Phase 3").
-  - **Settings**: mirrors the main Settings tab (inline). Cheap — the same `DraftBenchSettingTab` rendering can run into the tab's containerEl.
-- `src/ui/control-center/tabs/*.ts` — one file per tab for clarity, even if three are placeholders.
+- Plugin settings stay at Options -> Community plugins -> Draft Bench; no Settings tab is embedded in the Control Center. A later Dashboard surface will launch the native settings panel via `app.setting.open()` + `openTabById('draft-bench')`; see [control-center-reference.md](../planning/control-center-reference.md) for the commitment.
+- `src/ui/control-center/tabs/*.ts` — one file per tab for clarity, even if the Templates and Compile tabs are placeholders.
 - The modal caches the active project's scene list on construction to avoid re-scanning on tab switches; clear on `onClose()` per [ui-reference.md § Control Center conventions](../planning/ui-reference.md).
 
 **P1.E — Style Settings integration (deferred step 13).**

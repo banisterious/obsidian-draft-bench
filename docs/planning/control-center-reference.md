@@ -192,3 +192,19 @@ If a future DB Control Center pass ends up tracking CR's model closely, the **mi
 Everything else — mobile drawer, tool entries, workspace-event invocation, programmatic deep-linking, cross-tab callbacks — layers on top of that kernel as features mature.
 
 **Again: whether DB follows this model, reshapes it, or takes a different approach is a future design call.** The kernel above is worth noting because it's what CR distilled to; it's not a commitment for DB.
+
+## DB commitments for later design
+
+The points below are specific DB decisions (not speculative adoption) that shape how the Control Center will evolve. Captured here so they survive session ends; none are implemented in Phase 1.
+
+### Settings: launcher, not embed
+
+When a Dashboard (or equivalent landing surface) is added, it will include a tile or button labeled "Settings" that calls Obsidian's `app.setting.open()` followed by `app.setting.openTabById('draft-bench')`. This jumps the user directly to Obsidian's native settings panel with Draft Bench selected (one hop) without duplicating the settings UI inside the Control Center.
+
+**Rationale:**
+
+- Plugin configuration belongs at Options -> Community plugins per Obsidian convention; a second copy inside a modal creates a drift risk and bends the `PluginSettingTab` API (the P1.D skeleton briefly embedded one via `containerEl` reassignment; removed before shipping).
+- The Control Center's role is project operations (scenes, drafts, compile). Plugin configuration is a different scope.
+- Matches the pattern used in Charted Roots, which solved the same discoverability concern without duplicating surfaces.
+
+**Implementation gotcha:** `app.setting` is an internal-but-widely-used Obsidian API that is not present in the public `obsidian.d.ts`. A narrow type assertion (e.g., `(this.app as unknown as { setting: { open(): void; openTabById(id: string): void } }).setting.open()`) will be needed at the call site, scoped to the launcher handler only.

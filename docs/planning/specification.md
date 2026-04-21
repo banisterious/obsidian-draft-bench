@@ -340,7 +340,8 @@ A tabbed non-transient modal accessible via ribbon icon (lucide `pencil-line` gl
 - **Manuscript**: Ordered scene list (sorted by `dbench-order`) with status and prior-draft count per scene. Click-through opens the scene. A toolbar along the top of this tab surfaces primary project actions as buttons: **New scene**, **New draft of current scene**, **Reorder scenes**, **Compile** (Phase 3+). This tab is the canonical story-order view; ordering is read-only in the list itself: the Reorder scenes button opens the dedicated modal (see § Scene reordering).
 - **Templates**: Manage the built-in scene template and, in later phases, user-defined templates.
 - **Compile**: Book Builder interface (see Compile section). Placeholder in V1; populated in Phase 3.
-- **Settings**: Plugin configuration (drafts folder placement, template selection, style variables, etc.).
+
+Plugin configuration lives in Obsidian's native Settings panel (Options -> Community plugins -> Draft Bench), not in the Control Center. A later Control Center surface (Dashboard or equivalent) will include a launcher that jumps directly to the native settings tab via `app.setting.open()` + `openTabById('draft-bench')`, following the Charted Roots pattern; no settings UI is duplicated inside the modal.
 
 For a deeper Charted Roots architectural reference (drawer shell, tab dispatcher, cache tiers, Tools group, mobile drawer behavior) that may inform a later DB Control Center design pass, see [control-center-reference.md](control-center-reference.md). V1 ships the minimal skeleton described above; the reference doc is context for later evolution, not a blueprint for Phase 1.
 

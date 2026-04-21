@@ -33,9 +33,10 @@ export interface DraftBenchSettings {
 	projectsFolder: string;
 
 	/**
-	 * Default folder template for new scenes within a project. Supports
-	 * the `{project}` token. Default places scenes at the project's
-	 * root, alongside the project note.
+	 * Default folder template for new scenes, **relative to the project's
+	 * folder**. Supports the `{project}` token. Default (empty string)
+	 * places scenes alongside the project note; set to `'Scenes/'` to
+	 * nest them in a subfolder.
 	 */
 	scenesFolder: string;
 
@@ -78,7 +79,7 @@ export interface DraftBenchSettings {
  */
 export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	projectsFolder: 'Draft Bench/{project}/',
-	scenesFolder: '{project}/',
+	scenesFolder: '',
 	draftsFolderPlacement: 'project-local',
 	draftsFolderName: 'Drafts',
 	templatesFolder: 'Draft Bench/Templates/',

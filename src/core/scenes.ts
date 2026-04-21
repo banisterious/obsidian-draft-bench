@@ -58,8 +58,11 @@ export interface ResolvedScenePaths {
 
 /**
  * Pure path resolution. The folder path is `settings.scenesFolder`
- * (or `options.location`) with `{project}` expanded to the project's
- * basename; the file path appends `<title>.md`.
+ * (or `options.location`) interpreted **relative to the project's
+ * folder**, with `{project}` expanded to the project's basename. An
+ * empty template (the default) places the scene alongside the project
+ * note; a non-empty template nests it in a subfolder. The file path
+ * appends `<title>.md`.
  */
 export function resolveScenePaths(
 	settings: DraftBenchSettings,
@@ -77,15 +80,32 @@ export function resolveScenePaths(
 	}
 
 	const template = options.location ?? settings.scenesFolder;
-	const folderPath = template
+	const relative = template
 		.replace(/\{project\}/g, project.file.basename)
 		.replace(/\/+/g, '/')
-		.replace(/\/+$/, '');
+		.replace(/^\/+|\/+$/g, '');
+
+	const projectFolder = parentPath(project.file.path);
+	const folderPath = relative === ''
+		? projectFolder
+		: projectFolder === ''
+			? relative
+			: `${projectFolder}/${relative}`;
 
 	const filePath =
 		folderPath === '' ? `${title}.md` : `${folderPath}/${title}.md`;
 
 	return { folderPath, filePath };
+}
+
+/**
+ * Return the parent-folder portion of a path (everything before the
+ * final slash). Returns `''` for vault-root files.
+ */
+function parentPath(filePath: string): string {
+	const idx = filePath.lastIndexOf('/');
+	if (idx < 0) return '';
+	return filePath.slice(0, idx);
 }
 
 /**

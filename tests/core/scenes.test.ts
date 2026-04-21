@@ -20,7 +20,7 @@ async function seedProject(app: App, settings: DraftBenchSettings, title: string
 describe('resolveScenePaths', () => {
 	const settings: DraftBenchSettings = { ...DEFAULT_SETTINGS };
 
-	it('expands {project} from project basename', async () => {
+	it('defaults to the project folder (empty scenesFolder)', async () => {
 		const app = new App();
 		const project = await seedProject(app, settings, 'My Novel');
 
@@ -28,21 +28,36 @@ describe('resolveScenePaths', () => {
 			project,
 			title: 'Chapter 1',
 		});
-		expect(paths.folderPath).toBe('My Novel');
-		expect(paths.filePath).toBe('My Novel/Chapter 1.md');
+		expect(paths.folderPath).toBe('Draft Bench/My Novel');
+		expect(paths.filePath).toBe('Draft Bench/My Novel/Chapter 1.md');
 	});
 
-	it('honors a custom location override', async () => {
+	it('nests scenes in a subfolder when location is set', async () => {
 		const app = new App();
 		const project = await seedProject(app, settings, 'My Novel');
 
 		const paths = resolveScenePaths(settings, project, {
 			project,
 			title: 'Scene',
-			location: 'Writing/{project}/Scenes/',
+			location: 'Scenes/',
 		});
-		expect(paths.folderPath).toBe('Writing/My Novel/Scenes');
-		expect(paths.filePath).toBe('Writing/My Novel/Scenes/Scene.md');
+		expect(paths.folderPath).toBe('Draft Bench/My Novel/Scenes');
+		expect(paths.filePath).toBe('Draft Bench/My Novel/Scenes/Scene.md');
+	});
+
+	it('expands {project} inside a custom subfolder template', async () => {
+		const app = new App();
+		const project = await seedProject(app, settings, 'My Novel');
+
+		const paths = resolveScenePaths(settings, project, {
+			project,
+			title: 'Scene',
+			location: '{project} Scenes/',
+		});
+		expect(paths.folderPath).toBe('Draft Bench/My Novel/My Novel Scenes');
+		expect(paths.filePath).toBe(
+			'Draft Bench/My Novel/My Novel Scenes/Scene.md'
+		);
 	});
 
 	it('rejects empty title and forbidden characters', async () => {
@@ -95,7 +110,7 @@ describe('createScene', () => {
 			title: 'Opening',
 		});
 
-		expect(file.path).toBe('My Novel/Opening.md');
+		expect(file.path).toBe('Draft Bench/My Novel/Opening.md');
 		expect(file.basename).toBe('Opening');
 
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
@@ -192,13 +207,15 @@ describe('createScene', () => {
 		expect(scenes[0].file.basename).toBe('Visible');
 	});
 
-	it('honors a custom location', async () => {
+	it('honors a custom location (nested subfolder)', async () => {
 		const project = await seedProject(app, settings, 'Project');
 		const scene = await createScene(app, settings, {
 			project,
 			title: 'Elsewhere',
 			location: 'Writing/Drafted/',
 		});
-		expect(scene.path).toBe('Writing/Drafted/Elsewhere.md');
+		expect(scene.path).toBe(
+			'Draft Bench/Project/Writing/Drafted/Elsewhere.md'
+		);
 	});
 });

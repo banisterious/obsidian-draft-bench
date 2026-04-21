@@ -34,6 +34,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 		this.renderFolders();
 		this.renderDrafts();
 		this.renderTemplates();
+		this.renderBases();
 		this.renderSync();
 		this.renderAbout();
 	}
@@ -152,6 +153,29 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 				new FileSuggest(this.app, text.inputEl);
+			});
+	}
+
+	private renderBases(): void {
+		const { containerEl } = this;
+		const { settings } = this.plugin;
+
+		new Setting(containerEl).setName('Bases').setHeading();
+
+		new Setting(containerEl)
+			.setName('Bases folder')
+			.setDesc(
+				'Where the install command writes starter .base files. The folder is created if absent; existing files are never overwritten.'
+			)
+			.addText((text) => {
+				text
+					.setPlaceholder('Draft Bench/Bases')
+					.setValue(settings.basesFolder)
+					.onChange(async (value) => {
+						settings.basesFolder = value;
+						await this.plugin.saveSettings();
+					});
+				new FolderSuggest(this.app, text.inputEl);
 			});
 	}
 

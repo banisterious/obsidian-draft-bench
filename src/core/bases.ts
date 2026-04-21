@@ -1,5 +1,6 @@
 import type { App, TFile } from 'obsidian';
 import type { DraftBenchSettings } from '../model/settings';
+import type { BaseTemplate } from './bases-templates';
 
 /**
  * Bases integration: generate `.base` files (YAML) into a user-
@@ -117,4 +118,54 @@ function parentPath(filePath: string): string {
 	const idx = filePath.lastIndexOf('/');
 	if (idx < 0) return '';
 	return filePath.slice(0, idx);
+}
+
+/**
+ * Aggregate result from `installBases`: per-template outcome buckets.
+ * `created` and `skipped` both list template paths; `errors` captures
+ * the template path and the error message for any that threw during
+ * write.
+ */
+export interface InstallBasesResult {
+	created: string[];
+	skipped: string[];
+	errors: { path: string; message: string }[];
+}
+
+/**
+ * Create every template in `templates` under `settings.basesFolder`.
+ *
+ * Per-template outcomes bucket into `created` (new file written),
+ * `skipped` (a file already exists at the target path — no overwrite),
+ * or `errors` (unexpected write failure). Errors don't abort; the
+ * remaining templates still attempt. Callers shape the user-facing
+ * notice from the aggregate result.
+ */
+export async function installBases(
+	app: App,
+	settings: DraftBenchSettings,
+	templates: readonly BaseTemplate[]
+): Promise<InstallBasesResult> {
+	const result: InstallBasesResult = {
+		created: [],
+		skipped: [],
+		errors: [],
+	};
+
+	for (const template of templates) {
+		const path = resolveBasePath(settings, template.filename);
+		try {
+			const outcome = await createBaseFile(app, path, template.content);
+			if (outcome.status === 'created') {
+				result.created.push(outcome.path);
+			} else {
+				result.skipped.push(outcome.path);
+			}
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			result.errors.push({ path, message });
+		}
+	}
+
+	return result;
 }

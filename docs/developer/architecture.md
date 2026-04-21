@@ -217,16 +217,132 @@ Command: "Draft Bench: Repair project links"
 
 Recommended order, minimizing branch churn:
 
-1. **`core/id.ts`, `core/essentials.ts`** (plus tests). Smallest, pure, building blocks for everything else.
-2. **`model/types.ts`, `model/project.ts`, `model/scene.ts`, `model/draft.ts`, `model/settings.ts`**. Lock down the shapes.
-3. **`core/discovery.ts`** (plus tests). Vault scan + frontmatter filter.
-4. **`commands/create-project.ts`, `ui/modals/new-project-modal.ts`**. First end-to-end user-visible feature.
-5. **`core/linker.ts`, `core/integrity.ts`** (plus tests). Core correctness infrastructure before more features pile on.
-6. **`commands/new-scene.ts`, `ui/modals/new-scene-modal.ts`**. Second user-facing command; exercises the linker.
-7. **`ui/control-center/control-center-modal.ts`** + Project/Manuscript tabs (basic rendering only).
-8. **`commands/new-draft.ts`, `core/drafts.ts`**. Snapshot flow.
-9. **`ui/modals/reorder-scenes-modal.ts`, `commands/reorder-scenes.ts`, `core/reorder.ts`**. Ordering UI.
-10. **`context-menu/*`, `commands/retrofit/*`**. Retrofit surface.
-11. **`ui/leaf-styles.ts`, `styles/notes.css`**. CSS class tagging + base styles.
-12. **`settings/*`**. Settings tab.
-13. **Style Settings integration**. Last polish before Phase 1 cap.
+1. **`core/id.ts`, `core/essentials.ts`** (plus tests). Smallest, pure, building blocks for everything else. *(done)*
+2. **`model/types.ts`, `model/project.ts`, `model/scene.ts`, `model/draft.ts`, `model/settings.ts`**. Lock down the shapes. *(done)*
+3. **`core/discovery.ts`** (plus tests). Vault scan + frontmatter filter. *(done)*
+4. **`commands/create-project.ts`, `ui/modals/new-project-modal.ts`**. First end-to-end user-visible feature. *(done)*
+5. **`core/linker.ts`, `core/integrity.ts`** (plus tests). Core correctness infrastructure before more features pile on. *(linker scaffold only; handler bodies + integrity service land in P1.A-C below)*
+6. **`commands/new-scene.ts`, `ui/modals/new-scene-modal.ts`**. Second user-facing command; exercises the linker. *(done)*
+7. **`ui/control-center/control-center-modal.ts`** + Project/Manuscript tabs (basic rendering only). *(deferred — lands in P1.D below)*
+8. **`commands/new-draft.ts`, `core/drafts.ts`**. Snapshot flow. *(done)*
+9. **`ui/modals/reorder-scenes-modal.ts`, `commands/reorder-scenes.ts`, `core/reorder.ts`**. Ordering UI. *(done)*
+10. **`context-menu/*`, `commands/retrofit/*`**. Retrofit surface. *(done)*
+11. **`ui/leaf-styles.ts`, `styles/notes.css`**. CSS class tagging + base styles. *(done)*
+12. **`settings/*`**. Settings tab. *(done)*
+13. **Style Settings integration**. Last polish before Phase 1 cap. *(deferred — lands in P1.E below)*
+
+---
+
+## Phase 1 remainder
+
+Three Phase 1 items from the list above were skipped or scaffolded-only during the initial implementation pass. Finish them before any Phase 2 work so the bidirectional-linking invariant and the Control Center hub are in place.
+
+**P1.A — Linker handlers (scene ↔ project).**
+
+Implement real bodies for `DraftBenchLinker.handleModify` / `handleDelete` / `handleRename` covering the project-owned reverse arrays (`dbench-scenes` / `dbench-scene-ids`).
+
+- *On modify*: read the scene's declared `dbench-project-id`; ensure that project's reverse arrays include this scene (append if missing). Scan other projects for stale references to this scene's id and remove them (scene moved to a different project).
+- *On delete*: find the declared parent by id, remove the deleted scene from its reverse arrays. No cascade to drafts — leave them orphaned and let the repair service surface them.
+- *On rename*: update the wikilink entry in the parent's reverse array (the id companion is stable and doesn't need touching).
+
+Drive with unit tests modeled on `tests/core/linker.test.ts` (which already covers lifecycle, suspend/resume, and listener counts).
+
+**P1.B — Linker handlers (scene ↔ draft and project ↔ draft single-scene).**
+
+Extend the handler bodies to draft relationships:
+
+- *Scene → Draft*: `dbench-drafts` / `dbench-draft-ids` on scenes, forward refs `dbench-scene` / `dbench-scene-id` on drafts. Same modify/delete/rename semantics.
+- *Project → Draft (single-scene)*: drafts with empty `dbench-scene` but non-empty `dbench-project-id` attach directly to the project's `dbench-drafts` / `dbench-draft-ids` arrays. The handlers dispatch on "does the draft have a scene parent?" before deciding which array to touch.
+
+**P1.C — Integrity service + "Repair project links" command.**
+
+- `src/core/integrity.ts` — `DraftBenchIntegrityService`:
+  - `scanProject(projectId)` returns an `IntegrityReport` listing inconsistencies: missing reverse-array entries, orphan children (id companion points at non-existent note), conflicting refs (wikilink points at A, id companion at B).
+  - Classifies each entry as `auto-repairable` or `conflict`. Auto-repairable cases have an obvious fix; conflicts need user judgment.
+  - `applyRepairs(report)` executes the auto-repairable subset, returns a summary.
+- `src/ui/modals/repair-project-modal.ts` — preview modal per the canonical `preview → confirm → execute → summary` pattern in [ui-reference.md](../planning/ui-reference.md). Shows the report grouped by category, marks conflicts as unrepairable with an explanation.
+- `src/commands/repair-project.ts` — palette command (needs an active project note or a project picker). Also surface via project context menu entry.
+
+**P1.D — Control Center skeleton.**
+
+- `src/ui/control-center/control-center-modal.ts` — tabbed modal shell, accessible via:
+  - Ribbon icon (lucide `pencil-line`) — registered in `main.ts`.
+  - Palette command: "Draft Bench: Open Control Center".
+  - Project note context menu entry.
+- Tabs (Phase 1 scope — rendering only; Phase 2 adds content):
+  - **Project**: project title, status, synopsis placeholder.
+  - **Manuscript**: ordered scene list (read-only; sorted by `dbench-order`). Status and draft-count badges per row. Toolbar along the top with buttons: "New scene", "New draft of current scene", "Reorder scenes", "Compile" (Phase 3+ placeholder). Buttons invoke the existing commands.
+  - **Templates**: placeholder ("Template management — Phase 2").
+  - **Compile**: placeholder ("Book Builder — Phase 3").
+  - **Settings**: mirrors the main Settings tab (inline). Cheap — the same `DraftBenchSettingTab` rendering can run into the tab's containerEl.
+- `src/ui/control-center/tabs/*.ts` — one file per tab for clarity, even if three are placeholders.
+- The modal caches the active project's scene list on construction to avoid re-scanning on tab switches; clear on `onClose()` per [ui-reference.md § Control Center conventions](../planning/ui-reference.md).
+
+**P1.E — Style Settings integration (deferred step 13).**
+
+Pair two pieces that should land together:
+
+- `styles/style-settings.css` — Style Settings manifest block wrapping the variable declarations in `variables.css`. Declares the variable groups (Shared / Scene / Draft) per [specification.md § Style Settings integration](../planning/specification.md).
+- `styles/notes.css` additions — consuming rules for the previously-declared-but-unused variables: scene font-family / font-size / line-height / max-width, draft background, draft text-color. Ship opinionated defaults that read sensibly in Obsidian's default light/dark themes.
+
+After P1.E, Phase 1 is cap-complete and release-eligible.
+
+---
+
+## Phase 2
+
+With Phase 1 actually complete, Phase 2 adds writer-polish features. Same layering rules apply.
+
+**P2.A — User templates.**
+
+Composable with Templater rather than a replacement for it. Writers without Templater still get default template application; writers with Templater get rich body scripting on top.
+
+- `src/core/templates.ts` — per-type template resolution:
+  - Read `settings.templatesFolder`; look for `scene-template.md`, later `chapter-template.md`.
+  - Fall back to built-in defaults (already shipped as V1 string literals) if the file is absent.
+  - Seed the default template file to the folder on first use.
+- Plugin-token resolution: `{{project}}`, `{{project_title}}`, `{{scene_title}}`, `{{scene_order}}`, `{{date}}`, `{{previous_scene_title}}`.
+- Templater delegation: if Templater is installed, invoke its processor on the body before writing. Detect presence via `app.plugins.plugins['templater-obsidian']` or similar.
+- Plumb through `createScene`, `createDraft` (for the draft's initial body carry-forward), and `createProject` (for single-scene project bodies).
+- Settings tab gains a Templates section with per-type template-file pickers (via the existing `FolderSuggest` pattern, tweaked for file selection).
+
+**P2.B — Word counts.**
+
+- `src/core/word-count.ts` — pure counter:
+  - Strip frontmatter, code blocks (fenced + indented), HTML comments, wikilink syntax (keep display text).
+  - Return count for a given markdown string.
+- Per-scene and per-project aggregates, lazily computed and cached in a map keyed by file path + mtime. Invalidate on `vault.on('modify')`; recompute on next read.
+- Control Center surfaces:
+  - Project tab: project total, status breakdown (X draft, Y revision, Z final), optional target-count progress bar.
+  - Manuscript tab: word-count badge per scene row.
+- Optional per-project and per-scene target settings (stored in frontmatter as `dbench-target-words: N`).
+
+**P2.C — Bases starter views.**
+
+- Ship `.base` files in the plugin's repo (not auto-installed):
+  - All projects (sorted by status).
+  - Scenes in current project (ordered by `dbench-order`).
+  - Scenes by status (grouped).
+  - Draft history for a scene.
+- Document in `wiki-content/` and README how to copy them to a vault.
+- Optional: "Draft Bench: Install starter Bases views" command that copies the files to a user-selected folder.
+
+**P2.D — Configurable status vocabulary.**
+
+Deferred from Phase 1 ([specification.md § Resolved](../planning/specification.md) — V1 hardcoded `idea -> draft -> revision -> final`).
+
+- Settings tab: add a Statuses section with an editable list of status values. Default matches V1.
+- Persist via `settings.statusVocabulary: string[]`.
+- Scene modal's status dropdown reads from settings.
+- Validation: require at least one value; warn on removing a value that's in use on an existing note (offer bulk-rename before delete).
+
+---
+
+## Ordering rationale
+
+- **P1.A first** because linker stubs are the largest piece of technical debt; every new feature that writes frontmatter compounds the fragility.
+- **P1.C right after P1.B** because the integrity service's reconciliation rules are the same rules the linker applies inline — building them together locks the shared semantics.
+- **P1.D before Phase 2** because word counts (P2.B) and template management (P2.A) both naturally surface in the Control Center.
+- **P1.E before Phase 2** because Phase 2 features may want Style Settings knobs for visual tuning.
+- **P2.A before P2.B** because templates are independent and exercise the codebase without depending on other Phase 2 items; word counts are additive on top.
+- **P2.C and P2.D** are independent of each other and of the above; can swap order based on writer feedback.

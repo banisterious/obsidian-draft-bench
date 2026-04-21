@@ -108,6 +108,8 @@ function renderSceneList(
 		cls: 'dbench-control-center__scene-list',
 	});
 
+	const wordBadges: { scene: SceneNote; el: HTMLElement }[] = [];
+
 	for (const scene of scenes) {
 		const item = list.createEl('li', {
 			cls: 'dbench-control-center__scene-row',
@@ -134,11 +136,32 @@ function renderSceneList(
 			text: scene.frontmatter['dbench-status'],
 		});
 
+		const wordEl = item.createSpan({
+			cls: 'dbench-control-center__scene-words',
+			text: '...',
+		});
+		wordBadges.push({ scene, el: wordEl });
+
 		const draftCount = scene.frontmatter['dbench-drafts']?.length ?? 0;
 		item.createSpan({
 			cls: 'dbench-control-center__scene-drafts',
 			text: draftCount === 1 ? '1 draft' : `${draftCount} drafts`,
 		});
+	}
+
+	for (const { scene, el } of wordBadges) {
+		void context.plugin.wordCounts
+			.countForScene(scene)
+			.then((count) => {
+				if (!el.isConnected) return;
+				el.setText(
+					`${count.toLocaleString()} ${count === 1 ? 'word' : 'words'}`
+				);
+			})
+			.catch(() => {
+				if (!el.isConnected) return;
+				el.setText('-');
+			});
 	}
 }
 

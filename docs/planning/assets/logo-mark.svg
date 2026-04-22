@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Draft Bench logo mark (compact variant)
+  
+  A simplified version of the full logo, optimized for smaller display sizes
+  (24-64px). Drops the beat slip and keeps the desk edge, chapter stack,
+  and scene page. Heavier stroke weights so the shapes survive scaling.
+  
+  For the ribbon icon, Draft Bench uses Lucide's `pencil-ruler` glyph rather
+  than a custom icon. This mark is for places like the Control Center header,
+  settings tab inline logo, and docs sidebar.
+  
+  Uses currentColor for strokes so it inherits the surrounding text color.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256" role="img" aria-label="Draft Bench mark">
+  <title>Draft Bench</title>
+
+  <!-- Desk front edge only, to anchor the composition -->
+  <line
+    x1="2" y1="58" x2="62" y2="53"
+    stroke="currentColor"
+    stroke-width="3"
+    stroke-linecap="round"/>
+
+  <!-- Chapter stack (back): three pages with stronger strokes -->
+  <g transform="skewY(-4)">
+    <rect x="32" y="14" width="24" height="32" rx="1.5"
+      fill="none" stroke="currentColor" stroke-width="2" opacity="0.35"/>
+    <rect x="30" y="16" width="24" height="32" rx="1.5"
+      fill="none" stroke="currentColor" stroke-width="2" opacity="0.55"/>
+    <rect x="28" y="18" width="24" height="32" rx="1.5"
+      fill="none" stroke="currentColor" stroke-width="2.5"/>
+  </g>
+
+  <!-- Scene page (front, overlapping) -->
+  <g transform="skewY(-4)">
+    <rect x="8" y="24" width="22" height="30" rx="1.5"
+      fill="var(--background-primary, white)"
+      stroke="currentColor" stroke-width="3"/>
+  </g>
+</svg>

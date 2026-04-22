@@ -15,6 +15,14 @@
  *     notation because hyphens aren't valid in dot-notation JS
  *     expressions.
  *   - Formulas follow the same rule: expressions use `note["..."]`.
+ *
+ * Status-vocabulary dependency: the hardcoded `"final"` and
+ * `"revision"` literals inside filter expressions (Revision queue,
+ * Active scenes, etc.) assume the default vocabulary shipped by
+ * `DEFAULT_STATUS_VOCABULARY`. These files are written to the vault
+ * once on install and never regenerated, so writers who rename their
+ * statuses via Settings -> Statuses should update the .base files by
+ * hand to match. The plugin never touches them after creation.
  */
 
 export interface BaseTemplate {

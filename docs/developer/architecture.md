@@ -326,14 +326,16 @@ Composable with Templater rather than a replacement for it. Writers without Temp
 - Document in `wiki-content/` and README how to copy them to a vault.
 - Optional: "Draft Bench: Install starter Bases views" command that copies the files to a user-selected folder.
 
-**P2.D — Configurable status vocabulary.**
+**P2.D — Configurable status vocabulary.** ✅ Shipped.
 
-Deferred from Phase 1 ([specification.md § Resolved](../planning/specification.md) — V1 hardcoded `idea -> draft -> revision -> final`).
-
-- Settings tab: add a Statuses section with an editable list of status values. Default matches V1.
-- Persist via `settings.statusVocabulary: string[]`.
-- Scene modal's status dropdown reads from settings.
-- Validation: require at least one value; warn on removing a value that's in use on an existing note (offer bulk-rename before delete).
+- `DbenchStatus` widened from a literal union to `string`; the built-in default set is exported as `DEFAULT_STATUS_VOCABULARY` (`idea -> draft -> revision -> final`).
+- `settings.statusVocabulary: string[]` persists the active vocabulary; first entry is the default stamped onto new scenes.
+- `EssentialsContext` gained an optional `defaultStatus` field so stamp helpers use the configured default rather than the built-in constant. All creation paths (`createProject`, `createScene`) and retrofit actions (`setAsProject`, `setAsScene`, `setAsDraft`, `completeEssentials`, `addDbenchId`) thread settings through.
+- `WordCountCache`'s aggregate buckets are now `Record<string, number>` with lazy creation; the Project-tab word-count breakdown iterates settings first, then any out-of-vocab buckets the cache discovered.
+- Settings tab Statuses section: ordered row list with drag-handle and keyboard (up/down, j/k) reorder, inline text rename, "Default" badge on row 0, remove button per row (last row's remove is gated). Adding a status appends a "new status" row (counter-suffixed on collision).
+- Renaming an in-use status migrates affected notes in place via `core/statuses.renameStatus` inside `linker.withSuspended`. Removing an in-use status opens `RemoveStatusModal` with three options: rename-and-remove (with a dropdown of alternatives), remove-without-migrating, or cancel.
+- Core helpers at `src/core/statuses.ts`: `filesWithStatus`, `countStatusUsage`, `renameStatus`.
+- `RemoveStatusModal` at `src/ui/modals/remove-status-modal.ts` resolves a `Promise<RemoveStatusResult | null>` for the settings-tab caller.
 
 ---
 

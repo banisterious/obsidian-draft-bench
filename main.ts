@@ -3,19 +3,27 @@ import { DEFAULT_SETTINGS, type DraftBenchSettings } from './src/model/settings'
 import { registerCommands } from './src/commands/register';
 import { registerContextMenu } from './src/context-menu/register';
 import { DraftBenchLinker } from './src/core/linker';
+import { ProjectSelection } from './src/core/selection';
 import { WordCountCache } from './src/core/word-count-cache';
 import { DraftBenchSettingTab } from './src/settings/settings-tab';
-import { ControlCenterModal } from './src/ui/control-center/control-center-modal';
 import { LeafStyles } from './src/ui/leaf-styles';
+import { activateManuscriptView } from './src/ui/manuscript-view/activate';
+import {
+	ManuscriptView,
+	VIEW_TYPE_MANUSCRIPT,
+} from './src/ui/manuscript-view/manuscript-view';
 
 export default class DraftBenchPlugin extends Plugin {
 	settings!: DraftBenchSettings;
 	linker!: DraftBenchLinker;
 	leafStyles!: LeafStyles;
 	wordCounts!: WordCountCache;
+	selection!: ProjectSelection;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
+
+		this.selection = new ProjectSelection();
 
 		this.linker = new DraftBenchLinker(this.app, () => this.settings);
 		this.linker.start();
@@ -27,11 +35,16 @@ export default class DraftBenchPlugin extends Plugin {
 		this.leafStyles = new LeafStyles(this);
 		this.leafStyles.start();
 
+		this.registerView(
+			VIEW_TYPE_MANUSCRIPT,
+			(leaf) => new ManuscriptView(leaf, this)
+		);
+
 		registerCommands(this, () => this.settings, this.linker);
 		registerContextMenu(this, this.linker);
 
 		this.addRibbonIcon('pencil-ruler', 'Open Draft Bench', () => {
-			new ControlCenterModal(this.app, this, this.linker).open();
+			void activateManuscriptView(this.app);
 		});
 
 		this.addSettingTab(new DraftBenchSettingTab(this.app, this));

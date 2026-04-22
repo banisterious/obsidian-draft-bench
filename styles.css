@@ -6,7 +6,7 @@
    Do not edit directly. Edit the component files, then run:
      npm run build:css
 
-   Components: 9
+   Components: 10
 */
 
 
@@ -776,6 +776,158 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
+   MANUSCRIPT-VIEW.CSS  (145 lines, 3.51 KB)
+   -------------------------------------------------------------------------- */
+
+/*
+ * Manuscript workspace-leaf view.
+ *
+ * Per D-07, the leaf hosts the Project summary, Manuscript list, and
+ * toolbar in the right sidebar. Section layout uses the section-base
+ * primitive (see src/ui/manuscript-view/sections/section-base.ts);
+ * this file owns the view-level container, empty state, and section
+ * chrome. Section bodies each own their internal layout via their
+ * own rules (project-summary, manuscript-list) under the shared
+ * section prefix.
+ *
+ * Conventions: all classes use the `.dbench-manuscript-view__`
+ * short-form BEM prefix. Theme variables only (no locally-defined
+ * custom properties) so the leaf adapts to every Obsidian theme.
+ */
+
+.dbench-manuscript-view {
+	padding: var(--dbench-spacing-md);
+	height: 100%;
+	overflow-y: auto;
+}
+
+/*
+ * Empty state — shown when no project is selected. Two variants by
+ * vault state: a welcome with CTA when no projects exist, and a
+ * compact picker prompt when projects exist but none is active.
+ */
+
+.dbench-manuscript-view__empty {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-md);
+	align-items: stretch;
+	padding: var(--dbench-spacing-lg) var(--dbench-spacing-md);
+}
+
+.dbench-manuscript-view__empty-heading {
+	margin: 0;
+	font-size: var(--h3-size);
+	color: var(--text-normal);
+}
+
+.dbench-manuscript-view__empty-body {
+	margin: 0;
+	color: var(--text-muted);
+	line-height: 1.5;
+}
+
+.dbench-manuscript-view__empty-cta {
+	align-self: flex-start;
+}
+
+.dbench-manuscript-view__empty-footnote {
+	margin: 0;
+	padding-top: var(--dbench-spacing-md);
+	color: var(--text-faint);
+	font-size: var(--font-smaller);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.dbench-manuscript-view__empty-picker {
+	width: 100%;
+}
+
+/*
+ * Content wrapper — shown when a project is selected. Holds the
+ * stack of sections plus any top-level view chrome (title, toolbar).
+ */
+
+.dbench-manuscript-view__content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-md);
+}
+
+.dbench-manuscript-view__project-title {
+	margin: 0;
+	font-size: var(--h3-size);
+	color: var(--text-normal);
+}
+
+.dbench-manuscript-view__placeholder {
+	margin: 0;
+	color: var(--text-faint);
+	font-size: var(--font-smaller);
+	font-style: italic;
+}
+
+/*
+ * Section primitive — collapsible accordion with chevron + header +
+ * body. Matches the ARIA accordion pattern; roving tabindex is
+ * handled in TypeScript.
+ */
+
+.dbench-manuscript-view__section {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	background-color: var(--background-primary);
+}
+
+.dbench-manuscript-view__section-header {
+	display: flex;
+	align-items: center;
+	gap: var(--dbench-spacing-sm);
+	padding: var(--dbench-spacing-sm) var(--dbench-spacing-md);
+	cursor: pointer;
+	user-select: none;
+	outline: none;
+	min-height: 44px;
+}
+
+.dbench-manuscript-view__section-header:focus {
+	box-shadow: inset 2px 0 0 var(--interactive-accent);
+}
+
+.dbench-manuscript-view__section-chevron,
+.dbench-manuscript-view__section-icon {
+	display: inline-flex;
+	align-items: center;
+	color: var(--text-muted);
+	flex: 0 0 auto;
+}
+
+.dbench-manuscript-view__section-title {
+	flex: 1 1 auto;
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.dbench-manuscript-view__section-summary {
+	flex: 0 0 auto;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+	font-variant-numeric: tabular-nums;
+}
+
+.dbench-manuscript-view__section-body {
+	padding: var(--dbench-spacing-md);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.dbench-manuscript-view__section-body--collapsed {
+	display: none;
+}
+
+
+/* End of manuscript-view.css */
+
+/* --------------------------------------------------------------------------
    SETTINGS-TAB.CSS  (119 lines, 2.66 KB)
    -------------------------------------------------------------------------- */
 
@@ -905,14 +1057,15 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    BUILD SUMMARY
    ==========================================================================
 
-   Components: 7
-   Total:      842 lines, 21.74 KB
+   Components: 8
+   Total:      987 lines, 25.24 KB
    - variables.css: 71 lines, 2.34 KB
    - style-settings.css: 98 lines, 3.45 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
    - control-center.css: 338 lines, 7.84 KB
    - reorder-modal.css: 103 lines, 2.31 KB
+   - manuscript-view.css: 145 lines, 3.51 KB
    - settings-tab.css: 119 lines, 2.66 KB
 */
 

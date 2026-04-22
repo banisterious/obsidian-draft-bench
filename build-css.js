@@ -32,6 +32,7 @@ const CONFIG = {
 		'control-center.css',      // Tabbed Control Center modal
 		'modals.css',              // Shared modal base styles
 		'reorder-modal.css',       // Scene reordering modal (keyboard-first)
+		'manuscript-view.css',     // Manuscript workspace-leaf view (dockable)
 		'settings-tab.css',        // Plugin settings tab styling
 		'responsive.css'           // Breakpoint overrides (last so it can override anything)
 	]

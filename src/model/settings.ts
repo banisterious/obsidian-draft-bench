@@ -99,6 +99,16 @@ export interface DraftBenchSettings {
 	 * be disabled for performance in very large vaults.
 	 */
 	syncOnFileModify: boolean;
+
+	/**
+	 * One-shot flag: whether the Manuscript view has been auto-revealed
+	 * to the writer after their first project creation. Set to true the
+	 * first time a project is created from an empty vault so the leaf
+	 * becomes visible without surprising writers who are retrofitting
+	 * existing vaults (where projects might be created silently during
+	 * bulk retrofit). Subsequent project creations don't re-reveal.
+	 */
+	firstProjectRevealed: boolean;
 }
 
 /**
@@ -116,4 +126,5 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	statusVocabulary: [...DEFAULT_STATUS_VOCABULARY],
 	enableBidirectionalSync: true,
 	syncOnFileModify: true,
+	firstProjectRevealed: false,
 };

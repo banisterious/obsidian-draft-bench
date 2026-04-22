@@ -102,10 +102,26 @@ export class ManuscriptView extends ItemView {
 			this.render();
 		});
 
-		// Freshness: re-render on vault modify when the changed file is
-		// relevant to the currently-rendered project.
+		// Freshness: two listeners feed a shared debounced refresh.
+		//
+		// - vault.on('modify') catches body edits (word-count recompute
+		//   on prose additions) and has a project-scoped gate so
+		//   unrelated vault noise doesn't trigger work.
+		// - metadataCache.on('changed') catches frontmatter-side updates
+		//   *after* Obsidian has indexed them. This handles the new-
+		//   project race (project just got stamped but findProjects
+		//   can't see it yet), property-panel edits on scenes (status
+		//   / target changes), and delete + re-stamp flows. No gate:
+		//   the debounced re-render is cheap, and catching every
+		//   metadata update keeps the leaf trustworthy as an
+		//   ambient surface.
 		this.registerEvent(
 			this.plugin.app.vault.on('modify', (file) => this.onFileModify(file))
+		);
+		this.registerEvent(
+			this.plugin.app.metadataCache.on('changed', () =>
+				this.scheduleRefresh()
+			)
 		);
 
 		this.render();
@@ -168,7 +184,10 @@ export class ManuscriptView extends ItemView {
 		// Invalidate word-count cache for the touched file regardless;
 		// the re-render reads the fresh count.
 		this.plugin.wordCounts.invalidate(file.path);
+		this.scheduleRefresh();
+	}
 
+	private scheduleRefresh(): void {
 		if (this.modifyDebounce !== null) {
 			window.clearTimeout(this.modifyDebounce);
 		}

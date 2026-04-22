@@ -1,6 +1,8 @@
-import { PluginSettingTab, Setting, type App } from 'obsidian';
+import { Notice, PluginSettingTab, Setting, setIcon, type App } from 'obsidian';
 import type DraftBenchPlugin from '../../main';
 import type { DraftsFolderPlacement } from '../model/settings';
+import { countStatusUsage, renameStatus } from '../core/statuses';
+import { RemoveStatusModal } from '../ui/modals/remove-status-modal';
 import { FileSuggest } from './suggesters/file-suggest';
 import { FolderSuggest } from './suggesters/folder-suggest';
 
@@ -11,6 +13,7 @@ import { FolderSuggest } from './suggesters/folder-suggest';
  * Sections:
  *   - Folders      : projects / scenes / templates folder paths
  *   - Drafts       : drafts-folder placement + name
+ *   - Statuses     : editable workflow-status vocabulary
  *   - Sync         : bidirectional linker toggles
  *   - About        : version + repository link
  *
@@ -19,6 +22,9 @@ import { FolderSuggest } from './suggesters/folder-suggest';
  * name, not a path — suggestions don't apply).
  */
 export class DraftBenchSettingTab extends PluginSettingTab {
+	private statusFocusIndex = 0;
+	private statusDragFromIndex: number | null = null;
+
 	constructor(
 		app: App,
 		private readonly plugin: DraftBenchPlugin
@@ -35,6 +41,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 		this.renderDrafts();
 		this.renderTemplates();
 		this.renderBases();
+		this.renderStatuses();
 		this.renderSync();
 		this.renderAbout();
 	}
@@ -177,6 +184,284 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 					});
 				new FolderSuggest(this.app, text.inputEl);
 			});
+	}
+
+	private renderStatuses(): void {
+		const { containerEl } = this;
+		const { settings } = this.plugin;
+
+		new Setting(containerEl).setName('Statuses').setHeading();
+
+		new Setting(containerEl)
+			.setName('Workflow vocabulary')
+			.setDesc(
+				'The ordered list of statuses available on scenes and projects. The first value is the default for new scenes. Drag by the handle, or focus a row and press up/down, to reorder.'
+			);
+
+		const list = containerEl.createEl('ol', {
+			cls: 'dbench-statuses__list',
+			attr: {
+				role: 'listbox',
+				'aria-label': 'Status vocabulary',
+			},
+		});
+
+		settings.statusVocabulary.forEach((status, index) => {
+			this.renderStatusRow(list, status, index);
+		});
+
+		const addButton = containerEl.createEl('button', {
+			text: 'Add status',
+			cls: 'dbench-statuses__add',
+		});
+		addButton.addEventListener('click', () => {
+			void this.handleAddStatus();
+		});
+	}
+
+	private renderStatusRow(
+		list: HTMLOListElement,
+		status: string,
+		index: number
+	): void {
+		const { settings } = this.plugin;
+		const isDefault = index === 0;
+
+		const row = list.createEl('li', {
+			cls: 'dbench-statuses__row',
+			attr: {
+				role: 'option',
+				tabindex: index === this.statusFocusIndex ? '0' : '-1',
+				'aria-selected':
+					index === this.statusFocusIndex ? 'true' : 'false',
+				draggable: 'true',
+			},
+		});
+
+		const handle = row.createEl('span', {
+			cls: 'dbench-statuses__handle',
+			attr: { 'aria-hidden': 'true', title: 'Drag to reorder' },
+		});
+		setIcon(handle, 'grip-vertical');
+
+		const input = row.createEl('input', {
+			cls: 'dbench-statuses__input',
+			type: 'text',
+			attr: { 'aria-label': `Status ${index + 1}`, value: status },
+		});
+		input.value = status;
+		input.addEventListener('change', () => {
+			void this.handleRenameStatus(index, input.value);
+		});
+
+		if (isDefault) {
+			row.createEl('span', {
+				cls: 'dbench-statuses__badge',
+				text: 'Default',
+			});
+		}
+
+		const removeButton = row.createEl('button', {
+			cls: 'dbench-statuses__remove',
+			attr: {
+				'aria-label': `Remove "${status}"`,
+				title: 'Remove status',
+			},
+		});
+		setIcon(removeButton, 'x');
+		removeButton.disabled = settings.statusVocabulary.length <= 1;
+		removeButton.addEventListener('click', () => {
+			void this.handleRemoveStatus(index);
+		});
+
+		row.addEventListener('keydown', (ev) => {
+			if (ev.target !== row) return; // don't hijack input typing
+			if (ev.key === 'ArrowUp' || ev.key === 'k' || ev.key === 'K') {
+				ev.preventDefault();
+				void this.moveStatus(index, -1);
+			} else if (
+				ev.key === 'ArrowDown' ||
+				ev.key === 'j' ||
+				ev.key === 'J'
+			) {
+				ev.preventDefault();
+				void this.moveStatus(index, 1);
+			}
+		});
+
+		row.addEventListener('focus', () => {
+			this.statusFocusIndex = index;
+		});
+
+		row.addEventListener('dragstart', (ev) => {
+			this.statusDragFromIndex = index;
+			row.addClass('dbench-statuses__row--dragging');
+			if (ev.dataTransfer) {
+				ev.dataTransfer.effectAllowed = 'move';
+				ev.dataTransfer.setData('text/plain', String(index));
+			}
+		});
+		row.addEventListener('dragover', (ev) => {
+			if (this.statusDragFromIndex === null) return;
+			ev.preventDefault();
+			if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+			const rect = row.getBoundingClientRect();
+			const before = ev.clientY - rect.top < rect.height / 2;
+			row.removeClass(
+				'dbench-statuses__row--drop-before',
+				'dbench-statuses__row--drop-after'
+			);
+			row.addClass(
+				before
+					? 'dbench-statuses__row--drop-before'
+					: 'dbench-statuses__row--drop-after'
+			);
+		});
+		row.addEventListener('dragleave', () => {
+			row.removeClass(
+				'dbench-statuses__row--drop-before',
+				'dbench-statuses__row--drop-after'
+			);
+		});
+		row.addEventListener('drop', (ev) => {
+			ev.preventDefault();
+			row.removeClass(
+				'dbench-statuses__row--drop-before',
+				'dbench-statuses__row--drop-after'
+			);
+			const from = this.statusDragFromIndex;
+			if (from === null || from === index) return;
+			const rect = row.getBoundingClientRect();
+			const before = ev.clientY - rect.top < rect.height / 2;
+			let to = before ? index : index + 1;
+			if (from < to) to -= 1;
+			this.statusDragFromIndex = null;
+			void this.moveStatusTo(from, to);
+		});
+		row.addEventListener('dragend', () => {
+			this.statusDragFromIndex = null;
+			row.removeClass(
+				'dbench-statuses__row--dragging',
+				'dbench-statuses__row--drop-before',
+				'dbench-statuses__row--drop-after'
+			);
+		});
+
+		if (index === this.statusFocusIndex) {
+			queueMicrotask(() => row.focus());
+		}
+	}
+
+	private async moveStatus(from: number, delta: number): Promise<void> {
+		await this.moveStatusTo(from, from + delta);
+	}
+
+	private async moveStatusTo(from: number, to: number): Promise<void> {
+		const vocab = this.plugin.settings.statusVocabulary;
+		const clamped = Math.max(0, Math.min(vocab.length - 1, to));
+		if (clamped === from) return;
+		const [moved] = vocab.splice(from, 1);
+		vocab.splice(clamped, 0, moved);
+		this.statusFocusIndex = clamped;
+		await this.plugin.saveSettings();
+		this.display();
+	}
+
+	private async handleAddStatus(): Promise<void> {
+		const vocab = this.plugin.settings.statusVocabulary;
+		const base = 'new status';
+		let candidate = base;
+		let counter = 1;
+		while (vocab.includes(candidate)) {
+			counter += 1;
+			candidate = `${base} ${counter}`;
+		}
+		vocab.push(candidate);
+		this.statusFocusIndex = vocab.length - 1;
+		await this.plugin.saveSettings();
+		this.display();
+	}
+
+	private async handleRenameStatus(
+		index: number,
+		rawValue: string
+	): Promise<void> {
+		const vocab = this.plugin.settings.statusVocabulary;
+		const current = vocab[index];
+		const trimmed = rawValue.trim();
+
+		if (trimmed === '') {
+			new Notice('Status cannot be empty.');
+			this.display();
+			return;
+		}
+		if (trimmed === current) return;
+		if (
+			vocab.some((s, i) => i !== index && s === trimmed)
+		) {
+			new Notice(`Status "${trimmed}" already exists.`);
+			this.display();
+			return;
+		}
+
+		// Migrate any notes using the old value to the new one, so
+		// renaming a still-in-use status stays non-destructive.
+		const affected = countStatusUsage(this.app, current);
+		if (affected > 0) {
+			await this.plugin.linker.withSuspended(() =>
+				renameStatus(this.app, current, trimmed)
+			);
+		}
+		vocab[index] = trimmed;
+		await this.plugin.saveSettings();
+		if (affected > 0) {
+			const noun = affected === 1 ? 'note' : 'notes';
+			new Notice(
+				`✓ Renamed status on ${affected} ${noun}: ${current} -> ${trimmed}`
+			);
+		}
+		this.display();
+	}
+
+	private async handleRemoveStatus(index: number): Promise<void> {
+		const vocab = this.plugin.settings.statusVocabulary;
+		if (vocab.length <= 1) {
+			new Notice('At least one status is required.');
+			return;
+		}
+		const target = vocab[index];
+		const usage = countStatusUsage(this.app, target);
+
+		if (usage === 0) {
+			vocab.splice(index, 1);
+			this.statusFocusIndex = Math.max(0, Math.min(index, vocab.length - 1));
+			await this.plugin.saveSettings();
+			this.display();
+			return;
+		}
+
+		const others = vocab.filter((_, i) => i !== index);
+		const result = await RemoveStatusModal.open(this.app, {
+			status: target,
+			count: usage,
+			otherStatuses: others,
+		});
+		if (result === null) return;
+
+		if (result.renameTo !== null) {
+			const changed = await this.plugin.linker.withSuspended(() =>
+				renameStatus(this.app, target, result.renameTo as string)
+			);
+			const noun = changed === 1 ? 'note' : 'notes';
+			new Notice(
+				`✓ Migrated ${changed} ${noun}: ${target} -> ${result.renameTo}`
+			);
+		}
+
+		vocab.splice(index, 1);
+		this.statusFocusIndex = Math.max(0, Math.min(index, vocab.length - 1));
+		await this.plugin.saveSettings();
+		this.display();
 	}
 
 	private renderSync(): void {

@@ -95,9 +95,37 @@ export function resolveSceneTemplatePath(settings: DraftBenchSettings): string {
 }
 
 /**
+ * Resolve the scene-template TFile, seeding the file with
+ * `BUILTIN_SCENE_TEMPLATE` on the path from `resolveSceneTemplatePath`
+ * if it doesn't exist. The parent folder is created on demand.
+ *
+ * The Templater integration uses the returned TFile as the input to
+ * `read_and_parse_template`; the plain flow reads the file via
+ * `loadSceneTemplateBody`. Either way the seed-on-first-use behavior
+ * lives here.
+ */
+export async function ensureSceneTemplateFile(
+	app: App,
+	settings: DraftBenchSettings
+): Promise<TFile> {
+	const path = resolveSceneTemplatePath(settings);
+	const existing = app.vault.getAbstractFileByPath(path);
+
+	if (existing !== null && isFile(existing)) {
+		return existing;
+	}
+
+	const folder = parentPath(path);
+	if (folder !== '' && app.vault.getAbstractFileByPath(folder) === null) {
+		await app.vault.createFolder(folder);
+	}
+
+	return app.vault.create(path, BUILTIN_SCENE_TEMPLATE);
+}
+
+/**
  * Load the scene-template body from disk, seeding the file with
- * `BUILTIN_SCENE_TEMPLATE` if it doesn't exist. The parent folder is
- * created on demand.
+ * `BUILTIN_SCENE_TEMPLATE` if it doesn't exist.
  *
  * Returns the raw body (pre-substitution). Callers chain
  * `substituteTokens` to produce the final body, or use
@@ -107,20 +135,8 @@ export async function loadSceneTemplateBody(
 	app: App,
 	settings: DraftBenchSettings
 ): Promise<string> {
-	const path = resolveSceneTemplatePath(settings);
-	const existing = app.vault.getAbstractFileByPath(path);
-
-	if (existing !== null && isFile(existing)) {
-		return app.vault.read(existing);
-	}
-
-	const folder = parentPath(path);
-	if (folder !== '' && app.vault.getAbstractFileByPath(folder) === null) {
-		await app.vault.createFolder(folder);
-	}
-
-	await app.vault.create(path, BUILTIN_SCENE_TEMPLATE);
-	return BUILTIN_SCENE_TEMPLATE;
+	const file = await ensureSceneTemplateFile(app, settings);
+	return app.vault.read(file);
 }
 
 /**

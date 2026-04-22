@@ -1,10 +1,20 @@
-import type { App, TFile } from 'obsidian';
+import { Notice, type App, type TFile } from 'obsidian';
 import type { DbenchId, DbenchStatus } from '../model/types';
 import type { DraftBenchSettings } from '../model/settings';
 import type { ProjectNote, SceneNote } from './discovery';
 import { findScenesInProject } from './discovery';
 import { stampSceneEssentials } from './essentials';
-import { isoDate, resolveSceneTemplate } from './templates';
+import {
+	ensureSceneTemplateFile,
+	isoDate,
+	resolveSceneTemplate,
+	substituteTokens,
+	type TemplateContext,
+} from './templates';
+import {
+	isTemplaterEnabled,
+	renderTemplateThroughTemplater,
+} from './templater';
 
 /**
  * Scene creation: resolves the target file path, renders the scene
@@ -152,16 +162,16 @@ export async function createScene(
 	const defaultStatus = settings.statusVocabulary[0];
 	const status = options.status ?? defaultStatus;
 
-	const templateBody = await resolveSceneTemplate(app, settings, {
+	const context: TemplateContext = {
 		project: projectWikilink,
 		projectTitle: options.project.file.basename,
 		sceneTitle: options.title.trim(),
 		sceneOrder: order,
 		date: isoDate(),
 		previousSceneTitle: previousSceneTitleAt(app, projectId, order),
-	});
+	};
 
-	const file = await app.vault.create(filePath, templateBody);
+	const file = await renderSceneBody(app, settings, context, filePath);
 
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Pre-set scene-specific fields so stampSceneEssentials' setIfMissing
@@ -191,6 +201,51 @@ export async function createScene(
 	});
 
 	return file;
+}
+
+/**
+ * Produce the scene file with its initial body.
+ *
+ * When Templater is installed, the scene file is created empty, then
+ * Templater processes the template with the new scene file as its
+ * `tp.file.*` context. Our plugin-token substitution runs on the
+ * result; Templater's `<% %>` and our `{{...}}` don't collide, so the
+ * order is interchangeable in practice but fixed for predictability.
+ *
+ * When Templater isn't installed (or throws), the scene file is
+ * created directly with the plain plugin-token-substituted body. A
+ * Templater failure surfaces as a Notice but doesn't block scene
+ * creation.
+ */
+async function renderSceneBody(
+	app: App,
+	settings: DraftBenchSettings,
+	context: TemplateContext,
+	filePath: string
+): Promise<TFile> {
+	if (isTemplaterEnabled(app)) {
+		const templateFile = await ensureSceneTemplateFile(app, settings);
+		const emptyFile = await app.vault.create(filePath, '');
+		const processed = await renderTemplateThroughTemplater(
+			app,
+			templateFile,
+			emptyFile
+		);
+		if (processed === null) {
+			new Notice(
+				'Templater failed to process the scene template; using the plain template body.'
+			);
+			const fallback = substituteTokens(await app.vault.read(templateFile), context);
+			await app.vault.modify(emptyFile, fallback);
+			return emptyFile;
+		}
+		const body = substituteTokens(processed, context);
+		await app.vault.modify(emptyFile, body);
+		return emptyFile;
+	}
+
+	const body = await resolveSceneTemplate(app, settings, context);
+	return app.vault.create(filePath, body);
 }
 
 /**

@@ -269,16 +269,38 @@ export class Notice {
 	}
 }
 
+/**
+ * Minimal `app.plugins` stub. Tests that need to emulate an installed
+ * plugin call `_register(id, instance)`; everything else returns null.
+ */
+export class Plugins {
+	private installed = new Map<string, unknown>();
+
+	getPlugin(id: string): unknown | null {
+		return this.installed.get(id) ?? null;
+	}
+
+	_register(id: string, instance: unknown): void {
+		this.installed.set(id, instance);
+	}
+
+	_unregister(id: string): void {
+		this.installed.delete(id);
+	}
+}
+
 export class App {
 	vault: Vault;
 	metadataCache: MetadataCache;
 	fileManager: FileManager;
+	plugins: Plugins;
 
 	constructor() {
 		this.vault = new Vault();
 		this.metadataCache = new MetadataCache();
 		this.fileManager = new FileManager(this.vault, this.metadataCache);
 		this.vault._attachMetadataCache(this.metadataCache);
+		this.plugins = new Plugins();
 	}
 }
 

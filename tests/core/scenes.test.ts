@@ -270,3 +270,90 @@ describe('createScene', () => {
 		);
 	});
 });
+
+describe('createScene with Templater installed', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+	});
+
+	it('routes the template through Templater when installed, then applies plugin tokens', async () => {
+		const calls: Array<{ template: string; target: string }> = [];
+		app.plugins._register('templater-obsidian', {
+			templater: {
+				create_running_config: (
+					template: { path: string },
+					target: { path: string }
+				) => {
+					calls.push({ template: template.path, target: target.path });
+					return { template, target };
+				},
+				read_and_parse_template: async () => {
+					// Emit a body that still contains a plugin token so we can
+					// verify the pipeline substitutes it after Templater runs.
+					return 'Processed by Templater.\n{{scene_title}} ends here.';
+				},
+			},
+		});
+
+		const project = await seedProject(app, settings, 'My Novel');
+		const file = await createScene(app, settings, {
+			project,
+			title: 'Opening',
+		});
+
+		expect(calls).toHaveLength(1);
+		expect(calls[0].target).toBe('Draft Bench/My Novel/Opening.md');
+
+		const body = await app.vault.read(file);
+		const withoutFm = body.replace(/^---\n[\s\S]*?\n---\n/, '');
+		expect(withoutFm).toContain('Processed by Templater.');
+		expect(withoutFm).toContain('Opening ends here.');
+		// Frontmatter still got stamped after Templater + body write.
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		expect(fm?.['dbench-type']).toBe('scene');
+	});
+
+	it('falls back to the plain template body when Templater throws', async () => {
+		app.plugins._register('templater-obsidian', {
+			templater: {
+				create_running_config: () => ({}),
+				read_and_parse_template: async () => {
+					throw new Error('template parse error');
+				},
+			},
+		});
+
+		const project = await seedProject(app, settings, 'Novel');
+		const file = await createScene(app, settings, {
+			project,
+			title: 'Safe',
+		});
+
+		const body = await app.vault.read(file);
+		const withoutFm = body.replace(/^---\n[\s\S]*?\n---\n/, '');
+		// The built-in template's headings come through (with plugin tokens
+		// substituted — the template doesn't actually contain any of our
+		// tokens in the body, so this is a structural check).
+		expect(withoutFm).toContain('## Draft');
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		expect(fm?.['dbench-type']).toBe('scene');
+	});
+
+	it('uses the plain flow when Templater is not registered', async () => {
+		// Same as the default path, just asserting explicitly that the
+		// Templater branch doesn't run when the plugin isn't present.
+		const project = await seedProject(app, settings, 'Novel');
+		const file = await createScene(app, settings, {
+			project,
+			title: 'Plain',
+		});
+
+		const body = await app.vault.read(file);
+		const withoutFm = body.replace(/^---\n[\s\S]*?\n---\n/, '');
+		expect(withoutFm).toContain('## Draft');
+	});
+});

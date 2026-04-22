@@ -22,6 +22,13 @@ export interface ProjectFrontmatter {
 	'dbench-status': DbenchStatus;
 	'dbench-scenes': string[];
 	'dbench-scene-ids': DbenchId[];
+	/**
+	 * Opt-in authoring target for total project word count. Writers set
+	 * this via the Properties panel or in a template's frontmatter; not
+	 * stamped at creation. The Project-tab hero progress bar reads from
+	 * this value when set.
+	 */
+	'dbench-target-words'?: number;
 }
 
 /**

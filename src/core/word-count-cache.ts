@@ -1,6 +1,7 @@
 import type { App, TFile } from 'obsidian';
 import type { ProjectNote, SceneNote } from './discovery';
 import { findScenesInProject } from './discovery';
+import { readTargetWords } from './targets';
 import { countScene } from './word-count';
 
 /**
@@ -27,11 +28,25 @@ interface CacheEntry {
  * scenes appear as keys. UIs that want to render zero-rows for
  * not-yet-used statuses should iterate the vocabulary explicitly and
  * fall back to `0` for absent keys.
+ *
+ * Target fields (populated from `dbench-target-words` frontmatter):
+ *
+ * - `projectTarget`: the target on the project note itself, or `null`
+ *   when unset. Treated as the authoritative project target; scene
+ *   targets are informational (per-scene progress only).
+ * - `sceneTargetSum`: sum of `dbench-target-words` across scenes with
+ *   targets. Not used by the Project-tab hero bar (that's driven by
+ *   `projectTarget` alone) but exposed for UIs that want a
+ *   "sum-of-parts" read.
+ * - `scenesWithTargets`: count of scenes whose target is set.
  */
 export interface ProjectWordCounts {
 	total: number;
 	wordsByStatus: Record<string, number>;
 	scenesByStatus: Record<string, number>;
+	projectTarget: number | null;
+	sceneTargetSum: number;
+	scenesWithTargets: number;
 }
 
 /**
@@ -76,6 +91,9 @@ export class WordCountCache {
 			project.frontmatter['dbench-id']
 		);
 		const result = emptyCounts();
+		result.projectTarget = readTargetWords(
+			project.frontmatter as unknown as Record<string, unknown>
+		);
 		for (const scene of scenes) {
 			const count = await this.countForScene(scene);
 			const status = scene.frontmatter['dbench-status'];
@@ -83,6 +101,13 @@ export class WordCountCache {
 			result.wordsByStatus[status] = (result.wordsByStatus[status] ?? 0) + count;
 			result.scenesByStatus[status] =
 				(result.scenesByStatus[status] ?? 0) + 1;
+			const sceneTarget = readTargetWords(
+				scene.frontmatter as unknown as Record<string, unknown>
+			);
+			if (sceneTarget !== null) {
+				result.sceneTargetSum += sceneTarget;
+				result.scenesWithTargets += 1;
+			}
 		}
 		return result;
 	}
@@ -120,5 +145,8 @@ function emptyCounts(): ProjectWordCounts {
 		total: 0,
 		wordsByStatus: {},
 		scenesByStatus: {},
+		projectTarget: null,
+		sceneTargetSum: 0,
+		scenesWithTargets: 0,
 	};
 }

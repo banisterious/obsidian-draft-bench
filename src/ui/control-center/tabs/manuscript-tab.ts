@@ -1,6 +1,7 @@
 import { Notice, setIcon } from 'obsidian';
 import { isSceneFrontmatter } from '../../../model/scene';
 import type { SceneNote } from '../../../core/discovery';
+import { formatProgress, readTargetWords } from '../../../core/targets';
 import { NewSceneModal } from '../../modals/new-scene-modal';
 import { NewDraftModal } from '../../modals/new-draft-modal';
 import { ReorderScenesModal } from '../../modals/reorder-scenes-modal';
@@ -136,10 +137,10 @@ function renderSceneList(
 			text: scene.frontmatter['dbench-status'],
 		});
 
-		const wordEl = item.createSpan({
+		const wordEl = item.createDiv({
 			cls: 'dbench-control-center__scene-words',
-			text: '...',
 		});
+		wordEl.setText('...');
 		wordBadges.push({ scene, el: wordEl });
 
 		const draftCount = scene.frontmatter['dbench-drafts']?.length ?? 0;
@@ -154,15 +155,49 @@ function renderSceneList(
 			.countForScene(scene)
 			.then((count) => {
 				if (!el.isConnected) return;
-				el.setText(
-					`${count.toLocaleString()} ${count === 1 ? 'word' : 'words'}`
+				const target = readTargetWords(
+					scene.frontmatter as unknown as Record<string, unknown>
 				);
+				if (target === null) {
+					el.setText(
+						`${count.toLocaleString()} ${count === 1 ? 'word' : 'words'}`
+					);
+					return;
+				}
+				renderSceneProgress(el, count, target);
 			})
 			.catch(() => {
 				if (!el.isConnected) return;
 				el.setText('-');
 			});
 	}
+}
+
+function renderSceneProgress(
+	container: HTMLElement,
+	count: number,
+	target: number
+): void {
+	container.empty();
+	container.addClass('dbench-control-center__scene-words--with-target');
+	const view = formatProgress(count, target);
+	if (view.overage) {
+		container.addClass('dbench-control-center__scene-words--overage');
+	} else {
+		container.removeClass('dbench-control-center__scene-words--overage');
+	}
+
+	container.createEl('span', {
+		cls: 'dbench-control-center__scene-progress-label',
+		text: view.label,
+	});
+	const track = container.createDiv({
+		cls: 'dbench-control-center__scene-progress-track',
+	});
+	const fill = track.createDiv({
+		cls: 'dbench-control-center__scene-progress-fill',
+	});
+	fill.style.width = `${view.percent}%`;
 }
 
 export const manuscriptTab: TabDefinition = {

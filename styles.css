@@ -321,7 +321,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   CONTROL-CENTER.CSS  (269 lines, 5.95 KB)
+   CONTROL-CENTER.CSS  (338 lines, 7.84 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -467,6 +467,39 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	color: var(--text-muted);
 }
 
+/*
+ * Project-tab hero progress bar. Sits above the total + status
+ * breakdown when the project has a dbench-target-words set. Overage
+ * applies a warning-tinted fill without capping the label, so a
+ * writer who's blown past the target sees "3,200 / 3,000 (107%)"
+ * clearly.
+ */
+.dbench-control-center__progress-hero {
+	margin-bottom: var(--dbench-spacing-md);
+}
+
+.dbench-control-center__progress-label {
+	font-variant-numeric: tabular-nums;
+	margin-bottom: var(--dbench-spacing-xs);
+}
+
+.dbench-control-center__progress-track {
+	background-color: var(--background-modifier-border);
+	border-radius: var(--dbench-radius-sm);
+	height: 8px;
+	overflow: hidden;
+}
+
+.dbench-control-center__progress-fill {
+	background-color: var(--interactive-accent);
+	height: 100%;
+	transition: width var(--dbench-transition-base, 120ms) ease;
+}
+
+.dbench-control-center__progress-hero--overage .dbench-control-center__progress-fill {
+	background-color: var(--color-orange, #e0800c);
+}
+
 .dbench-control-center__status-breakdown {
 	display: grid;
 	grid-template-columns: max-content 1fr;
@@ -569,6 +602,42 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	color: var(--text-muted);
 	font-size: var(--font-smaller);
 	font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Per-scene progress variant on the Manuscript tab, used when the
+ * scene has a dbench-target-words set. Stacks label over track so it
+ * fits in a single row height without crowding the title.
+ */
+.dbench-control-center__scene-words--with-target {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+	min-width: 140px;
+}
+
+.dbench-control-center__scene-progress-label {
+	font-size: var(--font-smaller);
+	color: var(--text-muted);
+}
+
+.dbench-control-center__scene-progress-track {
+	width: 100%;
+	background-color: var(--background-modifier-border);
+	border-radius: var(--dbench-radius-sm);
+	height: 4px;
+	overflow: hidden;
+}
+
+.dbench-control-center__scene-progress-fill {
+	background-color: var(--interactive-accent);
+	height: 100%;
+	transition: width var(--dbench-transition-base, 120ms) ease;
+}
+
+.dbench-control-center__scene-words--overage .dbench-control-center__scene-progress-fill {
+	background-color: var(--color-orange, #e0800c);
 }
 
 .dbench-control-center__scene-drafts {
@@ -837,12 +906,12 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 7
-   Total:      773 lines, 19.84 KB
+   Total:      842 lines, 21.74 KB
    - variables.css: 71 lines, 2.34 KB
    - style-settings.css: 98 lines, 3.45 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - control-center.css: 269 lines, 5.95 KB
+   - control-center.css: 338 lines, 7.84 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - settings-tab.css: 119 lines, 2.66 KB
 */

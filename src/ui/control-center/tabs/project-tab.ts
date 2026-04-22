@@ -1,4 +1,5 @@
 import type { ProjectWordCounts } from '../../../core/word-count-cache';
+import { formatProgress } from '../../../core/targets';
 import type { TabContext, TabDefinition } from './types';
 
 function render(container: HTMLElement, context: TabContext): void {
@@ -73,6 +74,12 @@ function buildWordCountsView(
 ): HTMLElement {
 	const wrapper = document.createElement('div');
 
+	if (counts.projectTarget !== null) {
+		wrapper.appendChild(
+			buildProgressHero(counts.total, counts.projectTarget)
+		);
+	}
+
 	const total = wrapper.createDiv({
 		cls: 'dbench-control-center__word-counts-total',
 	});
@@ -130,6 +137,26 @@ function buildWordCountsView(
 	}
 
 	return wrapper;
+}
+
+function buildProgressHero(count: number, target: number): HTMLElement {
+	const view = formatProgress(count, target);
+	const hero = document.createElement('div');
+	hero.className = 'dbench-control-center__progress-hero';
+	if (view.overage) hero.classList.add('dbench-control-center__progress-hero--overage');
+
+	hero.createEl('div', {
+		cls: 'dbench-control-center__progress-label',
+		text: view.label,
+	});
+
+	const track = hero.createDiv({ cls: 'dbench-control-center__progress-track' });
+	const fill = track.createDiv({
+		cls: 'dbench-control-center__progress-fill',
+	});
+	fill.style.width = `${view.percent}%`;
+
+	return hero;
 }
 
 function appendStatusRow(

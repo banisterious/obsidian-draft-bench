@@ -20,6 +20,13 @@ export interface SceneFrontmatter {
 	'dbench-status': DbenchStatus;
 	'dbench-drafts': string[];
 	'dbench-draft-ids': DbenchId[];
+	/**
+	 * Opt-in authoring target for this scene's word count. Writers set
+	 * this via the Properties panel or in a template's frontmatter; not
+	 * stamped at creation. The Manuscript-tab per-scene progress bar
+	 * reads from this value when set.
+	 */
+	'dbench-target-words'?: number;
 }
 
 /**

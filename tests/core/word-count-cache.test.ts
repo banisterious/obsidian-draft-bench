@@ -196,6 +196,79 @@ describe('WordCountCache', () => {
 			expect(counts.scenesByStatus.brainstorm).toBe(1);
 			expect(counts.wordsByStatus.idea).toBeUndefined();
 		});
+
+		it('defaults target fields to null/0 when no targets are set', async () => {
+			const project = await seedProject(app, settings, 'No targets');
+			await seedScene(app, settings, project, 'Plain');
+
+			const counts = await cache.countForProject(project);
+			expect(counts.projectTarget).toBeNull();
+			expect(counts.sceneTargetSum).toBe(0);
+			expect(counts.scenesWithTargets).toBe(0);
+		});
+
+		it('reads projectTarget from the project frontmatter', async () => {
+			const project = await seedProject(app, settings, 'Targeted');
+			await app.fileManager.processFrontMatter(project.file, (fm) => {
+				fm['dbench-target-words'] = 10000;
+			});
+
+			// Re-read project from discovery so frontmatter is current.
+			const refreshed = findProjects(app).find(
+				(p) => p.file.path === project.file.path
+			)!;
+			const counts = await cache.countForProject(refreshed);
+			expect(counts.projectTarget).toBe(10000);
+		});
+
+		it('aggregates scene targets into sceneTargetSum and scenesWithTargets', async () => {
+			const project = await seedProject(app, settings, 'Split');
+			const s1 = await seedScene(app, settings, project, 'A');
+			const s2 = await seedScene(app, settings, project, 'B');
+			await seedScene(app, settings, project, 'C'); // no target
+
+			await app.fileManager.processFrontMatter(s1.file, (fm) => {
+				fm['dbench-target-words'] = 1500;
+			});
+			await app.fileManager.processFrontMatter(s2.file, (fm) => {
+				fm['dbench-target-words'] = 800;
+			});
+
+			const refreshed = findProjects(app).find(
+				(p) => p.file.path === project.file.path
+			)!;
+			const counts = await cache.countForProject(refreshed);
+			expect(counts.sceneTargetSum).toBe(2300);
+			expect(counts.scenesWithTargets).toBe(2);
+		});
+
+		it('skips invalid scene targets (zero, negative, non-integer)', async () => {
+			const project = await seedProject(app, settings, 'Junk');
+			const s1 = await seedScene(app, settings, project, 'Zero');
+			const s2 = await seedScene(app, settings, project, 'Neg');
+			const s3 = await seedScene(app, settings, project, 'Float');
+			const s4 = await seedScene(app, settings, project, 'Good');
+
+			await app.fileManager.processFrontMatter(s1.file, (fm) => {
+				fm['dbench-target-words'] = 0;
+			});
+			await app.fileManager.processFrontMatter(s2.file, (fm) => {
+				fm['dbench-target-words'] = -500;
+			});
+			await app.fileManager.processFrontMatter(s3.file, (fm) => {
+				fm['dbench-target-words'] = 1234.5;
+			});
+			await app.fileManager.processFrontMatter(s4.file, (fm) => {
+				fm['dbench-target-words'] = 2000;
+			});
+
+			const refreshed = findProjects(app).find(
+				(p) => p.file.path === project.file.path
+			)!;
+			const counts = await cache.countForProject(refreshed);
+			expect(counts.scenesWithTargets).toBe(1);
+			expect(counts.sceneTargetSum).toBe(2000);
+		});
 	});
 
 	describe('invalidate', () => {

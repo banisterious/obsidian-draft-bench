@@ -335,7 +335,7 @@ This section describes what the UI surfaces do. For **how** to build them — co
 
 ### Control Center
 
-A tabbed non-transient modal accessible via ribbon icon (lucide `pencil-line` glyph), command palette, or context menu. Tabs:
+A tabbed non-transient modal accessible via ribbon icon (lucide `pencil-ruler` glyph), command palette, or context menu. Tabs:
 
 - **Project**: Overview, metadata, synopsis, word count summary.
 - **Manuscript**: Ordered scene list (sorted by `dbench-order`) with status and prior-draft count per scene. Click-through opens the scene. A toolbar along the top of this tab surfaces primary project actions as buttons: **New scene**, **New draft of current scene**, **Reorder scenes**, **Compile** (Phase 3+). This tab is the canonical story-order view; ordering is read-only in the list itself: the Reorder scenes button opens the dedicated modal (see § Scene reordering).

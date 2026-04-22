@@ -265,7 +265,7 @@ Extend the handler bodies to draft relationships:
 **P1.D — Control Center skeleton.**
 
 - `src/ui/control-center/control-center-modal.ts` — tabbed modal shell, accessible via:
-  - Ribbon icon (lucide `pencil-line`) — registered in `main.ts`.
+  - Ribbon icon (lucide `pencil-ruler`) — registered in `main.ts`.
   - Palette command: "Draft Bench: Open Control Center".
   - Project note context menu entry.
 - Tabs (Phase 1 scope — rendering only; Phase 2 adds content):

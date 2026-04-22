@@ -62,7 +62,7 @@ function buildSingleFileItems(
 			addRetrofitMenuItem(
 				menu,
 				'Open control center',
-				'pencil-line',
+				'pencil-ruler',
 				() => {
 					new ControlCenterModal(app, plugin, linker, {
 						file,

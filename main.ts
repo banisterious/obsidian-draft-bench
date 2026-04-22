@@ -30,7 +30,7 @@ export default class DraftBenchPlugin extends Plugin {
 		registerCommands(this, () => this.settings, this.linker);
 		registerContextMenu(this, this.linker);
 
-		this.addRibbonIcon('pencil-line', 'Open Draft Bench control center', () => {
+		this.addRibbonIcon('pencil-ruler', 'Open Draft Bench', () => {
 			new ControlCenterModal(this.app, this, this.linker).open();
 		});
 

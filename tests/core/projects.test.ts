@@ -106,7 +106,7 @@ describe('createProject', () => {
 	});
 
 	it('creates a folder-shape project: folder + project note with stamped essentials', async () => {
-		const file = await createProject(app, settings, {
+		const { file } = await createProject(app, settings, {
 			title: 'My Novel',
 			shape: 'folder',
 		});
@@ -132,7 +132,7 @@ describe('createProject', () => {
 	});
 
 	it('creates a single-shape project: no nested project folder', async () => {
-		const file = await createProject(app, settings, {
+		const { file } = await createProject(app, settings, {
 			title: 'A Brief Encounter',
 			shape: 'single',
 		});
@@ -158,7 +158,7 @@ describe('createProject', () => {
 	});
 
 	it('honors a custom location', async () => {
-		const file = await createProject(app, settings, {
+		const { file } = await createProject(app, settings, {
 			title: 'Custom',
 			shape: 'folder',
 			location: 'Writing/Fiction/{project}/',
@@ -179,7 +179,7 @@ describe('createProject', () => {
 		const { findProjects } = await import('../../src/core/discovery');
 
 		expect(findProjects(app)).toEqual([]);
-		const file = await createProject(app, settings, {
+		const { file } = await createProject(app, settings, {
 			title: 'Discoverable',
 			shape: 'folder',
 		});

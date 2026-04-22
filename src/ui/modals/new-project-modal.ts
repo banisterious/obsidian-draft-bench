@@ -107,21 +107,21 @@ export class NewProjectModal extends Modal {
 		}
 
 		try {
-			const file = await createProject(this.app, this.settings, {
-				title: this.titleInput,
-				shape: this.shape,
-				location: this.locationInput,
-			});
+			const { file, projectId } = await createProject(
+				this.app,
+				this.settings,
+				{
+					title: this.titleInput,
+					shape: this.shape,
+					location: this.locationInput,
+				}
+			);
 
 			new Notice(`\u2713 Created project ${file.basename}`);
 			this.close();
 
-			if (this.onCreated) {
-				const projectId = this.app.metadataCache.getFileCache(file)
-					?.frontmatter?.['dbench-id'];
-				if (typeof projectId === 'string') {
-					await this.onCreated(projectId);
-				}
+			if (this.onCreated && projectId !== '') {
+				await this.onCreated(projectId);
 			}
 
 			await this.openProjectNote(file);

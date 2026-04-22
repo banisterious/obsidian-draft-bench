@@ -102,6 +102,17 @@ export function resolveProjectPaths(
 }
 
 /**
+ * Result of a successful `createProject` call. `projectId` is captured
+ * from the frontmatter inside the `processFrontMatter` callback, so
+ * callers don't need to read the metadata cache (which updates
+ * asynchronously and can be stale immediately after creation).
+ */
+export interface CreateProjectResult {
+	file: TFile;
+	projectId: string;
+}
+
+/**
  * Create a new Draft Bench project.
  *
  * Steps:
@@ -109,8 +120,10 @@ export function resolveProjectPaths(
  *   2. Refuse to overwrite if the file already exists.
  *   3. Create the folder (if folder path is non-empty and doesn't exist).
  *   4. Create the project note (empty).
- *   5. Stamp essentials via `processFrontMatter` + `stampProjectEssentials`.
- *   6. Return the created TFile so callers can open it.
+ *   5. Stamp essentials via `processFrontMatter` + `stampProjectEssentials`;
+ *      capture the generated `dbench-id` inside the callback.
+ *   6. Return `{ file, projectId }` so callers can open the note and
+ *      drive post-creation flows (auto-reveal, selection changes, etc.).
  *
  * Does not register a command, open the file, or show notices — those
  * concerns belong to the calling command / modal layer.
@@ -119,7 +132,7 @@ export async function createProject(
 	app: App,
 	settings: DraftBenchSettings,
 	options: CreateProjectOptions
-): Promise<TFile> {
+): Promise<CreateProjectResult> {
 	const { folderPath, filePath } = resolveProjectPaths(settings, options);
 
 	if (app.vault.getAbstractFileByPath(filePath) !== null) {
@@ -132,6 +145,7 @@ export async function createProject(
 
 	const file = await app.vault.create(filePath, '');
 
+	let projectId = '';
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Pre-set the shape so stampProjectEssentials' setIfMissing leaves
 		// it alone. Cleaner than overriding after stamping.
@@ -140,7 +154,9 @@ export async function createProject(
 			basename: file.basename,
 			defaultStatus: settings.statusVocabulary[0],
 		});
+		const id = frontmatter['dbench-id'];
+		if (typeof id === 'string') projectId = id;
 	});
 
-	return file;
+	return { file, projectId };
 }

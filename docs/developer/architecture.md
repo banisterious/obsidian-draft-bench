@@ -292,18 +292,22 @@ After P1.E, Phase 1 is cap-complete and release-eligible.
 
 With Phase 1 actually complete, Phase 2 adds writer-polish features. Same layering rules apply.
 
-**P2.A — User templates.**
+**P2.A — User templates.** ✅ Shipped (P2.A.1/2/3 in prior sessions, P2.A.4 in 2026-04-22).
 
 Composable with Templater rather than a replacement for it. Writers without Templater still get default template application; writers with Templater get rich body scripting on top.
 
-- `src/core/templates.ts` — per-type template resolution:
-  - Read `settings.templatesFolder`; look for `scene-template.md`, later `chapter-template.md`.
-  - Fall back to built-in defaults (already shipped as V1 string literals) if the file is absent.
-  - Seed the default template file to the folder on first use.
-- Plugin-token resolution: `{{project}}`, `{{project_title}}`, `{{scene_title}}`, `{{scene_order}}`, `{{date}}`, `{{previous_scene_title}}`.
-- Templater delegation: if Templater is installed, invoke its processor on the body before writing. Detect presence via `app.plugins.plugins['templater-obsidian']` or similar.
-- Plumb through `createScene`, `createDraft` (for the draft's initial body carry-forward), and `createProject` (for single-scene project bodies).
-- Settings tab gains a Templates section with per-type template-file pickers (via the existing `FolderSuggest` pattern, tweaked for file selection).
+- `src/core/templates.ts` — scene-template resolution:
+  - `ensureSceneTemplateFile` reads `settings.sceneTemplatePath` (override) or `<settings.templatesFolder>/scene-template.md`; seeds the built-in default on first use.
+  - `loadSceneTemplateBody` composes `ensureSceneTemplateFile` + `vault.read`.
+  - `substituteTokens` resolves six plugin tokens: `{{project}}`, `{{project_title}}`, `{{scene_title}}`, `{{scene_order}}`, `{{date}}`, `{{previous_scene_title}}`. Unknown `{{token}}` sequences pass through untouched.
+- `src/core/templater.ts` — Templater adapter:
+  - `isTemplaterEnabled(app)` checks `app.plugins.getPlugin('templater-obsidian')`.
+  - `renderTemplateThroughTemplater(app, templateFile, targetFile)` calls Templater's `templater.create_running_config(template, target, 0)` + `templater.read_and_parse_template(config)` and returns the parsed body string (or `null` on failure).
+- `createScene` dispatches via `renderSceneBody`:
+  - Templater enabled: create empty scene file (needed for `tp.file.*` resolution) → Templater processes the template → plugin-tokens substituted on Templater's output → written back to the scene file → frontmatter stamped.
+  - Templater absent or throws: plain flow — `resolveSceneTemplate` reads + substitutes → `vault.create(path, body)` → frontmatter stamped. On failure the writer sees a Notice; scene creation still completes.
+- Settings tab's Templates section ships the scene-template override path with `FileSuggest` autocomplete.
+- P2.A.4 stretch goal (Templater): shipped with the scene path only. Projects start empty; drafts snapshot the existing scene body. Neither needs Templater in V1.
 
 **P2.B — Word counts.**
 

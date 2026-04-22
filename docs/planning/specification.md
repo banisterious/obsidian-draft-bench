@@ -515,9 +515,11 @@ Phase 2 adds the ability to create, name, and manage multiple templates. Templat
 
 Templates are stored as markdown files in a configurable templates folder within the vault.
 
-### Templater Integration (Stretch Goal)
+### Templater Integration
 
-If the Templater plugin is installed, user-defined templates may use Templater syntax for dynamic content (dates, prompts, cursor placement, etc.). The plugin detects Templater's presence and processes templates through it when available.
+When the Templater plugin is installed, scene templates are processed through Templater before Draft Bench's plugin tokens are substituted. Writers can use Templater syntax (`<% tp.* %>`) for dynamic content — prompts, dates, cursor placement, user-defined functions — alongside Draft Bench's `{{scene_title}}`-style tokens. The two syntaxes don't collide; Templater runs first on the template body (with the new scene file as `tp.file.*` context), then Draft Bench substitutes plugin tokens on the result.
+
+Detection is automatic — no setting. When Templater isn't installed, or when a template script throws at runtime, scene creation falls through to the plain plugin-token flow; a broken Templater script never blocks scene creation. Projects and drafts don't use Templater in V1 (projects start empty, drafts snapshot the parent scene's body).
 
 ## Compile / Book Builder
 
@@ -678,7 +680,7 @@ Draft Bench is designed to coexist with plugins writers commonly use. Before eac
 
 | Plugin | Tested interaction |
 |---|---|
-| Templater | Stretch goal for V1: if installed, user-defined templates are processed through Templater for dynamic content. Built-in template is plain markdown regardless. |
+| Templater | Auto-detected. When installed, scene templates are processed through Templater before Draft Bench's plugin-token substitution runs; when absent (or when a Templater script throws), the plain plugin-token flow is used. See § Templater Integration. |
 | Style Settings | If installed, Draft Bench exposes scene- and draft-leaf styling variables. See § Styling and Style Settings Integration. |
 | Obsidian Bases | Every `dbench-*` property is Bases-queryable. Template `.base` files ship as a Phase 2 stretch goal. |
 | Dataview | Alternative query layer; `dbench-*` properties work in Dataview queries for writers who prefer it. |
@@ -702,7 +704,7 @@ These decisions are deferred and will be resolved as development progresses:
 - **Status vocabulary**: The `dbench-status` workflow on project and scene notes is user-configurable via Settings -> Draft Bench -> Statuses (Phase 2, P2.D). The default vocabulary is `idea -> draft -> revision -> final`; the first entry is always the default stamped onto new scenes. Writers can add, rename, reorder (drag-handle or keyboard), and remove values. Renaming a status that's in use migrates the affected notes in place. Removing an in-use status prompts an optional bulk-rename to another value (or remove-without-migrating, which leaves those notes carrying the retired value out-of-vocabulary). Per-project overrides remain a post-V1 consideration.
 - **Beat granularity**: V1 default is beats-as-headings inside scene notes. The `beat` type remains on the post-V1 type list for writers who need per-beat word counts or Bases queryability, but it stays "available if you want it, not first-class UI." No V1 modal or template support.
 - **Custom Bases views**: The plugin does not register a custom Bases view type. The property schema is sufficient: every `dbench-*` property is Bases-queryable, and writers build manuscript tables, status queues, and corkboards with vanilla Bases. Phase 2 ships template `.base` files as starters.
-- **Templater integration depth**: Deferred. The stretch-goal pass-through behavior (see § Scene Templates) stands; the depth question (deeper integration, plugin-aware Templater commands) is set aside until Templater integration is actively on the implementation agenda.
+- **Templater integration depth**: Pass-through behavior shipped in Phase 2 (P2.A.4). Scene templates route through Templater when installed; see § Templater Integration. Deeper integration (plugin-aware Templater commands, e.g., `tp.draftBench.previousScene()`) remains deferred until a writer requests it.
 - **Mobile support**: V1 is desktop-only (`isDesktopOnly: true` in `manifest.json`). Post-V1 re-evaluation of mobile compatibility is deferred; the decision depends on whether mobile becomes a meaningful portion of the user base once V1 ships.
 
 ## Documentation

@@ -11,13 +11,27 @@ import { createProject } from '../../core/projects';
  * note in a new leaf and shows a success notice. On failure, shows
  * an error notice and leaves the modal open so the user can correct.
  */
+/**
+ * Optional hook fired after a project has been successfully created
+ * (after the success notice, before the project note opens). Used by
+ * the `Create project` command to auto-reveal the Manuscript leaf on
+ * the first-ever project creation — see `ui/manuscript-view/first-reveal.ts`.
+ */
+export type NewProjectCreatedHook = (
+	projectId: string
+) => void | Promise<void>;
+
 export class NewProjectModal extends Modal {
 	private titleInput = '';
 	private shape: ProjectShape = 'folder';
 	private locationInput: string;
 	private submitButton: HTMLButtonElement | null = null;
 
-	constructor(app: App, private settings: DraftBenchSettings) {
+	constructor(
+		app: App,
+		private settings: DraftBenchSettings,
+		private onCreated: NewProjectCreatedHook | null = null
+	) {
 		super(app);
 		this.locationInput = settings.projectsFolder;
 	}
@@ -101,6 +115,15 @@ export class NewProjectModal extends Modal {
 
 			new Notice(`\u2713 Created project ${file.basename}`);
 			this.close();
+
+			if (this.onCreated) {
+				const projectId = this.app.metadataCache.getFileCache(file)
+					?.frontmatter?.['dbench-id'];
+				if (typeof projectId === 'string') {
+					await this.onCreated(projectId);
+				}
+			}
+
 			await this.openProjectNote(file);
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);

@@ -32,7 +32,7 @@ export function registerCommands(
 	getSettings: () => DraftBenchSettings,
 	linker: DraftBenchLinker
 ): void {
-	registerCreateProjectCommand(plugin, getSettings);
+	registerCreateProjectCommand(plugin, getSettings, () => plugin);
 	registerInstallBasesCommand(plugin);
 	registerNewSceneCommand(plugin, getSettings, linker);
 	registerNewDraftCommand(plugin, getSettings, linker);

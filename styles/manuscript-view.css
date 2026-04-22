@@ -142,3 +142,262 @@
 .dbench-manuscript-view__section-body--collapsed {
 	display: none;
 }
+
+/*
+ * Project picker header + toolbar. Header hosts the project dropdown;
+ * toolbar sits just below it with the four primary actions.
+ */
+
+.dbench-manuscript-view__header {
+	display: flex;
+	align-items: center;
+	margin-bottom: var(--dbench-spacing-sm);
+}
+
+.dbench-manuscript-view__picker {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.dbench-manuscript-view__toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--dbench-spacing-xs);
+	margin-bottom: var(--dbench-spacing-sm);
+}
+
+.dbench-manuscript-view__toolbar-button {
+	flex: 1 1 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--dbench-spacing-xs);
+	padding: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
+	min-height: 32px;
+	background-color: var(--interactive-normal);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-sm);
+	cursor: pointer;
+	font-size: var(--font-smaller);
+}
+
+.dbench-manuscript-view__toolbar-button:hover {
+	background-color: var(--interactive-hover);
+}
+
+.dbench-manuscript-view__toolbar-icon {
+	display: inline-flex;
+	align-items: center;
+	color: var(--text-muted);
+}
+
+.dbench-manuscript-view__toolbar-label {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/*
+ * Project summary section — meta rows, word-count hero, status
+ * breakdown. Mirrors the modal's former Project tab layout but
+ * tightened for the narrower sidebar width.
+ */
+
+.dbench-manuscript-view__meta {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
+	margin: 0 0 var(--dbench-spacing-md);
+}
+
+.dbench-manuscript-view__meta-label {
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+}
+
+.dbench-manuscript-view__meta-value {
+	margin: 0;
+	font-variant-numeric: tabular-nums;
+	word-break: break-word;
+}
+
+.dbench-manuscript-view__word-counts-heading {
+	margin: 0 0 var(--dbench-spacing-xs);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.dbench-manuscript-view__word-counts-body {
+	margin-bottom: var(--dbench-spacing-sm);
+}
+
+.dbench-manuscript-view__word-counts-total {
+	display: flex;
+	align-items: baseline;
+	gap: var(--dbench-spacing-xs);
+	margin-bottom: var(--dbench-spacing-sm);
+}
+
+.dbench-manuscript-view__word-counts-total-value {
+	font-size: var(--h3-size);
+	font-weight: var(--font-semibold);
+	font-variant-numeric: tabular-nums;
+}
+
+.dbench-manuscript-view__word-counts-total-label {
+	color: var(--text-muted);
+}
+
+.dbench-manuscript-view__progress-hero {
+	margin-bottom: var(--dbench-spacing-sm);
+}
+
+.dbench-manuscript-view__progress-label {
+	font-variant-numeric: tabular-nums;
+	margin-bottom: var(--dbench-spacing-xs);
+	font-size: var(--font-smaller);
+}
+
+.dbench-manuscript-view__progress-track {
+	background-color: var(--background-modifier-border);
+	border-radius: var(--dbench-radius-sm);
+	height: 8px;
+	overflow: hidden;
+}
+
+.dbench-manuscript-view__progress-fill {
+	background-color: var(--interactive-accent);
+	height: 100%;
+	transition: width 120ms ease;
+}
+
+.dbench-manuscript-view__progress-hero--overage .dbench-manuscript-view__progress-fill {
+	background-color: var(--color-orange, #e0800c);
+}
+
+.dbench-manuscript-view__status-breakdown {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
+	margin: 0;
+}
+
+.dbench-manuscript-view__status-label {
+	color: var(--text-muted);
+	text-transform: capitalize;
+}
+
+.dbench-manuscript-view__status-value {
+	margin: 0;
+	font-variant-numeric: tabular-nums;
+	font-size: var(--font-smaller);
+}
+
+/*
+ * Manuscript list — ordered scene list with per-row order number,
+ * title link, status pill, word / progress badge, and draft count.
+ */
+
+.dbench-manuscript-view__scene-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.dbench-manuscript-view__scene-row {
+	display: grid;
+	grid-template-columns: 2em 1fr auto;
+	grid-template-rows: auto auto;
+	gap: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
+	align-items: center;
+	padding: var(--dbench-spacing-sm) 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.dbench-manuscript-view__scene-row:last-child {
+	border-bottom: none;
+}
+
+.dbench-manuscript-view__scene-order {
+	grid-row: 1 / 3;
+	color: var(--text-muted);
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+.dbench-manuscript-view__scene-title {
+	grid-column: 2;
+	grid-row: 1;
+	color: var(--text-normal);
+	text-decoration: none;
+	font-weight: var(--font-semibold);
+	cursor: pointer;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dbench-manuscript-view__scene-title:hover {
+	color: var(--text-accent);
+	text-decoration: underline;
+}
+
+.dbench-manuscript-view__scene-words {
+	grid-column: 3;
+	grid-row: 1;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+.dbench-manuscript-view__scene-words--with-target {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+	min-width: 120px;
+}
+
+.dbench-manuscript-view__scene-progress-label {
+	font-size: var(--font-smallest);
+}
+
+.dbench-manuscript-view__scene-progress-track {
+	width: 100%;
+	background-color: var(--background-modifier-border);
+	border-radius: var(--dbench-radius-sm);
+	height: 3px;
+	overflow: hidden;
+}
+
+.dbench-manuscript-view__scene-progress-fill {
+	background-color: var(--interactive-accent);
+	height: 100%;
+	transition: width 120ms ease;
+}
+
+.dbench-manuscript-view__scene-words--overage .dbench-manuscript-view__scene-progress-fill {
+	background-color: var(--color-orange, #e0800c);
+}
+
+.dbench-manuscript-view__scene-status {
+	grid-column: 2;
+	grid-row: 2;
+	color: var(--text-muted);
+	font-size: var(--font-smallest);
+	text-transform: capitalize;
+}
+
+.dbench-manuscript-view__scene-drafts {
+	grid-column: 3;
+	grid-row: 2;
+	color: var(--text-faint);
+	font-size: var(--font-smallest);
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}

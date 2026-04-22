@@ -1,10 +1,21 @@
 import {
 	ItemView,
+	TFile,
 	WorkspaceLeaf,
+	type TAbstractFile,
 	type ViewStateResult,
 } from 'obsidian';
 import type DraftBenchPlugin from '../../../main';
-import { findProjects, type ProjectNote } from '../../core/discovery';
+import {
+	findProjects,
+	findScenesInProject,
+	type ProjectNote,
+	type SceneNote,
+} from '../../core/discovery';
+import { renderSection } from './sections/section-base';
+import { renderProjectSummaryBody } from './sections/project-summary-section';
+import { renderManuscriptListBody } from './sections/manuscript-list-section';
+import { renderToolbar } from './sections/toolbar';
 
 /**
  * The Manuscript workspace-leaf view.
@@ -14,13 +25,18 @@ import { findProjects, type ProjectNote } from '../../core/discovery';
  * the Project summary, Manuscript list, and toolbar actions; the
  * modal handles short-lived actions (Templates, Compile).
  *
- * Content is rendered in commit 2 of the split work; this commit
- * ships the view shell, empty-state handling, and plugin-state
- * integration so the leaf can be registered and opened without
- * depending on lifted-from-modal content yet.
+ * Rendering is split across section modules (sections/*.ts); this
+ * class owns the view-level lifecycle, state persistence, project
+ * picker, selection reconciliation with plugin state, and the
+ * `vault.on('modify')` debounce that keeps the scene list fresh while
+ * a writer is drafting.
  */
 
 export const VIEW_TYPE_MANUSCRIPT = 'draft-bench-manuscript';
+
+const SECTION_PROJECT_SUMMARY = 'project-summary';
+const SECTION_MANUSCRIPT_LIST = 'manuscript-list';
+const MODIFY_DEBOUNCE_MS = 300;
 
 /**
  * JSON-safe serialized view state. Versioned from the start so later
@@ -42,6 +58,7 @@ export class ManuscriptView extends ItemView {
 	private readonly plugin: DraftBenchPlugin;
 	private viewState: ManuscriptViewState = { ...EMPTY_STATE };
 	private unsubscribeSelection: (() => void) | null = null;
+	private modifyDebounce: number | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: DraftBenchPlugin) {
 		super(leaf);
@@ -84,6 +101,12 @@ export class ManuscriptView extends ItemView {
 			this.render();
 		});
 
+		// Freshness: re-render on vault modify when the changed file is
+		// relevant to the currently-rendered project.
+		this.registerEvent(
+			this.plugin.app.vault.on('modify', (file) => this.onFileModify(file))
+		);
+
 		this.render();
 		return Promise.resolve();
 	}
@@ -91,6 +114,10 @@ export class ManuscriptView extends ItemView {
 	onClose(): Promise<void> {
 		this.unsubscribeSelection?.();
 		this.unsubscribeSelection = null;
+		if (this.modifyDebounce !== null) {
+			window.clearTimeout(this.modifyDebounce);
+			this.modifyDebounce = null;
+		}
 		return Promise.resolve();
 	}
 
@@ -98,10 +125,7 @@ export class ManuscriptView extends ItemView {
 		return { ...this.viewState };
 	}
 
-	setState(
-		state: unknown,
-		result: ViewStateResult
-	): Promise<void> {
+	setState(state: unknown, result: ViewStateResult): Promise<void> {
 		if (state && typeof state === 'object') {
 			const s = state as Partial<ManuscriptViewState>;
 			if (typeof s.selectedProjectId === 'string' || s.selectedProjectId === null) {
@@ -125,57 +149,124 @@ export class ManuscriptView extends ItemView {
 		this.plugin.selection.set(projectId);
 	}
 
+	private onFileModify(file: TAbstractFile): void {
+		if (!this.isMarkdownFile(file)) return;
+		const project = this.resolveSelectedProject();
+		if (!project) return;
+
+		// Gate: the modified file is the project note itself, or one of
+		// its scenes. Non-project vault noise is ignored.
+		const scenes = findScenesInProject(
+			this.plugin.app,
+			project.frontmatter['dbench-id']
+		);
+		const isProjectNote = file.path === project.file.path;
+		const isProjectScene = scenes.some((s) => s.file.path === file.path);
+		if (!isProjectNote && !isProjectScene) return;
+
+		// Invalidate word-count cache for the touched file regardless;
+		// the re-render reads the fresh count.
+		this.plugin.wordCounts.invalidate(file.path);
+
+		if (this.modifyDebounce !== null) {
+			window.clearTimeout(this.modifyDebounce);
+		}
+		this.modifyDebounce = window.setTimeout(() => {
+			this.modifyDebounce = null;
+			this.render();
+		}, MODIFY_DEBOUNCE_MS);
+	}
+
+	private isMarkdownFile(file: TAbstractFile): file is TFile {
+		return file instanceof TFile && file.extension === 'md';
+	}
+
 	private render(): void {
 		const container = this.containerEl.children[1] as HTMLElement;
+		const previousScroll = container.scrollTop;
+
 		container.empty();
 		container.addClass('dbench-manuscript-view');
 
-		const project = this.resolveSelectedProject();
-		if (!project) {
-			this.renderEmptyState(container);
+		const projects = findProjects(this.plugin.app);
+		if (projects.length === 0) {
+			this.renderEmptyWelcome(container);
 			return;
 		}
 
-		this.renderProject(container, project);
+		// Picker header always present when projects exist.
+		this.renderPicker(container, projects);
+
+		const project = this.resolveSelectedProject();
+		if (!project) {
+			this.renderEmptyPrompt(container);
+			return;
+		}
+
+		const content = container.createDiv({
+			cls: 'dbench-manuscript-view__content',
+		});
+
+		renderToolbar(content, this.plugin, project);
+
+		const scenes = sortScenes(
+			findScenesInProject(
+				this.plugin.app,
+				project.frontmatter['dbench-id']
+			)
+		);
+
+		this.renderProjectSummarySection(content, project);
+		this.renderManuscriptListSection(content, scenes);
+
+		// Preserve scroll position after full re-render.
+		window.requestAnimationFrame(() => {
+			container.scrollTop = previousScroll;
+		});
 	}
 
-	private renderEmptyState(container: HTMLElement): void {
+	private renderEmptyWelcome(container: HTMLElement): void {
 		const wrapper = container.createDiv({
 			cls: 'dbench-manuscript-view__empty',
 		});
-
-		const projects = findProjects(this.plugin.app);
-		if (projects.length === 0) {
-			wrapper.createEl('h2', {
-				cls: 'dbench-manuscript-view__empty-heading',
-				text: 'Welcome to Draft Bench',
-			});
-			wrapper.createEl('p', {
-				cls: 'dbench-manuscript-view__empty-body',
-				text: 'Create your first project to see its manuscript here. Once a project exists, this view tracks its scenes, word counts, and progress.',
-			});
-			const cta = wrapper.createEl('button', {
-				cls: 'dbench-manuscript-view__empty-cta mod-cta',
-				text: 'Create your first project',
-			});
-			cta.addEventListener('click', () => {
-				this.openCreateProjectCommand();
-			});
-			wrapper.createEl('p', {
-				cls: 'dbench-manuscript-view__empty-footnote',
-				// eslint-disable-next-line obsidianmd/ui/sentence-case -- quoted palette command name preserves its branded casing
-				text: 'Templates and compile actions live in the control center (Draft Bench: Open control center).',
-			});
-			return;
-		}
-
+		wrapper.createEl('h2', {
+			cls: 'dbench-manuscript-view__empty-heading',
+			text: 'Welcome to Draft Bench',
+		});
 		wrapper.createEl('p', {
 			cls: 'dbench-manuscript-view__empty-body',
-			text: 'Select a project to view its manuscript.',
+			text: 'Create your first project to see its manuscript here. Once a project exists, this view tracks its scenes, word counts, and progress.',
 		});
+		const cta = wrapper.createEl('button', {
+			cls: 'dbench-manuscript-view__empty-cta mod-cta',
+			text: 'Create your first project',
+		});
+		cta.addEventListener('click', () => {
+			this.openCreateProjectCommand();
+		});
+		wrapper.createEl('p', {
+			cls: 'dbench-manuscript-view__empty-footnote',
+			// eslint-disable-next-line obsidianmd/ui/sentence-case -- quoted palette command name preserves its branded casing
+			text: 'Templates and compile actions live in the control center (Draft Bench: Open control center).',
+		});
+	}
 
-		const picker = wrapper.createEl('select', {
-			cls: 'dropdown dbench-manuscript-view__empty-picker',
+	private renderEmptyPrompt(container: HTMLElement): void {
+		container.createEl('p', {
+			cls: 'dbench-manuscript-view__placeholder',
+			text: 'Select a project above to view its manuscript.',
+		});
+	}
+
+	private renderPicker(
+		container: HTMLElement,
+		projects: ProjectNote[]
+	): void {
+		const header = container.createDiv({
+			cls: 'dbench-manuscript-view__header',
+		});
+		const picker = header.createEl('select', {
+			cls: 'dropdown dbench-manuscript-view__picker',
 			attr: { 'aria-label': 'Select a project' },
 		});
 		const placeholder = picker.createEl('option', {
@@ -183,33 +274,82 @@ export class ManuscriptView extends ItemView {
 			attr: { value: '' },
 		});
 		placeholder.disabled = true;
-		placeholder.selected = true;
+		const selectedId = this.viewState.selectedProjectId;
+		if (selectedId === null) {
+			placeholder.selected = true;
+		}
 		for (const p of projects) {
-			picker.createEl('option', {
+			const id = p.frontmatter['dbench-id'];
+			const option = picker.createEl('option', {
 				text: p.file.basename,
-				attr: { value: p.frontmatter['dbench-id'] },
+				attr: { value: id },
 			});
+			if (id === selectedId) option.selected = true;
 		}
 		picker.addEventListener('change', () => {
 			const value = picker.value;
-			if (value !== '') this.selectProject(value);
+			this.selectProject(value === '' ? null : value);
 		});
 	}
 
-	private renderProject(container: HTMLElement, project: ProjectNote): void {
-		// Placeholder until commit 2 lifts the Project-summary and
-		// Manuscript-list sections from the Control Center tabs.
-		const wrapper = container.createDiv({
-			cls: 'dbench-manuscript-view__content',
+	private renderProjectSummarySection(
+		container: HTMLElement,
+		project: ProjectNote
+	): void {
+		const expanded = this.readSectionState(SECTION_PROJECT_SUMMARY, true);
+		const body = renderSection(container, {
+			sectionId: SECTION_PROJECT_SUMMARY,
+			title: 'Project summary',
+			icon: 'book-open',
+			expanded,
+			onToggle: (id, isExpanded) => {
+				this.viewState.sectionStates[id] = isExpanded;
+			},
 		});
-		wrapper.createEl('h2', {
-			cls: 'dbench-manuscript-view__project-title',
-			text: project.file.basename,
+		if (!body) return;
+		renderProjectSummaryBody(
+			body,
+			project,
+			this.plugin.settings.statusVocabulary,
+			this.plugin.wordCounts.countForProject(project)
+		);
+	}
+
+	private renderManuscriptListSection(
+		container: HTMLElement,
+		scenes: SceneNote[],
+	): void {
+		const expanded = this.readSectionState(SECTION_MANUSCRIPT_LIST, true);
+		const summary =
+			scenes.length === 0
+				? undefined
+				: `${scenes.length} ${scenes.length === 1 ? 'scene' : 'scenes'}`;
+		const body = renderSection(container, {
+			sectionId: SECTION_MANUSCRIPT_LIST,
+			title: 'Manuscript',
+			icon: 'align-left',
+			summary,
+			expanded,
+			onToggle: (id, isExpanded) => {
+				this.viewState.sectionStates[id] = isExpanded;
+			},
 		});
-		wrapper.createEl('p', {
-			cls: 'dbench-manuscript-view__placeholder',
-			text: 'Project summary and manuscript list render here once section modules land.',
-		});
+		if (!body) return;
+		renderManuscriptListBody(
+			body,
+			scenes,
+			this.plugin.app,
+			this.plugin.wordCounts,
+			(scene) => {
+				void this.plugin.app.workspace.getLeaf(false).openFile(scene.file);
+			}
+		);
+	}
+
+	private readSectionState(sectionId: string, defaultValue: boolean): boolean {
+		const v = this.viewState.sectionStates[sectionId];
+		if (typeof v === 'boolean') return v;
+		return defaultValue;
 	}
 
 	private resolveSelectedProject(): ProjectNote | null {
@@ -248,4 +388,17 @@ export class ManuscriptView extends ItemView {
 		).commands;
 		commands?.executeCommandById('draft-bench:create-project');
 	}
+}
+
+/**
+ * Sort scenes by `dbench-order` ascending. Kept private to the view;
+ * the equivalent sort used by the Manuscript tab lives at
+ * `src/ui/control-center/tabs/sort-scenes.ts` and will be removed
+ * when that tab is deleted in the next commit.
+ */
+function sortScenes(scenes: SceneNote[]): SceneNote[] {
+	return [...scenes].sort(
+		(a, b) =>
+			a.frontmatter['dbench-order'] - b.frontmatter['dbench-order']
+	);
 }

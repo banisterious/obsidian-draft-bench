@@ -11,7 +11,7 @@
 
 
 /* --------------------------------------------------------------------------
-   VARIABLES.CSS  (71 lines, 2.32 KB)
+   VARIABLES.CSS  (71 lines, 2.34 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -63,7 +63,7 @@ body {
 	--dbench-scene-font-family: inherit;
 	--dbench-scene-font-size: inherit;
 	--dbench-scene-line-height: inherit;
-	--dbench-scene-max-width: none;
+	--dbench-scene-max-width: var(--file-line-width);
 
 	/*
 	 * Scene-leaf only. Defaults to "match theme" — the consuming
@@ -89,7 +89,7 @@ body {
 /* End of variables.css */
 
 /* --------------------------------------------------------------------------
-   STYLE-SETTINGS.CSS  (98 lines, 3.32 KB)
+   STYLE-SETTINGS.CSS  (98 lines, 3.59 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -140,9 +140,9 @@ settings:
     -
         id: --dbench-scene-max-width
         title: Reading width
-        description: Max content width. 65ch, 800px, or "none" for no limit.
+        description: Max content width when Obsidian's "Readable line length" is enabled. Defaults to "var(--file-line-width)" so scene and draft leaves match the rest of your vault. Override to 65ch, 800px, etc. for a different width on this plugin's leaves; use "none" to uncap. When Readable line length is off, this setting has no effect.
         type: variable-text
-        default: none
+        default: var(--file-line-width)
     -
         id: dbench-scene-heading
         title: Scene leaf
@@ -241,7 +241,7 @@ settings:
 /* End of base.css */
 
 /* --------------------------------------------------------------------------
-   NOTES.CSS  (62 lines, 1.76 KB)
+   NOTES.CSS  (73 lines, 2.38 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -271,10 +271,21 @@ settings:
 	line-height: var(--dbench-scene-line-height);
 }
 
-.dbench-scene .cm-sizer,
-.dbench-scene .markdown-preview-sizer,
-.dbench-draft .cm-sizer,
-.dbench-draft .markdown-preview-sizer {
+/*
+ * Max-width (reading width) is gated on `body.is-readable-line-width`
+ * so Obsidian's "Readable line length" toggle keeps authority. When
+ * off, we don't apply any max-width and Obsidian's no-cap default
+ * stands. When on, our rule takes over at higher specificity, using
+ * `--dbench-scene-max-width` (default: `var(--file-line-width)`, the
+ * same variable Obsidian uses). Users can override our var via Style
+ * Settings to give scene and draft leaves a different reading width
+ * from the rest of their vault.
+ */
+
+body.is-readable-line-width .dbench-scene .cm-sizer,
+body.is-readable-line-width .dbench-scene .markdown-preview-sizer,
+body.is-readable-line-width .dbench-draft .cm-sizer,
+body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	max-width: var(--dbench-scene-max-width);
 }
 
@@ -700,11 +711,11 @@ settings:
    ==========================================================================
 
    Components: 6
-   Total:      643 lines, 16.41 KB
-   - variables.css: 71 lines, 2.32 KB
-   - style-settings.css: 98 lines, 3.32 KB
+   Total:      654 lines, 17.33 KB
+   - variables.css: 71 lines, 2.34 KB
+   - style-settings.css: 98 lines, 3.59 KB
    - base.css: 40 lines, 0.75 KB
-   - notes.css: 62 lines, 1.76 KB
+   - notes.css: 73 lines, 2.38 KB
    - control-center.css: 269 lines, 5.95 KB
    - reorder-modal.css: 103 lines, 2.31 KB
 */

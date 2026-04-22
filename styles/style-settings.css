@@ -46,9 +46,9 @@ settings:
     -
         id: --dbench-scene-max-width
         title: Reading width
-        description: Max content width. 65ch, 800px, or "none" for no limit.
+        description: Max content width when Obsidian's "Readable line length" is enabled. Defaults to "var(--file-line-width)" so scene and draft leaves match the rest of your vault. Override to 65ch, 800px, etc. for a different width on this plugin's leaves; use "none" to uncap. When Readable line length is off, this setting has no effect.
         type: variable-text
-        default: none
+        default: var(--file-line-width)
     -
         id: dbench-scene-heading
         title: Scene leaf

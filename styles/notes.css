@@ -25,10 +25,21 @@
 	line-height: var(--dbench-scene-line-height);
 }
 
-.dbench-scene .cm-sizer,
-.dbench-scene .markdown-preview-sizer,
-.dbench-draft .cm-sizer,
-.dbench-draft .markdown-preview-sizer {
+/*
+ * Max-width (reading width) is gated on `body.is-readable-line-width`
+ * so Obsidian's "Readable line length" toggle keeps authority. When
+ * off, we don't apply any max-width and Obsidian's no-cap default
+ * stands. When on, our rule takes over at higher specificity, using
+ * `--dbench-scene-max-width` (default: `var(--file-line-width)`, the
+ * same variable Obsidian uses). Users can override our var via Style
+ * Settings to give scene and draft leaves a different reading width
+ * from the rest of their vault.
+ */
+
+body.is-readable-line-width .dbench-scene .cm-sizer,
+body.is-readable-line-width .dbench-scene .markdown-preview-sizer,
+body.is-readable-line-width .dbench-draft .cm-sizer,
+body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	max-width: var(--dbench-scene-max-width);
 }
 

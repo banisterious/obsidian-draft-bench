@@ -47,7 +47,7 @@ body {
 	--dbench-scene-font-family: inherit;
 	--dbench-scene-font-size: inherit;
 	--dbench-scene-line-height: inherit;
-	--dbench-scene-max-width: none;
+	--dbench-scene-max-width: var(--file-line-width);
 
 	/*
 	 * Scene-leaf only. Defaults to "match theme" — the consuming

@@ -13,7 +13,7 @@ import {
 	setAsScene,
 } from '../core/retrofit';
 import { isProjectFrontmatter } from '../model/project';
-import { ControlCenterModal } from '../ui/control-center/control-center-modal';
+import { activateManuscriptView } from '../ui/manuscript-view/activate';
 import { RepairProjectModal } from '../ui/modals/repair-project-modal';
 import {
 	addRetrofitMenuItem,
@@ -61,13 +61,11 @@ function buildSingleFileItems(
 		if (isProjectFrontmatter(fm)) {
 			addRetrofitMenuItem(
 				menu,
-				'Open control center',
+				'Show manuscript view',
 				'pencil-ruler',
 				() => {
-					new ControlCenterModal(app, plugin, linker, {
-						file,
-						frontmatter: fm,
-					}).open();
+					plugin.selection.set(fm['dbench-id']);
+					void activateManuscriptView(app);
 				}
 			);
 			addRetrofitMenuItem(

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { TFile } from 'obsidian';
-import { sortScenesByOrder } from '../../../src/ui/control-center/tabs/sort-scenes';
-import type { SceneNote } from '../../../src/core/discovery';
-import type { SceneFrontmatter } from '../../../src/model/scene';
+import { sortScenesByOrder } from '../../src/core/sort-scenes';
+import type { SceneNote } from '../../src/core/discovery';
+import type { SceneFrontmatter } from '../../src/model/scene';
 
 function makeScene(basename: string, order: number): SceneNote {
 	const file = new TFile({

@@ -1,73 +1,42 @@
-import {
-	App,
-	Modal,
-	Platform,
-	Setting,
-	TFile,
-	setIcon,
-	type EventRef,
-} from 'obsidian';
+import { App, Modal, Platform, setIcon } from 'obsidian';
 import type DraftBenchPlugin from '../../../main';
-import {
-	findProjects,
-	findScenesInProject,
-	type ProjectNote,
-	type SceneNote,
-} from '../../core/discovery';
 import type { DraftBenchLinker } from '../../core/linker';
 import { compileTab } from './tabs/compile-tab';
-import { manuscriptTab, sortScenesByOrder } from './tabs/manuscript-tab';
-import { projectTab } from './tabs/project-tab';
 import { templatesTab } from './tabs/templates-tab';
 import type { TabDefinition } from './tabs/types';
 
 export const CONTROL_CENTER_TABS: readonly TabDefinition[] = [
-	projectTab,
-	manuscriptTab,
 	templatesTab,
 	compileTab,
 ] as const;
 
-const DEFAULT_TAB_ID = 'project';
+const DEFAULT_TAB_ID = 'templates';
 
 /**
  * "Draft Bench: Control Center" modal.
  *
- * Tabbed hub per spec § Control Center. Phase 1 scope is rendering only:
- * Project / Manuscript show the selected project; Templates / Compile
- * are placeholders; Settings embeds `DraftBenchSettingTab` inline.
- *
- * Scene list for the selected project is cached on the instance and
- * cleared on close.
+ * Post-split (see D-07), the modal hosts action-shaped flows only:
+ * Templates (stub; full UI in Phase 3) and Compile (stub until
+ * Book Builder ships). Project overview and Manuscript-list content
+ * live in the dockable Manuscript view
+ * (`src/ui/manuscript-view/manuscript-view.ts`).
  */
 export class ControlCenterModal extends Modal {
 	private readonly plugin: DraftBenchPlugin;
 	private readonly linker: DraftBenchLinker;
-	private readonly projects: ProjectNote[];
-	private selectedProject: ProjectNote | null;
-	private cachedScenes: SceneNote[] | null = null;
 	private activeTabId: string = DEFAULT_TAB_ID;
 
 	private navEl: HTMLElement | null = null;
 	private contentAreaEl: HTMLElement | null = null;
 
-	private modifyListener: EventRef | null = null;
-	private refreshTimer: ReturnType<typeof setTimeout> | null = null;
-	private static readonly REFRESH_DEBOUNCE_MS = 300;
-
 	constructor(
 		app: App,
 		plugin: DraftBenchPlugin,
-		linker: DraftBenchLinker,
-		initialProject: ProjectNote | null = null
+		linker: DraftBenchLinker
 	) {
 		super(app);
 		this.plugin = plugin;
 		this.linker = linker;
-		this.projects = findProjects(app);
-		this.selectedProject =
-			initialProject ??
-			(this.projects.length > 0 ? this.projects[0] : null);
 	}
 
 	onOpen(): void {
@@ -91,42 +60,12 @@ export class ControlCenterModal extends Modal {
 
 		this.renderNav();
 		this.renderActiveTab();
-
-		this.modifyListener = this.app.vault.on('modify', (file) => {
-			if (!(file instanceof TFile) || file.extension !== 'md') return;
-			this.plugin.wordCounts.invalidate(file.path);
-			if (this.isRelevantFile(file)) this.scheduleRefresh();
-		});
 	}
 
 	onClose(): void {
-		if (this.modifyListener) {
-			this.app.vault.offref(this.modifyListener);
-			this.modifyListener = null;
-		}
-		if (this.refreshTimer !== null) {
-			clearTimeout(this.refreshTimer);
-			this.refreshTimer = null;
-		}
 		this.contentEl.empty();
-		this.cachedScenes = null;
 		this.navEl = null;
 		this.contentAreaEl = null;
-	}
-
-	private isRelevantFile(file: TFile): boolean {
-		if (!this.selectedProject) return false;
-		if (this.selectedProject.file.path === file.path) return true;
-		if (!this.cachedScenes) return false;
-		return this.cachedScenes.some((s) => s.file.path === file.path);
-	}
-
-	private scheduleRefresh(): void {
-		if (this.refreshTimer !== null) clearTimeout(this.refreshTimer);
-		this.refreshTimer = setTimeout(() => {
-			this.refreshTimer = null;
-			this.renderActiveTab();
-		}, ControlCenterModal.REFRESH_DEBOUNCE_MS);
 	}
 
 	private renderHeader(parent: HTMLElement): void {
@@ -138,33 +77,6 @@ export class ControlCenterModal extends Modal {
 			cls: 'dbench-control-center__title',
 			text: 'Draft Bench',
 		});
-
-		if (this.projects.length === 0) return;
-
-		new Setting(header)
-			.setName('Project')
-			.setClass('dbench-control-center__project-picker')
-			.addDropdown((dropdown) => {
-				for (const p of this.projects) {
-					dropdown.addOption(
-						p.frontmatter['dbench-id'],
-						p.file.basename
-					);
-				}
-				if (this.selectedProject) {
-					dropdown.setValue(
-						this.selectedProject.frontmatter['dbench-id']
-					);
-				}
-				dropdown.onChange((value) => {
-					this.selectedProject =
-						this.projects.find(
-							(p) => p.frontmatter['dbench-id'] === value
-						) ?? null;
-					this.cachedScenes = null;
-					this.renderActiveTab();
-				});
-			});
 	}
 
 	private renderNav(): void {
@@ -202,11 +114,6 @@ export class ControlCenterModal extends Modal {
 		this.contentAreaEl.empty();
 		this.contentAreaEl.scrollTop = 0;
 
-		if (this.projects.length === 0) {
-			this.renderEmptyVault(this.contentAreaEl);
-			return;
-		}
-
 		const tab =
 			CONTROL_CENTER_TABS.find((t) => t.id === this.activeTabId) ??
 			CONTROL_CENTER_TABS[0];
@@ -215,27 +122,9 @@ export class ControlCenterModal extends Modal {
 			app: this.app,
 			plugin: this.plugin,
 			linker: this.linker,
-			selectedProject: this.selectedProject,
-			scenes: this.getScenes(),
+			selectedProject: null,
+			scenes: null,
 			requestClose: () => this.close(),
-		});
-	}
-
-	private getScenes(): SceneNote[] | null {
-		if (!this.selectedProject) return null;
-		if (this.cachedScenes !== null) return this.cachedScenes;
-		const raw = findScenesInProject(
-			this.app,
-			this.selectedProject.frontmatter['dbench-id']
-		);
-		this.cachedScenes = sortScenesByOrder(raw);
-		return this.cachedScenes;
-	}
-
-	private renderEmptyVault(container: HTMLElement): void {
-		container.createEl('p', {
-			cls: 'dbench-control-center__empty',
-			text: 'No projects exist yet. Use the command palette to create one.',
 		});
 	}
 }

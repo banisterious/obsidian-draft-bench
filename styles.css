@@ -321,7 +321,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   CONTROL-CENTER.CSS  (338 lines, 7.84 KB)
+   CONTROL-CENTER.CSS  (109 lines, 2.68 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -347,11 +347,6 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-control-center__title {
 	margin: 0;
 	font-size: var(--h2-size);
-}
-
-.dbench-control-center__project-picker {
-	border-top: none;
-	padding-top: 0;
 }
 
 .dbench-control-center__body {
@@ -410,241 +405,17 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	overflow-y: auto;
 }
 
-/* Shared tab content primitives */
+/* Shared placeholder text inside tab bodies (Templates / Compile stubs). */
 
-.dbench-control-center__empty,
 .dbench-control-center__placeholder {
 	color: var(--text-muted);
 	font-style: italic;
 }
 
-/* Project tab */
-
-.dbench-control-center__project-title {
-	margin-top: 0;
-}
-
-.dbench-control-center__meta {
-	display: grid;
-	grid-template-columns: max-content 1fr;
-	gap: var(--dbench-spacing-xs) var(--dbench-spacing-md);
-	margin: var(--dbench-spacing-md) 0;
-}
-
-.dbench-control-center__meta-label {
-	color: var(--text-muted);
-	font-weight: var(--font-semibold);
-}
-
-.dbench-control-center__meta-value {
-	margin: 0;
-	font-variant-numeric: tabular-nums;
-}
-
-.dbench-control-center__word-counts {
-	margin-top: var(--dbench-spacing-lg);
-}
-
-.dbench-control-center__word-counts h3 {
-	margin-top: 0;
-	margin-bottom: var(--dbench-spacing-sm);
-}
-
-.dbench-control-center__word-counts-total {
-	display: flex;
-	align-items: baseline;
-	gap: var(--dbench-spacing-sm);
-	margin-bottom: var(--dbench-spacing-md);
-}
-
-.dbench-control-center__word-counts-total-value {
-	font-size: var(--h2-size);
-	font-weight: var(--font-semibold);
-	font-variant-numeric: tabular-nums;
-}
-
-.dbench-control-center__word-counts-total-label {
-	color: var(--text-muted);
-}
-
-/*
- * Project-tab hero progress bar. Sits above the total + status
- * breakdown when the project has a dbench-target-words set. Overage
- * applies a warning-tinted fill without capping the label, so a
- * writer who's blown past the target sees "3,200 / 3,000 (107%)"
- * clearly.
- */
-.dbench-control-center__progress-hero {
-	margin-bottom: var(--dbench-spacing-md);
-}
-
-.dbench-control-center__progress-label {
-	font-variant-numeric: tabular-nums;
-	margin-bottom: var(--dbench-spacing-xs);
-}
-
-.dbench-control-center__progress-track {
-	background-color: var(--background-modifier-border);
-	border-radius: var(--dbench-radius-sm);
-	height: 8px;
-	overflow: hidden;
-}
-
-.dbench-control-center__progress-fill {
-	background-color: var(--interactive-accent);
-	height: 100%;
-	transition: width var(--dbench-transition-base, 120ms) ease;
-}
-
-.dbench-control-center__progress-hero--overage .dbench-control-center__progress-fill {
-	background-color: var(--color-orange, #e0800c);
-}
-
-.dbench-control-center__status-breakdown {
-	display: grid;
-	grid-template-columns: max-content 1fr;
-	gap: var(--dbench-spacing-xs) var(--dbench-spacing-md);
-	margin: 0;
-}
-
-.dbench-control-center__status-label {
-	color: var(--text-muted);
-	text-transform: capitalize;
-}
-
-.dbench-control-center__status-value {
-	margin: 0;
-	font-variant-numeric: tabular-nums;
-}
-
-/* Manuscript tab */
-
-.dbench-control-center__toolbar {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--dbench-spacing-sm);
-	margin-bottom: var(--dbench-spacing-lg);
-}
-
-.dbench-control-center__toolbar-button {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--dbench-spacing-xs);
-	padding: var(--dbench-spacing-sm) var(--dbench-spacing-md);
-	background: var(--interactive-normal);
-	color: var(--text-normal);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--dbench-radius-sm);
-	cursor: pointer;
-	font-size: var(--font-ui-small);
-	transition: background-color var(--dbench-transition-fast);
-}
-
-.dbench-control-center__toolbar-button:hover {
-	background: var(--interactive-hover);
-}
-
-.dbench-control-center__toolbar-icon {
-	display: inline-flex;
-	align-items: center;
-}
-
-.dbench-control-center__scene-list {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--dbench-radius-md);
-}
-
-.dbench-control-center__scene-row {
-	display: flex;
-	align-items: center;
-	gap: var(--dbench-spacing-md);
-	padding: var(--dbench-spacing-sm) var(--dbench-spacing-md);
-	border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.dbench-control-center__scene-row:last-child {
-	border-bottom: none;
-}
-
-.dbench-control-center__scene-order {
-	flex: 0 0 auto;
-	min-width: 2.5em;
-	color: var(--text-muted);
-	font-variant-numeric: tabular-nums;
-}
-
-.dbench-control-center__scene-title {
-	flex: 1 1 auto;
-	color: var(--text-normal);
-	text-decoration: none;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.dbench-control-center__scene-title:hover {
-	color: var(--text-accent);
-	text-decoration: underline;
-}
-
-.dbench-control-center__scene-status {
-	flex: 0 0 auto;
-	color: var(--text-muted);
-	font-size: var(--font-smaller);
-	text-transform: capitalize;
-}
-
-.dbench-control-center__scene-words {
-	flex: 0 0 auto;
-	color: var(--text-muted);
-	font-size: var(--font-smaller);
-	font-variant-numeric: tabular-nums;
-}
-
-/*
- * Per-scene progress variant on the Manuscript tab, used when the
- * scene has a dbench-target-words set. Stacks label over track so it
- * fits in a single row height without crowding the title.
- */
-.dbench-control-center__scene-words--with-target {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-end;
-	gap: 2px;
-	min-width: 140px;
-}
-
-.dbench-control-center__scene-progress-label {
-	font-size: var(--font-smaller);
-	color: var(--text-muted);
-}
-
-.dbench-control-center__scene-progress-track {
-	width: 100%;
-	background-color: var(--background-modifier-border);
-	border-radius: var(--dbench-radius-sm);
-	height: 4px;
-	overflow: hidden;
-}
-
-.dbench-control-center__scene-progress-fill {
-	background-color: var(--interactive-accent);
-	height: 100%;
-	transition: width var(--dbench-transition-base, 120ms) ease;
-}
-
-.dbench-control-center__scene-words--overage .dbench-control-center__scene-progress-fill {
-	background-color: var(--color-orange, #e0800c);
-}
-
-.dbench-control-center__scene-drafts {
-	flex: 0 0 auto;
-	color: var(--text-muted);
-	font-size: var(--font-smaller);
-}
+/* Project and Manuscript tab rules were retired when those tabs
+ * moved to the dockable Manuscript view (D-07). Their styles live
+ * at styles/manuscript-view.css. Templates and Compile tabs inherit
+ * the shared placeholder rule above. */
 
 /* Mobile layout: stack nav above content */
 
@@ -1317,12 +1088,12 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 8
-   Total:      1246 lines, 31.13 KB
+   Total:      1017 lines, 25.97 KB
    - variables.css: 71 lines, 2.34 KB
    - style-settings.css: 98 lines, 3.45 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - control-center.css: 338 lines, 7.84 KB
+   - control-center.css: 109 lines, 2.68 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 404 lines, 9.39 KB
    - settings-tab.css: 119 lines, 2.66 KB

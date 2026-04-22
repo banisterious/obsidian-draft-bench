@@ -12,6 +12,7 @@ import {
 	type ProjectNote,
 	type SceneNote,
 } from '../../core/discovery';
+import { sortScenesByOrder } from '../../core/sort-scenes';
 import { renderSection } from './sections/section-base';
 import { renderProjectSummaryBody } from './sections/project-summary-section';
 import { renderManuscriptListBody } from './sections/manuscript-list-section';
@@ -209,7 +210,7 @@ export class ManuscriptView extends ItemView {
 
 		renderToolbar(content, this.plugin, project);
 
-		const scenes = sortScenes(
+		const scenes = sortScenesByOrder(
 			findScenesInProject(
 				this.plugin.app,
 				project.frontmatter['dbench-id']
@@ -390,15 +391,3 @@ export class ManuscriptView extends ItemView {
 	}
 }
 
-/**
- * Sort scenes by `dbench-order` ascending. Kept private to the view;
- * the equivalent sort used by the Manuscript tab lives at
- * `src/ui/control-center/tabs/sort-scenes.ts` and will be removed
- * when that tab is deleted in the next commit.
- */
-function sortScenes(scenes: SceneNote[]): SceneNote[] {
-	return [...scenes].sort(
-		(a, b) =>
-			a.frontmatter['dbench-order'] - b.frontmatter['dbench-order']
-	);
-}

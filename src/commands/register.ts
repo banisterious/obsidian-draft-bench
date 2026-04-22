@@ -38,9 +38,9 @@ export function registerCommands(
 	registerOpenControlCenterCommand(plugin, () => plugin, linker);
 	registerReorderScenesCommand(plugin, linker);
 	registerRepairProjectCommand(plugin, linker);
-	registerSetAsProjectCommand(plugin);
-	registerSetAsSceneCommand(plugin);
-	registerSetAsDraftCommand(plugin);
-	registerCompleteEssentialsCommand(plugin);
-	registerAddIdCommand(plugin);
+	registerSetAsProjectCommand(plugin, getSettings);
+	registerSetAsSceneCommand(plugin, getSettings);
+	registerSetAsDraftCommand(plugin, getSettings);
+	registerCompleteEssentialsCommand(plugin, getSettings);
+	registerAddIdCommand(plugin, getSettings);
 }

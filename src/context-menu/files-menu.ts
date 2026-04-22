@@ -1,4 +1,5 @@
-import { TFile, type App, type Menu, type TAbstractFile } from 'obsidian';
+import { TFile, type Menu, type TAbstractFile } from 'obsidian';
+import type DraftBenchPlugin from '../../main';
 import {
 	addDbenchId,
 	completeEssentials,
@@ -24,10 +25,11 @@ import { addRetrofitMenuItem, runBatch } from './shared';
  * have no applicable targets across the whole selection are omitted.
  */
 export function buildFilesMenuItems(
-	app: App,
+	plugin: DraftBenchPlugin,
 	menu: Menu,
 	targets: TAbstractFile[]
 ): void {
+	const { app, settings } = plugin;
 	const files = targets.filter(
 		(f): f is TFile => f instanceof TFile && f.extension === 'md'
 	);
@@ -39,13 +41,15 @@ export function buildFilesMenuItems(
 
 	if (anyUntyped) {
 		addRetrofitMenuItem(menu, 'Set as project', 'folder', () =>
-			runBatch(app, files, setAsProject, { action: 'Set as project' })
+			runBatch(app, settings, files, setAsProject, {
+				action: 'Set as project',
+			})
 		);
 		addRetrofitMenuItem(menu, 'Set as scene', 'align-left', () =>
-			runBatch(app, files, setAsScene, { action: 'Set as scene' })
+			runBatch(app, settings, files, setAsScene, { action: 'Set as scene' })
 		);
 		addRetrofitMenuItem(menu, 'Set as draft', 'file-text', () =>
-			runBatch(app, files, setAsDraft, { action: 'Set as draft' })
+			runBatch(app, settings, files, setAsDraft, { action: 'Set as draft' })
 		);
 	}
 
@@ -55,7 +59,7 @@ export function buildFilesMenuItems(
 			'Complete essential properties',
 			'check-circle',
 			() =>
-				runBatch(app, files, completeEssentials, {
+				runBatch(app, settings, files, completeEssentials, {
 					action: 'Complete essential properties',
 				})
 		);
@@ -63,7 +67,7 @@ export function buildFilesMenuItems(
 
 	if (anyMissingId) {
 		addRetrofitMenuItem(menu, 'Add identifier', 'hash', () =>
-			runBatch(app, files, addDbenchId, { action: 'Add identifier' })
+			runBatch(app, settings, files, addDbenchId, { action: 'Add identifier' })
 		);
 	}
 }

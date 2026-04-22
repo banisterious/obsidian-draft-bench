@@ -14,6 +14,9 @@ import {
 	setAsScene,
 } from '../../src/core/retrofit';
 import { isValidDbenchId } from '../../src/core/id';
+import { DEFAULT_SETTINGS } from '../../src/model/settings';
+
+const settings = DEFAULT_SETTINGS;
 
 /**
  * Test helper: create an untyped markdown file directly in the mock
@@ -97,7 +100,7 @@ describe('setAsProject', () => {
 
 	it('stamps project essentials on an untyped note', async () => {
 		const file = await seedFile(app, 'My Novel.md');
-		const result = await setAsProject(app, file);
+		const result = await setAsProject(app, settings,file);
 
 		expect(result.outcome).toBe('updated');
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
@@ -111,14 +114,14 @@ describe('setAsProject', () => {
 
 	it('skips when the note is already typed', async () => {
 		const file = await seedFile(app, 'note.md', { 'dbench-type': 'scene' });
-		const result = await setAsProject(app, file);
+		const result = await setAsProject(app, settings,file);
 		expect(result.outcome).toBe('skipped');
 		expect(result.reason).toContain('scene');
 	});
 
 	it('preserves existing non-dbench frontmatter', async () => {
 		const file = await seedFile(app, 'note.md', { title: 'Existing' });
-		const result = await setAsProject(app, file);
+		const result = await setAsProject(app, settings,file);
 		expect(result.outcome).toBe('updated');
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		expect(fm?.['title']).toBe('Existing');
@@ -130,7 +133,7 @@ describe('setAsScene', () => {
 	it('stamps scene essentials on an untyped note', async () => {
 		const app = new App();
 		const file = await seedFile(app, 'Opening.md');
-		const result = await setAsScene(app, file);
+		const result = await setAsScene(app, settings,file);
 
 		expect(result.outcome).toBe('updated');
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
@@ -145,7 +148,7 @@ describe('setAsScene', () => {
 		const file = await seedFile(app, 'note.md', {
 			'dbench-type': 'project',
 		});
-		const result = await setAsScene(app, file);
+		const result = await setAsScene(app, settings,file);
 		expect(result.outcome).toBe('skipped');
 		expect(result.reason).toMatch(/already a project/i);
 	});
@@ -155,7 +158,7 @@ describe('setAsDraft', () => {
 	it('stamps draft essentials with draft-number 1 by default', async () => {
 		const app = new App();
 		const file = await seedFile(app, 'Opening.md');
-		const result = await setAsDraft(app, file);
+		const result = await setAsDraft(app, settings,file);
 
 		expect(result.outcome).toBe('updated');
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
@@ -169,7 +172,7 @@ describe('setAsDraft', () => {
 			app,
 			'Opening - Draft 3 (20260420).md'
 		);
-		const result = await setAsDraft(app, file);
+		const result = await setAsDraft(app, settings,file);
 
 		expect(result.outcome).toBe('updated');
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
@@ -179,7 +182,7 @@ describe('setAsDraft', () => {
 	it('falls back to 1 when filename has no Draft pattern', async () => {
 		const app = new App();
 		const file = await seedFile(app, 'Untitled draft file.md');
-		const result = await setAsDraft(app, file);
+		const result = await setAsDraft(app, settings,file);
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		expect(fm?.['dbench-draft-number']).toBe(1);
 	});
@@ -189,7 +192,7 @@ describe('completeEssentials', () => {
 	it('skips an untyped note', async () => {
 		const app = new App();
 		const file = await seedFile(app, 'note.md');
-		const result = await completeEssentials(app, file);
+		const result = await completeEssentials(app, settings,file);
 		expect(result.outcome).toBe('skipped');
 		expect(result.reason).toMatch(/no dbench-type/i);
 	});
@@ -197,8 +200,8 @@ describe('completeEssentials', () => {
 	it('skips a fully-stamped note', async () => {
 		const app = new App();
 		const file = await seedFile(app, 'note.md');
-		await setAsScene(app, file);
-		const result = await completeEssentials(app, file);
+		await setAsScene(app, settings,file);
+		const result = await completeEssentials(app, settings,file);
 		expect(result.outcome).toBe('skipped');
 		expect(result.reason).toMatch(/already complete/i);
 	});
@@ -210,7 +213,7 @@ describe('completeEssentials', () => {
 			'dbench-id': 'abc-123-def-456',
 			// Missing: project, project-id, order, status, drafts, draft-ids
 		});
-		const result = await completeEssentials(app, file);
+		const result = await completeEssentials(app, settings,file);
 		expect(result.outcome).toBe('updated');
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		expect(fm?.['dbench-id']).toBe('abc-123-def-456'); // preserved
@@ -224,7 +227,7 @@ describe('completeEssentials', () => {
 		const file = await seedFile(app, 'Novel.md', {
 			'dbench-type': 'project',
 		});
-		const result = await completeEssentials(app, file);
+		const result = await completeEssentials(app, settings,file);
 		expect(result.outcome).toBe('updated');
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		expect(fm?.['dbench-project-shape']).toBe('folder');
@@ -237,7 +240,7 @@ describe('addDbenchId', () => {
 		const file = await seedFile(app, 'note.md', {
 			'dbench-type': 'scene',
 		});
-		const result = await addDbenchId(app, file);
+		const result = await addDbenchId(app, settings,file);
 		expect(result.outcome).toBe('updated');
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		expect(isValidDbenchId(fm?.['dbench-id'])).toBe(true);
@@ -249,14 +252,14 @@ describe('addDbenchId', () => {
 			'dbench-type': 'scene',
 			'dbench-id': 'abc-123-def-456',
 		});
-		const result = await addDbenchId(app, file);
+		const result = await addDbenchId(app, settings,file);
 		expect(result.outcome).toBe('skipped');
 	});
 
 	it('still stamps on an untyped note (spec allows standalone use)', async () => {
 		const app = new App();
 		const file = await seedFile(app, 'note.md');
-		const result = await addDbenchId(app, file);
+		const result = await addDbenchId(app, settings,file);
 		expect(result.outcome).toBe('updated');
 	});
 });
@@ -301,7 +304,7 @@ describe('applyToFiles', () => {
 		const b = await seedFile(app, 'b.md', { 'dbench-type': 'project' }); // already typed → skipped
 		const c = await seedFile(app, 'c.md'); // untyped → updated
 
-		const result = await applyToFiles(app, [a, b, c], setAsScene);
+		const result = await applyToFiles(app, settings,[a, b, c], setAsScene);
 		expect(result.updated).toBe(2);
 		expect(result.skipped).toBe(1);
 		expect(result.errors).toBe(0);
@@ -309,7 +312,7 @@ describe('applyToFiles', () => {
 
 	it('handles an empty file list', async () => {
 		const app = new App();
-		const result = await applyToFiles(app, [], setAsScene);
+		const result = await applyToFiles(app, settings,[], setAsScene);
 		expect(result).toEqual({ updated: 0, skipped: 0, errors: 0 });
 	});
 });
@@ -370,7 +373,7 @@ describe('setAsScene with folder inference', () => {
 		await seedProjectNote(app, 'Novel/Novel.md', 'prj-001-tst-001');
 		const untyped = await seedFile(app, 'Novel/Opening.md');
 
-		const result = await setAsScene(app, untyped);
+		const result = await setAsScene(app, settings,untyped);
 		expect(result.outcome).toBe('updated');
 
 		const fm = app.metadataCache.getFileCache(untyped)?.frontmatter;
@@ -408,7 +411,7 @@ describe('setAsScene with folder inference', () => {
 		});
 
 		const untyped = await seedFile(app, 'Novel/Chapter 3.md');
-		const result = await setAsScene(app, untyped);
+		const result = await setAsScene(app, settings,untyped);
 		expect(result.outcome).toBe('updated');
 
 		const fm = app.metadataCache.getFileCache(untyped)?.frontmatter;
@@ -418,7 +421,7 @@ describe('setAsScene with folder inference', () => {
 	it('falls back to empty placeholders when the folder has no project', async () => {
 		const app = new App();
 		const untyped = await seedFile(app, 'Loose/Orphan.md');
-		const result = await setAsScene(app, untyped);
+		const result = await setAsScene(app, settings,untyped);
 		expect(result.outcome).toBe('updated');
 
 		const fm = app.metadataCache.getFileCache(untyped)?.frontmatter;
@@ -433,7 +436,7 @@ describe('setAsScene with folder inference', () => {
 		await seedProjectNote(app, 'Shared/Second.md', 'prj-002-tst-002');
 		const untyped = await seedFile(app, 'Shared/Orphan.md');
 
-		const result = await setAsScene(app, untyped);
+		const result = await setAsScene(app, settings,untyped);
 		expect(result.outcome).toBe('updated');
 
 		const fm = app.metadataCache.getFileCache(untyped)?.frontmatter;
@@ -470,7 +473,7 @@ describe('setAsDraft with folder inference', () => {
 			'Novel/Drafts/Opening - Draft 1 (20260420).md'
 		);
 
-		const result = await setAsDraft(app, untyped);
+		const result = await setAsDraft(app, settings,untyped);
 		expect(result.outcome).toBe('updated');
 
 		const fm = app.metadataCache.getFileCache(untyped)?.frontmatter;
@@ -482,7 +485,7 @@ describe('setAsDraft with folder inference', () => {
 	it('always sets dbench-project-id (empty when inference fails)', async () => {
 		const app = new App();
 		const untyped = await seedFile(app, 'Loose/Orphan draft.md');
-		const result = await setAsDraft(app, untyped);
+		const result = await setAsDraft(app, settings,untyped);
 		expect(result.outcome).toBe('updated');
 
 		const fm = app.metadataCache.getFileCache(untyped)?.frontmatter;
@@ -496,7 +499,7 @@ describe('setAsDraft with folder inference', () => {
 		await seedProjectNote(app, 'Shared/B.md', 'prj-002-tst-002');
 		const untyped = await seedFile(app, 'Shared/Drafts/orphan.md');
 
-		const result = await setAsDraft(app, untyped);
+		const result = await setAsDraft(app, settings,untyped);
 		expect(result.outcome).toBe('updated');
 
 		const fm = app.metadataCache.getFileCache(untyped)?.frontmatter;
@@ -541,7 +544,7 @@ describe('completeEssentials with folder inference', () => {
 			'dbench-draft-ids': [],
 		});
 
-		const result = await completeEssentials(app, scene);
+		const result = await completeEssentials(app, settings,scene);
 		expect(result.outcome).toBe('updated');
 
 		const fm = app.metadataCache.getFileCache(scene)?.frontmatter;
@@ -565,7 +568,7 @@ describe('completeEssentials with folder inference', () => {
 			'dbench-draft-ids': [],
 		});
 
-		const result = await completeEssentials(app, scene);
+		const result = await completeEssentials(app, settings,scene);
 		// All required keys present AND existing values are non-empty.
 		// No upgrade opportunities, so skip.
 		expect(result.outcome).toBe('skipped');

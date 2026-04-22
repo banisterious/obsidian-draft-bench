@@ -29,16 +29,20 @@ export type DbenchId = string;
 export type ProjectShape = 'folder' | 'single';
 
 /**
- * V1 hardcoded status workflow. User-configurable vocabulary is
- * deferred to Phase 2 (see specification.md § Open Questions).
+ * A scene or project workflow status. The vocabulary is user-
+ * configurable (see `settings.statusVocabulary`); this alias is
+ * kept to document intent at call sites that pass a status value
+ * around.
  */
-export type DbenchStatus = 'idea' | 'draft' | 'revision' | 'final';
+export type DbenchStatus = string;
 
 /**
- * The four V1 status values as a runtime array, for iteration in
- * UI surfaces (status pickers, validation).
+ * Built-in default status workflow, used to seed
+ * `settings.statusVocabulary` on first load and as a fallback when
+ * the user's vocabulary somehow ends up empty. The first entry is
+ * the default status stamped onto new scenes and projects.
  */
-export const DBENCH_STATUSES: readonly DbenchStatus[] = [
+export const DEFAULT_STATUS_VOCABULARY: readonly string[] = [
 	'idea',
 	'draft',
 	'revision',

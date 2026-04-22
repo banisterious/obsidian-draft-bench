@@ -1,4 +1,5 @@
 import { generateDbenchId } from './id';
+import { DEFAULT_STATUS_VOCABULARY } from '../model/types';
 
 /**
  * "Essentials" helpers stamp the V1 frontmatter schema onto a note.
@@ -25,12 +26,29 @@ import { generateDbenchId } from './id';
 export interface EssentialsContext {
 	/** The file's basename without extension (e.g., "My Novel"). */
 	basename: string;
+
+	/**
+	 * The status value written when `dbench-status` is absent. Callers
+	 * typically pass `settings.statusVocabulary[0]`; when omitted, the
+	 * built-in default (first entry of `DEFAULT_STATUS_VOCABULARY`) is
+	 * used, which keeps retrofits against a still-loading plugin safe.
+	 */
+	defaultStatus?: string;
 }
 
-const DEFAULT_STATUS = 'idea';
 const DEFAULT_PROJECT_SHAPE = 'folder';
 const DEFAULT_SCENE_ORDER = 9999;
 const DEFAULT_DRAFT_NUMBER = 1;
+
+/**
+ * Resolve the default status from an `EssentialsContext`, falling back
+ * to the first value of the built-in vocabulary when the caller didn't
+ * pass one. Callers that know their settings should always pass an
+ * explicit value; the fallback is a safety net, not a feature.
+ */
+function defaultStatusOf(context: EssentialsContext): string {
+	return context.defaultStatus ?? DEFAULT_STATUS_VOCABULARY[0];
+}
 
 /**
  * Stamp project essentials onto `frontmatter`.
@@ -55,7 +73,7 @@ export function stampProjectEssentials(
 	setIfMissing(frontmatter, 'dbench-project', `[[${context.basename}]]`);
 	setIfMissing(frontmatter, 'dbench-project-id', id);
 	setIfMissing(frontmatter, 'dbench-project-shape', DEFAULT_PROJECT_SHAPE);
-	setIfMissing(frontmatter, 'dbench-status', DEFAULT_STATUS);
+	setIfMissing(frontmatter, 'dbench-status', defaultStatusOf(context));
 	setIfMissing(frontmatter, 'dbench-scenes', []);
 	setIfMissing(frontmatter, 'dbench-scene-ids', []);
 }
@@ -69,20 +87,19 @@ export function stampProjectEssentials(
  * (high default so the scene sorts at the end), `dbench-status`,
  * and the empty `dbench-drafts` / `dbench-draft-ids` reverse arrays.
  *
- * `context` is accepted for signature uniformity with the project
- * helper but is currently unused (no scene field defaults to a
- * filename-derived value). Idempotent.
+ * `context.defaultStatus` seeds `dbench-status` when absent; callers
+ * should pass `settings.statusVocabulary[0]`. Idempotent.
  */
 export function stampSceneEssentials(
 	frontmatter: Record<string, unknown>,
-	_context: EssentialsContext
+	context: EssentialsContext
 ): void {
 	setIfMissing(frontmatter, 'dbench-type', 'scene');
 	setIfMissing(frontmatter, 'dbench-id', generateDbenchId());
 	setIfMissing(frontmatter, 'dbench-project', '');
 	setIfMissing(frontmatter, 'dbench-project-id', '');
 	setIfMissing(frontmatter, 'dbench-order', DEFAULT_SCENE_ORDER);
-	setIfMissing(frontmatter, 'dbench-status', DEFAULT_STATUS);
+	setIfMissing(frontmatter, 'dbench-status', defaultStatusOf(context));
 	setIfMissing(frontmatter, 'dbench-drafts', []);
 	setIfMissing(frontmatter, 'dbench-draft-ids', []);
 }

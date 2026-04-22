@@ -86,21 +86,21 @@ function buildSingleFileItems(
 
 	if (type === null) {
 		addRetrofitMenuItem(menu, 'Set as project', 'folder', async () => {
-			const result = await setAsProject(app, file);
+			const result = await setAsProject(app, plugin.settings, file);
 			noticeForSingleFile(result, {
 				success: 'Set as project',
 				failureVerb: 'set as project',
 			});
 		});
 		addRetrofitMenuItem(menu, 'Set as scene', 'align-left', async () => {
-			const result = await setAsScene(app, file);
+			const result = await setAsScene(app, plugin.settings, file);
 			noticeForSingleFile(result, {
 				success: 'Set as scene',
 				failureVerb: 'set as scene',
 			});
 		});
 		addRetrofitMenuItem(menu, 'Set as draft', 'file-text', async () => {
-			const result = await setAsDraft(app, file);
+			const result = await setAsDraft(app, plugin.settings, file);
 			noticeForSingleFile(result, {
 				success: 'Set as draft',
 				failureVerb: 'set as draft',
@@ -115,7 +115,7 @@ function buildSingleFileItems(
 			'Complete essential properties',
 			'check-circle',
 			async () => {
-				const result = await completeEssentials(app, file);
+				const result = await completeEssentials(app, plugin.settings, file);
 				noticeForSingleFile(result, {
 					success: 'Completed essential properties',
 					failureVerb: 'complete essential properties',
@@ -126,7 +126,7 @@ function buildSingleFileItems(
 
 	if (hasMissingId(app, file)) {
 		addRetrofitMenuItem(menu, 'Add identifier', 'hash', async () => {
-			const result = await addDbenchId(app, file);
+			const result = await addDbenchId(app, plugin.settings, file);
 			noticeForSingleFile(result, {
 				success: 'Added identifier',
 				failureVerb: 'add identifier',
@@ -144,25 +144,26 @@ function buildFolderItems(
 	const files = collectMarkdownFiles(app, folder);
 	if (files.length === 0) return;
 
+	const { settings } = plugin;
 	addRetrofitMenuItem(menu, 'Set as project', 'folder', () =>
-		runBatch(app, files, setAsProject, { action: 'Set as project' })
+		runBatch(app, settings, files, setAsProject, { action: 'Set as project' })
 	);
 	addRetrofitMenuItem(menu, 'Set as scene', 'align-left', () =>
-		runBatch(app, files, setAsScene, { action: 'Set as scene' })
+		runBatch(app, settings, files, setAsScene, { action: 'Set as scene' })
 	);
 	addRetrofitMenuItem(menu, 'Set as draft', 'file-text', () =>
-		runBatch(app, files, setAsDraft, { action: 'Set as draft' })
+		runBatch(app, settings, files, setAsDraft, { action: 'Set as draft' })
 	);
 	addRetrofitMenuItem(
 		menu,
 		'Complete essential properties',
 		'check-circle',
 		() =>
-			runBatch(app, files, completeEssentials, {
+			runBatch(app, settings, files, completeEssentials, {
 				action: 'Complete essential properties',
 			})
 	);
 	addRetrofitMenuItem(menu, 'Add identifier', 'hash', () =>
-		runBatch(app, files, addDbenchId, { action: 'Add identifier' })
+		runBatch(app, settings, files, addDbenchId, { action: 'Add identifier' })
 	);
 }

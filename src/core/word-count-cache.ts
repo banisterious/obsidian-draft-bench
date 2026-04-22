@@ -1,5 +1,4 @@
 import type { App, TFile } from 'obsidian';
-import type { DbenchStatus } from '../model/types';
 import type { ProjectNote, SceneNote } from './discovery';
 import { findScenesInProject } from './discovery';
 import { countScene } from './word-count';
@@ -18,16 +17,21 @@ interface CacheEntry {
  * Aggregated counts for a project.
  *
  * - `total`: sum of word counts across every scene in the project.
- * - `wordsByStatus`: words contributed by scenes at each status
- *   (`idea` / `draft` / `revision` / `final`). Useful for "there's
- *   still 3k words sitting in revision" at-a-glance insight.
+ * - `wordsByStatus`: words contributed by scenes at each status, keyed
+ *   by the scene's `dbench-status`. Useful for "there's still 3k words
+ *   sitting in revision" at-a-glance insight.
  * - `scenesByStatus`: scene count per status, for UIs that want to
  *   show both measures ("3 scenes, 2,500 words in revision").
+ *
+ * Both maps are populated lazily: only statuses actually found on
+ * scenes appear as keys. UIs that want to render zero-rows for
+ * not-yet-used statuses should iterate the vocabulary explicitly and
+ * fall back to `0` for absent keys.
  */
 export interface ProjectWordCounts {
 	total: number;
-	wordsByStatus: Record<DbenchStatus, number>;
-	scenesByStatus: Record<DbenchStatus, number>;
+	wordsByStatus: Record<string, number>;
+	scenesByStatus: Record<string, number>;
 }
 
 /**
@@ -76,8 +80,9 @@ export class WordCountCache {
 			const count = await this.countForScene(scene);
 			const status = scene.frontmatter['dbench-status'];
 			result.total += count;
-			result.wordsByStatus[status] += count;
-			result.scenesByStatus[status] += 1;
+			result.wordsByStatus[status] = (result.wordsByStatus[status] ?? 0) + count;
+			result.scenesByStatus[status] =
+				(result.scenesByStatus[status] ?? 0) + 1;
 		}
 		return result;
 	}
@@ -113,7 +118,7 @@ export class WordCountCache {
 function emptyCounts(): ProjectWordCounts {
 	return {
 		total: 0,
-		wordsByStatus: { idea: 0, draft: 0, revision: 0, final: 0 },
-		scenesByStatus: { idea: 0, draft: 0, revision: 0, final: 0 },
+		wordsByStatus: {},
+		scenesByStatus: {},
 	};
 }

@@ -1,6 +1,5 @@
 import { App, Modal, Notice, Setting, type TFile } from 'obsidian';
 import type { DbenchStatus } from '../../model/types';
-import { DBENCH_STATUSES } from '../../model/types';
 import type { DraftBenchSettings } from '../../model/settings';
 import { createScene } from '../../core/scenes';
 import { findProjects, type ProjectNote } from '../../core/discovery';
@@ -19,7 +18,7 @@ export class NewSceneModal extends Modal {
 	private selectedProjectId = '';
 	private titleInput = '';
 	private orderInput = '';
-	private status: DbenchStatus = 'idea';
+	private status: DbenchStatus;
 	private submitButton: HTMLButtonElement | null = null;
 
 	constructor(
@@ -32,6 +31,7 @@ export class NewSceneModal extends Modal {
 		if (this.projects.length > 0) {
 			this.selectedProjectId = this.projects[0].frontmatter['dbench-id'];
 		}
+		this.status = settings.statusVocabulary[0];
 	}
 
 	onOpen(): void {
@@ -89,11 +89,11 @@ export class NewSceneModal extends Modal {
 			.setName('Status')
 			.setDesc('Initial workflow status.')
 			.addDropdown((dropdown) => {
-				for (const s of DBENCH_STATUSES) {
+				for (const s of this.settings.statusVocabulary) {
 					dropdown.addOption(s, capitalize(s));
 				}
 				dropdown.setValue(this.status).onChange((value) => {
-					this.status = value as DbenchStatus;
+					this.status = value;
 				});
 			});
 

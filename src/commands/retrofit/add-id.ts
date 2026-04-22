@@ -1,4 +1,5 @@
 import type { Plugin } from 'obsidian';
+import type { DraftBenchSettings } from '../../model/settings';
 import { addDbenchId } from '../../core/retrofit';
 import { activeMarkdownFile, noticeForResult } from './shared';
 
@@ -8,7 +9,10 @@ import { activeMarkdownFile, noticeForResult } from './shared';
  * skips. Named "Add identifier" rather than the literal property name
  * for sentence-case compatibility with Obsidian's plugin UI guidelines.
  */
-export function registerAddIdCommand(plugin: Plugin): void {
+export function registerAddIdCommand(
+	plugin: Plugin,
+	getSettings: () => DraftBenchSettings
+): void {
 	plugin.addCommand({
 		id: 'add-dbench-id',
 		name: 'Add identifier',
@@ -17,7 +21,7 @@ export function registerAddIdCommand(plugin: Plugin): void {
 			if (!file) return false;
 			if (!checking) {
 				void (async () => {
-					const result = await addDbenchId(plugin.app, file);
+					const result = await addDbenchId(plugin.app, getSettings(), file);
 					noticeForResult(result, {
 						success: 'Added identifier',
 						failureVerb: 'add identifier',

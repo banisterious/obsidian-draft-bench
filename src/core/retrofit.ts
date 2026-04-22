@@ -1,4 +1,5 @@
 import { TFile, type App, type TFolder } from 'obsidian';
+import type { DraftBenchSettings } from '../model/settings';
 import {
 	stampDbenchId,
 	stampDraftEssentials,
@@ -123,6 +124,7 @@ export function hasMissingId(app: App, file: TFile): boolean {
  */
 export async function setAsProject(
 	app: App,
+	settings: DraftBenchSettings,
 	file: TFile
 ): Promise<RetrofitResult> {
 	const existing = readDbenchType(app, file);
@@ -131,7 +133,10 @@ export async function setAsProject(
 	}
 	try {
 		await app.fileManager.processFrontMatter(file, (fm) => {
-			stampProjectEssentials(fm, { basename: file.basename });
+			stampProjectEssentials(fm, {
+				basename: file.basename,
+				defaultStatus: settings.statusVocabulary[0],
+			});
 		});
 		return { outcome: 'updated', file };
 	} catch (err) {
@@ -156,6 +161,7 @@ export async function setAsProject(
  */
 export async function setAsScene(
 	app: App,
+	settings: DraftBenchSettings,
 	file: TFile
 ): Promise<RetrofitResult> {
 	const existing = readDbenchType(app, file);
@@ -173,7 +179,10 @@ export async function setAsScene(
 					inferred.frontmatter['dbench-id']
 				);
 			}
-			stampSceneEssentials(fm, { basename: file.basename });
+			stampSceneEssentials(fm, {
+				basename: file.basename,
+				defaultStatus: settings.statusVocabulary[0],
+			});
 		});
 		return { outcome: 'updated', file };
 	} catch (err) {
@@ -197,6 +206,7 @@ export async function setAsScene(
  */
 export async function setAsDraft(
 	app: App,
+	_settings: DraftBenchSettings,
 	file: TFile
 ): Promise<RetrofitResult> {
 	const existing = readDbenchType(app, file);
@@ -246,6 +256,7 @@ export async function setAsDraft(
  */
 export async function completeEssentials(
 	app: App,
+	settings: DraftBenchSettings,
 	file: TFile
 ): Promise<RetrofitResult> {
 	const type = readDbenchType(app, file);
@@ -302,10 +313,14 @@ export async function completeEssentials(
 					);
 				}
 			}
+			const stampContext = {
+				basename: file.basename,
+				defaultStatus: settings.statusVocabulary[0],
+			};
 			if (type === 'project') {
-				stampProjectEssentials(frontmatter, { basename: file.basename });
+				stampProjectEssentials(frontmatter, stampContext);
 			} else if (type === 'scene') {
-				stampSceneEssentials(frontmatter, { basename: file.basename });
+				stampSceneEssentials(frontmatter, stampContext);
 			} else if (type === 'draft') {
 				if (
 					frontmatter['dbench-draft-number'] === undefined ||
@@ -315,7 +330,7 @@ export async function completeEssentials(
 						file.basename
 					);
 				}
-				stampDraftEssentials(frontmatter, { basename: file.basename });
+				stampDraftEssentials(frontmatter, stampContext);
 			}
 		});
 		return { outcome: 'updated', file };
@@ -343,6 +358,7 @@ function isEmpty(value: unknown): boolean {
  */
 export async function addDbenchId(
 	app: App,
+	_settings: DraftBenchSettings,
 	file: TFile
 ): Promise<RetrofitResult> {
 	if (!hasMissingId(app, file) && readDbenchType(app, file) !== null) {
@@ -374,12 +390,17 @@ export async function addDbenchId(
  */
 export async function applyToFiles(
 	app: App,
+	settings: DraftBenchSettings,
 	files: TFile[],
-	action: (app: App, file: TFile) => Promise<RetrofitResult>
+	action: (
+		app: App,
+		settings: DraftBenchSettings,
+		file: TFile
+	) => Promise<RetrofitResult>
 ): Promise<BatchResult> {
 	const result: BatchResult = { updated: 0, skipped: 0, errors: 0 };
 	for (const file of files) {
-		const r = await action(app, file);
+		const r = await action(app, settings, file);
 		if (r.outcome === 'updated') result.updated++;
 		else if (r.outcome === 'skipped') result.skipped++;
 		else result.errors++;

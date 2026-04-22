@@ -7,6 +7,8 @@
  * The Settings tab UI in `ui/settings/` reads and writes these.
  */
 
+import { DEFAULT_STATUS_VOCABULARY } from './types';
+
 /**
  * Where the drafts folder lives relative to projects in the vault.
  *
@@ -76,6 +78,15 @@ export interface DraftBenchSettings {
 	basesFolder: string;
 
 	/**
+	 * The ordered list of allowed workflow statuses (for scene and
+	 * project `dbench-status`). The first entry is the default
+	 * stamped onto new notes. Default matches the V1 hardcoded
+	 * vocabulary (`idea`, `draft`, `revision`, `final`); writers can
+	 * edit it in the Settings tab's Statuses section.
+	 */
+	statusVocabulary: string[];
+
+	/**
 	 * Master toggle for the bidirectional linker. When off, the live
 	 * sync service is dormant (manual repair via the "Repair project
 	 * links" command still works).
@@ -102,6 +113,7 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	templatesFolder: 'Draft Bench/Templates/',
 	sceneTemplatePath: '',
 	basesFolder: 'Draft Bench/Bases',
+	statusVocabulary: [...DEFAULT_STATUS_VOCABULARY],
 	enableBidirectionalSync: true,
 	syncOnFileModify: true,
 };

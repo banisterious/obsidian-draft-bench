@@ -25,7 +25,7 @@ export function registerContextMenu(
 
 	plugin.registerEvent(
 		plugin.app.workspace.on('files-menu', (menu, targets) => {
-			buildFilesMenuItems(plugin.app, menu, targets);
+			buildFilesMenuItems(plugin, menu, targets);
 		})
 	);
 }

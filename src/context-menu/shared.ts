@@ -1,4 +1,5 @@
 import { Notice, type App, type Menu, type TFile } from 'obsidian';
+import type { DraftBenchSettings } from '../model/settings';
 import {
 	applyToFiles,
 	type BatchResult,
@@ -73,11 +74,16 @@ export function noticeForBatch(
  */
 export async function runBatch(
 	app: App,
+	settings: DraftBenchSettings,
 	files: TFile[],
-	action: (app: App, file: TFile) => Promise<RetrofitResult>,
+	action: (
+		app: App,
+		settings: DraftBenchSettings,
+		file: TFile
+	) => Promise<RetrofitResult>,
 	labels: BatchNoticeLabels
 ): Promise<void> {
-	const result = await applyToFiles(app, files, action);
+	const result = await applyToFiles(app, settings, files, action);
 	noticeForBatch(result, labels);
 }
 

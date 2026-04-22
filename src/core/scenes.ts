@@ -149,7 +149,8 @@ export async function createScene(
 	const projectId = options.project.frontmatter['dbench-id'];
 	const projectWikilink = `[[${options.project.file.basename}]]`;
 	const order = options.order ?? nextSceneOrder(app, projectId);
-	const status = options.status ?? 'idea';
+	const defaultStatus = settings.statusVocabulary[0];
+	const status = options.status ?? defaultStatus;
 
 	const templateBody = await resolveSceneTemplate(app, settings, {
 		project: projectWikilink,
@@ -169,7 +170,10 @@ export async function createScene(
 		frontmatter['dbench-project-id'] = projectId;
 		frontmatter['dbench-order'] = order;
 		frontmatter['dbench-status'] = status;
-		stampSceneEssentials(frontmatter, { basename: file.basename });
+		stampSceneEssentials(frontmatter, {
+			basename: file.basename,
+			defaultStatus,
+		});
 	});
 
 	const sceneId = String(

@@ -1,4 +1,5 @@
 import type { Plugin } from 'obsidian';
+import type { DraftBenchSettings } from '../../model/settings';
 import { setAsProject } from '../../core/retrofit';
 import { activeMarkdownFile, noticeForResult } from './shared';
 
@@ -9,7 +10,10 @@ import { activeMarkdownFile, noticeForResult } from './shared';
  * already-typed notes (returns `skipped`), so the command stays visible
  * in the palette and surfaces a helpful notice when it can't apply.
  */
-export function registerSetAsProjectCommand(plugin: Plugin): void {
+export function registerSetAsProjectCommand(
+	plugin: Plugin,
+	getSettings: () => DraftBenchSettings
+): void {
 	plugin.addCommand({
 		id: 'set-as-project',
 		name: 'Set as project',
@@ -18,7 +22,11 @@ export function registerSetAsProjectCommand(plugin: Plugin): void {
 			if (!file) return false;
 			if (!checking) {
 				void (async () => {
-					const result = await setAsProject(plugin.app, file);
+					const result = await setAsProject(
+						plugin.app,
+						getSettings(),
+						file
+					);
 					noticeForResult(result, {
 						success: 'Set as project',
 						failureVerb: 'set as project',

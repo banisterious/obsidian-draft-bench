@@ -226,6 +226,32 @@ describe('stampDbenchId', () => {
 	});
 });
 
+describe('defaultStatus in context', () => {
+	it('stampProjectEssentials uses context.defaultStatus when provided', () => {
+		const fm: Record<string, unknown> = {};
+		stampProjectEssentials(fm, {
+			basename: 'My Novel',
+			defaultStatus: 'brainstorm',
+		});
+		expect(fm['dbench-status']).toBe('brainstorm');
+	});
+
+	it('stampSceneEssentials uses context.defaultStatus when provided', () => {
+		const fm: Record<string, unknown> = {};
+		stampSceneEssentials(fm, {
+			basename: 'Scene',
+			defaultStatus: 'wip',
+		});
+		expect(fm['dbench-status']).toBe('wip');
+	});
+
+	it('falls back to the built-in default when defaultStatus is omitted', () => {
+		const fm: Record<string, unknown> = {};
+		stampSceneEssentials(fm, { basename: 'Scene' });
+		expect(fm['dbench-status']).toBe('idea');
+	});
+});
+
 describe('cross-helper interaction', () => {
 	it('stampDbenchId followed by stampSceneEssentials uses the existing id', () => {
 		const fm: Record<string, unknown> = {};

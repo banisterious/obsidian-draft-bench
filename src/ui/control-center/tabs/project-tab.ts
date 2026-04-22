@@ -1,4 +1,3 @@
-import { DBENCH_STATUSES, type DbenchStatus } from '../../../model/types';
 import type { ProjectWordCounts } from '../../../core/word-count-cache';
 import type { TabContext, TabDefinition } from './types';
 
@@ -53,7 +52,9 @@ function renderWordCounts(container: HTMLElement, context: TabContext): void {
 		.then((counts) => {
 			if (!body.isConnected) return;
 			body.empty();
-			body.appendChild(buildWordCountsView(counts));
+			body.appendChild(
+				buildWordCountsView(counts, context.plugin.settings.statusVocabulary)
+			);
 		})
 		.catch((err: unknown) => {
 			if (!body.isConnected) return;
@@ -66,7 +67,10 @@ function renderWordCounts(container: HTMLElement, context: TabContext): void {
 		});
 }
 
-function buildWordCountsView(counts: ProjectWordCounts): HTMLElement {
+function buildWordCountsView(
+	counts: ProjectWordCounts,
+	vocabulary: readonly string[]
+): HTMLElement {
 	const wrapper = document.createElement('div');
 
 	const total = wrapper.createDiv({
@@ -85,12 +89,36 @@ function buildWordCountsView(counts: ProjectWordCounts): HTMLElement {
 		cls: 'dbench-control-center__status-breakdown',
 	});
 
+	// Iterate the writer's configured vocabulary first (so rows appear in
+	// their chosen order), then append any out-of-vocab buckets the cache
+	// discovered on scenes (statuses the writer has since removed but
+	// haven't been migrated off existing notes). Empty buckets are skipped.
+	const seen = new Set<string>();
+	const rows: string[] = [];
+	for (const status of vocabulary) {
+		if (!seen.has(status)) {
+			seen.add(status);
+			rows.push(status);
+		}
+	}
+	for (const status of Object.keys(counts.scenesByStatus)) {
+		if (!seen.has(status)) {
+			seen.add(status);
+			rows.push(status);
+		}
+	}
+
 	let renderedAny = false;
-	for (const status of DBENCH_STATUSES) {
-		const sceneCount = counts.scenesByStatus[status];
+	for (const status of rows) {
+		const sceneCount = counts.scenesByStatus[status] ?? 0;
 		if (sceneCount === 0) continue;
 		renderedAny = true;
-		appendStatusRow(breakdown, status, counts.wordsByStatus[status], sceneCount);
+		appendStatusRow(
+			breakdown,
+			status,
+			counts.wordsByStatus[status] ?? 0,
+			sceneCount
+		);
 	}
 
 	if (!renderedAny) {
@@ -106,7 +134,7 @@ function buildWordCountsView(counts: ProjectWordCounts): HTMLElement {
 
 function appendStatusRow(
 	dl: HTMLElement,
-	status: DbenchStatus,
+	status: string,
 	words: number,
 	scenes: number
 ): void {

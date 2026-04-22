@@ -136,7 +136,10 @@ export async function createProject(
 		// Pre-set the shape so stampProjectEssentials' setIfMissing leaves
 		// it alone. Cleaner than overriding after stamping.
 		frontmatter['dbench-project-shape'] = options.shape;
-		stampProjectEssentials(frontmatter, { basename: file.basename });
+		stampProjectEssentials(frontmatter, {
+			basename: file.basename,
+			defaultStatus: settings.statusVocabulary[0],
+		});
 	});
 
 	return file;

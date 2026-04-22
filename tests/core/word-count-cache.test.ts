@@ -133,23 +133,13 @@ describe('WordCountCache', () => {
 	});
 
 	describe('countForProject', () => {
-		it('returns zeros for a project with no scenes', async () => {
+		it('returns empty buckets for a project with no scenes', async () => {
 			const project = await seedProject(app, settings, 'Empty');
 
 			const counts = await cache.countForProject(project);
 			expect(counts.total).toBe(0);
-			expect(counts.wordsByStatus).toEqual({
-				idea: 0,
-				draft: 0,
-				revision: 0,
-				final: 0,
-			});
-			expect(counts.scenesByStatus).toEqual({
-				idea: 0,
-				draft: 0,
-				revision: 0,
-				final: 0,
-			});
+			expect(counts.wordsByStatus).toEqual({});
+			expect(counts.scenesByStatus).toEqual({});
 		});
 
 		it('sums word counts across scenes and buckets by status', async () => {
@@ -184,12 +174,27 @@ describe('WordCountCache', () => {
 			expect(counts.wordsByStatus.idea).toBe(3);
 			expect(counts.wordsByStatus.revision).toBe(2);
 			expect(counts.wordsByStatus.final).toBe(4);
-			expect(counts.wordsByStatus.draft).toBe(0);
+			expect(counts.wordsByStatus.draft).toBeUndefined();
 			expect(counts.scenesByStatus.idea).toBe(1);
 			expect(counts.scenesByStatus.revision).toBe(1);
 			expect(counts.scenesByStatus.final).toBe(1);
+			expect(counts.scenesByStatus.draft).toBeUndefined();
 			// Silence unused-var warnings for the seeded scenes.
 			void s1;
+		});
+
+		it('creates buckets lazily for statuses outside the default vocabulary', async () => {
+			const project = await seedProject(app, settings, 'P');
+			const scene = await seedScene(app, settings, project, 'One', 'a b c');
+			await app.fileManager.processFrontMatter(scene.file, (fm) => {
+				fm['dbench-status'] = 'brainstorm';
+			});
+
+			const counts = await cache.countForProject(project);
+			expect(counts.total).toBe(3);
+			expect(counts.wordsByStatus.brainstorm).toBe(3);
+			expect(counts.scenesByStatus.brainstorm).toBe(1);
+			expect(counts.wordsByStatus.idea).toBeUndefined();
 		});
 	});
 

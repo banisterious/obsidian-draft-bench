@@ -309,16 +309,19 @@ Composable with Templater rather than a replacement for it. Writers without Temp
 - Settings tab's Templates section ships the scene-template override path with `FileSuggest` autocomplete.
 - P2.A.4 stretch goal (Templater): shipped with the scene path only. Projects start empty; drafts snapshot the existing scene body. Neither needs Templater in V1.
 
-**P2.B — Word counts.**
+**P2.B — Word counts.** ✅ Shipped (P2.B.1/2/3/4/5 in prior sessions, P2.B.2 targets on 2026-04-22).
 
 - `src/core/word-count.ts` — pure counter:
-  - Strip frontmatter, code blocks (fenced + indented), HTML comments, wikilink syntax (keep display text).
+  - Strip frontmatter, fenced code, HTML comments, `%%` inline, wikilink syntax (keep display text); slice to `## Draft` section when present.
   - Return count for a given markdown string.
-- Per-scene and per-project aggregates, lazily computed and cached in a map keyed by file path + mtime. Invalidate on `vault.on('modify')`; recompute on next read.
+- `src/core/word-count-cache.ts` — per-scene cache keyed by file path + mtime; `countForProject` aggregates total, words/scenes by status (lazy buckets), and target fields (`projectTarget`, `sceneTargetSum`, `scenesWithTargets`). Invalidated on `vault.on('modify')`.
+- `src/core/targets.ts` — target-word helpers:
+  - `readTargetWords(frontmatter)` validates `dbench-target-words` is a positive integer (otherwise returns `null`). Writers opt in via the Properties panel or template frontmatter; not stamped by essentials.
+  - `formatProgress(count, target)` returns `{ label, percent (clamped), rawPercent, overage }` for UI rendering.
 - Control Center surfaces:
-  - Project tab: project total, status breakdown (X draft, Y revision, Z final), optional target-count progress bar.
-  - Manuscript tab: word-count badge per scene row.
-- Optional per-project and per-scene target settings (stored in frontmatter as `dbench-target-words: N`).
+  - Project tab: project total, status breakdown, plus a hero progress bar above the total when `dbench-target-words` is set on the project. Overage (count > target) tints the fill warning-colored; label always shows the raw percentage so writers see the overflow (e.g., `3,200 / 3,000 words (107%)`).
+  - Manuscript tab: per-scene row renders a stacked label + mini progress bar when the scene has a `dbench-target-words`, or the plain word badge otherwise.
+- V1 authoring: Properties panel or template frontmatter. No inline Set-target input on the Project/Manuscript tabs; revisit if writers ask.
 
 **P2.C — Bases starter views.** Patterns drawn from Charted Roots: see [bases-reference.md](../planning/bases-reference.md) for the orchestration pattern (`createBaseFile`, `isBasesAvailable`, soft availability gate, "already exists" guard) plus the DB commitments section for decisions already locked (static templates, no property aliases, user-triggered install, no cross-entity bases in V1).
 

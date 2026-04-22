@@ -53,6 +53,7 @@ Every note managed by Draft Bench carries a set of frontmatter properties that i
 | `dbench-project-id` | string | all plugin-managed notes | Stable-ID companion to `dbench-project`. Maintained by the linker. |
 | `dbench-order` | number | orderable types (scene, and later chapter) | Sort position within the note's ordering scope. |
 | `dbench-status` | string (optional) | project, scene, and later chapter | Workflow status (e.g., `idea`, `draft`, `revision`, `final`). |
+| `dbench-target-words` | positive integer (optional) | project, scene | Authoring target used by the Control Center progress bars. Writer-set via the Properties panel or template frontmatter; not stamped at creation. |
 | `dbench-<target-type>` | wikilink (optional) | notes that reference a typed parent | Typed forward relationship pointer (e.g., `dbench-scene` on a draft). See § Typed Relationships. |
 | `dbench-<target-type>-id` | string (optional) | same as above | Stable-ID companion to the typed forward pointer. |
 
@@ -637,7 +638,7 @@ CSS class tagging is V1-scoped. V1 ships exactly one default style rule — the 
 These features are planned but deferred to later builds:
 
 - **Writing sessions**: track daily word counts per project.
-- **Goals**: target word counts with progress tracking (per session, per scene, per project).
+- **Goals**: session-based goal tracking (deferred — daily/weekly targets, streaks, historical charts). V1 ships static target-word counts via `dbench-target-words` on project and scene notes, surfaced as progress bars on the Project and Manuscript tabs; see § Word Counts.
 - **Revision snapshots**: save named snapshots of scenes or of the entire manuscript with diff viewing. Project-level snapshots (parallel full-manuscript versions in the Longform "First Draft / Second Draft" sense) belong here, distinct from the per-scene drafts covered in § Draft Management. A per-scene `draft` captures one scene's prose at a moment in time; a project-level snapshot captures the whole manuscript's state at a moment in time.
 
 The data model and UI accommodate these features without architectural changes.
@@ -736,7 +737,7 @@ The specific page inventory for each tree will emerge as features land. This sec
 ### Phase 2: Templates and Polish
 - User-defined scene template management (multiple named templates, selectable at scene creation).
 - Status workflow (set/change via context menu and Control Center; resolve status-vocabulary open question).
-- Word counts (per-scene, per-project, displayed in Manuscript tab).
+- Word counts (per-scene, per-project, displayed in Manuscript tab). Optional `dbench-target-words` surfaces progress bars on the Project and Manuscript tabs.
 - Bases starter views (template `.base` files for manuscript table, status queue, corkboard).
 
 ### Phase 3: Compile and onboarding

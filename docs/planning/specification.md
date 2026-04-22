@@ -333,18 +333,41 @@ After a suspended operation completes, the plugin runs a targeted re-sync on the
 
 This section describes what the UI surfaces do. For **how** to build them — component patterns, CSS conventions, modal structures, accessibility guarantees, empty/loading states — see the companion [UI/UX Reference](ui-reference.md), which captures the patterns adapted from Charted Roots.
 
-### Control Center
+### Manuscript view and Control Center
 
-A tabbed non-transient modal accessible via ribbon icon (lucide `pencil-ruler` glyph), command palette, or context menu. Tabs:
+Draft Bench's UI has two primary surfaces, split per [D-07](decisions/D-07-control-center-split.md) to match the shape of what each surface hosts:
 
-- **Project**: Overview, metadata, synopsis, word count summary.
-- **Manuscript**: Ordered scene list (sorted by `dbench-order`) with status and prior-draft count per scene. Click-through opens the scene. A toolbar along the top of this tab surfaces primary project actions as buttons: **New scene**, **New draft of current scene**, **Reorder scenes**, **Compile** (Phase 3+). This tab is the canonical story-order view; ordering is read-only in the list itself: the Reorder scenes button opens the dedicated modal (see § Scene reordering).
-- **Templates**: Manage the built-in scene template and, in later phases, user-defined templates.
-- **Compile**: Book Builder interface (see Compile section). Placeholder in V1; populated in Phase 3.
+**Manuscript view (dockable workspace leaf).** The ambient writing companion. Lives in the right sidebar by default; can be dragged to the left sidebar, the main pane, or detached to a popout window. Hosts:
 
-Plugin configuration lives in Obsidian's native Settings panel (Options -> Community plugins -> Draft Bench), not in the Control Center. A later Control Center surface (Dashboard or equivalent) will include a launcher that jumps directly to the native settings tab via `app.setting.open()` + `openTabById('draft-bench')`, following the Charted Roots pattern; no settings UI is duplicated inside the modal.
+- **Project picker** at the top — dropdown of all discoverable projects. Selection persists across reloads.
+- **Toolbar** with four buttons: **New scene**, **New draft of current scene**, **Reorder scenes**, **Compile** (Phase 3+). Buttons invoke the existing commands / dedicated modals; the leaf stays open.
+- **Project summary** section (collapsible): status, shape, identifier, total word count, hero progress bar when `dbench-target-words` is set on the project, per-status word/scene breakdown.
+- **Manuscript list** section (collapsible): ordered scene list with click-through, status pill, word-count or per-scene progress bar (when `dbench-target-words` is set), draft count.
+- **Empty states**: welcome + "Create your first project" CTA when no projects exist in the vault; compact prompt when projects exist but none is selected.
 
-For a deeper Charted Roots architectural reference (drawer shell, tab dispatcher, cache tiers, Tools group, mobile drawer behavior) that may inform a later DB Control Center design pass, see [control-center-reference.md](control-center-reference.md). V1 ships the minimal skeleton described above; the reference doc is context for later evolution, not a blueprint for Phase 1.
+Invoked via:
+
+- Ribbon icon (lucide `pencil-ruler`).
+- Palette command `Draft Bench: Show manuscript view`.
+- Project-note context menu entry `Show manuscript view` (selects that project, reveals the leaf).
+- Auto-reveals on first project creation (one-shot behavior; writers who close the leaf afterward stay closed).
+
+**Control Center (action-shaped modal).** Short-lived flows that benefit from modal focus. Tabs:
+
+- **Templates**: Manage the built-in scene template and, in later phases, user-defined templates. Stub in V1; full UI in Phase 3.
+- **Compile**: Book Builder interface (see Compile section). Stub until Phase 3 ships.
+
+Invoked via the palette command `Draft Bench: Open control center`. The modal doesn't duplicate Manuscript view content — Project overview and scene-list navigation belong on the ambient surface, not in a short-lived dialog.
+
+**Cross-surface state.** Both surfaces share a single plugin-level `selectedProjectId` so selecting a project in one is reflected in the other. The Manuscript view additionally persists its selection via Obsidian's workspace-layout state API so reloads restore the previous project.
+
+**Settings.** Plugin configuration lives in Obsidian's native Settings panel (Options -> Community plugins -> Draft Bench), not in either surface. A future Dashboard could include a launcher tile that jumps to the native settings tab via `app.setting.open()` + `openTabById('draft-bench')`; no settings UI is duplicated.
+
+For further reading:
+
+- [D-07](decisions/D-07-control-center-split.md) — the split decision record with locked and still-open questions.
+- [dockable-view-reference.md](dockable-view-reference.md) — Obsidian `ItemView` patterns that inform the Manuscript leaf's implementation.
+- [control-center-reference.md](control-center-reference.md) — Charted Roots architectural reference for a later Control Center / Dashboard design pass.
 
 ### Scene reordering
 

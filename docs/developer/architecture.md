@@ -35,14 +35,21 @@ src/
     draft.ts                          Draft frontmatter shape + guard functions
     settings.ts                       DraftBenchSettings interface + DEFAULT_SETTINGS
 
-  ui/                                 Obsidian UI surfaces (modals, tabs, styling hooks)
+  ui/                                 Obsidian UI surfaces (modals, leaf, styling hooks)
     control-center/
-      control-center-modal.ts         Tabbed modal shell
+      control-center-modal.ts         Post-D-07 action-shaped modal (Templates + Compile tabs)
       tabs/
-        project-tab.ts                Overview, word count, metadata
-        manuscript-tab.ts             Ordered scene list + toolbar
-        templates-tab.ts              Template management
-        compile-tab.ts                Placeholder (Phase 3+)
+        templates-tab.ts              Template management (Phase 3+)
+        compile-tab.ts                Compile / Book Builder (Phase 3+)
+    manuscript-view/
+      manuscript-view.ts              Dockable ItemView — project summary + manuscript list
+      activate.ts                     activateManuscriptView helper (reuse or create leaf)
+      first-reveal.ts                 Auto-reveal on first project creation
+      sections/
+        section-base.ts               Collapsible ARIA accordion primitive (lazy render)
+        project-summary-section.ts    Meta + word counts + hero progress + status breakdown
+        manuscript-list-section.ts    Ordered scene list with per-row badges / progress
+        toolbar.ts                    New scene / New draft / Reorder / Compile buttons
     modals/
       new-project-modal.ts            Create-project flow
       new-scene-modal.ts              Create-scene flow
@@ -262,20 +269,19 @@ Extend the handler bodies to draft relationships:
 - `src/ui/modals/repair-project-modal.ts` — preview modal per the canonical `preview → confirm → execute → summary` pattern in [ui-reference.md](../planning/ui-reference.md). Shows the report grouped by category, marks conflicts as unrepairable with an explanation.
 - `src/commands/repair-project.ts` — palette command (needs an active project note or a project picker). Also surface via project context menu entry.
 
-**P1.D — Control Center skeleton.**
+**P1.D — Control Center skeleton.** Post-D-07 split:
 
-- `src/ui/control-center/control-center-modal.ts` — tabbed modal shell, accessible via:
+- `src/ui/control-center/control-center-modal.ts` — action-shaped tabbed modal hosting Templates + Compile (both stubs until Phase 3). Accessible via:
+  - Palette command `Draft Bench: Open control center`.
+- `src/ui/manuscript-view/manuscript-view.ts` — dockable ItemView hosting Project summary + Manuscript list + toolbar. Accessible via:
   - Ribbon icon (lucide `pencil-ruler`) — registered in `main.ts`.
-  - Palette command: "Draft Bench: Open Control Center".
-  - Project note context menu entry.
-- Tabs (Phase 1 scope — rendering only; Phase 2 adds content):
-  - **Project**: project title, status, synopsis placeholder.
-  - **Manuscript**: ordered scene list (read-only; sorted by `dbench-order`). Status and draft-count badges per row. Toolbar along the top with buttons: "New scene", "New draft of current scene", "Reorder scenes", "Compile" (Phase 3+ placeholder). Buttons invoke the existing commands.
-  - **Templates**: placeholder ("Template management — Phase 2").
-  - **Compile**: placeholder ("Book Builder — Phase 3").
-- Plugin settings stay at Options -> Community plugins -> Draft Bench; no Settings tab is embedded in the Control Center. A later Dashboard surface will launch the native settings panel via `app.setting.open()` + `openTabById('draft-bench')`; see [control-center-reference.md](../planning/control-center-reference.md) for the commitment.
-- `src/ui/control-center/tabs/*.ts` — one file per tab for clarity, even if the Templates and Compile tabs are placeholders.
-- The modal caches the active project's scene list on construction to avoid re-scanning on tab switches; clear on `onClose()` per [ui-reference.md § Control Center conventions](../planning/ui-reference.md).
+  - Palette command `Draft Bench: Show manuscript view`.
+  - Project-note context menu entry `Show manuscript view` (sets selection to that project, reveals leaf).
+  - Auto-reveal on first project creation (one-shot, tracked via `settings.firstProjectRevealed`).
+- Plugin settings stay at Options -> Community plugins -> Draft Bench; no Settings tab is embedded in either surface. A future Dashboard could launch the native settings panel via `app.setting.open()` + `openTabById('draft-bench')`; see [control-center-reference.md](../planning/control-center-reference.md) for the commitment.
+- Selection state is plugin-level (`plugin.selection: ProjectSelection`) — both modal and leaf read + write through a small event-emitter API. The leaf additionally persists `selectedProjectId` via `getState()` so a workspace-layout reload restores the previously selected project.
+- Scene list is re-read from discovery on each render. `WordCountCache` with mtime invalidation coalesces per-scene lookups. Leaf listens to `vault.on('modify')` with a 300ms debounce; modal is static (Templates/Compile tabs don't depend on vault state).
+- See [D-07](../planning/decisions/D-07-control-center-split.md) for the full split decision record and [dockable-view-reference.md](../planning/dockable-view-reference.md) for the Obsidian ItemView patterns the leaf uses.
 
 **P1.E — Style Settings integration (deferred step 13).**
 

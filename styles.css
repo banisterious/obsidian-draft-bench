@@ -89,7 +89,7 @@ body {
 /* End of variables.css */
 
 /* --------------------------------------------------------------------------
-   STYLE-SETTINGS.CSS  (98 lines, 3.59 KB)
+   STYLE-SETTINGS.CSS  (98 lines, 3.45 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -140,9 +140,9 @@ settings:
     -
         id: --dbench-scene-max-width
         title: Reading width
-        description: Max content width when Obsidian's "Readable line length" is enabled. Defaults to "var(--file-line-width)" so scene and draft leaves match the rest of your vault. Override to 65ch, 800px, etc. for a different width on this plugin's leaves; use "none" to uncap. When Readable line length is off, this setting has no effect.
+        description: "Max content width. Only applied when Obsidian's Readable line length is on. Override to 65ch, 800px, or none for a different behavior on scene and draft leaves."
         type: variable-text
-        default: var(--file-line-width)
+        default: "var(--file-line-width)"
     -
         id: dbench-scene-heading
         title: Scene leaf
@@ -155,13 +155,13 @@ settings:
         title: Background color
         description: CSS color value. Use "var(--background-primary)" to match your theme.
         type: variable-text
-        default: var(--background-primary)
+        default: "var(--background-primary)"
     -
         id: --dbench-scene-text-color
         title: Text color
         description: CSS color value. Use "var(--text-normal)" to match your theme.
         type: variable-text
-        default: var(--text-normal)
+        default: "var(--text-normal)"
     -
         id: dbench-draft-heading
         title: Draft leaf (archival)
@@ -174,19 +174,19 @@ settings:
         title: Background color
         description: CSS color value. "var(--background-secondary)" gives a subtle archival tint.
         type: variable-text
-        default: var(--background-primary)
+        default: "var(--background-primary)"
     -
         id: --dbench-draft-text-color
         title: Text color
         description: CSS color value. "var(--text-muted)" dims draft text.
         type: variable-text
-        default: var(--text-normal)
+        default: "var(--text-normal)"
     -
         id: --dbench-draft-border-left
         title: Border-left (archival cue)
         description: CSS border shorthand. Default is a thin theme-muted line. Set to "none" to remove.
         type: variable-text
-        default: 3px solid var(--text-faint)
+        default: "3px solid var(--text-faint)"
 
 */
 
@@ -711,9 +711,9 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 6
-   Total:      654 lines, 17.33 KB
+   Total:      654 lines, 17.19 KB
    - variables.css: 71 lines, 2.34 KB
-   - style-settings.css: 98 lines, 3.59 KB
+   - style-settings.css: 98 lines, 3.45 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
    - control-center.css: 269 lines, 5.95 KB

@@ -352,6 +352,69 @@ Composable with Templater rather than a replacement for it. Writers without Temp
 
 ---
 
+## Phase 3
+
+Phase 3 ships Book Builder (compile pipeline + UI) followed by the onboarding wizard. V1 compile decisions locked in [D-06](../planning/decisions/D-06-compile-preset-storage-and-content-rules.md); reference architectures for the implementation in [book-builder-reference.md](../planning/book-builder-reference.md) and [report-generation-reference.md](../planning/report-generation-reference.md).
+
+**P3.A — Compile preset as first-class note.**
+
+Establishes the note type and plumbing before any pipeline work.
+
+- `src/model/compile-preset.ts` — `CompilePresetFrontmatter` type, `DEFAULT_COMPILE_PRESET` defaults, type guard, stamp helpers.
+- `src/core/compile-presets.ts` — `createCompilePreset`, `resolveCompilePresets(project)`, `duplicateCompilePreset`.
+- `src/core/linker.ts` — new `RelationshipConfig` entry for preset <-> project bidirectional linking (preset `dbench-project` <-> project `dbench-compile-presets` / `dbench-compile-preset-ids` reverse arrays).
+- `src/core/integrity.ts` — third `scanRelationship` call for the preset <-> project relationship.
+- `src/ui/modals/new-compile-preset-modal.ts` — 3-field create modal (name + project + format).
+- `src/commands/create-compile-preset.ts` — palette command.
+
+V1 vocabulary gains `compile-preset` as a fourth type alongside `project` / `scene` / `draft`. No retrofit action; presets are always plugin-created.
+
+**P3.B — Core compile pipeline.**
+
+Markdown-first synthesis applying content-handling rules; format-agnostic.
+
+- `src/core/compile-service.ts` — `CompileService.generate(preset): Promise<CompileResult>`. Pipeline: collect scenes -> apply inclusion filters -> per-scene body extraction -> content-handling rules -> concatenation with section-break insertion -> final markdown string + metadata.
+- `src/core/compile/content-rules.ts` — per-rule transforms (strip frontmatter, transform headings, normalize dinkuses, strip callouts / tasks / tags / comments / highlights, handle wikilinks + embeds per preset).
+- `src/core/compile/footnote-renumber.ts` — port CR's footnote-parser pattern near-verbatim (~110 LOC pure function).
+- `src/core/compile/section-breaks.ts` — read `dbench-section-break-*` properties off scenes; emit breaks before the corresponding scene at compile time.
+- `src/core/compile/hash.ts` — djb2 hash for per-scene change detection.
+
+Error semantics: per-scene try/catch; failed scenes produce an error marker in output; compile completes with a partial-success notice.
+
+**P3.C — Output renderers.**
+
+Three renderers sharing the markdown intermediate from P3.B.
+
+- `src/core/compile/render-md.ts` — vault path (`<project folder>/Compiled/<preset name>.md`, overwrites) or save dialog depending on `dbench-compile-output`.
+- `src/core/compile/render-pdf.ts` — pdfmake with lazy-loaded VFS fonts (Roboto + DejaVu Sans Mono). Dynamic-imported on first compile; cached for subsequent runs. Save dialog for destination.
+- `src/core/compile/render-odt.ts` — JSZip archive (mimetype + manifest + styles.xml + content.xml subset). System fonts. Save dialog for destination.
+
+**P3.D — Compile tab form UI.**
+
+The Control Center's Compile tab (currently a stub) gets full form content.
+
+- `src/ui/control-center/tabs/compile-tab.ts` — preset picker + form sections.
+- `src/ui/control-center/compile-form/` — per-section renderers (metadata, inclusion, output, content-handling, last-compile). Collapsible accordions reusing the `section-base` primitive from the Manuscript leaf.
+- Per-field affordances: radio groups, toggles, multi-select for status filter, scene picker modal for excludes, read-only state display for compile-state fields.
+- Saves via `processFrontMatter` on change; reads `dbench-last-*` fields for the Last-compile section.
+
+**P3.E — Run + context menus.**
+
+- `src/commands/run-compile.ts` — `Draft Bench: Run compile` with smart file-context resolution (active preset -> run; active scene / project / draft -> picker for project's presets; unrelated -> project picker -> preset picker).
+- `src/commands/duplicate-compile-preset.ts` — `Draft Bench: Duplicate compile preset`.
+- `src/commands/compile-current-project.ts` — `Draft Bench: Compile current project`.
+- Context menu entries on preset / project / scene / draft notes, each delegating to the corresponding command. Smart visibility (action only shows when it applies).
+
+**P3.F — Strip-with-notice batching.**
+
+- `src/core/compile/strip-notice.ts` — accumulator for strip-with-notice events during markdown synthesis. Emits one batched Notice at compile completion summarizing counts by category (images, bases, PDF, audio, video). No per-embed notice spam.
+
+**P3-Onboarding — Welcome modal + first-project walkthrough.**
+
+Phase 3's second half, following Book Builder completion. Not covered in D-06; see [wizards-reference.md](../planning/wizards-reference.md) for the wizard-shape reference and a future ADR for onboarding-specific decisions.
+
+---
+
 ## Ordering rationale
 
 - **P1.A first** because linker stubs are the largest piece of technical debt; every new feature that writes frontmatter compounds the fragility.
@@ -360,3 +423,9 @@ Composable with Templater rather than a replacement for it. Writers without Temp
 - **P1.E before Phase 2** because Phase 2 features may want Style Settings knobs for visual tuning.
 - **P2.A before P2.B** because templates are independent and exercise the codebase without depending on other Phase 2 items; word counts are additive on top.
 - **P2.C and P2.D** are independent of each other and of the above; can swap order based on writer feedback.
+- **P3.A first** in Phase 3 because the preset note type + linker plumbing must exist before pipeline work can create or resolve presets.
+- **P3.B before P3.C** because renderers consume the markdown intermediate produced by the pipeline; no point rendering without synthesis.
+- **P3.B before P3.D** because the form UI has nothing to configure until the pipeline exists.
+- **P3.C in parallel with P3.D** once P3.B lands; renderers and UI don't depend on each other.
+- **P3.E last in the compile track** because commands and context menus glue the finished pipeline + UI together.
+- **Onboarding after Book Builder** so the walkthrough teaches the final UI shape, including compile entry points.

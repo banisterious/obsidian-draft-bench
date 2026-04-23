@@ -22,7 +22,7 @@ const presetCtx = (
 });
 
 describe('stampProjectEssentials', () => {
-	it('stamps all eight project keys onto an empty frontmatter', () => {
+	it('stamps all ten project keys onto an empty frontmatter', () => {
 		const fm: Record<string, unknown> = {};
 		stampProjectEssentials(fm, ctx('My Novel'));
 
@@ -34,6 +34,8 @@ describe('stampProjectEssentials', () => {
 		expect(fm['dbench-status']).toBe('idea');
 		expect(fm['dbench-scenes']).toEqual([]);
 		expect(fm['dbench-scene-ids']).toEqual([]);
+		expect(fm['dbench-compile-presets']).toEqual([]);
+		expect(fm['dbench-compile-preset-ids']).toEqual([]);
 	});
 
 	it('uses the basename in the self-link', () => {
@@ -73,6 +75,8 @@ describe('stampProjectEssentials', () => {
 			'dbench-status': 'revision',
 			'dbench-scenes': ['[[Scene 1]]'],
 			'dbench-scene-ids': ['xyz-789-abc-456'],
+			'dbench-compile-presets': ['[[Workshop]]'],
+			'dbench-compile-preset-ids': ['prs-111-222-333'],
 		};
 		const snapshot = { ...fm };
 		stampProjectEssentials(fm, ctx('Project'));

@@ -23,6 +23,13 @@ export interface ProjectFrontmatter {
 	'dbench-scenes': string[];
 	'dbench-scene-ids': DbenchId[];
 	/**
+	 * Reverse arrays for compile presets attached to this project.
+	 * Maintained by the linker; seeded as empty arrays by
+	 * `stampProjectEssentials`. See D-06 § Preset storage format.
+	 */
+	'dbench-compile-presets': string[];
+	'dbench-compile-preset-ids': DbenchId[];
+	/**
 	 * Opt-in authoring target for total project word count. Writers set
 	 * this via the Properties panel or in a template's frontmatter; not
 	 * stamped at creation. The Project-tab hero progress bar reads from

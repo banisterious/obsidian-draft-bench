@@ -369,6 +369,9 @@ interface RelationshipConfig {
  *   is a no-op on adds but still cleans up any stale references —
  *   which lets the linker recover when a writer converts a project
  *   between folder and single-scene shapes.
+ * - `compile-preset`: one parent, the enclosing project (either shape).
+ *   Reverse arrays `dbench-compile-presets` / `dbench-compile-preset-ids`
+ *   live on the project note.
  */
 const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 	scene: [
@@ -410,6 +413,18 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 							unknown
 						>,
 					})),
+		},
+	],
+	'compile-preset': [
+		{
+			childParentIdField: 'dbench-project-id',
+			parentWikilinkField: 'dbench-compile-presets',
+			parentIdField: 'dbench-compile-preset-ids',
+			candidateParents: (app) =>
+				findProjects(app).map((p) => ({
+					file: p.file,
+					frontmatter: p.frontmatter as unknown as Record<string, unknown>,
+				})),
 		},
 	],
 };

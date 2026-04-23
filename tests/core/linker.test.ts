@@ -897,3 +897,234 @@ describe('DraftBenchLinker — single-scene-project<->draft sync', () => {
 		expect(fm?.['dbench-draft-ids']).toEqual(['drf-001-tst-001']);
 	});
 });
+
+describe('DraftBenchLinker — compile-preset<->project sync', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedProject(
+		path: string,
+		id: string,
+		title: string,
+		shape: 'folder' | 'single' = 'folder'
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'project',
+			'dbench-id': id,
+			'dbench-project': `[[${title}]]`,
+			'dbench-project-id': id,
+			'dbench-project-shape': shape,
+			'dbench-status': 'draft',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+			'dbench-compile-presets': [],
+			'dbench-compile-preset-ids': [],
+		});
+		return file;
+	}
+
+	async function seedPreset(
+		path: string,
+		id: string,
+		parentTitle: string,
+		parentId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'compile-preset',
+			'dbench-id': id,
+			'dbench-project': `[[${parentTitle}]]`,
+			'dbench-project-id': parentId,
+			'dbench-schema-version': 1,
+			'dbench-compile-format': 'md',
+			'dbench-compile-output': 'vault',
+		});
+		return file;
+	}
+
+	it('modify: adds preset to declared parent project reverse arrays', async () => {
+		const project = await seedProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const preset = await seedPreset(
+			'Novel/Compile Presets/Workshop.md',
+			'prs-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		app.vault._fire('modify', preset);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-compile-presets']).toEqual(['[[Workshop]]']);
+		expect(fm?.['dbench-compile-preset-ids']).toEqual(['prs-001-tst-001']);
+	});
+
+	it('modify: moves preset between projects (removes from old, adds to new)', async () => {
+		const oldProject = await seedProject(
+			'Old/Old.md',
+			'prj-old-tst-001',
+			'Old'
+		);
+		const newProject = await seedProject(
+			'New/New.md',
+			'prj-new-tst-002',
+			'New'
+		);
+		const preset = await seedPreset(
+			'Old/Compile Presets/Workshop.md',
+			'prs-001-tst-001',
+			'Old',
+			'prj-old-tst-001'
+		);
+
+		// First sync: preset lands in Old project's reverse arrays.
+		app.vault._fire('modify', preset);
+		await flush();
+
+		expect(
+			app.metadataCache.getFileCache(oldProject)?.frontmatter?.[
+				'dbench-compile-presets'
+			]
+		).toEqual(['[[Workshop]]']);
+
+		// Writer re-points the preset at New project.
+		const currentFm =
+			app.metadataCache.getFileCache(preset)?.frontmatter ?? {};
+		app.metadataCache._setFrontmatter(preset, {
+			...currentFm,
+			'dbench-project': '[[New]]',
+			'dbench-project-id': 'prj-new-tst-002',
+		});
+		app.vault._fire('modify', preset);
+		await flush();
+
+		expect(
+			app.metadataCache.getFileCache(oldProject)?.frontmatter?.[
+				'dbench-compile-presets'
+			]
+		).toEqual([]);
+		expect(
+			app.metadataCache.getFileCache(newProject)?.frontmatter?.[
+				'dbench-compile-presets'
+			]
+		).toEqual(['[[Workshop]]']);
+	});
+
+	it('modify: idempotent — no additional entries on repeated syncs', async () => {
+		const project = await seedProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const preset = await seedPreset(
+			'Novel/Compile Presets/Workshop.md',
+			'prs-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		app.vault._fire('modify', preset);
+		await flush();
+		app.vault._fire('modify', preset);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-compile-presets']).toEqual(['[[Workshop]]']);
+		expect(fm?.['dbench-compile-preset-ids']).toEqual(['prs-001-tst-001']);
+	});
+
+	it('delete: removes preset from project reverse arrays', async () => {
+		const project = await seedProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const preset = await seedPreset(
+			'Novel/Compile Presets/Workshop.md',
+			'prs-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		app.vault._fire('modify', preset);
+		await flush();
+		expect(
+			app.metadataCache.getFileCache(project)?.frontmatter?.[
+				'dbench-compile-presets'
+			]
+		).toEqual(['[[Workshop]]']);
+
+		app.vault._fire('delete', preset);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-compile-presets']).toEqual([]);
+		expect(fm?.['dbench-compile-preset-ids']).toEqual([]);
+	});
+
+	it('rename: updates wikilink entry in project reverse array', async () => {
+		const project = await seedProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const preset = await seedPreset(
+			'Novel/Compile Presets/Workshop.md',
+			'prs-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		app.vault._fire('modify', preset);
+		await flush();
+
+		const oldPath = app.vault._rename(
+			preset,
+			'Novel/Compile Presets/Final manuscript.md'
+		);
+		app.vault._fire('rename', preset, oldPath);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-compile-presets']).toEqual(['[[Final manuscript]]']);
+		expect(fm?.['dbench-compile-preset-ids']).toEqual(['prs-001-tst-001']);
+	});
+
+	it('modify: syncs against single-scene projects too (no shape filter)', async () => {
+		const project = await seedProject(
+			'Flash.md',
+			'prj-001-tst-001',
+			'Flash',
+			'single'
+		);
+		const preset = await seedPreset(
+			'Compile Presets/Workshop.md',
+			'prs-001-tst-001',
+			'Flash',
+			'prj-001-tst-001'
+		);
+
+		app.vault._fire('modify', preset);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-compile-presets']).toEqual(['[[Workshop]]']);
+	});
+});

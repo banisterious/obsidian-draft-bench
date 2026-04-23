@@ -59,8 +59,10 @@ function defaultStatusOf(context: EssentialsContext): string {
  *
  * Adds (when absent): `dbench-type`, `dbench-id`, `dbench-project`
  * (self-link from `context.basename`), `dbench-project-id` (mirrors
- * `dbench-id`), `dbench-project-shape`, `dbench-status`, and the
- * empty `dbench-scenes` / `dbench-scene-ids` reverse arrays.
+ * `dbench-id`), `dbench-project-shape`, `dbench-status`, the empty
+ * `dbench-scenes` / `dbench-scene-ids` reverse arrays, and the empty
+ * `dbench-compile-presets` / `dbench-compile-preset-ids` reverse
+ * arrays for the compile-preset relationship.
  *
  * The note "becomes" a project in one step. Idempotent.
  */
@@ -80,6 +82,8 @@ export function stampProjectEssentials(
 	setIfMissing(frontmatter, 'dbench-status', defaultStatusOf(context));
 	setIfMissing(frontmatter, 'dbench-scenes', []);
 	setIfMissing(frontmatter, 'dbench-scene-ids', []);
+	setIfMissing(frontmatter, 'dbench-compile-presets', []);
+	setIfMissing(frontmatter, 'dbench-compile-preset-ids', []);
 }
 
 /**

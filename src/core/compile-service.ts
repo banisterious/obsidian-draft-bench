@@ -1,11 +1,11 @@
 import type { App } from 'obsidian';
+import { applyContentRules } from './compile/content-rules';
 import {
 	findScenesInProject,
 	type CompilePresetNote,
 	type SceneNote,
 } from './discovery';
 import { sortScenesByOrder } from './sort-scenes';
-import { stripFrontmatter } from './word-count';
 
 /**
  * Outcome of one compile run. Consumed by the output renderers (P3.C)
@@ -50,12 +50,10 @@ export interface CompileError {
  * markdown document. This format-agnostic intermediate is consumed by
  * the output renderers (MD / PDF / ODT) that land in P3.C.
  *
- * This shell leaves per-rule transformations to
- * `src/core/compile/content-rules.ts` (landing next). Frontmatter is
- * stripped as body-extraction mechanics; the per-preset
- * `dbench-compile-frontmatter` rule will override when the rules
- * module lands. Chapter numbering, section-break insertion, footnote
- * renumbering, and wikilink / embed handling are similarly deferred.
+ * Per-scene transformations (frontmatter, body scope, heading
+ * prepending, inline transforms) run through
+ * `src/core/compile/content-rules.ts`. Footnote renumbering, section
+ * breaks, and djb2 hashing land in sibling modules in later commits.
  */
 export class CompileService {
 	constructor(private app: App) {}
@@ -92,10 +90,16 @@ export class CompileService {
 		const bodies: string[] = [];
 		let scenesCompiled = 0;
 
-		for (const scene of selected) {
+		for (let i = 0; i < selected.length; i++) {
+			const scene = selected[i];
 			try {
 				const raw = await this.app.vault.read(scene.file);
-				bodies.push(stripFrontmatter(raw).trim());
+				const transformed = applyContentRules(raw, {
+					preset: preset.frontmatter,
+					sceneTitle: scene.file.basename,
+					compileIndex: i + 1,
+				});
+				bodies.push(transformed);
 				scenesCompiled++;
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);

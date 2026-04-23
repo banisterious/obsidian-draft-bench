@@ -130,7 +130,9 @@ describe('CompileService.generate', () => {
 		const result = await service.generate(preset);
 
 		expect(result.markdown).toBe(
-			'Opening prose.\n\nMiddle prose.\n\nClosing prose.'
+			'# Opening\n\nOpening prose.\n\n' +
+				'# Middle\n\nMiddle prose.\n\n' +
+				'# Closing\n\nClosing prose.'
 		);
 		expect(result.scenesCompiled).toBe(3);
 		expect(result.scenesSkipped).toBe(0);
@@ -167,7 +169,9 @@ describe('CompileService.generate', () => {
 		const preset = makePreset({ projectId });
 		const result = await service.generate(preset);
 
-		expect(result.markdown).toBe('First.\n\nSecond.\n\nThird.');
+		expect(result.markdown).toBe(
+			'# A\n\nFirst.\n\n# B\n\nSecond.\n\n# C\n\nThird.'
+		);
 	});
 
 	it('strips YAML frontmatter from scene bodies before concatenation', async () => {
@@ -183,7 +187,7 @@ describe('CompileService.generate', () => {
 		const preset = makePreset({ projectId });
 		const result = await service.generate(preset);
 
-		expect(result.markdown).toBe('Prose after the fence.');
+		expect(result.markdown).toBe('# Opening\n\nProse after the fence.');
 		expect(result.scenesCompiled).toBe(1);
 	});
 
@@ -243,7 +247,7 @@ describe('CompileService.generate', () => {
 		});
 		const result = await service.generate(preset);
 
-		expect(result.markdown).toBe('Final A.\n\nFinal C.');
+		expect(result.markdown).toBe('# A\n\nFinal A.\n\n# C\n\nFinal C.');
 		expect(result.scenesCompiled).toBe(2);
 		expect(result.scenesSkipped).toBe(1);
 	});
@@ -274,7 +278,7 @@ describe('CompileService.generate', () => {
 		});
 		const result = await service.generate(preset);
 
-		expect(result.markdown).toBe('Final A.');
+		expect(result.markdown).toBe('# A\n\nFinal A.');
 		expect(result.scenesCompiled).toBe(1);
 		expect(result.scenesSkipped).toBe(1);
 	});
@@ -303,7 +307,7 @@ describe('CompileService.generate', () => {
 		});
 		const result = await service.generate(preset);
 
-		expect(result.markdown).toBe('A.');
+		expect(result.markdown).toBe('# A\n\nA.');
 		expect(result.scenesSkipped).toBe(1);
 	});
 
@@ -331,7 +335,7 @@ describe('CompileService.generate', () => {
 		});
 		const result = await service.generate(preset);
 
-		expect(result.markdown).toBe('A.');
+		expect(result.markdown).toBe('# A\n\nA.');
 		expect(result.scenesSkipped).toBe(1);
 	});
 
@@ -380,7 +384,26 @@ describe('CompileService.generate', () => {
 		const preset = makePreset({ projectId });
 		const result = await service.generate(preset);
 
-		expect(result.markdown).toBe('Novel scene.');
+		expect(result.markdown).toBe('# A\n\nNovel scene.');
 		expect(result.scenesCompiled).toBe(1);
+	});
+
+	it('slices scene bodies to the draft section by default (rule 1 integration)', async () => {
+		await seedScene(app, {
+			path: 'Novel/Opening.md',
+			id: 'sc1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			body:
+				'# Source passages\nplanning notes\n' +
+				'# Beat outline\nmore planning\n' +
+				'## Draft\nThe actual prose.',
+		});
+
+		const preset = makePreset({ projectId });
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe('# Opening\n\nThe actual prose.');
 	});
 });

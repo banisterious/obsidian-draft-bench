@@ -1,6 +1,7 @@
 import type DraftBenchPlugin from '../../main';
 import type { DraftBenchSettings } from '../model/settings';
 import type { DraftBenchLinker } from '../core/linker';
+import { registerCreateCompilePresetCommand } from './create-compile-preset';
 import { registerCreateProjectCommand } from './create-project';
 import { registerInstallBasesCommand } from './install-bases';
 import { registerNewSceneCommand } from './new-scene';
@@ -33,6 +34,7 @@ export function registerCommands(
 	linker: DraftBenchLinker
 ): void {
 	registerCreateProjectCommand(plugin, getSettings, () => plugin);
+	registerCreateCompilePresetCommand(plugin, linker);
 	registerInstallBasesCommand(plugin);
 	registerNewSceneCommand(plugin, getSettings, linker);
 	registerNewDraftCommand(plugin, getSettings, linker);

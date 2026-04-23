@@ -1,5 +1,6 @@
 import type { App } from 'obsidian';
 import { applyContentRules } from './compile/content-rules';
+import { renumberFootnotes } from './compile/footnote-renumber';
 import {
 	findScenesInProject,
 	type CompilePresetNote,
@@ -89,6 +90,7 @@ export class CompileService {
 
 		const bodies: string[] = [];
 		let scenesCompiled = 0;
+		let footnoteOffset = 1;
 
 		for (let i = 0; i < selected.length; i++) {
 			const scene = selected[i];
@@ -99,7 +101,9 @@ export class CompileService {
 					sceneTitle: scene.file.basename,
 					compileIndex: i + 1,
 				});
-				bodies.push(transformed);
+				const renumbered = renumberFootnotes(transformed, footnoteOffset);
+				footnoteOffset += renumbered.consumedCount;
+				bodies.push(renumbered.content);
 				scenesCompiled++;
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);

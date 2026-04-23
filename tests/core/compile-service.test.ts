@@ -388,6 +388,36 @@ describe('CompileService.generate', () => {
 		expect(result.scenesCompiled).toBe(1);
 	});
 
+	it('renumbers footnotes continuously across scenes', async () => {
+		await seedScene(app, {
+			path: 'Novel/A.md',
+			id: 'sc-a-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			body: 'Scene A[^1] mentions[^2].\n\n[^1]: First.\n[^2]: Second.',
+		});
+		await seedScene(app, {
+			path: 'Novel/B.md',
+			id: 'sc-b-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+			body: 'Scene B[^1] stands alone.\n\n[^1]: B-only.',
+		});
+
+		const preset = makePreset({ projectId });
+		const result = await service.generate(preset);
+
+		// A's [^1] / [^2] -> [^1] / [^2]; B's [^1] -> [^3] (continues
+		// from A's offset).
+		expect(result.markdown).toContain('Scene A[^1] mentions[^2].');
+		expect(result.markdown).toContain('[^1]: First.');
+		expect(result.markdown).toContain('[^2]: Second.');
+		expect(result.markdown).toContain('Scene B[^3] stands alone.');
+		expect(result.markdown).toContain('[^3]: B-only.');
+	});
+
 	it('slices scene bodies to the draft section by default (rule 1 integration)', async () => {
 		await seedScene(app, {
 			path: 'Novel/Opening.md',

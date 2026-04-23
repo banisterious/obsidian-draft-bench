@@ -24,6 +24,20 @@ export default class DraftBenchPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.selection = new ProjectSelection();
+		// Pre-populate from settings so reload restores the last-
+		// selected project before the leaf's onOpen runs.
+		this.selection.set(this.settings.lastSelectedProjectId);
+		// Persist selection changes through plugin settings. Obsidian's
+		// workspace-state persistence (`requestSaveLayout`) is debounced
+		// and unreliable for late-session mutations; plugin data.json is
+		// saved synchronously via saveSettings and round-trips cleanly
+		// across reloads.
+		this.register(
+			this.selection.onChange((id) => {
+				this.settings.lastSelectedProjectId = id;
+				void this.saveSettings();
+			})
+		);
 
 		this.linker = new DraftBenchLinker(this.app, () => this.settings);
 		this.linker.start();

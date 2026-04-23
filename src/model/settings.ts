@@ -109,6 +109,16 @@ export interface DraftBenchSettings {
 	 * bulk retrofit). Subsequent project creations don't re-reveal.
 	 */
 	firstProjectRevealed: boolean;
+
+	/**
+	 * The last-selected project's `dbench-id`, or `null` when no
+	 * project is selected. Persisted here (rather than in Obsidian's
+	 * workspace state) so reload reliably restores the writer's
+	 * current project — `requestSaveLayout` is debounced and can miss
+	 * late-session selections. The Manuscript leaf mirrors this into
+	 * `plugin.selection` on load.
+	 */
+	lastSelectedProjectId: string | null;
 }
 
 /**
@@ -127,4 +137,5 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	enableBidirectionalSync: true,
 	syncOnFileModify: true,
 	firstProjectRevealed: false,
+	lastSelectedProjectId: null,
 };

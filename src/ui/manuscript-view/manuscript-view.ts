@@ -97,14 +97,13 @@ export class ManuscriptView extends ItemView {
 			this.plugin.selection.set(this.viewState.selectedProjectId);
 		}
 
-		// Subscribe to selection changes from other surfaces. Each
-		// change that mutates viewState calls requestSaveLayout so
-		// Obsidian persists the new selection to workspace.json and
-		// reload restores to the right project.
+		// Subscribe to selection changes from other surfaces. The
+		// plugin persists selection via settings (see main.ts), so
+		// this listener only needs to mirror into local viewState
+		// and re-render.
 		this.unsubscribeSelection = this.plugin.selection.onChange((id) => {
 			if (id === this.viewState.selectedProjectId) return;
 			this.viewState.selectedProjectId = id;
-			this.plugin.app.workspace.requestSaveLayout();
 			this.render();
 		});
 

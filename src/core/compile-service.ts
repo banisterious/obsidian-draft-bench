@@ -2,6 +2,7 @@ import type { App } from 'obsidian';
 import { applyContentRules } from './compile/content-rules';
 import { renumberFootnotes } from './compile/footnote-renumber';
 import { buildSectionBreak } from './compile/section-breaks';
+import { djb2, formatChapterHash } from './compile/hash';
 import {
 	findScenesInProject,
 	type CompilePresetNote,
@@ -35,6 +36,14 @@ export interface CompileResult {
 	 * here, matching CR Book Builder's per-chapter try/catch semantics.
 	 */
 	errors: CompileError[];
+	/**
+	 * `"<scene-id>:<djb2-hash>"` strings for every successfully-read
+	 * scene. Suitable for writing into the preset's
+	 * `dbench-last-chapter-hashes` on compile completion so the
+	 * Compile tab (P3.D) can surface "N scenes changed since last
+	 * compile." Omits scenes that failed to read.
+	 */
+	chapterHashes: string[];
 }
 
 export interface CompileError {
@@ -90,6 +99,7 @@ export class CompileService {
 		}
 
 		const bodies: string[] = [];
+		const chapterHashes: string[] = [];
 		let scenesCompiled = 0;
 		let footnoteOffset = 1;
 
@@ -97,6 +107,9 @@ export class CompileService {
 			const scene = selected[i];
 			try {
 				const raw = await this.app.vault.read(scene.file);
+				chapterHashes.push(
+					formatChapterHash(scene.frontmatter['dbench-id'], djb2(raw))
+				);
 				const transformed = applyContentRules(raw, {
 					preset: preset.frontmatter,
 					sceneTitle: scene.file.basename,
@@ -123,6 +136,7 @@ export class CompileService {
 			scenesSkipped,
 			warnings,
 			errors,
+			chapterHashes,
 		};
 	}
 }
@@ -172,5 +186,6 @@ function emptyResult(warnings: string[], errors: CompileError[]): CompileResult 
 		scenesSkipped: 0,
 		warnings,
 		errors,
+		chapterHashes: [],
 	};
 }

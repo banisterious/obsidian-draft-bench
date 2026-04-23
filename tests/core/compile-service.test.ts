@@ -478,6 +478,38 @@ describe('CompileService.generate', () => {
 		expect(result.markdown).toBe('# Opening\n\nOpening prose.');
 	});
 
+	it('populates chapterHashes for every successfully-read scene', async () => {
+		await seedScene(app, {
+			path: 'Novel/A.md',
+			id: 'sc-a-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			body: 'First.',
+		});
+		await seedScene(app, {
+			path: 'Novel/B.md',
+			id: 'sc-b-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+			body: 'Second.',
+		});
+
+		const preset = makePreset({ projectId });
+		const result = await service.generate(preset);
+
+		expect(result.chapterHashes).toHaveLength(2);
+		expect(result.chapterHashes[0]).toMatch(
+			/^sc-a-tst-001:[0-9a-f]{8}$/
+		);
+		expect(result.chapterHashes[1]).toMatch(
+			/^sc-b-tst-002:[0-9a-f]{8}$/
+		);
+		// Hashes differ because bodies differ.
+		expect(result.chapterHashes[0]).not.toBe(result.chapterHashes[1]);
+	});
+
 	it('slices scene bodies to the draft section by default (rule 1 integration)', async () => {
 		await seedScene(app, {
 			path: 'Novel/Opening.md',

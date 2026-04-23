@@ -3,6 +3,7 @@ import {
 	TFile,
 	WorkspaceLeaf,
 	setIcon,
+	type CachedMetadata,
 	type TAbstractFile,
 	type ViewStateResult,
 } from 'obsidian';
@@ -103,25 +104,38 @@ export class ManuscriptView extends ItemView {
 			this.render();
 		});
 
-		// Freshness: two listeners feed a shared debounced refresh.
+		// Freshness: four listeners feed a shared debounced refresh.
 		//
 		// - vault.on('modify') catches body edits (word-count recompute
 		//   on prose additions) and has a project-scoped gate so
 		//   unrelated vault noise doesn't trigger work.
-		// - metadataCache.on('changed') catches frontmatter-side updates
-		//   *after* Obsidian has indexed them. This handles the new-
-		//   project race (project just got stamped but findProjects
-		//   can't see it yet), property-panel edits on scenes (status
-		//   / target changes), and delete + re-stamp flows. No gate:
-		//   the debounced re-render is cheap, and catching every
-		//   metadata update keeps the leaf trustworthy as an
-		//   ambient surface.
+		// - metadataCache.on('changed') catches frontmatter updates
+		//   *after* Obsidian has indexed them: new-project creation,
+		//   property-panel edits on scenes (status / target), retrofit
+		//   stamps, etc.
+		// - metadataCache.on('resolved') catches the initial vault
+		//   load. 'changed' may not fire during the startup indexing
+		//   pass, so without this listener a reload restores the leaf
+		//   with a stale view that never updates.
+		// - metadataCache.on('deleted') clears selection if the
+		//   currently-selected project gets deleted, using the prev-
+		//   cache data to identify it (the file itself is already gone).
 		this.registerEvent(
 			this.plugin.app.vault.on('modify', (file) => this.onFileModify(file))
 		);
 		this.registerEvent(
 			this.plugin.app.metadataCache.on('changed', () =>
 				this.scheduleRefresh()
+			)
+		);
+		this.registerEvent(
+			this.plugin.app.metadataCache.on('resolved', () =>
+				this.scheduleRefresh()
+			)
+		);
+		this.registerEvent(
+			this.plugin.app.metadataCache.on('deleted', (file, prevCache) =>
+				this.handleFileDeleted(file, prevCache)
 			)
 		);
 
@@ -388,18 +402,33 @@ export class ManuscriptView extends ItemView {
 	private resolveSelectedProject(): ProjectNote | null {
 		const id = this.viewState.selectedProjectId;
 		if (id === null) return null;
+		// Read-only: findProjects may return stale / partial results right
+		// after file creation or during initial vault load. Returning null
+		// when no match is found is safe — the next render (driven by
+		// metadataCache resolve/change events) reconciles. Clearing the
+		// selection as a side effect here would incorrectly wipe it
+		// during those cache races.
 		const match = findProjects(this.plugin.app).find(
 			(p) => p.frontmatter['dbench-id'] === id
 		);
-		if (!match) {
-			// Stale selection (project deleted/moved). Clear and fall through.
+		return match ?? null;
+	}
+
+	private handleFileDeleted(
+		file: TAbstractFile,
+		prevCache: CachedMetadata | null
+	): void {
+		const id = prevCache?.frontmatter?.['dbench-id'];
+		if (typeof id === 'string' && id === this.viewState.selectedProjectId) {
 			this.viewState.selectedProjectId = null;
 			if (this.plugin.selection.get() === id) {
 				this.plugin.selection.set(null);
 			}
-			return null;
 		}
-		return match;
+		// Always drop the cache entry and schedule a refresh — deletion
+		// may affect counts, picker contents, or scene list.
+		this.plugin.wordCounts.invalidate(file.path);
+		this.scheduleRefresh();
 	}
 
 	private projectExists(id: string): boolean {

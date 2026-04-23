@@ -1,6 +1,8 @@
-# Welcome to Draft Bench
+<p align="center">
+  <img src="assets/draft-bench-graphite-on-ivory-1024.png" alt="Draft Bench" width="280">
+</p>
 
-**A creative writing workflow for Obsidian.** Manage projects, scenes, and versioned drafts in plain markdown, with flexible folder structure and native compatibility with Obsidian Bases.
+**A writing workflow for Obsidian.** Manage projects, scenes, and versioned drafts in plain markdown, with flexible folder structure and native compatibility with Obsidian Bases.
 
 Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with added emphasis on per-scene draft history as first-class files, rich metadata via frontmatter, and a compile system that requires no JavaScript knowledge.
 

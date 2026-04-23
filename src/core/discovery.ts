@@ -3,6 +3,10 @@ import type { DbenchId } from '../model/types';
 import { isProjectFrontmatter, type ProjectFrontmatter } from '../model/project';
 import { isSceneFrontmatter, type SceneFrontmatter } from '../model/scene';
 import { isDraftFrontmatter, type DraftFrontmatter } from '../model/draft';
+import {
+	isCompilePresetFrontmatter,
+	type CompilePresetFrontmatter,
+} from '../model/compile-preset';
 
 /**
  * Vault-wide discovery utilities.
@@ -37,6 +41,12 @@ export interface SceneNote {
 export interface DraftNote {
 	file: TFile;
 	frontmatter: DraftFrontmatter;
+}
+
+/** A discovered compile-preset note paired with its parsed frontmatter. */
+export interface CompilePresetNote {
+	file: TFile;
+	frontmatter: CompilePresetFrontmatter;
 }
 
 /**
@@ -75,6 +85,20 @@ export function findDrafts(app: App): DraftNote[] {
 	for (const file of app.vault.getMarkdownFiles()) {
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		if (isDraftFrontmatter(fm)) {
+			out.push({ file, frontmatter: fm });
+		}
+	}
+	return out;
+}
+
+/**
+ * Find every compile-preset note in the vault.
+ */
+export function findCompilePresets(app: App): CompilePresetNote[] {
+	const out: CompilePresetNote[] = [];
+	for (const file of app.vault.getMarkdownFiles()) {
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		if (isCompilePresetFrontmatter(fm)) {
 			out.push({ file, frontmatter: fm });
 		}
 	}
@@ -125,6 +149,21 @@ export function findDraftsOfProject(app: App, projectId: DbenchId): DraftNote[] 
 		const fm = draft.frontmatter as unknown as Record<string, unknown>;
 		return fm['dbench-project-id'] === projectId;
 	});
+}
+
+/**
+ * Find compile-preset notes whose `dbench-project-id` matches the given
+ * project ID. The rename-safe ID companion lets presets follow their
+ * project across renames without re-linking.
+ */
+export function findCompilePresetsOfProject(
+	app: App,
+	projectId: DbenchId
+): CompilePresetNote[] {
+	if (projectId === '') return [];
+	return findCompilePresets(app).filter(
+		(preset) => preset.frontmatter['dbench-project-id'] === projectId
+	);
 }
 
 /**

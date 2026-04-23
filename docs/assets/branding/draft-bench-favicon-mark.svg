@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img">
+  <title>Draft Bench favicon mark</title>
+  <desc>Simplified Draft Bench mark for favicon-scale rendering. Three fanned manuscript pages only, with no interior text lines or editor's marks. Strokes are thickened so the mark remains legible at 32 pixels and below.</desc>
+  <g transform="translate(100 100)">
+    <g transform="translate(0 40) rotate(-18)">
+      <rect x="-25" y="-80" width="50" height="80" rx="3" fill="none" stroke="#2B2B2D" stroke-width="5" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(0 40) rotate(18)">
+      <rect x="-25" y="-80" width="50" height="80" rx="3" fill="none" stroke="#2B2B2D" stroke-width="5" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(0 40)">
+      <rect x="-25" y="-80" width="50" height="80" rx="3" fill="none" stroke="#2B2B2D" stroke-width="5" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>

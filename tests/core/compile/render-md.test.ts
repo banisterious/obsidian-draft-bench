@@ -1,8 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App, TFile } from 'obsidian';
 import {
 	compiledFolderFor,
+	renderMdToDisk,
 	renderMdToVault,
+	type MdDiskDeps,
 } from '../../../src/core/compile/render-md';
 import type { CompileResult } from '../../../src/core/compile-service';
 import type {
@@ -186,5 +188,69 @@ describe('renderMdToVault', () => {
 			makeResult('content')
 		);
 		expect(result.path).toBe('Draft Bench/My Novel/Compiled/Workshop.md');
+	});
+});
+
+describe('renderMdToDisk', () => {
+	let preset: CompilePresetNote;
+
+	beforeEach(() => {
+		preset = makePreset('Compile Presets/Workshop.md');
+	});
+
+	it('writes to the chosen path and returns it', async () => {
+		const writeFile = vi.fn().mockResolvedValue(undefined);
+		const deps: MdDiskDeps = {
+			pickPath: vi.fn().mockResolvedValue('/tmp/out.md'),
+			writeFile,
+		};
+
+		const result = await renderMdToDisk(
+			preset,
+			makeResult('# Manuscript\n\nBody.'),
+			deps
+		);
+
+		expect(result).toEqual({ kind: 'written', path: '/tmp/out.md' });
+		expect(deps.pickPath).toHaveBeenCalledWith({ defaultName: 'Workshop.md' });
+		expect(writeFile).toHaveBeenCalledWith('/tmp/out.md', '# Manuscript\n\nBody.');
+	});
+
+	it('returns kind=canceled when the user dismisses the save dialog', async () => {
+		const writeFile = vi.fn();
+		const deps: MdDiskDeps = {
+			pickPath: vi.fn().mockResolvedValue(null),
+			writeFile,
+		};
+
+		const result = await renderMdToDisk(preset, makeResult('body'), deps);
+
+		expect(result).toEqual({ kind: 'canceled' });
+		expect(writeFile).not.toHaveBeenCalled();
+	});
+
+	it('propagates write errors to the caller', async () => {
+		const deps: MdDiskDeps = {
+			pickPath: vi.fn().mockResolvedValue('/read-only/out.md'),
+			writeFile: vi.fn().mockRejectedValue(new Error('EACCES: permission denied')),
+		};
+
+		await expect(
+			renderMdToDisk(preset, makeResult('body'), deps)
+		).rejects.toThrow('EACCES');
+	});
+
+	it('passes the preset basename with .md extension as the default filename', async () => {
+		const fancyPreset = makePreset('Compile Presets/Submission Manuscript.md');
+		const deps: MdDiskDeps = {
+			pickPath: vi.fn().mockResolvedValue('/out.md'),
+			writeFile: vi.fn().mockResolvedValue(undefined),
+		};
+
+		await renderMdToDisk(fancyPreset, makeResult('x'), deps);
+
+		expect(deps.pickPath).toHaveBeenCalledWith({
+			defaultName: 'Submission Manuscript.md',
+		});
 	});
 });

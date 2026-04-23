@@ -321,7 +321,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   CONTROL-CENTER.CSS  (109 lines, 2.68 KB)
+   CONTROL-CENTER.CSS  (198 lines, 4.47 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -416,6 +416,95 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
  * moved to the dockable Manuscript view (D-07). Their styles live
  * at styles/manuscript-view.css. Templates and Compile tabs inherit
  * the shared placeholder rule above. */
+
+/* Compile tab (P3.D). Shell layout: header with project read-out +
+ * preset picker + buttons, body with collapsible form sections
+ * landing in follow-up commits. */
+
+.dbench-compile-tab {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-lg);
+}
+
+.dbench-compile-tab__header {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-sm);
+	padding-bottom: var(--dbench-spacing-md);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.dbench-compile-tab__project-row {
+	display: flex;
+	align-items: center;
+	gap: var(--dbench-spacing-sm);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.dbench-compile-tab__project-icon {
+	display: inline-flex;
+	align-items: center;
+}
+
+.dbench-compile-tab__project-name {
+	color: var(--text-normal);
+	font-weight: var(--font-semibold);
+}
+
+.dbench-compile-tab__preset-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--dbench-spacing-sm);
+}
+
+.dbench-compile-tab__preset-picker {
+	flex: 1 1 auto;
+	min-width: 12em;
+}
+
+.dbench-compile-tab__preset-empty {
+	flex: 1 1 auto;
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.dbench-compile-tab__buttons {
+	display: flex;
+	gap: var(--dbench-spacing-sm);
+}
+
+.dbench-compile-tab__button {
+	padding: var(--dbench-spacing-xs) var(--dbench-spacing-md);
+}
+
+.dbench-compile-tab__body {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-md);
+}
+
+.dbench-compile-tab__empty {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-sm);
+	padding: var(--dbench-spacing-xl) var(--dbench-spacing-lg);
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.dbench-compile-tab__empty-message {
+	margin: 0;
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.dbench-compile-tab__empty-hint {
+	margin: 0;
+	font-size: var(--font-ui-small);
+}
 
 /* Mobile layout: stack nav above content */
 
@@ -1109,12 +1198,12 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 8
-   Total:      1038 lines, 26.49 KB
+   Total:      1127 lines, 28.28 KB
    - variables.css: 71 lines, 2.34 KB
    - style-settings.css: 98 lines, 3.45 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - control-center.css: 109 lines, 2.68 KB
+   - control-center.css: 198 lines, 4.47 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 425 lines, 9.92 KB
    - settings-tab.css: 119 lines, 2.66 KB

@@ -1,7 +1,7 @@
 import type { Plugin } from 'obsidian';
 import type DraftBenchPlugin from '../../main';
 import type { DraftBenchSettings } from '../model/settings';
-import { revealLeafIfFirstProject } from '../ui/manuscript-view/first-reveal';
+import { onProjectCreated } from '../ui/manuscript-view/project-created-hook';
 import { NewProjectModal } from '../ui/modals/new-project-modal';
 
 /**
@@ -12,7 +12,8 @@ import { NewProjectModal } from '../ui/modals/new-project-modal';
  *
  * The `getSettings` thunk is used (rather than a captured snapshot)
  * so the modal sees the latest settings if the user changes them.
- * The `onCreated` hook auto-reveals the Manuscript leaf on the
+ * The `onCreated` hook updates plugin-level selection to the new
+ * project (always) and auto-reveals the Manuscript leaf on the
  * first-ever project creation (see D-07 Block A).
  */
 export function registerCreateProjectCommand(
@@ -24,10 +25,8 @@ export function registerCreateProjectCommand(
 		id: 'create-project',
 		name: 'Create project',
 		callback: () => {
-			new NewProjectModal(
-				plugin.app,
-				getSettings(),
-				(projectId) => revealLeafIfFirstProject(getPlugin(), projectId)
+			new NewProjectModal(plugin.app, getSettings(), (projectId) =>
+				onProjectCreated(getPlugin(), projectId)
 			).open();
 		},
 	});

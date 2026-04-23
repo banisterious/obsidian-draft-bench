@@ -159,6 +159,27 @@
 	min-width: 0;
 }
 
+.dbench-manuscript-view__new-project {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin-left: var(--dbench-spacing-xs);
+	padding: var(--dbench-spacing-xs);
+	min-width: 32px;
+	min-height: 32px;
+	background: var(--interactive-normal);
+	color: var(--text-muted);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-sm);
+	cursor: pointer;
+}
+
+.dbench-manuscript-view__new-project:hover {
+	background: var(--interactive-hover);
+	color: var(--text-normal);
+}
+
 .dbench-manuscript-view__toolbar {
 	display: flex;
 	flex-wrap: wrap;

@@ -2,6 +2,7 @@ import {
 	ItemView,
 	TFile,
 	WorkspaceLeaf,
+	setIcon,
 	type TAbstractFile,
 	type ViewStateResult,
 } from 'obsidian';
@@ -309,6 +310,18 @@ export class ManuscriptView extends ItemView {
 		picker.addEventListener('change', () => {
 			const value = picker.value;
 			this.selectProject(value === '' ? null : value);
+		});
+
+		const newProjectButton = header.createEl('button', {
+			cls: 'dbench-manuscript-view__new-project',
+			attr: {
+				'aria-label': 'Create project',
+				title: 'Create project',
+			},
+		});
+		setIcon(newProjectButton, 'plus');
+		newProjectButton.addEventListener('click', () => {
+			this.openCreateProjectCommand();
 		});
 	}
 

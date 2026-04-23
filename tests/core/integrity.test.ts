@@ -13,13 +13,23 @@ import { findProjects, type ProjectNote } from '../../src/core/discovery';
  * produce after YAML parsing.
  */
 
+interface ProjectSeedExtras {
+	reverseScenes?: string[];
+	reverseSceneIds?: string[];
+	reverseDrafts?: string[];
+	reverseDraftIds?: string[];
+	reversePresets?: string[];
+	reversePresetIds?: string[];
+}
+
 async function seedFolderProject(
 	app: App,
 	path: string,
 	id: string,
 	title: string,
 	reverseScenes: string[] = [],
-	reverseSceneIds: string[] = []
+	reverseSceneIds: string[] = [],
+	extras: ProjectSeedExtras = {}
 ): Promise<TFile> {
 	const file = await app.vault.create(path, '');
 	app.metadataCache._setFrontmatter(file, {
@@ -31,6 +41,8 @@ async function seedFolderProject(
 		'dbench-status': 'draft',
 		'dbench-scenes': reverseScenes,
 		'dbench-scene-ids': reverseSceneIds,
+		'dbench-compile-presets': extras.reversePresets ?? [],
+		'dbench-compile-preset-ids': extras.reversePresetIds ?? [],
 	});
 	return file;
 }
@@ -41,7 +53,8 @@ async function seedSingleProject(
 	id: string,
 	title: string,
 	reverseDrafts: string[] = [],
-	reverseDraftIds: string[] = []
+	reverseDraftIds: string[] = [],
+	extras: ProjectSeedExtras = {}
 ): Promise<TFile> {
 	const file = await app.vault.create(path, '');
 	app.metadataCache._setFrontmatter(file, {
@@ -53,6 +66,28 @@ async function seedSingleProject(
 		'dbench-status': 'draft',
 		'dbench-drafts': reverseDrafts,
 		'dbench-draft-ids': reverseDraftIds,
+		'dbench-compile-presets': extras.reversePresets ?? [],
+		'dbench-compile-preset-ids': extras.reversePresetIds ?? [],
+	});
+	return file;
+}
+
+async function seedPreset(
+	app: App,
+	path: string,
+	id: string,
+	projectTitle: string,
+	projectId: string
+): Promise<TFile> {
+	const file = await app.vault.create(path, '');
+	app.metadataCache._setFrontmatter(file, {
+		'dbench-type': 'compile-preset',
+		'dbench-id': id,
+		'dbench-project': `[[${projectTitle}]]`,
+		'dbench-project-id': projectId,
+		'dbench-schema-version': 1,
+		'dbench-compile-format': 'md',
+		'dbench-compile-output': 'vault',
 	});
 	return file;
 }
@@ -372,6 +407,139 @@ describe('scanProject — single-scene project<->draft', () => {
 		// relationship and this test confirms the scanner skips it.
 		const kinds_ = kinds(report.issues);
 		expect(kinds_).not.toContain('draft-missing-in-project');
+	});
+});
+
+describe('scanProject — compile-preset<->project issues', () => {
+	let app: App;
+
+	beforeEach(() => {
+		app = new App();
+	});
+
+	it('reports preset-missing-in-project when preset declares project but is absent from reverse arrays', async () => {
+		await seedFolderProject(app, 'Novel/Novel.md', 'prj-001', 'Novel');
+		await seedPreset(
+			app,
+			'Novel/Compile Presets/Workshop.md',
+			'prs-001',
+			'Novel',
+			'prj-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		const presetIssues = report.issues.filter(
+			(i) => i.kind === 'preset-missing-in-project'
+		);
+		expect(presetIssues).toHaveLength(1);
+		expect(presetIssues[0].autoRepairable).toBe(true);
+		expect(presetIssues[0].repair?.kind).toBe('add-to-reverse');
+	});
+
+	it('reports stale-preset-in-project when reverse arrays reference a non-existent preset', async () => {
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001',
+			'Novel',
+			[],
+			[],
+			{
+				reversePresets: ['[[Ghost preset]]'],
+				reversePresetIds: ['prs-ghost-999'],
+			}
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		const presetIssues = report.issues.filter(
+			(i) => i.kind === 'stale-preset-in-project'
+		);
+		expect(presetIssues).toHaveLength(1);
+		expect(presetIssues[0].autoRepairable).toBe(true);
+		expect(presetIssues[0].repair?.kind).toBe('remove-from-reverse');
+	});
+
+	it('is clean when preset is properly listed on both sides', async () => {
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001',
+			'Novel',
+			[],
+			[],
+			{
+				reversePresets: ['[[Workshop]]'],
+				reversePresetIds: ['prs-001'],
+			}
+		);
+		await seedPreset(
+			app,
+			'Novel/Compile Presets/Workshop.md',
+			'prs-001',
+			'Novel',
+			'prj-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		const presetIssues = report.issues.filter((i) =>
+			i.kind.includes('preset')
+		);
+		expect(presetIssues).toEqual([]);
+	});
+
+	it('scans preset<->project even for single-scene projects', async () => {
+		await seedSingleProject(app, 'Flash.md', 'prj-001', 'Flash');
+		await seedPreset(
+			app,
+			'Compile Presets/Submission.md',
+			'prs-001',
+			'Flash',
+			'prj-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Flash'));
+		const presetIssues = report.issues.filter(
+			(i) => i.kind === 'preset-missing-in-project'
+		);
+		expect(presetIssues).toHaveLength(1);
+	});
+
+	it('reports project-preset-conflict when wikilink and id point at different files', async () => {
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001',
+			'Novel',
+			[],
+			[],
+			{
+				reversePresets: ['[[Workshop]]'],
+				reversePresetIds: ['prs-999'], // id doesn't match Workshop
+			}
+		);
+		// Workshop resolves to this preset:
+		await seedPreset(
+			app,
+			'Novel/Compile Presets/Workshop.md',
+			'prs-001',
+			'Novel',
+			'prj-001'
+		);
+		// prs-999 resolves to a different preset:
+		await seedPreset(
+			app,
+			'Novel/Compile Presets/Other.md',
+			'prs-999',
+			'Novel',
+			'prj-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		const conflicts = report.issues.filter(
+			(i) => i.kind === 'project-preset-conflict'
+		);
+		expect(conflicts).toHaveLength(1);
+		expect(conflicts[0].autoRepairable).toBe(false);
 	});
 });
 

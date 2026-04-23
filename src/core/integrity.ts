@@ -1,5 +1,6 @@
 import { type App, type TFile } from 'obsidian';
 import {
+	findCompilePresetsOfProject,
 	findDraftsOfProject,
 	findDraftsOfScene,
 	findNoteById,
@@ -46,7 +47,10 @@ export type IntegrityIssueKind =
 	| 'scene-draft-conflict'
 	| 'draft-missing-in-project'
 	| 'stale-draft-in-project'
-	| 'project-draft-conflict';
+	| 'project-draft-conflict'
+	| 'preset-missing-in-project'
+	| 'stale-preset-in-project'
+	| 'project-preset-conflict';
 
 export interface IntegrityIssue {
 	kind: IntegrityIssueKind;
@@ -149,6 +153,35 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 			})
 		);
 	}
+
+	// Project <-> compile preset. Applies to both folder and
+	// single-scene projects (unlike drafts, which only attach directly
+	// to single-scene projects).
+	issues.push(
+		...scanRelationship({
+			app,
+			parent: {
+				file: project.file,
+				frontmatter: project.frontmatter as unknown as Record<
+					string,
+					unknown
+				>,
+			},
+			parentId: projectId,
+			wikilinkField: 'dbench-compile-presets',
+			idField: 'dbench-compile-preset-ids',
+			declaredChildren: findCompilePresetsOfProject(app, projectId).map(
+				toGeneric
+			),
+			childDeclaresParent: (fm) => fm['dbench-project-id'] === projectId,
+			childTypeLabel: 'Compile preset',
+			kinds: {
+				missing: 'preset-missing-in-project',
+				stale: 'stale-preset-in-project',
+				conflict: 'project-preset-conflict',
+			},
+		})
+	);
 
 	// Project <-> draft (single-scene projects only — folder projects
 	// don't hold drafts directly).

@@ -97,10 +97,14 @@ export class ManuscriptView extends ItemView {
 			this.plugin.selection.set(this.viewState.selectedProjectId);
 		}
 
-		// Subscribe to selection changes from other surfaces.
+		// Subscribe to selection changes from other surfaces. Each
+		// change that mutates viewState calls requestSaveLayout so
+		// Obsidian persists the new selection to workspace.json and
+		// reload restores to the right project.
 		this.unsubscribeSelection = this.plugin.selection.onChange((id) => {
 			if (id === this.viewState.selectedProjectId) return;
 			this.viewState.selectedProjectId = id;
+			this.plugin.app.workspace.requestSaveLayout();
 			this.render();
 		});
 
@@ -324,6 +328,15 @@ export class ManuscriptView extends ItemView {
 		picker.addEventListener('change', () => {
 			const value = picker.value;
 			this.selectProject(value === '' ? null : value);
+			if (value === '') return;
+			// Also open the project note in the active leaf so the
+			// writer can start editing / reading it immediately.
+			const project = projects.find(
+				(p) => p.frontmatter['dbench-id'] === value
+			);
+			if (project) {
+				void this.plugin.app.workspace.getLeaf(false).openFile(project.file);
+			}
 		});
 
 		const newProjectButton = header.createEl('button', {
@@ -351,6 +364,7 @@ export class ManuscriptView extends ItemView {
 			expanded,
 			onToggle: (id, isExpanded) => {
 				this.viewState.sectionStates[id] = isExpanded;
+				this.plugin.app.workspace.requestSaveLayout();
 			},
 		});
 		if (!body) return;
@@ -379,6 +393,7 @@ export class ManuscriptView extends ItemView {
 			expanded,
 			onToggle: (id, isExpanded) => {
 				this.viewState.sectionStates[id] = isExpanded;
+				this.plugin.app.workspace.requestSaveLayout();
 			},
 		});
 		if (!body) return;

@@ -1,14 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import {
+	stampCompilePresetEssentials,
 	stampDbenchId,
 	stampDraftEssentials,
 	stampProjectEssentials,
 	stampSceneEssentials,
+	type CompilePresetEssentialsContext,
 	type EssentialsContext,
 } from '../../src/core/essentials';
 import { isValidDbenchId } from '../../src/core/id';
 
 const ctx = (basename: string): EssentialsContext => ({ basename });
+
+const presetCtx = (
+	overrides: Partial<CompilePresetEssentialsContext> = {}
+): CompilePresetEssentialsContext => ({
+	basename: 'Workshop draft',
+	projectWikilink: '[[My Novel]]',
+	projectId: 'ppp-000-qqq-111',
+	...overrides,
+});
 
 describe('stampProjectEssentials', () => {
 	it('stamps all eight project keys onto an empty frontmatter', () => {
@@ -279,5 +290,101 @@ describe('cross-helper interaction', () => {
 		expect(fm['dbench-order']).toBe(9999);
 		expect(fm['dbench-status']).toBe('idea');
 		expect(fm['dbench-drafts']).toEqual([]);
+	});
+});
+
+describe('stampCompilePresetEssentials', () => {
+	it('stamps identity, linkage, and all default values onto an empty frontmatter', () => {
+		const fm: Record<string, unknown> = {};
+		stampCompilePresetEssentials(fm, presetCtx());
+
+		expect(fm['dbench-type']).toBe('compile-preset');
+		expect(isValidDbenchId(fm['dbench-id'])).toBe(true);
+		expect(fm['dbench-project']).toBe('[[My Novel]]');
+		expect(fm['dbench-project-id']).toBe('ppp-000-qqq-111');
+		expect(fm['dbench-schema-version']).toBe(1);
+		expect(fm['dbench-compile-format']).toBe('md');
+		expect(fm['dbench-compile-output']).toBe('vault');
+		expect(fm['dbench-compile-scene-source']).toBe('auto');
+		expect(fm['dbench-compile-scene-statuses']).toEqual([]);
+		expect(fm['dbench-compile-scene-excludes']).toEqual([]);
+		expect(fm['dbench-compile-include-section-breaks']).toBe(true);
+		expect(fm['dbench-compile-heading-scope']).toBe('draft');
+		expect(fm['dbench-compile-frontmatter']).toBe('strip');
+		expect(fm['dbench-compile-wikilinks']).toBe('display-text');
+		expect(fm['dbench-compile-embeds']).toBe('strip');
+		expect(fm['dbench-compile-dinkuses']).toBe('preserve');
+		expect(fm['dbench-last-compiled-at']).toBe('');
+		expect(fm['dbench-last-output-path']).toBe('');
+		expect(fm['dbench-last-chapter-hashes']).toEqual([]);
+	});
+
+	it('applies the format override on a fresh frontmatter', () => {
+		const fm: Record<string, unknown> = {};
+		stampCompilePresetEssentials(fm, presetCtx({ format: 'pdf' }));
+		expect(fm['dbench-compile-format']).toBe('pdf');
+	});
+
+	it('preserves a writer-set format when re-stamping with a different format override', () => {
+		const fm: Record<string, unknown> = { 'dbench-compile-format': 'odt' };
+		stampCompilePresetEssentials(fm, presetCtx({ format: 'pdf' }));
+		expect(fm['dbench-compile-format']).toBe('odt');
+	});
+
+	it('is idempotent: re-running produces the same frontmatter', () => {
+		const fm: Record<string, unknown> = {};
+		stampCompilePresetEssentials(fm, presetCtx());
+		const snapshot = JSON.parse(JSON.stringify(fm));
+		stampCompilePresetEssentials(fm, presetCtx());
+		expect(fm).toEqual(snapshot);
+	});
+
+	it('preserves writer-tuned values across all stamped keys', () => {
+		const fm: Record<string, unknown> = {
+			'dbench-type': 'compile-preset',
+			'dbench-id': 'aaa-111-bbb-222',
+			'dbench-project': '[[Custom]]',
+			'dbench-project-id': 'zzz-999-yyy-888',
+			'dbench-compile-title': 'Things That Transpired',
+			'dbench-compile-author': 'Jane Writer',
+			'dbench-compile-scene-statuses': ['final'],
+			'dbench-compile-include-cover': true,
+			'dbench-compile-wikilinks': 'strip',
+		};
+		stampCompilePresetEssentials(fm, presetCtx());
+
+		expect(fm['dbench-id']).toBe('aaa-111-bbb-222');
+		expect(fm['dbench-project']).toBe('[[Custom]]');
+		expect(fm['dbench-project-id']).toBe('zzz-999-yyy-888');
+		expect(fm['dbench-compile-title']).toBe('Things That Transpired');
+		expect(fm['dbench-compile-author']).toBe('Jane Writer');
+		expect(fm['dbench-compile-scene-statuses']).toEqual(['final']);
+		expect(fm['dbench-compile-include-cover']).toBe(true);
+		expect(fm['dbench-compile-wikilinks']).toBe('strip');
+	});
+
+	it('clones array defaults so later mutation does not leak across stamps', () => {
+		const fm1: Record<string, unknown> = {};
+		const fm2: Record<string, unknown> = {};
+		stampCompilePresetEssentials(fm1, presetCtx());
+		stampCompilePresetEssentials(fm2, presetCtx());
+
+		(fm1['dbench-compile-scene-statuses'] as string[]).push('final');
+
+		expect(fm1['dbench-compile-scene-statuses']).toEqual(['final']);
+		expect(fm2['dbench-compile-scene-statuses']).toEqual([]);
+	});
+
+	it('mirrors the project wikilink and id from the context', () => {
+		const fm: Record<string, unknown> = {};
+		stampCompilePresetEssentials(
+			fm,
+			presetCtx({
+				projectWikilink: '[[A Salt-Worn Road]]',
+				projectId: 'xyz-111-abc-222',
+			})
+		);
+		expect(fm['dbench-project']).toBe('[[A Salt-Worn Road]]');
+		expect(fm['dbench-project-id']).toBe('xyz-111-abc-222');
 	});
 });

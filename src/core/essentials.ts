@@ -1,5 +1,9 @@
 import { generateDbenchId } from './id';
 import { DEFAULT_STATUS_VOCABULARY } from '../model/types';
+import {
+	DEFAULT_COMPILE_PRESET_VALUES,
+	type CompileFormat,
+} from '../model/compile-preset';
 
 /**
  * "Essentials" helpers stamp the V1 frontmatter schema onto a note.
@@ -136,6 +140,67 @@ export function stampDraftEssentials(
  */
 export function stampDbenchId(frontmatter: Record<string, unknown>): void {
 	setIfMissing(frontmatter, 'dbench-id', generateDbenchId());
+}
+
+/**
+ * Context for stamping a compile preset. Extends the basic essentials
+ * context with the parent-project pointer (wikilink + id) and the
+ * caller-chosen output format. The format override is the one setting
+ * the create modal collects up front; everything else uses the
+ * `DEFAULT_COMPILE_PRESET_VALUES` defaults.
+ */
+export interface CompilePresetEssentialsContext extends EssentialsContext {
+	/** Wikilink to the parent project, e.g. `"[[My Novel]]"`. */
+	projectWikilink: string;
+	/** Parent project's `dbench-id`. */
+	projectId: string;
+	/**
+	 * Output format chosen at create time. When absent, uses the
+	 * default-values entry (`md`). Callers always pass this through
+	 * from the create modal; the optional signature exists only to
+	 * support tests that don't care about the format.
+	 */
+	format?: CompileFormat;
+}
+
+/**
+ * Stamp compile-preset essentials onto `frontmatter`.
+ *
+ * Sets (when absent): `dbench-type`, `dbench-id`, `dbench-project`
+ * (wikilink to the parent project), `dbench-project-id` (stable id
+ * companion), and every `dbench-compile-*` field from the default
+ * values, plus the plugin-managed state fields
+ * (`dbench-last-compiled-at`, `dbench-last-output-path`,
+ * `dbench-last-chapter-hashes`) as empty defaults.
+ *
+ * The `context.format` override replaces the default `dbench-compile-format`
+ * when present; every other default from `DEFAULT_COMPILE_PRESET_VALUES`
+ * applies. Idempotent: any field already present in `frontmatter`
+ * (including writer-tuned values) is preserved.
+ */
+export function stampCompilePresetEssentials(
+	frontmatter: Record<string, unknown>,
+	context: CompilePresetEssentialsContext
+): void {
+	setIfMissing(frontmatter, 'dbench-type', 'compile-preset');
+	setIfMissing(frontmatter, 'dbench-id', generateDbenchId());
+	setIfMissing(frontmatter, 'dbench-project', context.projectWikilink);
+	setIfMissing(frontmatter, 'dbench-project-id', context.projectId);
+
+	// Apply the caller's format override first so it wins on fresh
+	// frontmatter, but `setIfMissing` still preserves any existing
+	// value a writer may have hand-edited. The defaults loop below
+	// then skips the format field because it's already present.
+	if (context.format !== undefined) {
+		setIfMissing(frontmatter, 'dbench-compile-format', context.format);
+	}
+
+	for (const [key, value] of Object.entries(DEFAULT_COMPILE_PRESET_VALUES)) {
+		// Clone array defaults so callers mutating the stamped array
+		// later don't share the DEFAULT_COMPILE_PRESET_VALUES entry.
+		const defaultValue = Array.isArray(value) ? [...value] : value;
+		setIfMissing(frontmatter, key, defaultValue);
+	}
 }
 
 /**

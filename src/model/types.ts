@@ -7,9 +7,10 @@
 
 /**
  * The discriminator value of `dbench-type`. V1 vocabulary:
- * `project`, `scene`, `draft`. Post-V1 will add `chapter` and others.
+ * `project`, `scene`, `draft`, `compile-preset`. Post-V1 will add
+ * `chapter` and others.
  */
-export type DbenchType = 'project' | 'scene' | 'draft';
+export type DbenchType = 'project' | 'scene' | 'draft' | 'compile-preset';
 
 /**
  * A Draft Bench stable identifier (format `abc-123-def-456`).

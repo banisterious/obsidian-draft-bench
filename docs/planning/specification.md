@@ -471,6 +471,9 @@ All context menu actions are also available as commands, plus:
 - `Draft Bench: Set as project / scene / draft` (retrofit actions)
 - `Draft Bench: Complete essential properties`
 - `Draft Bench: Add identifier`
+- `Draft Bench: Create compile preset` (Phase 3+)
+- `Draft Bench: Run compile` (Phase 3+)
+- `Draft Bench: Duplicate compile preset` (Phase 3+)
 - `Draft Bench: Compile current project` (Phase 3+)
 - `Draft Bench: Jump to next scene` / `Draft Bench: Jump to previous scene`
 
@@ -547,46 +550,116 @@ Detection is automatic — no setting. When Templater isn't installed, or when a
 
 ## Compile / Book Builder
 
-Modeled on the Charted Roots Book Builder. The user assembles a compile configuration through a form-based UI — no JavaScript required. Book Builder runs entirely in-process: no Pandoc, no LaTeX, no external toolchain. Writers export on any platform with Obsidian installed.
+Book Builder assembles compiled manuscripts from a project's scenes: markdown concatenation with content-handling rules, rendered to markdown, PDF, or ODT for vault storage, workshop circulation, or submission. Runs entirely in-process (no Pandoc, no LaTeX, no external toolchain); writers export on any platform with Obsidian installed.
 
-### Core Capabilities
+Full V1 design rationale in [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md). The spec below summarizes the locked shape.
 
-- **Include/exclude** individual scenes or groups by status, type, or manual selection
-- **Section breaks**: configurable separators between scenes
-- **Title page** generation (optional)
-- **Frontmatter stripping**: remove YAML from compiled output
-- **Heading transformation**: e.g., convert scene titles to chapter headings
-- **Scene ordering**: uses `dbench-order` by default; manual override available (drag-handle + keyboard reorder, reusing the primitive from § Scene reordering)
+### Compile-as-artifact
+
+Compile configurations are first-class vault notes with `dbench-type: compile-preset`. Presets are persistent artifacts writers open, edit, and return to, not transient UI state dismissed after a single session. The preset note is the canonical compile surface; the Book Builder UI is one editing surface among several (Properties panel, Bases views, direct frontmatter edit).
+
+Consequences: presets survive Obsidian restarts and vault moves; writers maintain multiple presets per project cheaply (workshop draft / final manuscript / Kindle sample / synopsis-only); preset notes travel between vaults as plain markdown files; git-synced vaults version presets natively.
+
+Presets participate in bidirectional linking with their parent project (preset `dbench-project` <-> project `dbench-compile-presets` / `dbench-compile-preset-ids` reverse arrays, same pattern as scene <-> project).
+
+### Core capabilities
+
+- **Scene concatenation** in `dbench-order`.
+- **Status filtering** via `dbench-status` values (empty filter = all statuses).
+- **Explicit exclusions** via wikilink list on the preset.
+- **Section breaks** as scene-scoped decorations (named breaks rendered before specific scenes).
+- **Content-handling rules** for markdown constructs: frontmatter, wikilinks, embeds, callouts, footnotes, etc. Five rules are per-preset; the rest are hardcoded defaults (see § Content-handling rules below and [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md) for the full table).
+- **Heading-scope** selection: include only content below `^## Draft` (V1 default) or the full scene body.
+- **Scene-title heading insertion** (H1) with optional chapter-numbering prefix.
+- **Title page** generation (optional).
+
+### Inclusion model
+
+Three flat preset fields control which scenes enter the compile set:
+
+```yaml
+dbench-compile-scene-source: auto       # V1 value; explicit reserved post-V1
+dbench-compile-scene-statuses: []       # [] = all; ["final"] = filter
+dbench-compile-scene-excludes: []       # wikilink array of scenes to skip
+```
+
+Pipeline order: collect all scenes in `dbench-order` -> filter by status (strict: missing status excluded if filter is non-empty) -> remove excluded scenes -> compile set.
+
+Default status filter is empty (all statuses) so a new preset compiles visibly during early drafting. A future Data Quality surface will flag missing-status scenes as a fixable pre-compile issue (see [data-quality-reference.md](data-quality-reference.md)).
 
 ### Granularity tiers
 
-Three levels of "what to include":
+V1 supports two granularity modes via `dbench-compile-heading-scope`:
 
-- **Scene-level** (default): pick whole scenes via checkbox list, filter by status / type / manual selection.
-- **Heading-scoped within each scene**: extract only content under a specified heading (e.g., the `## Draft` section of each included scene). Useful for compiling only prose, leaving planning sections out of the submitted manuscript.
-- **Draft-version cross-section**: instead of live-scene bodies, pull a specific historical draft from each scene (e.g., "Draft 2 across the manuscript"). Uses the scene's `dbench-drafts` array. Useful for snapshotting a complete revision state or comparing past drafts as unified manuscripts.
+- **Scene-level, draft-only** (default, `scope: draft`): include only content below each scene's `^## Draft` heading. Planning sections (Source passages, Beat outline, Open questions) are excluded. Matches the built-in scene template's manuscript-only region.
+- **Scene-level, full body** (`scope: full`): include the entire scene body, including planning sections. Useful for internal review compiles; rarely used for submission output.
 
-### Output Formats
+Deferred post-V1: **draft-version cross-section** (compile a specific historical draft per scene, e.g., "Draft 2 across the manuscript," using each scene's `dbench-drafts` array). Useful for snapshotting a complete revision state; not V1-essential.
 
-- **Vault (MD)**: compiled manuscript as a new note in the vault.
-- **Saved MD**: markdown file saved outside the vault. Obsidian's native save dialog lets the user pick the destination (matching Charted Roots' pattern).
-- **ODT**: OpenDocument Text.
-- **PDF**: direct PDF export via [pdfmake](https://pdfmake.github.io/docs/). Dynamically imported on first compile so the ~200KB library and ~1.5MB font VFS (Roboto for body + DejaVu Sans Mono for monospace) don't affect plugin load time. Matches Charted Roots' rendering stack; jsPDF is not shipped in V1 (considered only if a future image-first export feature is added).
+### Output formats
 
-### Content-handling rules (deferred to D-06)
+V1 ships three formats. Format and destination are encoded as two orthogonal preset fields:
 
-When concatenating scene bodies, Book Builder needs explicit rules for how to handle constructs that cross scene boundaries or have multiple reasonable interpretations in a compiled output: in-body headings, horizontal rules, dinkuses, footnote renumbering, raw HTML, Obsidian embeds, wikilinks, callouts, Tasks checkboxes, tags. The enumerated rule set, their default behaviors, and which rules are overridable at global / per-preset scope are tracked in [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md).
+```yaml
+dbench-compile-format: md           # md | pdf | odt
+dbench-compile-output: vault        # vault | disk (vault meaningful only when format=md)
+```
 
-### Compile Presets
+- **Markdown to vault** (`format: md`, `output: vault`): compiled manuscript as a new note at `<project folder>/Compiled/<preset name>.md`. Re-compile overwrites. Default for new presets.
+- **Markdown to disk** (`format: md`, `output: disk`): markdown file saved outside the vault via Obsidian's native save dialog.
+- **PDF** (`format: pdf`): direct export via [pdfmake](https://pdfmake.github.io/docs/) with lazy-loaded VFS fonts (Roboto + DejaVu Sans Mono). Dynamically imported on first compile so the ~200KB library and ~1.5MB font VFS don't affect plugin load time. Save dialog for destination.
+- **ODT** (`format: odt`): OpenDocument Text via a JSZip-built archive (mimetype + manifest + styles.xml + content.xml subset). System fonts, no bundling. Save dialog for destination.
 
-Compile configurations are saved as named presets. Presets can be duplicated, edited, and shared. Each project can have multiple presets (e.g., "Draft for workshop," "Final manuscript," "Synopsis only").
+One preset, one output. Writers wanting multiple formats (e.g., MD for vault records + PDF for submission) create two presets; cheap under the compile-as-artifact model.
 
-**Storage format: deferred to D-06.** Three paths are under consideration: plugin `data.json` keyed by project id, a sidecar file in the project folder, or first-class preset notes (`dbench-type: compile-preset`). D-06 locks the choice before Phase 3 implementation.
+Post-V1: EPUB / DOCX / RTF formats, Kindle direct-send, per-preset output path override, auto-versioned output filenames.
 
-### Invocation
+### Section breaks
 
-- **Command palette**: `Draft Bench: Compile current project`. When the active file is a scene or project note, the command resolves the parent project and opens the Compile tab of that project's Control Center. When the active file is not plugin-managed, the command falls back to a project picker modal (same pattern as `Draft Bench: Reorder scenes`).
-- **Control Center toolbar**: the Compile button on the Manuscript tab opens the Compile tab directly for the currently-open project.
+Named section breaks (e.g., "Part II." / "Interlude") are scene-scoped decorations, declared on the scene that the break precedes:
+
+```yaml
+# On the scene note:
+dbench-section-break-title: "II."
+dbench-section-break-style: visual      # visual | page-break; default visual
+```
+
+Presence of `dbench-section-break-title` triggers a break before that scene during compile. Styles: `visual` = dinkus + heading (default); `page-break` = page break + heading (PDF / ODT; falls back to visual in MD). Absent = no break.
+
+Preset-level `dbench-compile-include-section-breaks: true | false` (default true) suppresses all breaks for variant-compile flexibility (workshop compile with breaks off, final compile with breaks on, from the same scene structure).
+
+### Content-handling rules
+
+When concatenating scene bodies, Book Builder applies explicit rules for how each construct renders in the compiled output. V1 has 16 rules; 5 are per-preset (heading-scope, frontmatter, dinkuses, embeds, wikilinks), 11 are hardcoded. The full rule table with defaults and overrides lives in [D-06 § Content-handling rules](decisions/D-06-compile-preset-storage-and-content-rules.md).
+
+Highlights:
+
+- **Scene body scope**: per-preset; defaults to `## Draft` section only.
+- **Heading transformation**: scene title emitted as H1 above each compiled body; chapter-numbering prefix if set; in-body H1s shifted to H2.
+- **Footnote renumbering**: auto-renumber across concatenated scenes so identifiers don't collide.
+- **Wikilinks**: per-preset; default `display-text` (strip brackets, keep display).
+- **Embeds**: split by target type. Note embeds (`![[Some Note]]`) per-preset (V1 strip-only); image embeds (`![[photo.jpg]]`) and base embeds (`![[view.base]]`) hardcoded strip-with-notice (post-V1 image support via MediaService).
+- **Callouts / Tasks / Tags / Comments / Highlights**: hardcoded strip with sensible preservations (callout body preserved, task text preserved, highlight text preserved).
+
+Strip-with-notice constructs trigger a single batched notice on compile completion (e.g., `"12 embeds stripped (8 images, 3 bases, 1 PDF); post-V1 adds include paths for supported types."`) rather than per-embed notice spam.
+
+### User interface
+
+Three surfaces mirror the three operations writers perform:
+
+**Create** — palette command `Draft Bench: Create compile preset` or "New preset" button in the Compile tab opens a minimal modal with three fields: preset name, project (auto-filled from active file context), output format (default md). All other fields stamped with defaults on the new preset note.
+
+**Edit** — the Control Center's Compile tab renders a form view of the active project's presets. Header: preset picker + "New preset" + "Run compile" buttons. Body: grouped collapsible sections (Metadata, Inclusion, Output, Content-handling, Last compile) with appropriate per-field affordances (radio groups for enums, toggles for booleans, multi-select for status filter, scene picker for excludes, read-only display for compile state). Saves via `processFrontMatter` on change; the Properties panel remains a valid alternative surface.
+
+**Run** — palette command `Draft Bench: Run compile` with smart file-context resolution (active preset = run that preset; active scene / project / draft = pick from project's presets; unrelated = project picker -> preset picker). The Compile tab's "Run compile" button runs the currently-selected preset directly.
+
+Context menu entries on compile-relevant notes:
+
+- On preset notes: "Run compile" and "Duplicate preset."
+- On project notes: "Create compile preset" (alongside existing "Show manuscript view" and "Repair project links").
+- On scene / draft notes: "Compile current project."
+
+Each context menu action has a palette-command counterpart for keyboard parity. No wizard UI ships in V1; the compile-as-artifact principle eliminates the "commit to N decisions up front" need.
 
 ## Bases Integration
 

@@ -1,5 +1,7 @@
 # Branding and Visual Identity
 
+> **Canonical guidance lives in [brand-guidelines.md](../assets/branding/brand-guidelines.md).** This document is the design-exploration record — name selection, ribbon-icon reasoning, early logo iterations. For current asset inventory, clearspace rules, and placement guidance, use brand-guidelines.md.
+
 **Purpose:** A single reference for Draft Bench's visual identity — name, tagline, logo, ribbon icon, and where each asset is used. Produced so placement and treatment decisions are captured once and don't have to be re-derived from conversation history.
 
 **Relationship to the specification:** Orthogonal. The [specification](specification.md) defines what the plugin does; this document defines how it presents itself. When the specification says "the Control Center header shows the plugin name," this document specifies what appears next to that name.

@@ -222,7 +222,7 @@ describe('scanProject — scene<->project issues', () => {
 		);
 
 		const report = scanProject(app, loadProject(app, 'Novel'));
-		expect(kinds(report.issues)).toEqual(['scene-missing-in-project']);
+		expect(kinds(report.issues)).toEqual(['SCENE_MISSING_IN_PROJECT']);
 		expect(report.issues[0].autoRepairable).toBe(true);
 	});
 
@@ -238,7 +238,7 @@ describe('scanProject — scene<->project issues', () => {
 		);
 
 		const report = scanProject(app, loadProject(app, 'Novel'));
-		expect(kinds(report.issues)).toEqual(['stale-scene-in-project']);
+		expect(kinds(report.issues)).toEqual(['STALE_SCENE_IN_PROJECT']);
 		expect(report.issues[0].autoRepairable).toBe(true);
 	});
 
@@ -262,7 +262,7 @@ describe('scanProject — scene<->project issues', () => {
 		);
 
 		const report = scanProject(app, loadProject(app, 'Novel'));
-		expect(kinds(report.issues)).toEqual(['stale-scene-in-project']);
+		expect(kinds(report.issues)).toEqual(['STALE_SCENE_IN_PROJECT']);
 	});
 
 	it('flags a wikilink/id-companion conflict (not auto-repairable)', async () => {
@@ -293,7 +293,7 @@ describe('scanProject — scene<->project issues', () => {
 
 		const report = scanProject(app, loadProject(app, 'Novel'));
 		const conflictIssues = report.issues.filter(
-			(i) => i.kind === 'scene-project-conflict'
+			(i) => i.kind === 'SCENE_PROJECT_CONFLICT'
 		);
 		expect(conflictIssues).toHaveLength(1);
 		expect(conflictIssues[0].autoRepairable).toBe(false);
@@ -330,7 +330,7 @@ describe('scanProject — scene<->draft issues', () => {
 		);
 
 		const report = scanProject(app, loadProject(app, 'Novel'));
-		expect(kinds(report.issues)).toEqual(['draft-missing-in-scene']);
+		expect(kinds(report.issues)).toEqual(['DRAFT_MISSING_IN_SCENE']);
 	});
 
 	it('flags a stale draft entry in scene\'s reverse array', async () => {
@@ -354,7 +354,7 @@ describe('scanProject — scene<->draft issues', () => {
 		);
 
 		const report = scanProject(app, loadProject(app, 'Novel'));
-		expect(kinds(report.issues)).toEqual(['stale-draft-in-scene']);
+		expect(kinds(report.issues)).toEqual(['STALE_DRAFT_IN_SCENE']);
 	});
 });
 
@@ -378,7 +378,7 @@ describe('scanProject — single-scene project<->draft', () => {
 		);
 
 		const report = scanProject(app, loadProject(app, 'Flash'));
-		expect(kinds(report.issues)).toEqual(['draft-missing-in-project']);
+		expect(kinds(report.issues)).toEqual(['DRAFT_MISSING_IN_PROJECT']);
 	});
 
 	it('does not scan project<->draft on folder projects', async () => {
@@ -406,7 +406,7 @@ describe('scanProject — single-scene project<->draft', () => {
 		// No project<->draft issues — only folder projects lack that
 		// relationship and this test confirms the scanner skips it.
 		const kinds_ = kinds(report.issues);
-		expect(kinds_).not.toContain('draft-missing-in-project');
+		expect(kinds_).not.toContain('DRAFT_MISSING_IN_PROJECT');
 	});
 });
 
@@ -417,7 +417,7 @@ describe('scanProject — compile-preset<->project issues', () => {
 		app = new App();
 	});
 
-	it('reports preset-missing-in-project when preset declares project but is absent from reverse arrays', async () => {
+	it('reports PRESET_MISSING_IN_PROJECT when preset declares project but is absent from reverse arrays', async () => {
 		await seedFolderProject(app, 'Novel/Novel.md', 'prj-001', 'Novel');
 		await seedPreset(
 			app,
@@ -429,14 +429,14 @@ describe('scanProject — compile-preset<->project issues', () => {
 
 		const report = scanProject(app, loadProject(app, 'Novel'));
 		const presetIssues = report.issues.filter(
-			(i) => i.kind === 'preset-missing-in-project'
+			(i) => i.kind === 'PRESET_MISSING_IN_PROJECT'
 		);
 		expect(presetIssues).toHaveLength(1);
 		expect(presetIssues[0].autoRepairable).toBe(true);
 		expect(presetIssues[0].repair?.kind).toBe('add-to-reverse');
 	});
 
-	it('reports stale-preset-in-project when reverse arrays reference a non-existent preset', async () => {
+	it('reports STALE_PRESET_IN_PROJECT when reverse arrays reference a non-existent preset', async () => {
 		await seedFolderProject(
 			app,
 			'Novel/Novel.md',
@@ -452,7 +452,7 @@ describe('scanProject — compile-preset<->project issues', () => {
 
 		const report = scanProject(app, loadProject(app, 'Novel'));
 		const presetIssues = report.issues.filter(
-			(i) => i.kind === 'stale-preset-in-project'
+			(i) => i.kind === 'STALE_PRESET_IN_PROJECT'
 		);
 		expect(presetIssues).toHaveLength(1);
 		expect(presetIssues[0].autoRepairable).toBe(true);
@@ -499,12 +499,12 @@ describe('scanProject — compile-preset<->project issues', () => {
 
 		const report = scanProject(app, loadProject(app, 'Flash'));
 		const presetIssues = report.issues.filter(
-			(i) => i.kind === 'preset-missing-in-project'
+			(i) => i.kind === 'PRESET_MISSING_IN_PROJECT'
 		);
 		expect(presetIssues).toHaveLength(1);
 	});
 
-	it('reports project-preset-conflict when wikilink and id point at different files', async () => {
+	it('reports PROJECT_PRESET_CONFLICT when wikilink and id point at different files', async () => {
 		await seedFolderProject(
 			app,
 			'Novel/Novel.md',
@@ -536,7 +536,7 @@ describe('scanProject — compile-preset<->project issues', () => {
 
 		const report = scanProject(app, loadProject(app, 'Novel'));
 		const conflicts = report.issues.filter(
-			(i) => i.kind === 'project-preset-conflict'
+			(i) => i.kind === 'PROJECT_PRESET_CONFLICT'
 		);
 		expect(conflicts).toHaveLength(1);
 		expect(conflicts[0].autoRepairable).toBe(false);

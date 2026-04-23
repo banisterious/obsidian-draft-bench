@@ -38,19 +38,31 @@ import {
  * scans (driven by the UI).
  */
 
+/**
+ * Stable SNAKE_CASE identifiers for integrity issue categories.
+ *
+ * Each code names one (relationship, failure mode) pairing. Codes are
+ * treated as public identifiers: help-doc anchors, Data Quality tab
+ * grouping, and future telemetry/logging should target these strings,
+ * so they should not be renamed lightly. New relationships or failure
+ * modes should add codes rather than repurposing existing ones.
+ *
+ * Naming shape: `<PARENT>_<CATEGORY>_<CHILD>` for reverse-array and
+ * conflict issues, where CATEGORY is one of MISSING / STALE / CONFLICT.
+ */
 export type IntegrityIssueKind =
-	| 'scene-missing-in-project'
-	| 'stale-scene-in-project'
-	| 'scene-project-conflict'
-	| 'draft-missing-in-scene'
-	| 'stale-draft-in-scene'
-	| 'scene-draft-conflict'
-	| 'draft-missing-in-project'
-	| 'stale-draft-in-project'
-	| 'project-draft-conflict'
-	| 'preset-missing-in-project'
-	| 'stale-preset-in-project'
-	| 'project-preset-conflict';
+	| 'SCENE_MISSING_IN_PROJECT'
+	| 'STALE_SCENE_IN_PROJECT'
+	| 'SCENE_PROJECT_CONFLICT'
+	| 'DRAFT_MISSING_IN_SCENE'
+	| 'STALE_DRAFT_IN_SCENE'
+	| 'SCENE_DRAFT_CONFLICT'
+	| 'DRAFT_MISSING_IN_PROJECT'
+	| 'STALE_DRAFT_IN_PROJECT'
+	| 'PROJECT_DRAFT_CONFLICT'
+	| 'PRESET_MISSING_IN_PROJECT'
+	| 'STALE_PRESET_IN_PROJECT'
+	| 'PROJECT_PRESET_CONFLICT';
 
 export interface IntegrityIssue {
 	kind: IntegrityIssueKind;
@@ -116,9 +128,9 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 			childDeclaresParent: (fm) => fm['dbench-project-id'] === projectId,
 			childTypeLabel: 'Scene',
 			kinds: {
-				missing: 'scene-missing-in-project',
-				stale: 'stale-scene-in-project',
-				conflict: 'scene-project-conflict',
+				missing: 'SCENE_MISSING_IN_PROJECT',
+				stale: 'STALE_SCENE_IN_PROJECT',
+				conflict: 'SCENE_PROJECT_CONFLICT',
 			},
 		})
 	);
@@ -146,9 +158,9 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 					fm['dbench-scene-id'] === scene.frontmatter['dbench-id'],
 				childTypeLabel: 'Draft',
 				kinds: {
-					missing: 'draft-missing-in-scene',
-					stale: 'stale-draft-in-scene',
-					conflict: 'scene-draft-conflict',
+					missing: 'DRAFT_MISSING_IN_SCENE',
+					stale: 'STALE_DRAFT_IN_SCENE',
+					conflict: 'SCENE_DRAFT_CONFLICT',
 				},
 			})
 		);
@@ -176,9 +188,9 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 			childDeclaresParent: (fm) => fm['dbench-project-id'] === projectId,
 			childTypeLabel: 'Compile preset',
 			kinds: {
-				missing: 'preset-missing-in-project',
-				stale: 'stale-preset-in-project',
-				conflict: 'project-preset-conflict',
+				missing: 'PRESET_MISSING_IN_PROJECT',
+				stale: 'STALE_PRESET_IN_PROJECT',
+				conflict: 'PROJECT_PRESET_CONFLICT',
 			},
 		})
 	);
@@ -213,9 +225,9 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 					!fm['dbench-scene-id'],
 				childTypeLabel: 'Draft',
 				kinds: {
-					missing: 'draft-missing-in-project',
-					stale: 'stale-draft-in-project',
-					conflict: 'project-draft-conflict',
+					missing: 'DRAFT_MISSING_IN_PROJECT',
+					stale: 'STALE_DRAFT_IN_PROJECT',
+					conflict: 'PROJECT_DRAFT_CONFLICT',
 				},
 			})
 		);

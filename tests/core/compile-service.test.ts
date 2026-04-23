@@ -3,6 +3,7 @@ import { App, TFile } from 'obsidian';
 import { CompileService } from '../../src/core/compile-service';
 import type { CompilePresetNote } from '../../src/core/discovery';
 import type { CompilePresetFrontmatter } from '../../src/model/compile-preset';
+import type { SectionBreakStyle } from '../../src/model/scene';
 import type { DbenchStatus } from '../../src/model/types';
 
 /**
@@ -21,10 +22,12 @@ async function seedScene(
 		order: number;
 		body: string;
 		status?: DbenchStatus;
+		sectionBreakTitle?: string;
+		sectionBreakStyle?: SectionBreakStyle;
 	}
 ): Promise<TFile> {
 	const file = await app.vault.create(options.path, options.body);
-	app.metadataCache._setFrontmatter(file, {
+	const fm: Record<string, unknown> = {
 		'dbench-type': 'scene',
 		'dbench-id': options.id,
 		'dbench-project': `[[${options.projectTitle}]]`,
@@ -33,7 +36,14 @@ async function seedScene(
 		'dbench-status': options.status ?? 'draft',
 		'dbench-drafts': [],
 		'dbench-draft-ids': [],
-	});
+	};
+	if (options.sectionBreakTitle !== undefined) {
+		fm['dbench-section-break-title'] = options.sectionBreakTitle;
+	}
+	if (options.sectionBreakStyle !== undefined) {
+		fm['dbench-section-break-style'] = options.sectionBreakStyle;
+	}
+	app.metadataCache._setFrontmatter(file, fm);
 	return file;
 }
 
@@ -416,6 +426,56 @@ describe('CompileService.generate', () => {
 		expect(result.markdown).toContain('[^2]: Second.');
 		expect(result.markdown).toContain('Scene B[^3] stands alone.');
 		expect(result.markdown).toContain('[^3]: B-only.');
+	});
+
+	it('injects a section break before a scene that declares one', async () => {
+		await seedScene(app, {
+			path: 'Novel/Opening.md',
+			id: 'sc-a-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			body: 'Opening prose.',
+		});
+		await seedScene(app, {
+			path: 'Novel/Afternoon.md',
+			id: 'sc-b-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+			body: 'Afternoon prose.',
+			sectionBreakTitle: 'Part II',
+			sectionBreakStyle: 'visual',
+		});
+
+		const preset = makePreset({ projectId });
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe(
+			'# Opening\n\nOpening prose.\n\n' +
+				'* * *\n\n**Part II**\n\n* * *\n\n' +
+				'# Afternoon\n\nAfternoon prose.'
+		);
+	});
+
+	it('suppresses all section breaks when the preset toggles them off', async () => {
+		await seedScene(app, {
+			path: 'Novel/Opening.md',
+			id: 'sc-a-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			body: 'Opening prose.',
+			sectionBreakTitle: 'Part I',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-include-section-breaks': false,
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe('# Opening\n\nOpening prose.');
 	});
 
 	it('slices scene bodies to the draft section by default (rule 1 integration)', async () => {

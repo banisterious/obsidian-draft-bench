@@ -27,7 +27,25 @@ export interface SceneFrontmatter {
 	 * reads from this value when set.
 	 */
 	'dbench-target-words'?: number;
+	/**
+	 * Optional section-break title shown before this scene at compile
+	 * time (D-06 rule extended). Absence means no break; presence
+	 * triggers the break (preset-level
+	 * `dbench-compile-include-section-breaks` gates the whole
+	 * mechanism). Writer-set via the Properties panel.
+	 */
+	'dbench-section-break-title'?: string;
+	/**
+	 * Render hint for the break declared by
+	 * `dbench-section-break-title`. `visual` = centered title between
+	 * dinkus lines (default); `page-break` = begin a new page in
+	 * PDF / ODT output. The markdown intermediate renders both
+	 * identically; renderers honor page-break when they land in P3.C.
+	 */
+	'dbench-section-break-style'?: SectionBreakStyle;
 }
+
+export type SectionBreakStyle = 'visual' | 'page-break';
 
 /**
  * Type guard: true iff `value` is an object whose `dbench-type` is

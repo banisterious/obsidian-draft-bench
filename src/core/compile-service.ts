@@ -1,6 +1,7 @@
 import type { App } from 'obsidian';
 import { applyContentRules } from './compile/content-rules';
 import { renumberFootnotes } from './compile/footnote-renumber';
+import { buildSectionBreak } from './compile/section-breaks';
 import {
 	findScenesInProject,
 	type CompilePresetNote,
@@ -103,6 +104,8 @@ export class CompileService {
 				});
 				const renumbered = renumberFootnotes(transformed, footnoteOffset);
 				footnoteOffset += renumbered.consumedCount;
+				const sectionBreak = buildSectionBreak(scene, preset.frontmatter);
+				if (sectionBreak) bodies.push(sectionBreak);
 				bodies.push(renumbered.content);
 				scenesCompiled++;
 			} catch (err) {

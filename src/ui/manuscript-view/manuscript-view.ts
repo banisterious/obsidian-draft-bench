@@ -225,7 +225,13 @@ export class ManuscriptView extends ItemView {
 		const previousScroll = container.scrollTop;
 
 		container.empty();
-		container.addClass('dbench-manuscript-view');
+		// `dbench-scope` unlocks the plugin's spacing / radius /
+		// transition custom properties defined in variables.css;
+		// without it, every `var(--dbench-spacing-*)` reference in
+		// manuscript-view.css falls back to empty and grid gaps /
+		// padding collapse. (Previously missing; surfaced as the
+		// "Statusidea" touching-text layout bug.)
+		container.addClass('dbench-manuscript-view', 'dbench-scope');
 
 		const projects = findProjects(this.plugin.app);
 		if (projects.length === 0) {

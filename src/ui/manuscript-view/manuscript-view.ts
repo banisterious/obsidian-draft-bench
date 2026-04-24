@@ -15,6 +15,7 @@ import {
 	type SceneNote,
 } from '../../core/discovery';
 import { sortScenesByOrder } from '../../core/sort-scenes';
+import { ControlCenterModal } from '../control-center/control-center-modal';
 import { renderSection } from './sections/section-base';
 import { renderProjectSummaryBody } from './sections/project-summary-section';
 import { renderManuscriptListBody } from './sections/manuscript-list-section';
@@ -82,6 +83,20 @@ export class ManuscriptView extends ItemView {
 	}
 
 	onOpen(): Promise<void> {
+		// Header action button for the Control Center modal. Uses
+		// Obsidian's built-in `addAction()` for the leaf title-bar
+		// (the same strip where close / pop-out live) so writers have
+		// a one-click path from the ambient leaf to the action-shaped
+		// modal without going to the palette. Complements the palette
+		// command `Open control center`.
+		this.addAction('settings-2', 'Open control center', () => {
+			new ControlCenterModal(
+				this.plugin.app,
+				this.plugin,
+				this.plugin.linker
+			).open();
+		});
+
 		// Reconcile plugin state with leaf state on open. Order:
 		// 1. If plugin has a selection, trust it (another surface wrote it).
 		// 2. Else if leaf state has one and the project still exists,

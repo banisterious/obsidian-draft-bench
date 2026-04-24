@@ -13,6 +13,7 @@ import {
 	setAsScene,
 } from '../core/retrofit';
 import { isProjectFrontmatter } from '../model/project';
+import { ControlCenterModal } from '../ui/control-center/control-center-modal';
 import { activateManuscriptView } from '../ui/manuscript-view/activate';
 import { RepairProjectModal } from '../ui/modals/repair-project-modal';
 import {
@@ -66,6 +67,17 @@ function buildSingleFileItems(
 				() => {
 					plugin.selection.set(fm['dbench-id']);
 					void activateManuscriptView(app);
+				}
+			);
+			addRetrofitMenuItem(
+				menu,
+				'Open control center',
+				'settings-2',
+				() => {
+					// Set selection first so the Compile tab lands on this
+					// project's presets when the modal opens.
+					plugin.selection.set(fm['dbench-id']);
+					new ControlCenterModal(app, plugin, linker).open();
 				}
 			);
 			addRetrofitMenuItem(

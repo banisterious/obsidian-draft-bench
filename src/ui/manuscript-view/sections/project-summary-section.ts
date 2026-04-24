@@ -26,8 +26,24 @@ export function renderProjectSummaryBody(
 		cls: 'dbench-manuscript-view__meta',
 	});
 	appendMetaRow(meta, 'Status', project.frontmatter['dbench-status']);
-	appendMetaRow(meta, 'Shape', project.frontmatter['dbench-project-shape']);
-	appendMetaRow(meta, 'Identifier', project.frontmatter['dbench-id']);
+
+	// Shape + Identifier are technical metadata writers rarely need
+	// day-to-day. Tucked behind a native `<details>` disclosure so
+	// they remain one click away (debugging, support) without
+	// consuming primary sidebar real estate. Using the native element
+	// inherits theme styling for the summary row + chevron.
+	const detailsEl = body.createEl('details', {
+		cls: 'dbench-manuscript-view__details',
+	});
+	detailsEl.createEl('summary', {
+		cls: 'dbench-manuscript-view__details-summary',
+		text: 'Details',
+	});
+	const detailsMeta = detailsEl.createEl('dl', {
+		cls: 'dbench-manuscript-view__meta dbench-manuscript-view__meta--details',
+	});
+	appendMetaRow(detailsMeta, 'Shape', project.frontmatter['dbench-project-shape']);
+	appendMetaRow(detailsMeta, 'Identifier', project.frontmatter['dbench-id']);
 
 	const wordCounts = body.createDiv({
 		cls: 'dbench-manuscript-view__word-counts',

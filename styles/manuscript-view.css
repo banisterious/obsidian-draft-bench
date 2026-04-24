@@ -257,7 +257,7 @@
 	display: grid;
 	grid-template-columns: max-content 1fr;
 	gap: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
-	margin: 0 0 var(--dbench-spacing-md);
+	margin: 0 0 var(--dbench-spacing-xs);
 }
 
 .dbench-manuscript-view__meta-label {
@@ -269,6 +269,32 @@
 	margin: 0;
 	font-variant-numeric: tabular-nums;
 	word-break: break-word;
+}
+
+/*
+ * Details disclosure for technical metadata (Shape + Identifier).
+ * Native `<details>` element so theme inheritance handles the
+ * summary row + chevron rotation without custom JS. Inner meta grid
+ * carries the `--details` modifier so its top margin collapses into
+ * the summary row instead of stacking awkwardly.
+ */
+.dbench-manuscript-view__details {
+	margin: 0 0 var(--dbench-spacing-md);
+}
+
+.dbench-manuscript-view__details-summary {
+	color: var(--text-faint);
+	font-size: var(--font-smaller);
+	cursor: pointer;
+	padding: var(--dbench-spacing-xs) 0;
+}
+
+.dbench-manuscript-view__details-summary:hover {
+	color: var(--text-muted);
+}
+
+.dbench-manuscript-view__meta--details {
+	margin: var(--dbench-spacing-xs) 0 0;
 }
 
 .dbench-manuscript-view__word-counts-heading {

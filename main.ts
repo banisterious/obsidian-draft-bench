@@ -62,6 +62,42 @@ export default class DraftBenchPlugin extends Plugin {
 		});
 
 		this.addSettingTab(new DraftBenchSettingTab(this.app, this));
+
+		// Style Settings race workaround. Obsidian's plugin-CSS injection
+		// can land after Style Settings' initial parseCSS pass, leaving
+		// SS's `settingsList` empty for our `@settings` block — surfaced
+		// as "No settings found" under our manifest's section. Nudge SS
+		// to re-parse after the workspace is fully ready, by which time
+		// our `<style>` tag is definitely in the DOM.
+		this.app.workspace.onLayoutReady(() => {
+			this.nudgeStyleSettingsParse();
+		});
+	}
+
+	/**
+	 * Reach into the Style Settings plugin (if installed) and trigger
+	 * a re-parse. The `parseCSS` method has been stable on SS for
+	 * years, but it isn't a published API contract — wrap in try/catch
+	 * so a future SS rename doesn't break our load.
+	 */
+	private nudgeStyleSettingsParse(): void {
+		const plugins = (
+			this.app as unknown as {
+				plugins: { plugins: Record<string, unknown> };
+			}
+		).plugins;
+		const ss = plugins.plugins['obsidian-style-settings'] as
+			| { parseCSS?: () => void }
+			| undefined;
+		if (!ss || typeof ss.parseCSS !== 'function') return;
+		try {
+			ss.parseCSS();
+		} catch (err) {
+			console.warn(
+				'[DraftBench] Style Settings parseCSS nudge failed:',
+				err
+			);
+		}
 	}
 
 	onunload(): void {

@@ -228,14 +228,17 @@ For V1, the lazy-loading investigation is deferrable. Ship with static import of
 
 ### Revised bundle math for Draft Bench
 
-| Component | Size | Loading strategy (V1) | Loading strategy (post-V1 lazy) |
-|---|---|---|---|
-| pdfmake core | ~1.4 MB | Static, once render-pdf is imported | Lazy, on first PDF compile |
-| Stock Roboto VFS (4 variants) | ~835 KB | Static, once render-pdf is imported | Lazy, pairs with pdfmake |
-| JSZip (ODT renderer) | ~100 KB | Static, once render-odt is imported | Static, unchanged |
-| **main.js total (PDF + ODT wired)** | **~2.3 MB increase** | — | **~100 KB increase**; pdfmake + fonts deferred |
+Measured 2026-04-23 after P3.E shipped and the dispatcher made render-pdf + render-odt reachable from the plugin entry. Production build (`npm run build`), esbuild without minification (Obsidian community-plugin convention; reviewers read source):
 
-V1 ship size: substantial (+~2.3 MB over current 162 KB) once the P3.E dispatcher makes render-pdf reachable. This raises the stakes on post-V1 lazy-loading — it's now the dominant optimization lever, not a nice-to-have.
+| Component | Size in bundle | Loading strategy (V1) | Loading strategy (post-V1 lazy) |
+|---|---|---|---|
+| pdfmake core (unminified) | ~2.85 MB | Static, once render-pdf is imported | Lazy, on first PDF compile |
+| Stock Roboto VFS (4 variants, base64) | ~835 KB | Static, once render-pdf is imported | Lazy, pairs with pdfmake |
+| JSZip (ODT renderer, unminified) | ~300-400 KB | Static, once render-odt is imported | Static, unchanged |
+| Draft Bench code + other deps | ~200 KB | Static | Static |
+| **main.js total (measured)** | **~4.72 MB** (from 181 KB baseline) | — | **~400-600 KB**; pdfmake + VFS deferred |
+
+Important correction for anyone working from earlier numbers: pdfmake.js **unminified** is ~2.85 MB, not the ~1.4 MB minified figure previously quoted. esbuild's Obsidian-plugin config doesn't minify, so the unminified size is what ships. This roughly doubled the bundle-increase prediction — actual +4.54 MB vs. forecast +2.3 MB. Total V1 ship size is substantial (~5 MB including CSS + all deps); post-V1 lazy-loading is now the dominant lever, not a nice-to-have.
 
 ### Outstanding questions for Draft Bench
 

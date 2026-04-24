@@ -510,6 +510,53 @@ describe('CompileService.generate', () => {
 		expect(result.chapterHashes[0]).not.toBe(result.chapterHashes[1]);
 	});
 
+	it('aggregates stripSummary counts across all scenes (P3.F)', async () => {
+		await seedScene(app, {
+			path: 'Novel/A.md',
+			id: 'sc-a',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			body: 'Prose ![[pic.png]] and ![[photo.jpg]] and ![[clip.mp3]].',
+		});
+		await seedScene(app, {
+			path: 'Novel/B.md',
+			id: 'sc-b',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+			body: 'More ![[diagram.svg]] and ![[view.base]] and ![[Some Note]].',
+		});
+
+		const preset = makePreset({ projectId });
+		const result = await service.generate(preset);
+
+		// A: 2 images + 1 audio; B: 1 image + 1 base + 1 note. Totals: 3 img, 1 audio, 1 base, 1 note.
+		expect(result.stripSummary.counts.image).toBe(3);
+		expect(result.stripSummary.counts.audio).toBe(1);
+		expect(result.stripSummary.counts.base).toBe(1);
+		expect(result.stripSummary.counts.note).toBe(1);
+		expect(result.stripSummary.counts.video).toBe(0);
+		expect(result.stripSummary.counts.pdf).toBe(0);
+		expect(result.stripSummary.total).toBe(6);
+	});
+
+	it('returns a zero stripSummary when no embeds were encountered', async () => {
+		await seedScene(app, {
+			path: 'Novel/Clean.md',
+			id: 'sc-clean',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			body: 'Pure prose with no embeds.',
+		});
+
+		const preset = makePreset({ projectId });
+		const result = await service.generate(preset);
+
+		expect(result.stripSummary.total).toBe(0);
+	});
+
 	it('slices scene bodies to the draft section by default (rule 1 integration)', async () => {
 		await seedScene(app, {
 			path: 'Novel/Opening.md',

@@ -4,6 +4,10 @@ import { renumberFootnotes } from './compile/footnote-renumber';
 import { buildSectionBreak } from './compile/section-breaks';
 import { djb2, formatChapterHash } from './compile/hash';
 import {
+	createStripAccumulator,
+	type StripSummary,
+} from './compile/strip-accumulator';
+import {
 	findScenesInProject,
 	type CompilePresetNote,
 	type SceneNote,
@@ -44,6 +48,14 @@ export interface CompileResult {
 	 * compile." Omits scenes that failed to read.
 	 */
 	chapterHashes: string[];
+	/**
+	 * Aggregate strip counts across every scene in this compile (P3.F).
+	 * Populated by the shared accumulator threaded into
+	 * `applyContentRules`; surfaced via the dispatcher's success
+	 * outcome so the Run notice can list "3 image embeds, 1 base embed"
+	 * without per-embed Notice spam.
+	 */
+	stripSummary: StripSummary;
 }
 
 export interface CompileError {
@@ -100,6 +112,7 @@ export class CompileService {
 
 		const bodies: string[] = [];
 		const chapterHashes: string[] = [];
+		const stripAccumulator = createStripAccumulator();
 		let scenesCompiled = 0;
 		let footnoteOffset = 1;
 
@@ -114,6 +127,7 @@ export class CompileService {
 					preset: preset.frontmatter,
 					sceneTitle: scene.file.basename,
 					compileIndex: i + 1,
+					stripAccumulator,
 				});
 				const renumbered = renumberFootnotes(transformed, footnoteOffset);
 				footnoteOffset += renumbered.consumedCount;
@@ -137,6 +151,7 @@ export class CompileService {
 			warnings,
 			errors,
 			chapterHashes,
+			stripSummary: stripAccumulator.snapshot(),
 		};
 	}
 }
@@ -187,5 +202,6 @@ function emptyResult(warnings: string[], errors: CompileError[]): CompileResult 
 		warnings,
 		errors,
 		chapterHashes: [],
+		stripSummary: createStripAccumulator().snapshot(),
 	};
 }

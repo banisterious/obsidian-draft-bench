@@ -4,21 +4,20 @@ import {
 	applyContentRules,
 	applyDinkusRule,
 	applyFrontmatterRule,
-	applyNoteEmbedRule,
 	applyWikilinkRule,
 	buildSceneHeading,
 	shiftH1sInBody,
-	stripBaseEmbeds,
 	stripCalloutMarkers,
 	stripComments,
+	stripEmbeds,
 	stripHighlights,
-	stripImageEmbeds,
 	stripTags,
 	stripTaskCheckboxes,
 	toRoman,
 	transformOutsideCode,
 	type RuleContext,
 } from '../../../src/core/compile/content-rules';
+import { createStripAccumulator } from '../../../src/core/compile/strip-accumulator';
 import type { CompilePresetFrontmatter } from '../../../src/model/compile-preset';
 
 function makePresetFm(
@@ -186,42 +185,49 @@ describe('stripTaskCheckboxes', () => {
 
 // -- Rules 8a / 8b / 8c: embeds ----------------------------------------
 
-describe('stripImageEmbeds', () => {
-	it('drops image embeds by extension', () => {
-		expect(stripImageEmbeds('before ![[pic.png]] after')).toBe('before  after');
-		expect(stripImageEmbeds('![[photo.jpeg]]')).toBe('');
-	});
-
-	it('leaves non-image embeds untouched', () => {
-		expect(stripImageEmbeds('![[Note]]')).toBe('![[Note]]');
-		expect(stripImageEmbeds('![[view.base]]')).toBe('![[view.base]]');
-	});
-
-	it('handles anchor / display suffixes', () => {
-		expect(stripImageEmbeds('![[pic.png#x50]]')).toBe('');
-		expect(stripImageEmbeds('![[pic.png|thumb]]')).toBe('');
-	});
-});
-
-describe('stripBaseEmbeds', () => {
-	it('drops .base embeds', () => {
-		expect(stripBaseEmbeds('![[view.base]]')).toBe('');
-	});
-
-	it('leaves other embeds untouched', () => {
-		expect(stripBaseEmbeds('![[Note]] and ![[pic.png]]')).toBe(
-			'![[Note]] and ![[pic.png]]'
+describe('stripEmbeds', () => {
+	it('drops every `![[...]]` embed regardless of category', () => {
+		expect(stripEmbeds('before ![[pic.png]] after', 'strip')).toBe(
+			'before  after'
 		);
-	});
-});
-
-describe('applyNoteEmbedRule', () => {
-	it('strips all remaining embeds in V1 (strip mode)', () => {
-		expect(applyNoteEmbedRule('![[Some Note]] text', 'strip')).toBe(' text');
+		expect(stripEmbeds('![[Note]] ![[view.base]]', 'strip')).toBe(' ');
 	});
 
-	it('also strips in resolve mode for V1 (reserved for post-V1)', () => {
-		expect(applyNoteEmbedRule('![[Some Note]] text', 'resolve')).toBe(' text');
+	it('handles anchor and display suffixes', () => {
+		expect(stripEmbeds('![[pic.png#x50]]', 'strip')).toBe('');
+		expect(stripEmbeds('![[pic.png|thumb]]', 'strip')).toBe('');
+	});
+
+	it('treats preserve and resolve modes as strip in V1', () => {
+		expect(stripEmbeds('![[Note]]', 'resolve')).toBe('');
+	});
+
+	it('records each strip in the accumulator when provided', () => {
+		const acc = createStripAccumulator();
+		stripEmbeds(
+			'![[pic.png]] ![[view.base]] ![[clip.mp3]] ![[Note]] ![[reading.pdf]] ![[scene.mp4]]',
+			'strip',
+			acc
+		);
+		const s = acc.snapshot();
+		expect(s.counts.image).toBe(1);
+		expect(s.counts.base).toBe(1);
+		expect(s.counts.audio).toBe(1);
+		expect(s.counts.pdf).toBe(1);
+		expect(s.counts.video).toBe(1);
+		expect(s.counts.note).toBe(1);
+		expect(s.total).toBe(6);
+	});
+
+	it('treats unknown extensions as note embeds', () => {
+		const acc = createStripAccumulator();
+		stripEmbeds('![[Some Note]] ![[other.xyz]]', 'strip', acc);
+		const s = acc.snapshot();
+		expect(s.counts.note).toBe(2);
+	});
+
+	it('works without an accumulator (strip still happens)', () => {
+		expect(stripEmbeds('![[pic.png]]', 'strip')).toBe('');
 	});
 });
 

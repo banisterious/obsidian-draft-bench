@@ -250,6 +250,7 @@ describe('runCompile: md + vault', () => {
 			'Draft Bench/Novel/Compiled/Workshop.md'
 		);
 		expect(outcome.scenesCompiled).toBe(1);
+		expect(outcome.stripSummary.total).toBe(0);
 
 		const written = app.vault.getAbstractFileByPath(outcome.outputPath);
 		expect(written).not.toBeNull();
@@ -259,6 +260,32 @@ describe('runCompile: md + vault', () => {
 		expect(fm['dbench-last-output-path']).toBe(outcome.outputPath);
 		expect(Array.isArray(fm['dbench-last-chapter-hashes'])).toBe(true);
 		expect((fm['dbench-last-chapter-hashes'] as string[]).length).toBe(1);
+	});
+
+	it('surfaces stripSummary on success when embeds were stripped', async () => {
+		const project = await seedProject(app, 'Novel', 'prj-strip');
+		await seedScene(app, {
+			path: 'Draft Bench/Novel/A.md',
+			id: 'sc-a',
+			projectId: 'prj-strip',
+			projectTitle: 'Novel',
+			order: 1,
+			body: 'Scene with ![[pic.png]] and ![[view.base]] and ![[Some Note]].',
+		});
+		const preset = await seedPreset(app, 'Workshop', {
+			projectId: project.frontmatter['dbench-id'],
+			format: 'md',
+			output: 'vault',
+		});
+
+		const outcome = await runCompile(app, preset);
+
+		expect(outcome.kind).toBe('success');
+		if (outcome.kind !== 'success') return;
+		expect(outcome.stripSummary.counts.image).toBe(1);
+		expect(outcome.stripSummary.counts.base).toBe(1);
+		expect(outcome.stripSummary.counts.note).toBe(1);
+		expect(outcome.stripSummary.total).toBe(3);
 	});
 });
 

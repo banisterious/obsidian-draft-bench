@@ -11,6 +11,7 @@ import {
 	type ProjectNote,
 } from '../discovery';
 import { applyCompileState } from './apply-compile-state';
+import type { StripSummary } from './strip-accumulator';
 import {
 	createMdDiskDeps,
 	renderMdToDisk,
@@ -60,6 +61,7 @@ export type RunCompileOutcome =
 			scenesSkipped: number;
 			warnings: string[];
 			errors: CompileError[];
+			stripSummary: StripSummary;
 	  }
 	| {
 			kind: 'canceled';
@@ -153,6 +155,7 @@ export async function runCompile(
 		scenesSkipped: result.scenesSkipped,
 		warnings: result.warnings,
 		errors: result.errors,
+		stripSummary: result.stripSummary,
 	};
 }
 

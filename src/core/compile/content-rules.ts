@@ -7,6 +7,7 @@ import type {
 	CompileWikilinkRule,
 } from '../../model/compile-preset';
 import { sliceToDraft, stripFrontmatter } from '../word-count';
+import { classifyEmbedPath, type StripAccumulator } from './strip-accumulator';
 
 /**
  * Per-scene context threaded into `applyContentRules`. Kept narrow so
@@ -22,6 +23,14 @@ export interface RuleContext {
 	 * Used for chapter numbering (numeric / roman prefixes).
 	 */
 	compileIndex: number;
+	/**
+	 * Optional accumulator for strip-with-notice events (P3.F). The
+	 * compile service passes one shared accumulator across all scenes
+	 * so the final summary reflects the whole compile run. When
+	 * omitted (rule-level unit tests), strips still happen but go
+	 * unrecorded.
+	 */
+	stripAccumulator?: StripAccumulator;
 }
 
 /**
@@ -77,9 +86,9 @@ export function applyContentRules(rawContent: string, ctx: RuleContext): string 
 	body = transformOutsideCode(body, (text) => {
 		let t = text;
 		// Embeds first so wikilink regex only sees non-embed [[...]].
-		t = stripImageEmbeds(t);
-		t = stripBaseEmbeds(t);
-		t = applyNoteEmbedRule(t, ctx.preset['dbench-compile-embeds']);
+		// The media + note embed handlers share one regex pass via
+		// stripEmbeds so each embed is categorized exactly once.
+		t = stripEmbeds(t, ctx.preset['dbench-compile-embeds'], ctx.stripAccumulator);
 		t = applyWikilinkRule(t, ctx.preset['dbench-compile-wikilinks']);
 		t = stripTags(t);
 		t = stripComments(t);
@@ -204,34 +213,32 @@ export function stripTaskCheckboxes(body: string): string {
 
 // ---- Rules 8a / 8b / 8c: embeds -------------------------------------
 
-const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|bmp|heic|heif|avif)$/i;
-const BASE_EXT = /\.base$/i;
-
-export function stripImageEmbeds(text: string): string {
-	return text.replace(/!\[\[([^\]]+?)\]\]/g, (match, inner: string) => {
-		const path = inner.split('#')[0].split('|')[0];
-		return IMAGE_EXT.test(path) ? '' : match;
-	});
-}
-
-export function stripBaseEmbeds(text: string): string {
-	return text.replace(/!\[\[([^\]]+?)\]\]/g, (match, inner: string) => {
-		const path = inner.split('#')[0].split('|')[0];
-		return BASE_EXT.test(path) ? '' : match;
-	});
-}
-
 /**
- * V1 note-embed handling strips every remaining `![[...]]`. The
- * per-preset `resolve` mode is reserved for post-V1 (see D-06 rule
- * 8a); in V1 it falls through to strip so writers can flip the
- * setting early without changing output behavior.
+ * Unified embed stripper (rules 8a / 8b / 8c combined).
+ *
+ * All `![[...]]` embeds are dropped in V1 regardless of category:
+ * media types (image / audio / video / pdf / base) have no
+ * resolution path, and the per-preset `resolve` mode for note
+ * embeds is reserved for post-V1. Every embed is classified (by
+ * extension for media, default to `note`) and recorded in the
+ * accumulator so the compile dispatcher can surface a batched
+ * summary Notice at completion.
+ *
+ * One regex pass ensures each embed is counted exactly once; the
+ * earlier per-category helpers were prone to double-counting if
+ * chained out of order.
  */
-export function applyNoteEmbedRule(
+export function stripEmbeds(
 	text: string,
-	_mode: CompileEmbedRule
+	_mode: CompileEmbedRule,
+	acc?: StripAccumulator
 ): string {
-	return text.replace(/!\[\[[^\]]+?\]\]/g, '');
+	return text.replace(/!\[\[([^\]]+?)\]\]/g, (_match, inner: string) => {
+		const path = inner.split('#')[0].split('|')[0];
+		const category = classifyEmbedPath(path) ?? 'note';
+		acc?.record(category);
+		return '';
+	});
 }
 
 // ---- Rule 9: wikilinks ----------------------------------------------

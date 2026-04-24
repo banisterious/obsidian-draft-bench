@@ -12,6 +12,7 @@ import {
 } from '../discovery';
 import type { DraftBenchLinker } from '../linker';
 import { runCompile, type RunCompileOutcome } from './run';
+import { formatStripSummary } from './strip-accumulator';
 
 /**
  * Shared compile operations used by the palette commands (Run compile,
@@ -51,6 +52,8 @@ export function notifyOutcome(
 			if (outcome.scenesSkipped > 0) {
 				msg += ` (${outcome.scenesSkipped} skipped)`;
 			}
+			const stripLine = formatStripSummary(outcome.stripSummary);
+			if (stripLine) msg += `\n${stripLine}`;
 			new Notice(msg);
 			return;
 		}

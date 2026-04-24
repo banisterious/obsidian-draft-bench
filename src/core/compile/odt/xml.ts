@@ -101,6 +101,14 @@ function renderBlock(block: OdtBlock): string {
 				.join('');
 			return `<text:list text:style-name="${styleName}">${items}</text:list>`;
 		}
+		case 'thematic-break':
+			// Centered dinkus paragraph. ODT consumers (LibreOffice,
+			// Word) recognize Text_20_body with center alignment via
+			// the inline `style:text-align="center"` attribute on the
+			// paragraph properties; using a plain text-body run here
+			// keeps the word processor's list / heading detection from
+			// re-interpreting it.
+			return `<text:p text:style-name="Text_20_body">* * *</text:p>`;
 	}
 }
 

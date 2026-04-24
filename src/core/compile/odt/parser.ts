@@ -37,11 +37,28 @@ export interface OdtList {
 	items: OdtRun[][];
 }
 
-export type OdtBlock = OdtHeading | OdtParagraph | OdtList;
+export interface OdtThematicBreak {
+	kind: 'thematic-break';
+}
+
+export type OdtBlock =
+	| OdtHeading
+	| OdtParagraph
+	| OdtList
+	| OdtThematicBreak;
 
 const HEADING_PATTERN = /^(#{1,6})\s+(.*)$/;
 const UNORDERED_ITEM_PATTERN = /^\s*[-*+]\s+(.*)$/;
 const ORDERED_ITEM_PATTERN = /^\s*\d+\.\s+(.*)$/;
+/**
+ * CommonMark thematic break: 3+ matching `-`, `*`, or `_` characters
+ * on a line, optionally separated by spaces / tabs. `* * *` (the
+ * compile dinkus emitted by section-break injection) is the case
+ * that motivated this — without explicit detection, the leading `*`
+ * matches the unordered-list pattern and the dinkus renders as a
+ * bullet list of asterisks.
+ */
+const THEMATIC_BREAK_PATTERN = /^\s*([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
 
 /**
  * Parse `markdown` into a flat block list. Blank lines are
@@ -70,6 +87,15 @@ export function parseMarkdownForOdt(markdown: string): OdtBlock[] {
 				level,
 				runs: parseInline(headingMatch[2]),
 			});
+			i++;
+			continue;
+		}
+
+		// Thematic break must come before the list-item check —
+		// `* * *` matches the unordered-item regex too, and we want
+		// HR semantics, not bullets.
+		if (THEMATIC_BREAK_PATTERN.test(line)) {
+			blocks.push({ kind: 'thematic-break' });
 			i++;
 			continue;
 		}
@@ -108,6 +134,7 @@ export function parseMarkdownForOdt(markdown: string): OdtBlock[] {
 			if (curr.trim() === '') break;
 			if (
 				HEADING_PATTERN.test(curr) ||
+				THEMATIC_BREAK_PATTERN.test(curr) ||
 				UNORDERED_ITEM_PATTERN.test(curr) ||
 				ORDERED_ITEM_PATTERN.test(curr)
 			)

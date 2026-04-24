@@ -74,6 +74,16 @@ export function renderBlock(block: MdBlock): Content {
 				? { ol: items, style: 'list' }
 				: { ul: items, style: 'list' };
 		}
+		case 'thematic-break':
+			// Render as a centered dinkus paragraph. Visual section
+			// break, recognizable to readers, no list-bullet artifact.
+			// Uses pdfmake's `text` block with center alignment +
+			// generous vertical margin.
+			return {
+				text: '* * *',
+				alignment: 'center',
+				margin: [0, 12, 0, 12],
+			};
 	}
 }
 

@@ -135,4 +135,44 @@ describe('parseMarkdownForOdt', () => {
 		expect(parseMarkdownForOdt('')).toEqual([]);
 		expect(parseMarkdownForOdt('\n\n\n')).toEqual([]);
 	});
+
+	it('recognizes `* * *` as a thematic break (not a bullet list)', () => {
+		// Without explicit thematic-break detection, the leading `*`
+		// matches the unordered-list pattern and the dinkus renders as
+		// bullets. This is the bug surfaced by the dev-vault PDF
+		// walkthrough: "Part II" surrounded by `* * *` rendered as
+		// `•\nPart II\n•`.
+		const blocks = parseMarkdownForOdt(
+			'before\n\n* * *\n\n**Part II**\n\n* * *\n\nafter'
+		);
+		expect(blocks.map((b) => b.kind)).toEqual([
+			'paragraph',
+			'thematic-break',
+			'paragraph',
+			'thematic-break',
+			'paragraph',
+		]);
+	});
+
+	it('recognizes other CommonMark thematic-break variants', () => {
+		expect(parseMarkdownForOdt('***').map((b) => b.kind)).toEqual([
+			'thematic-break',
+		]);
+		expect(parseMarkdownForOdt('---').map((b) => b.kind)).toEqual([
+			'thematic-break',
+		]);
+		expect(parseMarkdownForOdt('___').map((b) => b.kind)).toEqual([
+			'thematic-break',
+		]);
+		expect(parseMarkdownForOdt('* * * * *').map((b) => b.kind)).toEqual([
+			'thematic-break',
+		]);
+	});
+
+	it('still recognizes single-asterisk bullet items as lists', () => {
+		// Defends against an over-eager thematic-break regex that would
+		// swallow legitimate `* item` lines.
+		const blocks = parseMarkdownForOdt('* first item\n* second item');
+		expect(blocks.map((b) => b.kind)).toEqual(['list']);
+	});
 });

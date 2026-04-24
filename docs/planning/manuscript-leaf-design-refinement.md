@@ -2,7 +2,14 @@
 
 Planning doc for a deliberate design pass on the Manuscript leaf — the dockable right-sidebar view that writers see every session. Two goals: fix consistency / information-architecture issues that accumulated as the leaf grew feature-by-feature, and move the visual identity from "functional" toward "attractive."
 
-**Status:** Draft. Observations captured from the 2026-04-24 screenshot review; aesthetic direction not yet locked. No implementation work started.
+**Status:** Direction locked 2026-04-24. Implementation starting with observation 1 (Compile button placement). Mockups used to make the call live gitignored at [docs/mockups/](../mockups/).
+
+## Locked decisions (2026-04-24)
+
+- **Aesthetic direction: B — Ulysses warm.** Semantic status colors (muted palette), status chips on scene rows + colored dots in breakdown, rounded corners, gradient progress fills, warmer background tint, small-caps section heads. Compile button promoted to a primary CTA above the 3-button toolbar with a soft shadow.
+- **Status colors: on by default, Style Settings exposure.** Each default-vocabulary status ships with a muted color (brainstorm/idea = muted blue, draft = neutral gray, revision = amber, final = green). Out-of-vocabulary statuses fall back to `--text-muted`. Style Settings exposes each color as a tunable variable so writers who dislike the palette (or have custom vocabulary values) can override.
+- **Ordering: design pass before onboarding.** Phase 3 onboarding is the next Phase 3 item after this refinement; onboarding lands on a polished leaf rather than one mid-redesign.
+- **Empty state: brand-mark variant, option 2 (accent-tinted).** Uses [draft-bench-favicon-mark.svg](../assets/branding/draft-bench-favicon-mark.svg) inlined with `stroke="currentColor"` tinted via `color: var(--text-accent)`. Copy: "Your manuscript begins here" + "Create your first project to start tracking scenes, drafts, and compile presets." Primary "Create project" button + secondary "Learn more" button. Applies to the Manuscript leaf's empty state when no project is selected. No custom illustration work; the brand mark was already designed.
 
 **Scope:** The Manuscript leaf only. Control Center modal (Templates + Compile tabs) and settings tab are explicitly out of scope for this pass — they get their own design reviews when they grow enough content to warrant it.
 
@@ -167,18 +174,21 @@ Manual dev-vault walkthroughs at each step; screenshots checked against the refe
 
 ---
 
-## Open questions
+## Alternatives considered (not picked)
 
-1. **Aesthetic direction** — A (iA Writer quiet), B (Ulysses warm), or C (polish-only, stay inherit-first)?
-2. **Status colors** — if Direction B, do status colors ship as defaults or opt-in via Style Settings? Leaning opt-in: default stays monochrome; Style Settings toggle turns on the palette.
-3. **Scope coupling with onboarding** — Phase 3 onboarding work is imminent. Should this design pass ship before onboarding (so onboarding lands on the polished leaf) or after (so onboarding's UX feedback informs the design)?
-4. **Custom illustration** — are we willing to ship a small decorative SVG in empty states, or is that a bridge too far for a Community Plugins submission?
-5. **Mobile prep** — V1 is desktop-only, but any aesthetic choices baked in now will carry to mobile if/when it lands. Worth considering how the scene list reads at mobile widths (~320px).
+Preserved for future-context; the reasoning behind the lock.
+
+- **Direction A — iA Writer quiet.** Monochrome + single accent. Rejected: aesthetically restrained to the point of not reading as "designed" to writers expecting visual warmth from a writing tool. Good reference for typography rhythm; its whitespace and hierarchy discipline carry into B.
+- **Direction C — polish only.** Fix IA, stop there. Rejected: addresses the consistency observations but doesn't answer the "I want the leaf to feel more attractive" brief. Fine as a fallback if Direction B produces unforeseen theme-compatibility issues.
+
+## Open questions still
+
+- **Mobile prep.** V1 is desktop-only, but any aesthetic choices baked in now will carry to mobile if/when it lands. Worth a pass on scene-list readability at ~320px when implementation is done.
 
 ---
 
-## Follow-up after direction is picked
+## Follow-up now that direction is locked
 
-- Update this doc: promote the chosen direction to a locked decision at the top; move unpicked directions to an "alternatives considered" section.
-- Open a tracking commit or issue for each observation / opportunity from the sections above.
-- Start implementation with the lowest-risk consistency fix first (probably observation 1 — the Compile button placement).
+- Implementation proceeds per the sequence in the implementation section (small reversible commits per observation, aesthetic opportunities after, Style Settings manifest last).
+- Each commit lands incrementally; the leaf remains usable at every step.
+- Manual dev-vault walkthrough screenshot at each surface to confirm the real rendering matches the mockup intent; recorded as a short note in each commit body if divergent.

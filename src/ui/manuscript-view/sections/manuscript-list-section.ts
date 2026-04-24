@@ -91,13 +91,7 @@ export function renderManuscriptListBody(
 				const target = readTargetWords(
 					scene.frontmatter as unknown as Record<string, unknown>
 				);
-				if (target === null) {
-					el.setText(
-						`${count.toLocaleString()} ${count === 1 ? 'word' : 'words'}`
-					);
-					return;
-				}
-				renderSceneProgress(el, count, target);
+				renderSceneWords(el, count, target);
 			})
 			.catch(() => {
 				if (!el.isConnected) return;
@@ -106,29 +100,45 @@ export function renderManuscriptListBody(
 	}
 }
 
-function renderSceneProgress(
+/**
+ * Render label + progress track for one scene's word count. Every
+ * scene row gets the same layout so row heights stay consistent
+ * (design obs. 4): targeted scenes fill the bar to `view.percent`%;
+ * targetless scenes show an empty track beside the plain word label.
+ * The bar reads as "no progress data" at 0% width, not as "stalled
+ * progress" — the label carries the primary information either way.
+ */
+function renderSceneWords(
 	container: HTMLElement,
 	count: number,
-	target: number
+	target: number | null
 ): void {
 	container.empty();
-	container.addClass('dbench-manuscript-view__scene-words--with-target');
-	const view = formatProgress(count, target);
-	if (view.overage) {
-		container.addClass('dbench-manuscript-view__scene-words--overage');
+	container.removeClass('dbench-manuscript-view__scene-words--overage');
+
+	const label = container.createEl('span', {
+		cls: 'dbench-manuscript-view__scene-progress-label',
+	});
+
+	let percent = 0;
+	if (target === null) {
+		label.setText(
+			`${count.toLocaleString()} ${count === 1 ? 'word' : 'words'}`
+		);
 	} else {
-		container.removeClass('dbench-manuscript-view__scene-words--overage');
+		const view = formatProgress(count, target);
+		label.setText(view.label);
+		percent = view.percent;
+		if (view.overage) {
+			container.addClass('dbench-manuscript-view__scene-words--overage');
+		}
 	}
 
-	container.createEl('span', {
-		cls: 'dbench-manuscript-view__scene-progress-label',
-		text: view.label,
-	});
 	const track = container.createDiv({
 		cls: 'dbench-manuscript-view__scene-progress-track',
 	});
 	const fill = track.createDiv({
 		cls: 'dbench-manuscript-view__scene-progress-fill',
 	});
-	fill.style.width = `${view.percent}%`;
+	fill.style.width = `${percent}%`;
 }

@@ -1,8 +1,12 @@
-import { FuzzySuggestModal, Notice, type App } from 'obsidian';
+import { FuzzySuggestModal, Notice, type App, type TFile } from 'obsidian';
 import type DraftBenchPlugin from '../../../main';
+import { isDraftFrontmatter } from '../../model/draft';
+import { isProjectFrontmatter } from '../../model/project';
+import { isSceneFrontmatter } from '../../model/scene';
 import { duplicateCompilePreset } from '../compile-presets';
 import {
 	findCompilePresetsOfProject,
+	findNoteById,
 	type CompilePresetNote,
 	type ProjectNote,
 } from '../discovery';
@@ -182,4 +186,34 @@ export class ProjectPickerModal extends FuzzySuggestModal<ProjectNote> {
 
 function pluralize(n: number, singular: string, plural: string): string {
 	return `${n} ${n === 1 ? singular : plural}`;
+}
+
+/**
+ * Resolve the "owning project" for an active file. Project notes are
+ * their own project; scenes and drafts follow `dbench-project-id` via
+ * the rename-safe id companion. Anything else (compile preset,
+ * untyped, unmanaged) returns null — callers decide whether to fall
+ * back to a picker.
+ *
+ * Compile presets are deliberately excluded: a caller that wants to
+ * act on a preset directly should type-check the frontmatter first;
+ * this helper is for the "find this file's project" flow only.
+ */
+export function resolveProjectForActive(
+	app: App,
+	file: TFile,
+	fm: Record<string, unknown>
+): ProjectNote | null {
+	if (isProjectFrontmatter(fm)) {
+		return { file, frontmatter: fm };
+	}
+	if (!isSceneFrontmatter(fm) && !isDraftFrontmatter(fm)) return null;
+
+	const id = fm['dbench-project-id'];
+	if (typeof id !== 'string' || id === '') return null;
+
+	const resolved = findNoteById(app, id);
+	if (!resolved) return null;
+	if (!isProjectFrontmatter(resolved.frontmatter)) return null;
+	return { file: resolved.file, frontmatter: resolved.frontmatter };
 }

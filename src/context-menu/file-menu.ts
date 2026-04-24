@@ -17,6 +17,11 @@ import { ControlCenterModal } from '../ui/control-center/control-center-modal';
 import { activateManuscriptView } from '../ui/manuscript-view/activate';
 import { RepairProjectModal } from '../ui/modals/repair-project-modal';
 import {
+	addPresetMenuItems,
+	addProjectCompileItem,
+	addSceneOrDraftCompileItem,
+} from './compile-items';
+import {
 	addRetrofitMenuItem,
 	noticeForSingleFile,
 	runBatch,
@@ -91,7 +96,16 @@ function buildSingleFileItems(
 					}).open();
 				}
 			);
+			addProjectCompileItem(plugin, linker, menu, file);
 		}
+	}
+
+	if (type === 'compile-preset') {
+		addPresetMenuItems(plugin, linker, menu, file);
+	}
+
+	if (type === 'scene' || type === 'draft') {
+		addSceneOrDraftCompileItem(plugin, menu, file);
 	}
 
 	if (type === null) {

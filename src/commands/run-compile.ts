@@ -1,19 +1,13 @@
-import { Notice, type App, type TFile } from 'obsidian';
+import { Notice } from 'obsidian';
 import type DraftBenchPlugin from '../../main';
 import {
 	compileAndNotify,
 	pickPresetAndCompile,
 	ProjectPickerModal,
+	resolveProjectForActive,
 } from '../core/compile/operations';
-import {
-	findNoteById,
-	findProjects,
-	type ProjectNote,
-} from '../core/discovery';
+import { findProjects } from '../core/discovery';
 import { isCompilePresetFrontmatter } from '../model/compile-preset';
-import { isDraftFrontmatter } from '../model/draft';
-import { isProjectFrontmatter } from '../model/project';
-import { isSceneFrontmatter } from '../model/scene';
 
 /**
  * Register the "Draft Bench: Run compile" palette command.
@@ -51,7 +45,7 @@ async function runCommand(plugin: DraftBenchPlugin): Promise<void> {
 			return;
 		}
 		if (fm) {
-			const project = resolveProjectFromActive(app, active, fm);
+			const project = resolveProjectForActive(app, active, fm);
 			if (project) {
 				await pickPresetAndCompile(plugin, project);
 				return;
@@ -60,25 +54,6 @@ async function runCommand(plugin: DraftBenchPlugin): Promise<void> {
 	}
 
 	await pickProjectThenPresetAndRun(plugin);
-}
-
-function resolveProjectFromActive(
-	app: App,
-	file: TFile,
-	fm: Record<string, unknown>
-): ProjectNote | null {
-	if (isProjectFrontmatter(fm)) {
-		return { file, frontmatter: fm };
-	}
-	if (!isSceneFrontmatter(fm) && !isDraftFrontmatter(fm)) return null;
-
-	const id = fm['dbench-project-id'];
-	if (typeof id !== 'string' || id === '') return null;
-
-	const resolved = findNoteById(app, id);
-	if (!resolved) return null;
-	if (!isProjectFrontmatter(resolved.frontmatter)) return null;
-	return { file: resolved.file, frontmatter: resolved.frontmatter };
 }
 
 async function pickProjectThenPresetAndRun(

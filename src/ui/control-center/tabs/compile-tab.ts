@@ -1,4 +1,5 @@
-import { Notice, setIcon } from 'obsidian';
+import { setIcon } from 'obsidian';
+import { compileAndNotify } from '../../../core/compile/operations';
 import {
 	findCompilePresetsOfProject,
 	findProjects,
@@ -187,14 +188,53 @@ function renderHeader(state: CompileTabState): void {
 	const runButton = buttonRow.createEl('button', {
 		cls: 'mod-cta',
 		text: 'Run compile',
-		attr: {
-			disabled: 'true',
-			title: 'Available once the run-compile command lands.',
-		},
 	});
+	runButton.disabled = state.presets.length === 0;
 	runButton.addEventListener('click', () => {
-		new Notice('Run compile lands in a follow-up commit.');
+		void handleRunClick(state, runButton);
 	});
+}
+
+async function handleRunClick(
+	state: CompileTabState,
+	runButton: HTMLButtonElement
+): Promise<void> {
+	const preset = state.presets.find(
+		(p) => p.frontmatter['dbench-id'] === state.selectedPresetId
+	);
+	if (!preset) return;
+
+	runButton.disabled = true;
+	const originalText = runButton.textContent ?? 'Run compile';
+	runButton.textContent = 'Compiling...';
+	try {
+		await compileAndNotify(state.context.app, preset);
+		// Re-read the preset's frontmatter so the Last-compile section
+		// reflects the fresh compile state, then re-render the body
+		// (header stays put).
+		refreshPresetFrontmatter(state, preset.frontmatter['dbench-id']);
+		renderBody(state);
+	} finally {
+		runButton.disabled = state.presets.length === 0;
+		runButton.textContent = originalText;
+	}
+}
+
+/**
+ * Re-read a single preset's frontmatter from the metadata cache so
+ * the in-memory `state.presets` entry reflects freshly-written
+ * compile state (`dbench-last-*` fields). Cheaper than a full
+ * `refreshPresets` scan when only one preset changed.
+ */
+function refreshPresetFrontmatter(state: CompileTabState, presetId: string): void {
+	const preset = state.presets.find(
+		(p) => p.frontmatter['dbench-id'] === presetId
+	);
+	if (!preset) return;
+	const fm = state.context.app.metadataCache.getFileCache(preset.file)
+		?.frontmatter;
+	if (!fm) return;
+	preset.frontmatter = fm as unknown as CompilePresetNote['frontmatter'];
 }
 
 function renderBody(state: CompileTabState): void {

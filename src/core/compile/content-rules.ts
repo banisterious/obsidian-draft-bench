@@ -96,11 +96,18 @@ export function applyContentRules(rawContent: string, ctx: RuleContext): string 
 		t = applyDinkusRule(t, ctx.preset['dbench-compile-dinkuses']);
 		// Final whitespace cleanup: inline rules strip content but
 		// leave the spaces / blank lines that flanked it. Collapse
-		// mid-line double-spaces and triple+ newline runs so the
-		// output reads cleanly.
+		// mid-line double-spaces, whitespace-only lines, and triple+
+		// newline runs so the output reads cleanly.
 		t = normalizeWhitespaceArtifacts(t);
 		return t;
 	});
+
+	// Trim trailing whitespace the inline rules may have left at
+	// end-of-scene (e.g., stripTags leaves a trailing space when a
+	// tag ended the body). Without this, the scene-concat in
+	// `compile-service` ends up with `...\n\n \n\n#heading` between
+	// scenes, which renders as an extra blank paragraph.
+	body = body.trimEnd();
 
 	return body;
 }
@@ -138,6 +145,10 @@ export function applyContentRules(rawContent: string, ctx: RuleContext): string 
 export function normalizeWhitespaceArtifacts(text: string): string {
 	return text
 		.replace(/(\S)[ \t]{2,}(\S)/g, '$1 $2')
+		// Whitespace-only lines (e.g., a line containing just the
+		// space stripTags leaves behind) become true blanks so the
+		// next pass can collapse adjacent runs.
+		.replace(/\n[ \t]+\n/g, '\n\n')
 		.replace(/\n{3,}/g, '\n\n');
 }
 

@@ -377,9 +377,11 @@ describe('applyContentRules', () => {
 			'See [[Target]] with #tag and ==highlight==.\n%%comment%%';
 		const result = applyContentRules(raw, baseCtx());
 		// The tag strip leaves a double space ("with  and") that
-		// `normalizeWhitespaceArtifacts` then collapses to one.
+		// `normalizeWhitespaceArtifacts` then collapses to one. The
+		// trailing newline gets trimmed by the scene-trailing-
+		// whitespace pass so scene concatenation stays clean.
 		expect(result).toBe(
-			'# Opening\n\nSee Target with and highlight.\n'
+			'# Opening\n\nSee Target with and highlight.'
 		);
 	});
 
@@ -442,6 +444,16 @@ describe('applyContentRules', () => {
 			'# Opening\n\nHe called for Arthur. had arrived.'
 		);
 	});
+
+	it('trims trailing whitespace stripTags leaves at end of scene body', () => {
+		// `#tag` at end of body: stripTags leaves `\n\n ` trailing
+		// (the `\s` before the tag becomes ` ` in the replacement).
+		// Without trimEnd, scene concatenation renders an extra blank
+		// paragraph between scenes.
+		const raw = '## Draft\nSome prose.\n\n#tag';
+		const result = applyContentRules(raw, baseCtx());
+		expect(result).toBe('# Opening\n\nSome prose.');
+	});
 });
 
 describe('normalizeWhitespaceArtifacts', () => {
@@ -469,5 +481,21 @@ describe('normalizeWhitespaceArtifacts', () => {
 
 	it('preserves a single space between words', () => {
 		expect(normalizeWhitespaceArtifacts('hello world')).toBe('hello world');
+	});
+
+	it('converts whitespace-only lines to true blank lines', () => {
+		expect(normalizeWhitespaceArtifacts('before\n \nafter')).toBe(
+			'before\n\nafter'
+		);
+		expect(normalizeWhitespaceArtifacts('before\n\t\nafter')).toBe(
+			'before\n\nafter'
+		);
+	});
+
+	it('collapses adjacent whitespace-only line + blank-line runs', () => {
+		// `stripTags` leaves `\n\n ` at end-of-scene when a tag ends
+		// the body; the middle pass turns the space-only line into a
+		// true blank, and the third pass collapses the 3+ newline run.
+		expect(normalizeWhitespaceArtifacts('a\n\n \n\nb')).toBe('a\n\nb');
 	});
 });

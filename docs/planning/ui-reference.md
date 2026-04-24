@@ -505,6 +505,25 @@ class MyModal extends Modal {
 
 Canonical examples: [`src/trees/ui/unified-tree-wizard-modal.ts:191-384`], [`src/ui/person-picker.ts:167-191`]. Note that CR mostly avoids `titleEl.setText()` in favor of a custom `.crc-modal-header` — see §3's Divergence 4.
 
+**`ItemView.addAction()` and the sidebar-hidden view-header (gotcha):**
+
+`ItemView.addAction(icon, title, callback)` adds an icon button to the view's `view-header` strip — the same top-bar where "close" and "pop-out" live. On main-pane leaves it is always visible. **On sidebar leaves it is not.** Obsidian's core CSS applies:
+
+```css
+.workspace-split.mod-left-split .view-header,
+.workspace-split.mod-right-split .view-header {
+    display: none;
+}
+```
+
+…which hides the entire action strip (and everything added to it) whenever the leaf sits in the left or right sidebar.
+
+Consequence: if an `ItemView` defaults to a sidebar position — as Draft Bench's Manuscript leaf does per [D-07](decisions/D-07-control-center-split.md) — `addAction()` buttons are invisible to most users. They only appear if the writer drags the leaf into the main pane. Longform sidesteps this entirely by doing all entry-point UI inside `contentEl`.
+
+**Pattern to adopt:** for leaves that default to sidebar, put entry-point buttons inside `contentEl` (typically in a custom header section you render yourself). Use `.clickable-icon` or a matching icon-button class for visual consistency with Obsidian's own sidebar widgets. Reserve `addAction()` for leaves that default to the main pane.
+
+Canonical DB example: [`src/ui/manuscript-view/manuscript-view.ts`] — the "+ Create project" and "Open control center" buttons live in the leaf's picker header, not the view-header, so they survive both leaf positions.
+
 **Icon helper:**
 
 ```typescript

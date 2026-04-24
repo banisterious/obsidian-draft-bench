@@ -9,6 +9,19 @@
  * in tab content (word counts, templates, etc.).
  */
 
+/*
+ * Modal width override. Obsidian's default modal (~600-700px) is
+ * too narrow once we have a 180px nav drawer + Setting rows with
+ * descriptions in the content area. The squeeze truncates labels
+ * ("Destination" -> "Des...") and wraps descriptions every few
+ * words. 960px on big screens gives the content column room for
+ * proper Setting-row layouts; `min(... , 92vw)` keeps the modal
+ * responsive on smaller viewports.
+ */
+.dbench-control-center-modal {
+	width: min(960px, 92vw);
+}
+
 .dbench-control-center__header {
 	display: flex;
 	flex-direction: column;

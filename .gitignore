@@ -80,3 +80,6 @@ deploy.sh
 dev-deploy.sh
 
 .claude/
+
+# Internal UI mockups (HTML prototypes for design reviews, not shipped)
+docs/mockups/

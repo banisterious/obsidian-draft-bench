@@ -4,9 +4,51 @@
 
 **Relationship to the specification:** This is reference material for *how* to build the plugin's UI, not *what* the plugin does. The [specification](specification.md) is authoritative for features and behavior; this document captures the component patterns those features should use. When the specification says "a modal that does X," this document describes how that modal should look, behave, and integrate with the rest of the UI.
 
-**Scope:** Nine sections covering Control Center, modals, settings UI, batch operations, notices, shared components, CSS conventions, accessibility, and empty/loading states. Each section names the CR file paths to consult during implementation, the DB-specific adaptations to apply, and any gap CR has documented that DB should close.
+**Scope:** Eleven sections covering styling philosophy, Control Center, modals, settings UI, batch operations, notices, shared components, CSS conventions, accessibility, empty/loading states, and an Obsidian-native class and API inventory. Each section names the CR file paths to consult during implementation, the DB-specific adaptations to apply, and any gap CR has documented that DB should close.
 
 **A note on line numbers.** Line numbers in this document are approximate and based on the Charted Roots codebase as of April 2026. They will drift as CR evolves. Use them as starting points for search within CR's files, not as stable anchors.
+
+---
+
+## 0. Styling philosophy: inherit first, customize last
+
+**The meta-rule:** When building UI, reach for Obsidian's built-in CSS classes and component APIs first. Only add custom markup or CSS when the native pattern doesn't fit the use case — and be able to state specifically why.
+
+This is the rule that makes every other section in this document coherent. CR's UI feels cohesive with Obsidian's core because CR inherits from Obsidian wherever possible and only diverges with justification. DB should do the same.
+
+**Why the default must be "inherit":**
+
+| Benefit | Explanation |
+|---------|-------------|
+| Theme compatibility | Obsidian's native classes work in every community theme. Hand-rolled CSS often breaks in popular themes (Minimal, Things, AnuPpuccin) that customize spacing, borders, or typography. |
+| Light/dark mode for free | Using Obsidian's CSS variables (`--text-normal`, `--background-primary`, etc.) means your UI switches correctly with the app. Hardcoded colors silently break dark mode. |
+| Mobile responsive defaults | Obsidian's Settings, Modals, and core components already handle narrow viewports. Custom markup requires you to re-implement mobile behavior from scratch. |
+| Accessibility defaults | Obsidian's Setting API produces labeled form controls with correct focus behavior. Hand-rolled DOM skips the focus styles, ARIA attributes, and keyboard handling users expect. |
+| Maintenance inheritance | When Obsidian updates its default setting-item styles (padding, border-radius, focus rings), your plugin inherits the update automatically. Custom CSS drifts. |
+| User familiarity | Users already know how Obsidian's Settings look and feel. Custom-styled settings require them to re-learn your plugin's visual vocabulary. |
+
+**The decision framework.** Before writing a custom class or component, walk this checklist:
+
+1. **Does Obsidian already provide this?** Check the Obsidian API (`Setting`, `Modal`, `ButtonComponent`, etc.) and the native CSS classes (see §10 inventory below).
+2. **Does an Obsidian-native class work with minor extension?** If the Setting API gives you 80% of what you need, extend it (inject into `.controlEl`, apply a `crc-*` modifier class) rather than replacing it.
+3. **Is the gap genuinely not served by native patterns?** Dense multi-column forms, custom field types (entity pickers), non-standard visual widgets (color picker with variants) — these are real gaps, and custom markup is justified.
+4. **When you diverge, state why in the code or in this reference.** A comment like `// Custom header: Obsidian's titleEl doesn't support icon + themed variant` is enough. The divergence is durable; the rationale should be too.
+
+**The cost of diverging without justification.** The worst failure mode is: someone builds a custom settings interface that looks fine on their machine, ships it, and users discover it's broken on mobile, unreadable in the AnuPpuccin theme, and inaccessible by keyboard. That's the preventable case this rule exists for.
+
+**CR's adherence report — the short version:**
+
+- **Settings tab:** Pure `new Setting()` chain everywhere. No custom replacement.
+- **Simple modals:** `extends Modal` + `new Setting()` in `contentEl`. No divergence.
+- **Dense wizard forms:** Divergence via `.crc-form-row-inline` grid wrapper — native one-row-per-setting was too tall.
+- **Modal headers:** Divergence via `.crc-modal-header` — native `titleEl` doesn't support icon + state variants.
+- **Entity pickers:** Divergence via `*PickerModal` classes — `FuzzySuggestModal` doesn't support domain filtering (sex, person type, family groups).
+- **Custom field types (pronouns chips, color variant grid):** Surgical divergence via `.controlEl` access — extending Setting rather than replacing it.
+- **Notices, icons (where Obsidian's set suffices), buttons (`.mod-cta`, `.mod-warning`), state classes (`is-active`, `is-selected`):** Full inheritance.
+
+The divergences are real and documented. The inheritance is the default.
+
+**Further reading:** §10 (Obsidian-native class and API inventory) catalogs the specific classes CR consumes. §3 (Settings UI) and §7 (CSS conventions) both have "when to break out" subsections covering the specific divergence patterns.
 
 ---
 
@@ -93,6 +135,45 @@
 - Use Obsidian's `Setting` class for all controls (native theme compatibility).
 - Group related settings under one section with a one-line description.
 - For settings that cross-reference another tab or section, use a callout-style box.
+
+### When to break out of the Setting API
+
+The Setting API is the right default for settings tabs and most modal forms. CR diverges in four specific cases. Each divergence has a concrete pattern; the decision to diverge has a specific rationale.
+
+**Divergence 1: Dense multi-column form rows.** When a wizard step needs two or three short fields on one row (Sex + Birth date, or Street + City + Zip), Obsidian's one-field-per-row layout is too tall.
+
+- CR exemplar: [`src/ui/family-creation-wizard.ts:529-544`] — two Settings in a `.crc-form-row-inline` grid wrapper.
+- Pattern: wrap a `div.crc-form-row-inline` with `display: grid; grid-template-columns: 1fr 1fr;`, then construct Settings inside it. The Settings still use the API; only the container is custom.
+- Rationale: one-field-per-row × 3 fields = ~360px; two-column × 2 rows = ~240px. Native Setting layout doesn't offer a columns mode.
+
+**Divergence 2: Manual `.setting-item` DOM for modal density.** When a modal-embedded form has many small fields and the overhead of `new Setting()` per field is wasteful, CR constructs `.setting-item` / `.setting-item-info` / `.setting-item-control` DOM directly.
+
+- CR exemplar: [`src/organizations/ui/organization-type-manager-card.ts:428-446`] — name + order + color inputs built as manual Setting DOM.
+- Pattern: use Obsidian's native class names on raw `div` elements. Styles still inherit from Obsidian; only the Setting API scaffolding is bypassed.
+- Rationale: each `new Setting()` registers listeners and constructs its own internal state; in a modal with many fields, that's unnecessary overhead. Manual `.setting-item` DOM preserves the visual consistency without the API tax.
+
+**Divergence 3: Extending a Setting's `.controlEl` with custom children.** When a Setting control needs more than the API's built-in components (Text/Toggle/Dropdown/Slider/Button), reach into `.controlEl` directly and inject custom children.
+
+- CR exemplar: [`src/ui/create-person-modal.ts:1357-1408`] — pronouns chips + custom input + preset buttons injected into `setting.controlEl`.
+- CR exemplar: [`src/organizations/ui/organization-type-editor-modal.ts:199-222`] — color picker grid with `is-selected` state injected into `.controlEl`.
+- Pattern: call `new Setting()` for the label + description, then skip `.addX()` and manipulate `setting.controlEl` directly.
+- Rationale: the Setting's label/description/layout are still inherited; only the control surface is custom. Surgical extension, not replacement.
+
+**Divergence 4: Custom modal header with icon + state.** Obsidian's `Modal.titleEl` is a single text span. For modals that want an icon next to the title, a state modifier (e.g., success state on completion), or a structured header, CR builds a custom `.crc-modal-header`.
+
+- CR exemplar: [`src/ui/create-person-modal.ts:347-352`] — header with Lucide icon + title text, and a `.crc-modal-title--success` modifier at `:2513` for the post-save success state.
+- Pattern: in `onOpen()`, create a `div.crc-modal-header` as the first child of `contentEl`, leaving `titleEl` unused.
+- Rationale: icon-beside-title and state-variant-per-stage aren't possible with `titleEl`. The escape is worth the cost.
+
+**DB adaptation:**
+
+- Phase 1 settings should be pure `new Setting()` chains. No divergence justified for V1 settings.
+- If Phase 2 introduces a wizard with compact multi-field rows (compile preset editor, onboarding flow), use Divergence 1's pattern.
+- If Phase 2+ introduces custom-type managers (scene templates, compile presets), use Divergence 2's pattern for dense modal-embedded forms.
+- Reach into `.controlEl` only when a Setting genuinely can't express the control — first check whether the problem is solvable with a ButtonComponent chain or an ExtraButton.
+- If a DB modal header needs an icon or state variant, use Divergence 4's pattern.
+
+**Rule of thumb:** if you catch yourself writing more than ~30 lines of custom control DOM for one field, that's a signal to step back and consider whether the native pattern really doesn't fit — or whether a smaller divergence (wrapping a Setting, not replacing it) would do.
 
 ---
 
@@ -214,6 +295,37 @@ Each shows a card with icon, name, description, and inline edit/delete buttons.
 - One keyframe-animation file; animate-once, reference-many.
 - Dark mode: rely on Obsidian's CSS variables for theme switching; use `@media (prefers-color-scheme: dark)` sparingly.
 
+### When custom CSS is justified
+
+The color/spacing/radius rules in the main §7 body assume you're writing custom CSS. But the prior question — *should this surface have custom CSS at all* — deserves its own framing.
+
+**Default:** apply an Obsidian native class, write no CSS. This works for:
+
+- Buttons that fit `.mod-cta` / `.mod-warning` / `.clickable-icon` / `.mod-muted`
+- Form controls that fit `Setting`'s Text/Toggle/Dropdown/Slider/Button/TextArea
+- State rendering that fits `is-active` / `is-selected` / `is-disabled` / `is-hidden`
+- Callouts that fit Obsidian's `.callout` / `.callout-title` / `.callout-content` pattern
+- Suggestion dropdowns that fit Obsidian's autocomplete/suggest UI
+- Icon-only buttons that fit `.clickable-icon` (already includes hover/focus styling)
+
+**Custom CSS is justified when:**
+
+1. **A layout doesn't exist in Obsidian's vocabulary.** Multi-column form grids, canvas-overlay tool palettes, custom stat-grid dashboards. Obsidian doesn't provide these primitives.
+2. **A visual modifier on an existing element isn't available.** Tinted cards, colored status badges, archived-state dimming. You can still use Obsidian's layout classes, just add a `.dbench-*` modifier for the variant.
+3. **A domain-specific component doesn't have an Obsidian analog.** Entity picker cards, draft-leaf archival styling, scene-status badges. Build these custom; name them `.dbench-{component}__{element}--{modifier}`.
+4. **A composition is too complex for the Setting API.** Pronouns chips, color-variant grids, multi-entity pickers. Extend via `.controlEl`; don't replace the Setting shell.
+
+**Custom CSS is NOT justified when:**
+
+- You want a button to be "a little bigger" — use `.mod-cta` and adjust the container spacing instead
+- You want a border-radius that "looks nicer" — use `var(--radius-s)` / `var(--radius-m)` / `var(--radius-l)` (Obsidian provides these)
+- You want a slightly different color — `var(--text-accent)`, `var(--text-muted)`, `var(--background-modifier-border)` cover most needs
+- You want a drop shadow on a card — use `var(--shadow-s)` / `var(--shadow-m)` / `var(--shadow-l)`
+
+**The litmus test:** before writing a custom class, search your draft CSS for hardcoded values. Every `color:`, `background:`, `border-radius:`, `box-shadow:`, `padding:`, `margin:` that isn't `var(--obsidian-variable)` or `var(--dbench-scale)` is a signal that you might be drifting from the inheritance rule.
+
+**CR's divergence principle:** when CR writes custom CSS, it's almost always a *layout wrapper* (flex/grid container) or a *modifier on a native class* — not a full replacement of Obsidian's styling. The Setting rows still look like Setting rows; CR just arranges them differently.
+
 ---
 
 ## 8. Accessibility
@@ -290,6 +402,159 @@ Each shows a card with icon, name, description, and inline edit/delete buttons.
 - Empty = optional icon + message + optional helper text + optional CTA button.
 - For tables, render an empty-state row inside `<tbody>` when data is empty.
 - Reuse a single spinner animation defined once in the base stylesheet.
+
+---
+
+## 10. Obsidian-native class and API inventory
+
+Reference catalog of the Obsidian-native classes and component APIs that CR consumes. Not exhaustive — focused on the ones that come up most often in modal / form / settings construction. File references point to canonical CR usage.
+
+### Native CSS classes
+
+**Setting primitives** (used in settings tabs AND when constructing modal-embedded form rows by hand):
+
+| Class | Purpose | CR canonical usage |
+|---|---|---|
+| `.setting-item` | One row in a setting list | [`src/organizations/ui/organization-type-manager-card.ts:428`] |
+| `.setting-item-info` | Left side (name + description) | Same file |
+| `.setting-item-name` | The label | Same file |
+| `.setting-item-description` | Optional descriptive text below the name | Produced by `setDesc()` |
+| `.setting-item-control` | Right side where inputs/buttons go | [`src/ui/create-person-modal.ts:1358`] (pronouns chip injection) |
+
+**Button modifiers** (applied to `<button>` or directly to `ButtonComponent` output):
+
+| Class | Purpose | CR canonical usage |
+|---|---|---|
+| `.mod-cta` | Primary/call-to-action button (accent color) | [`src/trees/ui/trees-tab.ts:259`] |
+| `.mod-warning` | Destructive action button | [`src/organizations/ui/organization-type-manager-card.ts:377`] |
+| `.mod-destructive` | Stronger destructive variant | Less common; verify in Obsidian docs |
+| `.clickable-icon` | Icon-only button with hover state | Widely used — e.g., dockable view header actions |
+
+**State modifiers** (applied via `classList.add()` as appropriate):
+
+| Class | Purpose | CR canonical usage |
+|---|---|---|
+| `.is-active` | Current tab / selected nav item | [`src/ui/split-wizard-modal.ts:243`] (wizard step indicator) |
+| `.is-selected` | Currently-selected item in a list or grid | [`src/organizations/ui/organization-type-editor-modal.ts:255`] |
+| `.is-disabled` | Disabled control (non-interactive) | Applied to buttons during async operations |
+| `.is-hidden` | Display-none toggle | [`src/organizations/ui/organization-type-manager-card.ts:253`] |
+| `.is-loading` | Async loading state | Layered onto custom `.crc-*-loading` containers |
+
+**Modal / view scaffolding:**
+
+| Class | Purpose | Provenance |
+|---|---|---|
+| `.modal` | Root modal container | Applied by `Modal` base class |
+| `.modal-container` | Outer modal wrapper | Same |
+| `.modal-content` | Inner content area (populated by `contentEl`) | Same |
+| `.modal-close-button` | The `×` close affordance | Same — CR trusts this (no override). See [`src/ui/control-center.ts:206`] comment. |
+
+**Other useful natives:**
+
+| Class | Purpose | Note |
+|---|---|---|
+| `.callout`, `.callout-title`, `.callout-content` | Obsidian's info/warning boxes | Use these before building custom `.cr-info-box` equivalents |
+| `.tag` | Hashtag styling | Use for scene-status badges if the visual fits |
+| `.internal-link`, `.external-link` | Link styling | Use for any wikilink or URL presentation |
+| `.search-input-container`, `.search-input` | Filter input styling | Wraps `<input>` elements in pickers and filter rows |
+
+### Native component APIs
+
+**`new Setting(container)` chain** — the backbone of all settings and most modal forms:
+
+```typescript
+new Setting(container)
+  .setName('Label')
+  .setDesc('Optional description')
+  .addText(text => text
+    .setPlaceholder('hint')
+    .setValue(currentValue)
+    .onChange(async (value) => { /* save */ }));
+```
+
+Canonical example: [`src/settings.ts:1060-1068`]. Can chain multiple `addX()` calls for compound controls (toggle + text field + button on one row).
+
+**Component types CR uses via the Setting chain:**
+
+| API | CR usage example |
+|---|---|
+| `addText(cb)` -> `TextComponent` | [`src/ui/family-creation-wizard.ts:517`] |
+| `addToggle(cb)` -> `ToggleComponent` | [`src/settings.ts:1063`] |
+| `addDropdown(cb)` -> `DropdownComponent` | [`src/settings.ts:1074`] |
+| `addSlider(cb)` -> `SliderComponent` | [`src/settings.ts:1241`] |
+| `addTextArea(cb)` -> `TextAreaComponent` | [`src/sources/ui/custom-source-type-modal.ts:238`] |
+| `addButton(cb)` -> `ButtonComponent` | Ubiquitous |
+| `addExtraButton(cb)` -> `ExtraButtonComponent` (icon button with tooltip) | [`src/settings.ts:2314`] |
+| `setHeading()` | Renders as a section header rather than a field row |
+
+**`extends Modal` lifecycle:**
+
+```typescript
+class MyModal extends Modal {
+  constructor(app: App) { super(app); }
+  onOpen(): void {
+    const { contentEl } = this;
+    contentEl.empty();
+    // populate
+  }
+  onClose(): void {
+    // cleanup (e.g., clearTimeout, unregister listeners)
+  }
+}
+```
+
+Canonical examples: [`src/trees/ui/unified-tree-wizard-modal.ts:191-384`], [`src/ui/person-picker.ts:167-191`]. Note that CR mostly avoids `titleEl.setText()` in favor of a custom `.crc-modal-header` — see §3's Divergence 4.
+
+**Icon helper:**
+
+```typescript
+import { setIcon } from 'obsidian';
+setIcon(element, 'settings');  // Obsidian's icon set, ~16-18px
+```
+
+Canonical example: [`src/settings.ts:1030`]. For modals/custom UI that want larger or genealogy-specific icons, CR uses Lucide via a local wrapper ([`src/ui/lucide-icons.ts`] — see §3's Divergence noted under custom modal headers).
+
+**Notice helper:**
+
+```typescript
+new Notice('Message');
+```
+
+Used directly throughout — no wrapper function. See existing §5 Notices and feedback for the full convention.
+
+**Tooltip helper (on ExtraButtonComponent):**
+
+```typescript
+new Setting(container).addExtraButton(button => button
+  .setIcon('x')
+  .setTooltip('Clear alias')
+  .onClick(() => { /* ... */ }));
+```
+
+Canonical example: [`src/settings.ts:2314`]. For standalone tooltips on non-Setting elements, `setTooltip(el, text)` can be imported from obsidian.
+
+**`MarkdownRenderer.render()`** — when you need to render markdown (wikilinks, formatting) into a DOM element:
+
+```typescript
+import { MarkdownRenderer } from 'obsidian';
+await MarkdownRenderer.render(app, markdownString, targetEl, sourcePath, component);
+```
+
+Canonical example: [`src/dynamic-content/renderers/extractions-renderer.ts:148-154`].
+
+### DB adaptation checklist
+
+When building a new UI surface in Draft Bench, walk this list before writing any `.dbench-*` class:
+
+1. **Is this a form or settings row?** -> `new Setting()` chain first.
+2. **Is this a button?** -> Plain `<button>` + `.mod-cta` / `.mod-warning`, or `ButtonComponent` via `addButton()`.
+3. **Is this an icon-only affordance?** -> `.clickable-icon` class + `setIcon()` or `ExtraButtonComponent`.
+4. **Is this a modal?** -> `extends Modal` + `contentEl` population in `onOpen()`.
+5. **Is this a notification?** -> `new Notice(msg)`.
+6. **Is this an info/warning box?** -> Obsidian's `.callout` before building custom.
+7. **Is this a state toggle (active, selected, disabled)?** -> Use `.is-*` classes; don't invent new ones.
+
+If the answer to all of the above is "no, the need is genuinely different," then a `.dbench-*` custom class is justified. Document the divergence inline in the code (a one-line comment is fine) so future maintainers know the native alternatives were considered.
 
 ---
 

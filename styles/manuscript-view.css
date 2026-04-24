@@ -180,6 +180,34 @@
 	color: var(--text-normal);
 }
 
+/*
+ * Compile CTA — primary project action, promoted out of the 3-button
+ * toolbar row so it reads as the "finish line" action. `.mod-cta`
+ * supplies Obsidian's native accent treatment; the row here just
+ * handles spacing + full-width layout.
+ */
+.dbench-manuscript-view__compile-cta-row {
+	margin-bottom: var(--dbench-spacing-xs);
+}
+
+.dbench-manuscript-view__compile-cta {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--dbench-spacing-xs);
+	width: 100%;
+	padding: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
+	min-height: 34px;
+	border-radius: var(--dbench-radius-sm);
+	font-size: var(--font-ui-medium);
+	cursor: pointer;
+}
+
+.dbench-manuscript-view__compile-cta-icon {
+	display: inline-flex;
+	align-items: center;
+}
+
 .dbench-manuscript-view__toolbar {
 	display: flex;
 	flex-wrap: wrap;

@@ -19,7 +19,7 @@ import { ControlCenterModal } from '../control-center/control-center-modal';
 import { renderSection } from './sections/section-base';
 import { renderProjectSummaryBody } from './sections/project-summary-section';
 import { renderManuscriptListBody } from './sections/manuscript-list-section';
-import { renderToolbar } from './sections/toolbar';
+import { renderCompileCta, renderToolbar } from './sections/toolbar';
 
 /**
  * The Manuscript workspace-leaf view.
@@ -246,6 +246,7 @@ export class ManuscriptView extends ItemView {
 			cls: 'dbench-manuscript-view__content',
 		});
 
+		renderCompileCta(content, this.plugin, project);
 		renderToolbar(content, this.plugin, project);
 
 		const scenes = sortScenesByOrder(

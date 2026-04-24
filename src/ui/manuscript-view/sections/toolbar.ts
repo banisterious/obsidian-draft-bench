@@ -1,5 +1,6 @@
 import { Notice, setIcon } from 'obsidian';
 import type DraftBenchPlugin from '../../../../main';
+import { pickPresetAndCompile } from '../../../core/compile/operations';
 import type { ProjectNote } from '../../../core/discovery';
 import { isSceneFrontmatter } from '../../../model/scene';
 import { NewDraftModal } from '../../modals/new-draft-modal';
@@ -7,11 +8,46 @@ import { NewSceneModal } from '../../modals/new-scene-modal';
 import { ReorderScenesModal } from '../../modals/reorder-scenes-modal';
 
 /**
- * Manuscript-leaf toolbar — four primary project actions surfaced as
- * icon buttons at the top of the leaf content. Adapted from the
- * Control Center's former Manuscript-tab toolbar; the lifetime is
- * different (leaf stays open on action-modal invocation instead of
- * closing like the modal) but the actions themselves are identical.
+ * Manuscript-leaf primary CTA — "Compile" promoted out of the
+ * 3-button toolbar row into a distinct block above it. The writer's
+ * final action on a project gets visual weight matching its
+ * importance; per the Ulysses-warm direction (D-design-refinement),
+ * the CTA carries `.mod-cta` so Obsidian's native accent treatment
+ * does the work.
+ *
+ * Wired to the shared `pickPresetAndCompile` helper so this path
+ * behaves identically to the palette / context-menu entries.
+ */
+export function renderCompileCta(
+	container: HTMLElement,
+	plugin: DraftBenchPlugin,
+	selectedProject: ProjectNote
+): void {
+	const ctaRow = container.createDiv({
+		cls: 'dbench-manuscript-view__compile-cta-row',
+	});
+	const button = ctaRow.createEl('button', {
+		cls: 'mod-cta dbench-manuscript-view__compile-cta',
+		attr: { 'aria-label': 'Compile', title: 'Compile' },
+	});
+	const iconEl = button.createSpan({
+		cls: 'dbench-manuscript-view__compile-cta-icon',
+		attr: { 'aria-hidden': 'true' },
+	});
+	setIcon(iconEl, 'book-marked');
+	button.createSpan({
+		cls: 'dbench-manuscript-view__compile-cta-label',
+		text: 'Compile',
+	});
+	button.addEventListener('click', () => {
+		void pickPresetAndCompile(plugin, selectedProject);
+	});
+}
+
+/**
+ * Manuscript-leaf toolbar — three secondary project actions (New
+ * scene / New draft of current scene / Reorder scenes). Compile used
+ * to live here as a fourth button; see `renderCompileCta` above.
  */
 export function renderToolbar(
 	container: HTMLElement,
@@ -45,10 +81,6 @@ export function renderToolbar(
 
 	addToolbarButton(toolbar, 'Reorder scenes', 'list-ordered', () => {
 		new ReorderScenesModal(plugin.app, plugin.linker, selectedProject).open();
-	});
-
-	addToolbarButton(toolbar, 'Compile', 'book-marked', () => {
-		new Notice('Compile arrives in a later phase.');
 	});
 }
 

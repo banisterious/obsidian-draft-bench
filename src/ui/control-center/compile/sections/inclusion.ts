@@ -1,6 +1,7 @@
 import { Setting, type App } from 'obsidian';
 import type { CompilePresetNote } from '../../../../core/discovery';
 import type { DraftBenchSettings } from '../../../../model/settings';
+import { writeField } from './write-field';
 
 /**
  * Inclusion section of the Compile tab form.
@@ -113,15 +114,3 @@ function renderStatusFilter(
 	}
 }
 
-async function writeField<K extends keyof CompilePresetNote['frontmatter']>(
-	app: App,
-	preset: CompilePresetNote,
-	key: K,
-	value: CompilePresetNote['frontmatter'][K]
-): Promise<void> {
-	await app.fileManager.processFrontMatter(preset.file, (fm) => {
-		(fm as Record<string, unknown>)[key as string] = value as unknown;
-	});
-	(preset.frontmatter as unknown as Record<string, unknown>)[key as string] =
-		value;
-}

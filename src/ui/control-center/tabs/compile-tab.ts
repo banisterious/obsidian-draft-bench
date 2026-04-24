@@ -7,8 +7,10 @@ import {
 } from '../../../core/discovery';
 import { renderSection } from '../../manuscript-view/sections/section-base';
 import { NewCompilePresetModal } from '../../modals/new-compile-preset-modal';
+import { renderContentHandlingSection } from '../compile/sections/content-handling';
 import { renderInclusionSection } from '../compile/sections/inclusion';
 import { renderMetadataSection } from '../compile/sections/metadata';
+import { renderOutputSection } from '../compile/sections/output';
 import type { TabContext, TabDefinition } from './types';
 
 /**
@@ -231,9 +233,23 @@ function renderBody(state: CompileTabState): void {
 		);
 	});
 
+	renderFormSection(state.bodyEl, 'output', 'Output', 'file-output', (body) => {
+		renderOutputSection(body, state.context.app, preset);
+	});
+
+	renderFormSection(
+		state.bodyEl,
+		'content-handling',
+		'Content handling',
+		'wand',
+		(body) => {
+			renderContentHandlingSection(body, state.context.app, preset);
+		}
+	);
+
 	state.bodyEl.createEl('p', {
 		cls: 'dbench-compile-tab__placeholder',
-		text: 'Output, content-handling, and last-compile sections land in follow-up commits.',
+		text: 'Last-compile section lands in a follow-up commit.',
 	});
 }
 

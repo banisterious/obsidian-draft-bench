@@ -321,7 +321,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   CONTROL-CENTER.CSS  (241 lines, 5.57 KB)
+   CONTROL-CENTER.CSS  (219 lines, 5.02 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -476,10 +476,6 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	gap: var(--dbench-spacing-sm);
 }
 
-.dbench-compile-tab__button {
-	padding: var(--dbench-spacing-xs) var(--dbench-spacing-md);
-}
-
 .dbench-compile-tab__body {
 	display: flex;
 	flex-direction: column;
@@ -506,47 +502,29 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	font-size: var(--font-ui-small);
 }
 
-/* Multi-select control used by the Inclusion section (status filter). */
+/* Status-filter chip layout. The chip itself is a plain <label> +
+ * checkbox + text; this rule is the layout-only wrapper that lays
+ * the chips out horizontally. Native checkbox styling carries the
+ * visual weight (per ui-reference.md § 0). */
 
-.dbench-compile-tab__multi-select {
+.dbench-compile-tab__status-chips {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--dbench-spacing-md);
 	align-items: center;
 }
 
-.dbench-compile-tab__multi-select-item {
+.dbench-compile-tab__status-chip {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--dbench-spacing-xs);
-	padding: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
-	border-radius: var(--dbench-radius-sm);
-	background-color: var(--background-secondary);
 	cursor: pointer;
-	font-size: var(--font-ui-small);
-}
-
-.dbench-compile-tab__multi-select-item input[type="checkbox"] {
-	margin: 0;
 }
 
 /* Monospace styling for textarea inputs (e.g., excludes wikilinks). */
 
 .dbench-compile-tab__monospace {
 	font-family: var(--font-monospace);
-}
-
-/* Read-only value pills used in the Last-compile section. */
-
-.dbench-compile-tab__readonly-value {
-	display: inline-block;
-	padding: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
-	background-color: var(--background-secondary);
-	border-radius: var(--dbench-radius-sm);
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-	max-width: 100%;
-	overflow-wrap: anywhere;
 }
 
 /* Mobile layout: stack nav above content */
@@ -679,7 +657,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-VIEW.CSS  (425 lines, 9.92 KB)
+   MANUSCRIPT-VIEW.CSS  (419 lines, 9.87 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1034,21 +1012,15 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	text-align: right;
 }
 
+/* Layout-only rules; color + hover styling come from `.internal-link`
+ * applied alongside this class on the <a> element. */
 .dbench-manuscript-view__scene-title {
 	grid-column: 2;
 	grid-row: 1;
-	color: var(--text-normal);
-	text-decoration: none;
 	font-weight: var(--font-semibold);
-	cursor: pointer;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-}
-
-.dbench-manuscript-view__scene-title:hover {
-	color: var(--text-accent);
-	text-decoration: underline;
 }
 
 .dbench-manuscript-view__scene-words {
@@ -1241,14 +1213,14 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 8
-   Total:      1170 lines, 29.39 KB
+   Total:      1142 lines, 28.78 KB
    - variables.css: 71 lines, 2.34 KB
    - style-settings.css: 98 lines, 3.45 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - control-center.css: 241 lines, 5.57 KB
+   - control-center.css: 219 lines, 5.02 KB
    - reorder-modal.css: 103 lines, 2.31 KB
-   - manuscript-view.css: 425 lines, 9.92 KB
+   - manuscript-view.css: 419 lines, 9.87 KB
    - settings-tab.css: 119 lines, 2.66 KB
 */
 

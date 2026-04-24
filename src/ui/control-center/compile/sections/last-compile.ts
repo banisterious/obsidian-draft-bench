@@ -1,4 +1,4 @@
-import { Setting, type App } from 'obsidian';
+import { Setting, type App, type TextComponent } from 'obsidian';
 import { computeLastCompileStatus } from '../../../../core/compile/last-compile-status';
 import type { CompilePresetNote } from '../../../../core/discovery';
 
@@ -8,61 +8,74 @@ import type { CompilePresetNote } from '../../../../core/discovery';
  * "N scenes changed since last compile" readout per D-06's UI
  * commitment.
  *
- * The async computation reads every scene's content to djb2-hash it,
- * so the section first renders synchronously with placeholders and
- * updates when the promise resolves. If the writer switches presets
- * before the computation finishes, the stale update writes into a
- * detached DOM (harmless) — the next render starts fresh.
+ * Per [ui-reference.md § 0](../../../../../docs/planning/ui-reference.md),
+ * each row is a `Setting` row with `addText().setDisabled(true)` so
+ * the read-only value picks up Obsidian's native disabled-text-input
+ * styling instead of a custom pill class. The async update mutates
+ * the held `TextComponent` references rather than reaching for raw
+ * DOM nodes.
+ *
+ * Stale updates after a preset switch write into a detached
+ * TextComponent (harmless) — the next render starts fresh.
  */
 export function renderLastCompileSection(
 	parent: HTMLElement,
 	app: App,
 	preset: CompilePresetNote
 ): void {
-	const compiledAtSetting = new Setting(parent)
-		.setName('Last compiled')
-		.setDesc('Timestamp of the most recent successful compile.');
-	const compiledAtValue = compiledAtSetting.controlEl.createEl('span', {
-		cls: 'dbench-compile-tab__readonly-value',
-		text: '...',
-	});
+	let compiledAtComponent: TextComponent | null = null;
+	let outputPathComponent: TextComponent | null = null;
+	let scenesChangedComponent: TextComponent | null = null;
 
-	const outputPathSetting = new Setting(parent)
+	new Setting(parent)
+		.setName('Last compiled')
+		.setDesc('Timestamp of the most recent successful compile.')
+		.addText((text) => {
+			compiledAtComponent = text;
+			text.setValue('...').setDisabled(true);
+		});
+
+	new Setting(parent)
 		.setName('Last output path')
 		.setDesc(
 			'Vault or absolute path the most recent compile wrote to. Re-compile overwrites this path silently.'
-		);
-	const outputPathValue = outputPathSetting.controlEl.createEl('span', {
-		cls: 'dbench-compile-tab__readonly-value',
-		text: '...',
-	});
+		)
+		.addText((text) => {
+			outputPathComponent = text;
+			text.setValue('...').setDisabled(true);
+		});
 
-	const changesSetting = new Setting(parent)
+	new Setting(parent)
 		.setName('Scenes changed since')
 		.setDesc(
 			'Count of scenes whose content differs from the snapshot taken at the last compile, plus added or removed scenes.'
-		);
-	const changesValue = changesSetting.controlEl.createEl('span', {
-		cls: 'dbench-compile-tab__readonly-value',
-		text: 'Computing...',
-	});
+		)
+		.addText((text) => {
+			scenesChangedComponent = text;
+			text.setValue('Computing...').setDisabled(true);
+		});
 
 	computeLastCompileStatus(app, preset)
 		.then((status) => {
-			compiledAtValue.textContent = status.compiledAt
-				? formatTimestamp(status.compiledAt)
-				: 'Never compiled.';
-			outputPathValue.textContent = status.outputPath ?? 'No output yet.';
-			changesValue.textContent = formatScenesChanged(status);
+			compiledAtComponent?.setValue(
+				status.compiledAt
+					? formatTimestamp(status.compiledAt)
+					: 'Never compiled.'
+			);
+			outputPathComponent?.setValue(status.outputPath ?? 'No output yet.');
+			scenesChangedComponent?.setValue(formatScenesChanged(status));
 		})
 		.catch((err) => {
 			console.error('Draft Bench: failed to compute last-compile status', err);
-			compiledAtValue.textContent = preset.frontmatter['dbench-last-compiled-at']
-				? formatTimestamp(preset.frontmatter['dbench-last-compiled-at'])
-				: 'Never compiled.';
-			outputPathValue.textContent =
-				preset.frontmatter['dbench-last-output-path'] || 'No output yet.';
-			changesValue.textContent = '(unable to compute)';
+			compiledAtComponent?.setValue(
+				preset.frontmatter['dbench-last-compiled-at']
+					? formatTimestamp(preset.frontmatter['dbench-last-compiled-at'])
+					: 'Never compiled.'
+			);
+			outputPathComponent?.setValue(
+				preset.frontmatter['dbench-last-output-path'] || 'No output yet.'
+			);
+			scenesChangedComponent?.setValue('(unable to compute)');
 		});
 }
 

@@ -68,6 +68,19 @@ export function renderInclusionSection(
 		});
 }
 
+/**
+ * Multi-select chips injected into a Setting's `.controlEl`. Per
+ * [ui-reference.md § 3 Divergence 3](../../../../../docs/planning/ui-reference.md),
+ * the Setting shell stays inherited (label, description, native
+ * row layout); only the control surface is custom because Obsidian's
+ * Setting API has no built-in multi-select primitive.
+ *
+ * Chip visual: plain `<label>` containing a checkbox + the status
+ * text, laid out horizontally with `display: flex` + gap. No pill
+ * background or border — Obsidian's native checkbox styling carries
+ * the visual weight. One opt-in CSS rule for the flex container is
+ * the only thing custom.
+ */
 function renderStatusFilter(
 	parent: HTMLElement,
 	app: App,
@@ -75,7 +88,7 @@ function renderStatusFilter(
 	settings: DraftBenchSettings
 ): void {
 	const wrapper = parent.createDiv({
-		cls: 'dbench-compile-tab__multi-select',
+		cls: 'dbench-compile-tab__status-chips',
 	});
 
 	const current = new Set(
@@ -84,7 +97,7 @@ function renderStatusFilter(
 
 	for (const status of settings.statusVocabulary) {
 		const label = wrapper.createEl('label', {
-			cls: 'dbench-compile-tab__multi-select-item',
+			cls: 'dbench-compile-tab__status-chip',
 		});
 		const checkbox = label.createEl('input', {
 			type: 'checkbox',

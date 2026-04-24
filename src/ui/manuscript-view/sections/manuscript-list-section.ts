@@ -48,8 +48,11 @@ export function renderManuscriptListBody(
 			text: String(scene.frontmatter['dbench-order']),
 		});
 
+		// `internal-link` inherits Obsidian's wikilink color + hover
+		// styling theme-correctly; the dbench-* class supplies layout
+		// only (grid placement + reset of underline default).
 		const titleEl = item.createEl('a', {
-			cls: 'dbench-manuscript-view__scene-title',
+			cls: 'internal-link dbench-manuscript-view__scene-title',
 			text: scene.file.basename,
 			href: '#',
 		});

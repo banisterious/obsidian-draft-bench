@@ -350,21 +350,15 @@
 	text-align: right;
 }
 
+/* Layout-only rules; color + hover styling come from `.internal-link`
+ * applied alongside this class on the <a> element. */
 .dbench-manuscript-view__scene-title {
 	grid-column: 2;
 	grid-row: 1;
-	color: var(--text-normal);
-	text-decoration: none;
 	font-weight: var(--font-semibold);
-	cursor: pointer;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-}
-
-.dbench-manuscript-view__scene-title:hover {
-	color: var(--text-accent);
-	text-decoration: underline;
 }
 
 .dbench-manuscript-view__scene-words {

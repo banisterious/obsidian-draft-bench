@@ -164,10 +164,10 @@ function renderHeader(state: CompileTabState): void {
 		cls: 'dbench-compile-tab__buttons',
 	});
 
-	const newButton = buttonRow.createEl('button', {
-		cls: 'dbench-compile-tab__button',
-		text: 'New preset',
-	});
+	// Plain <button> + Obsidian's .mod-cta for the primary action.
+	// Per ui-reference.md § 0, no custom button class needed; native
+	// padding / focus styling carries the visual.
+	const newButton = buttonRow.createEl('button', { text: 'New preset' });
 	newButton.addEventListener('click', () => {
 		if (!state.project) return;
 		new NewCompilePresetModal(
@@ -185,7 +185,7 @@ function renderHeader(state: CompileTabState): void {
 	});
 
 	const runButton = buttonRow.createEl('button', {
-		cls: 'dbench-compile-tab__button mod-cta',
+		cls: 'mod-cta',
 		text: 'Run compile',
 		attr: {
 			disabled: 'true',

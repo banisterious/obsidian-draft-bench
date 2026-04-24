@@ -150,10 +150,6 @@
 	gap: var(--dbench-spacing-sm);
 }
 
-.dbench-compile-tab__button {
-	padding: var(--dbench-spacing-xs) var(--dbench-spacing-md);
-}
-
 .dbench-compile-tab__body {
 	display: flex;
 	flex-direction: column;
@@ -180,47 +176,29 @@
 	font-size: var(--font-ui-small);
 }
 
-/* Multi-select control used by the Inclusion section (status filter). */
+/* Status-filter chip layout. The chip itself is a plain <label> +
+ * checkbox + text; this rule is the layout-only wrapper that lays
+ * the chips out horizontally. Native checkbox styling carries the
+ * visual weight (per ui-reference.md § 0). */
 
-.dbench-compile-tab__multi-select {
+.dbench-compile-tab__status-chips {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--dbench-spacing-md);
 	align-items: center;
 }
 
-.dbench-compile-tab__multi-select-item {
+.dbench-compile-tab__status-chip {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--dbench-spacing-xs);
-	padding: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
-	border-radius: var(--dbench-radius-sm);
-	background-color: var(--background-secondary);
 	cursor: pointer;
-	font-size: var(--font-ui-small);
-}
-
-.dbench-compile-tab__multi-select-item input[type="checkbox"] {
-	margin: 0;
 }
 
 /* Monospace styling for textarea inputs (e.g., excludes wikilinks). */
 
 .dbench-compile-tab__monospace {
 	font-family: var(--font-monospace);
-}
-
-/* Read-only value pills used in the Last-compile section. */
-
-.dbench-compile-tab__readonly-value {
-	display: inline-block;
-	padding: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
-	background-color: var(--background-secondary);
-	border-radius: var(--dbench-radius-sm);
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-	max-width: 100%;
-	overflow-wrap: anywhere;
 }
 
 /* Mobile layout: stack nav above content */

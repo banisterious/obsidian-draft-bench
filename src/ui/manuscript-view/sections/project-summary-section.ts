@@ -175,9 +175,13 @@ function appendStatusRow(
 	words: number,
 	scenes: number
 ): void {
+	// `data-status` drives the ::before colored-dot style in
+	// manuscript-view.css; lowercased so CSS selectors match
+	// regardless of vocabulary casing.
 	dl.createEl('dt', {
 		cls: 'dbench-manuscript-view__status-label',
 		text: status,
+		attr: { 'data-status': status.toLowerCase() },
 	});
 	dl.createEl('dd', {
 		cls: 'dbench-manuscript-view__status-value',

@@ -61,10 +61,7 @@ export function renderManuscriptListBody(
 			onOpenScene(scene);
 		});
 
-		item.createSpan({
-			cls: 'dbench-manuscript-view__scene-status',
-			text: scene.frontmatter['dbench-status'],
-		});
+		renderStatusChip(item, scene.frontmatter['dbench-status']);
 
 		const wordEl = item.createDiv({
 			cls: 'dbench-manuscript-view__scene-words',
@@ -98,6 +95,29 @@ export function renderManuscriptListBody(
 				el.setText('-');
 			});
 	}
+}
+
+/**
+ * Render a status chip — a small pill with a colored dot + label.
+ * The `data-status` attribute carries the status value lowercased so
+ * CSS selectors can assign per-status color via
+ * `[data-status="brainstorm"]` etc. Label text preserves the writer's
+ * configured casing. Out-of-vocabulary values inherit the
+ * default-neutral color.
+ */
+function renderStatusChip(container: HTMLElement, status: string): void {
+	const chip = container.createSpan({
+		cls: 'dbench-manuscript-view__status-chip',
+		attr: { 'data-status': status.toLowerCase() },
+	});
+	chip.createSpan({
+		cls: 'dbench-manuscript-view__status-chip-dot',
+		attr: { 'aria-hidden': 'true' },
+	});
+	chip.createSpan({
+		cls: 'dbench-manuscript-view__status-chip-label',
+		text: status,
+	});
 }
 
 /**

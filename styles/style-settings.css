@@ -93,5 +93,40 @@ settings:
         description: CSS border shorthand. Default is a thin theme-muted line. Set to "none" to remove.
         type: variable-text
         default: "3px solid var(--text-faint)"
+    -
+        id: dbench-status-palette-heading
+        title: Manuscript status colors
+        description: Muted accents for status chips on scene rows and colored dots in the status breakdown. Use "var(--text-muted)" to disable a color (the chip falls back to the default neutral tint).
+        type: heading
+        level: 1
+        collapsed: true
+    -
+        id: --dbench-status-brainstorm
+        title: Brainstorm / idea color
+        description: Foreground color for the brainstorm and idea chips and dots.
+        type: variable-color
+        format: hex
+        default: "#5b8cd6"
+    -
+        id: --dbench-status-draft
+        title: Draft color
+        description: Foreground color for the draft chip and dot.
+        type: variable-color
+        format: hex
+        default: "#9aa0a6"
+    -
+        id: --dbench-status-revision
+        title: Revision color
+        description: Foreground color for the revision chip and dot.
+        type: variable-color
+        format: hex
+        default: "#d4a443"
+    -
+        id: --dbench-status-final
+        title: Final color
+        description: Foreground color for the final chip and dot.
+        type: variable-color
+        format: hex
+        default: "#74b275"
 
 */

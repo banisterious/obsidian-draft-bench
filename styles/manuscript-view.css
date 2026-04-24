@@ -353,8 +353,42 @@
 }
 
 .dbench-manuscript-view__status-label {
+	display: flex;
+	align-items: center;
+	gap: var(--dbench-spacing-xs);
 	color: var(--text-muted);
 	text-transform: capitalize;
+}
+
+/*
+ * Colored dot prefix on breakdown labels. Same color variable the
+ * scene-row chip uses, so a writer overriding one value matches both
+ * surfaces. Out-of-vocabulary statuses get the default-neutral color.
+ */
+.dbench-manuscript-view__status-label::before {
+	content: "";
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--dbench-status-default);
+	flex-shrink: 0;
+}
+
+.dbench-manuscript-view__status-label[data-status="brainstorm"]::before,
+.dbench-manuscript-view__status-label[data-status="idea"]::before {
+	background: var(--dbench-status-brainstorm);
+}
+
+.dbench-manuscript-view__status-label[data-status="draft"]::before {
+	background: var(--dbench-status-draft);
+}
+
+.dbench-manuscript-view__status-label[data-status="revision"]::before {
+	background: var(--dbench-status-revision);
+}
+
+.dbench-manuscript-view__status-label[data-status="final"]::before {
+	background: var(--dbench-status-final);
 }
 
 .dbench-manuscript-view__status-value {
@@ -442,12 +476,58 @@
 	background-color: var(--color-orange, #e0800c);
 }
 
-.dbench-manuscript-view__scene-status {
+/*
+ * Status chip — small pill with colored dot + label. Rendered on
+ * each scene row (grid column 2, row 2, below the scene title) and
+ * optionally elsewhere in future. Foreground color comes from the
+ * per-status variable; background is derived from the same color via
+ * `color-mix` so overriding the foreground shifts the background
+ * too, no mismatch.
+ */
+.dbench-manuscript-view__status-chip {
 	grid-column: 2;
 	grid-row: 2;
-	color: var(--text-muted);
+	display: inline-flex;
+	align-items: center;
+	gap: var(--dbench-spacing-xs);
+	align-self: start;
+	justify-self: start;
+	padding: 2px var(--dbench-spacing-sm) 2px var(--dbench-spacing-xs);
+	border-radius: 999px;
+	color: var(--dbench-status-default);
+	background: color-mix(in srgb, currentcolor 12%, transparent);
 	font-size: var(--font-smallest);
-	text-transform: capitalize;
+	line-height: 1.4;
+}
+
+.dbench-manuscript-view__status-chip-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentcolor;
+	flex-shrink: 0;
+}
+
+.dbench-manuscript-view__status-chip-label {
+	text-transform: lowercase;
+	letter-spacing: 0.02em;
+}
+
+.dbench-manuscript-view__status-chip[data-status="brainstorm"],
+.dbench-manuscript-view__status-chip[data-status="idea"] {
+	color: var(--dbench-status-brainstorm);
+}
+
+.dbench-manuscript-view__status-chip[data-status="draft"] {
+	color: var(--dbench-status-draft);
+}
+
+.dbench-manuscript-view__status-chip[data-status="revision"] {
+	color: var(--dbench-status-revision);
+}
+
+.dbench-manuscript-view__status-chip[data-status="final"] {
+	color: var(--dbench-status-final);
 }
 
 .dbench-manuscript-view__scene-drafts {

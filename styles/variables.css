@@ -67,4 +67,20 @@ body {
 	--dbench-draft-background: var(--background-primary);
 	--dbench-draft-text-color: var(--text-normal);
 	--dbench-draft-border-left: 3px solid var(--text-faint);
+
+	/*
+	 * Status color palette for the Manuscript leaf (Direction B —
+	 * Ulysses warm). One foreground color per default-vocabulary
+	 * status; the chip background is derived at paint time via
+	 * `color-mix` so overriding the foreground via Style Settings
+	 * also shifts the background (no mismatch). Muted tones so status
+	 * reads as supporting metadata, not shouting. Out-of-vocabulary
+	 * statuses inherit `--dbench-status-default`.
+	 */
+	--dbench-status-brainstorm: #5b8cd6;
+	--dbench-status-idea: #5b8cd6;
+	--dbench-status-draft: #9aa0a6;
+	--dbench-status-revision: #d4a443;
+	--dbench-status-final: #74b275;
+	--dbench-status-default: var(--text-muted);
 }

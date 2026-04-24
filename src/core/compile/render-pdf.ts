@@ -85,7 +85,20 @@ export async function buildPdfBytes(
 		preset['dbench-compile-page-size'] === 'a4' ? 'A4' : 'LETTER';
 	const docDefinition = buildPdfDocDefinition(blocks, { pageSize });
 	const pdf = pdfMake.createPdf(docDefinition);
-	const buffer = await pdf.getBuffer();
+	// `@types/pdfmake` declares `getBuffer(): Promise<Buffer>`, but
+	// pdfmake's actual 0.2.x runtime is callback-based and throws
+	// `getBuffer is an async method and needs a callback argument`
+	// when called without one. Promise-wrap the callback variant.
+	// Cast the runtime to the callback signature; the typings are
+	// lying for our version.
+	const buffer = await new Promise<Buffer>((resolve) => {
+		const callbackApi = pdf as unknown as {
+			getBuffer: (cb: (b: Buffer) => void) => void;
+		};
+		callbackApi.getBuffer((buf) => {
+			resolve(buf);
+		});
+	});
 	return new Uint8Array(buffer);
 }
 

@@ -45,6 +45,12 @@ export function buildPdfDocDefinition(
 			h6: { fontSize: 11, bold: true, margin: [0, 8, 0, 4] },
 			body: { fontSize: 11, margin: [0, 0, 0, 6], lineHeight: 1.35 },
 			list: { fontSize: 11, margin: [0, 0, 0, 6], lineHeight: 1.35 },
+			sectionBreakTitle: {
+				fontSize: 16,
+				bold: true,
+				alignment: 'center',
+				margin: [0, 8, 0, 16],
+			},
 		},
 		defaultStyle: { font: 'Roboto', fontSize: 11 },
 	};
@@ -84,6 +90,12 @@ export function renderBlock(block: MdBlock): Content {
 				alignment: 'center',
 				margin: [0, 12, 0, 12],
 			};
+		case 'section-break-title':
+			// Centered, larger, bold paragraph — gives "Part II" type
+			// dividers visual weight matching their semantic role.
+			// Smaller than h1 (chapter headings) so the hierarchy
+			// reads correctly: chapter > section-break-title > body.
+			return { text: block.title, style: 'sectionBreakTitle' };
 	}
 }
 

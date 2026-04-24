@@ -41,11 +41,29 @@ export interface OdtThematicBreak {
 	kind: 'thematic-break';
 }
 
+/**
+ * Fused section-break-title block. The compile-service emits section
+ * breaks as `* * *\n\n**Title**\n\n* * *` in the markdown intermediate.
+ * The post-pass below collapses this exact shape into a single block
+ * so renderers can style the title as a centered, larger paragraph
+ * (rather than a body-text-sized bold paragraph between two dinkuses,
+ * which reads as too quiet for a "Part II" divider in PDF / ODT
+ * output).
+ *
+ * Vault-MD output is unaffected; only the AST that PDF / ODT renderers
+ * consume gets the fused block.
+ */
+export interface OdtSectionBreakTitle {
+	kind: 'section-break-title';
+	title: string;
+}
+
 export type OdtBlock =
 	| OdtHeading
 	| OdtParagraph
 	| OdtList
-	| OdtThematicBreak;
+	| OdtThematicBreak
+	| OdtSectionBreakTitle;
 
 const HEADING_PATTERN = /^(#{1,6})\s+(.*)$/;
 const UNORDERED_ITEM_PATTERN = /^\s*[-*+]\s+(.*)$/;
@@ -148,7 +166,45 @@ export function parseMarkdownForOdt(markdown: string): OdtBlock[] {
 		}
 	}
 
-	return blocks;
+	return fuseSectionBreakTitles(blocks);
+}
+
+/**
+ * Post-parse pass: collapse the [thematic-break, paragraph-of-only-
+ * bold, thematic-break] sequence emitted by `buildSectionBreak` into
+ * a single `section-break-title` block. Anything that doesn't match
+ * the exact shape passes through unchanged, so authored markdown
+ * that incidentally contains a bold-only paragraph between two HRs
+ * isn't accidentally fused.
+ */
+function fuseSectionBreakTitles(blocks: OdtBlock[]): OdtBlock[] {
+	const out: OdtBlock[] = [];
+	let i = 0;
+	while (i < blocks.length) {
+		const a = blocks[i];
+		const b = blocks[i + 1];
+		const c = blocks[i + 2];
+		if (
+			a?.kind === 'thematic-break' &&
+			b?.kind === 'paragraph' &&
+			c?.kind === 'thematic-break' &&
+			isBoldOnlyParagraph(b)
+		) {
+			const para = b;
+			const firstRun = para.runs[0];
+			const title = firstRun.kind === 'bold' ? firstRun.text : '';
+			out.push({ kind: 'section-break-title', title });
+			i += 3;
+			continue;
+		}
+		out.push(a);
+		i++;
+	}
+	return out;
+}
+
+function isBoldOnlyParagraph(b: OdtParagraph): boolean {
+	return b.runs.length === 1 && b.runs[0].kind === 'bold';
 }
 
 /**

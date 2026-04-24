@@ -139,15 +139,11 @@ describe('parseMarkdownForOdt', () => {
 	it('recognizes `* * *` as a thematic break (not a bullet list)', () => {
 		// Without explicit thematic-break detection, the leading `*`
 		// matches the unordered-list pattern and the dinkus renders as
-		// bullets. This is the bug surfaced by the dev-vault PDF
-		// walkthrough: "Part II" surrounded by `* * *` rendered as
-		// `•\nPart II\n•`.
-		const blocks = parseMarkdownForOdt(
-			'before\n\n* * *\n\n**Part II**\n\n* * *\n\nafter'
-		);
+		// bullets. This input doesn't match the section-break-title
+		// fusing pattern (no bold-only paragraph between dinkuses), so
+		// the thematic-break stays as its own block.
+		const blocks = parseMarkdownForOdt('before\n\n* * *\n\nafter');
 		expect(blocks.map((b) => b.kind)).toEqual([
-			'paragraph',
-			'thematic-break',
 			'paragraph',
 			'thematic-break',
 			'paragraph',
@@ -174,5 +170,38 @@ describe('parseMarkdownForOdt', () => {
 		// swallow legitimate `* item` lines.
 		const blocks = parseMarkdownForOdt('* first item\n* second item');
 		expect(blocks.map((b) => b.kind)).toEqual(['list']);
+	});
+
+	it('fuses the section-break-title pattern emitted by buildSectionBreak', () => {
+		const blocks = parseMarkdownForOdt(
+			'before\n\n* * *\n\n**Part II**\n\n* * *\n\nafter'
+		);
+		expect(blocks).toHaveLength(3);
+		expect(blocks[0].kind).toBe('paragraph');
+		expect(blocks[1]).toEqual({
+			kind: 'section-break-title',
+			title: 'Part II',
+		});
+		expect(blocks[2].kind).toBe('paragraph');
+	});
+
+	it('does not fuse when the middle paragraph has more than one inline run', () => {
+		const blocks = parseMarkdownForOdt(
+			'* * *\n\n**bold** then plain text\n\n* * *'
+		);
+		expect(blocks.map((b) => b.kind)).toEqual([
+			'thematic-break',
+			'paragraph',
+			'thematic-break',
+		]);
+	});
+
+	it('does not fuse when the middle paragraph is plain (not bold)', () => {
+		const blocks = parseMarkdownForOdt('* * *\n\nplain text\n\n* * *');
+		expect(blocks.map((b) => b.kind)).toEqual([
+			'thematic-break',
+			'paragraph',
+			'thematic-break',
+		]);
 	});
 });

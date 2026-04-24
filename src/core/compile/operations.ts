@@ -154,7 +154,7 @@ export class PresetPickerModal extends FuzzySuggestModal<CompilePresetNote> {
 		return this.presets;
 	}
 	getItemText(preset: CompilePresetNote): string {
-		return preset.file.basename;
+		return formatPresetLabel(preset);
 	}
 	onChooseItem(preset: CompilePresetNote): void {
 		this.onPick(preset);
@@ -189,6 +189,18 @@ export class ProjectPickerModal extends FuzzySuggestModal<ProjectNote> {
 
 function pluralize(n: number, singular: string, plural: string): string {
 	return `${n} ${n === 1 ? singular : plural}`;
+}
+
+/**
+ * Display label for a preset that includes its actual output format.
+ * Surfaces the format so writers don't get confused when a preset
+ * named "Submission PDF" has had its format switched to ODT — the
+ * picker / dropdown text now reads "Submission PDF · ODT" so the
+ * mismatch is visible at the choice point, not after the fact.
+ */
+export function formatPresetLabel(preset: CompilePresetNote): string {
+	const format = preset.frontmatter['dbench-compile-format'] ?? 'md';
+	return `${preset.file.basename} · ${format.toUpperCase()}`;
 }
 
 /**

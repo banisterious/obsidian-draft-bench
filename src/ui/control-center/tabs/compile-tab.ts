@@ -1,5 +1,8 @@
 import { setIcon } from 'obsidian';
-import { compileAndNotify } from '../../../core/compile/operations';
+import {
+	compileAndNotify,
+	formatPresetLabel,
+} from '../../../core/compile/operations';
 import {
 	findCompilePresetsOfProject,
 	findProjects,
@@ -149,7 +152,7 @@ function renderHeader(state: CompileTabState): void {
 		for (const preset of state.presets) {
 			const option = select.createEl('option', {
 				value: preset.frontmatter['dbench-id'],
-				text: preset.file.basename,
+				text: formatPresetLabel(preset),
 			});
 			if (preset.frontmatter['dbench-id'] === state.selectedPresetId) {
 				option.selected = true;

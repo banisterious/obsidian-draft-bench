@@ -1,12 +1,15 @@
-import { FuzzySuggestModal, Notice, type App, type TFile } from 'obsidian';
+import { Notice, type App, type TFile } from 'obsidian';
 import type DraftBenchPlugin from '../../main';
-import { duplicateCompilePreset } from '../core/compile-presets';
+import {
+	duplicateAndOpen,
+	PresetPickerModal,
+	ProjectPickerModal,
+} from '../core/compile/operations';
 import type { DraftBenchLinker } from '../core/linker';
 import {
 	findCompilePresetsOfProject,
 	findNoteById,
 	findProjects,
-	type CompilePresetNote,
 	type ProjectNote,
 } from '../core/discovery';
 import { isCompilePresetFrontmatter } from '../model/compile-preset';
@@ -16,9 +19,10 @@ import { isSceneFrontmatter } from '../model/scene';
 
 /**
  * Register the "Draft Bench: Duplicate compile preset" palette
- * command. Picks a preset using the same file-context resolution as
- * Run compile, then invokes `duplicateCompilePreset` inside
- * `linker.withSuspended` and opens the new preset note.
+ * command. Same file-context resolution as Run compile; once a preset
+ * is picked, runs `duplicateAndOpen` from
+ * `src/core/compile/operations.ts` which handles linker-suspension,
+ * notice, and opening the duplicate.
  */
 export function registerDuplicateCompilePresetCommand(
 	plugin: DraftBenchPlugin,
@@ -43,7 +47,10 @@ async function runCommand(
 	if (active) {
 		const fm = app.metadataCache.getFileCache(active)?.frontmatter;
 		if (fm && isCompilePresetFrontmatter(fm)) {
-			await duplicate(plugin, linker, { file: active, frontmatter: fm });
+			await duplicateAndOpen(plugin, linker, {
+				file: active,
+				frontmatter: fm,
+			});
 			return;
 		}
 		if (fm) {
@@ -93,12 +100,17 @@ async function pickPresetAndDuplicate(
 		return;
 	}
 	if (presets.length === 1) {
-		await duplicate(plugin, linker, presets[0]);
+		await duplicateAndOpen(plugin, linker, presets[0]);
 		return;
 	}
-	new PresetPickerModal(plugin, presets, (preset) => {
-		void duplicate(plugin, linker, preset);
-	}).open();
+	new PresetPickerModal(
+		plugin,
+		presets,
+		'Pick a compile preset to duplicate...',
+		(preset) => {
+			void duplicateAndOpen(plugin, linker, preset);
+		}
+	).open();
 }
 
 async function pickProjectThenPresetAndDuplicate(
@@ -114,67 +126,12 @@ async function pickProjectThenPresetAndDuplicate(
 		await pickPresetAndDuplicate(plugin, linker, projects[0]);
 		return;
 	}
-	new ProjectPickerModal(plugin, projects, (project) => {
-		void pickPresetAndDuplicate(plugin, linker, project);
-	}).open();
-}
-
-async function duplicate(
-	plugin: DraftBenchPlugin,
-	linker: DraftBenchLinker,
-	preset: CompilePresetNote
-): Promise<void> {
-	try {
-		const file = await linker.withSuspended(() =>
-			duplicateCompilePreset(plugin.app, preset)
-		);
-		new Notice(`✓ Duplicated as ${file.basename}`);
-		const leaf = plugin.app.workspace.getLeaf(false);
-		await leaf.openFile(file);
-	} catch (err) {
-		const message = err instanceof Error ? err.message : String(err);
-		new Notice(
-			`Could not duplicate "${preset.file.basename}": ${message}`
-		);
-	}
-}
-
-class ProjectPickerModal extends FuzzySuggestModal<ProjectNote> {
-	constructor(
-		plugin: DraftBenchPlugin,
-		private projects: ProjectNote[],
-		private onPick: (project: ProjectNote) => void
-	) {
-		super(plugin.app);
-		this.setPlaceholder('Pick a project...');
-	}
-	getItems(): ProjectNote[] {
-		return this.projects;
-	}
-	getItemText(project: ProjectNote): string {
-		return project.file.basename;
-	}
-	onChooseItem(project: ProjectNote): void {
-		this.onPick(project);
-	}
-}
-
-class PresetPickerModal extends FuzzySuggestModal<CompilePresetNote> {
-	constructor(
-		plugin: DraftBenchPlugin,
-		private presets: CompilePresetNote[],
-		private onPick: (preset: CompilePresetNote) => void
-	) {
-		super(plugin.app);
-		this.setPlaceholder('Pick a compile preset to duplicate...');
-	}
-	getItems(): CompilePresetNote[] {
-		return this.presets;
-	}
-	getItemText(preset: CompilePresetNote): string {
-		return preset.file.basename;
-	}
-	onChooseItem(preset: CompilePresetNote): void {
-		this.onPick(preset);
-	}
+	new ProjectPickerModal(
+		plugin,
+		projects,
+		'Pick a project...',
+		(project) => {
+			void pickPresetAndDuplicate(plugin, linker, project);
+		}
+	).open();
 }

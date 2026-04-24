@@ -30,8 +30,21 @@
 	display: flex;
 	flex-direction: column;
 	gap: var(--dbench-spacing-md);
-	align-items: stretch;
-	padding: var(--dbench-spacing-lg) var(--dbench-spacing-md);
+	align-items: center;
+	text-align: center;
+	padding: var(--dbench-spacing-xl) var(--dbench-spacing-md);
+}
+
+/* Brand mark — accent-tinted (Direction B empty-state option 2).
+   `currentcolor` stroke inherits from the rule's color; setting
+   color to var(--text-accent) tints the whole mark without
+   hard-coding a palette. Opacity softens it so the heading below
+   retains primary focus. */
+.dbench-manuscript-view__empty-mark {
+	width: 72px;
+	height: 72px;
+	color: var(--text-accent);
+	opacity: 0.7;
 }
 
 .dbench-manuscript-view__empty-heading {
@@ -42,12 +55,13 @@
 
 .dbench-manuscript-view__empty-body {
 	margin: 0;
+	max-width: 260px;
 	color: var(--text-muted);
 	line-height: 1.5;
 }
 
 .dbench-manuscript-view__empty-cta {
-	align-self: flex-start;
+	align-self: center;
 }
 
 .dbench-manuscript-view__empty-footnote {

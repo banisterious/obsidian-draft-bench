@@ -244,11 +244,38 @@ export function toRoman(n: number): string {
  * `> [!warning]-` collapsed, etc.). Subsequent blockquote-body lines
  * remain — the callout becomes a plain blockquote in the output.
  */
+/**
+ * Strip Obsidian callout blocks entirely (rule 10).
+ *
+ * A callout starts with `> [!type] Title` (with optional `+` / `-`
+ * fold marker) and continues across subsequent `>`-prefixed lines
+ * until a non-`>` line (blank or otherwise) ends the block.
+ *
+ * Earlier behavior dropped only the header line, leaving the
+ * continuation `>` lines in place. They then rendered as a regular
+ * blockquote in the PDF / ODT output, surfacing the writer's
+ * research-note text in the compiled manuscript. The whole block
+ * has to go.
+ *
+ * Regular blockquotes (no `[!type]` marker) are not in scope of
+ * rule 10 and pass through unchanged.
+ */
 export function stripCalloutMarkers(body: string): string {
-	return body
-		.split('\n')
-		.filter((line) => !/^\s*>\s*\[![\w-]+\][+-]?/.test(line))
-		.join('\n');
+	const lines = body.split('\n');
+	const out: string[] = [];
+	let inCallout = false;
+	for (const line of lines) {
+		if (/^\s*>\s*\[![\w-]+\][+-]?/.test(line)) {
+			inCallout = true;
+			continue;
+		}
+		if (inCallout) {
+			if (/^\s*>/.test(line)) continue;
+			inCallout = false;
+		}
+		out.push(line);
+	}
+	return out.join('\n');
 }
 
 // ---- Rule 11: tasks -------------------------------------------------

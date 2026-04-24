@@ -150,14 +150,29 @@ describe('toRoman', () => {
 // -- Rule 10: callouts --------------------------------------------------
 
 describe('stripCalloutMarkers', () => {
-	it('drops the marker line and keeps the body', () => {
+	it('drops the marker line AND its continuation lines', () => {
 		const body = '> [!note] Title\n> Body line\nOther content.';
-		expect(stripCalloutMarkers(body)).toBe('> Body line\nOther content.');
+		expect(stripCalloutMarkers(body)).toBe('Other content.');
 	});
 
-	it('handles collapsed and expanded variants', () => {
-		const body = '> [!warning]- Collapsed\n> Body\n> [!tip]+ Expanded\n> More';
-		expect(stripCalloutMarkers(body)).toBe('> Body\n> More');
+	it('handles collapsed and expanded variants, dropping the whole block', () => {
+		const body =
+			'> [!warning]- Collapsed\n> Body\n\n> [!tip]+ Expanded\n> More';
+		// Both callouts dropped; only the blank line that separated
+		// them survives — and that's the single empty element in the
+		// output array, which `join('\n')` renders as `''`.
+		expect(stripCalloutMarkers(body)).toBe('');
+	});
+
+	it('ends a callout at the first non-blockquote line', () => {
+		const body =
+			'before\n\n> [!note] Title\n> body line\n\nafter the callout';
+		expect(stripCalloutMarkers(body)).toBe('before\n\n\nafter the callout');
+	});
+
+	it('handles a callout at end-of-input', () => {
+		const body = 'paragraph\n\n> [!info] Heading\n> body';
+		expect(stripCalloutMarkers(body)).toBe('paragraph\n');
 	});
 
 	it('leaves plain blockquotes untouched', () => {

@@ -94,10 +94,51 @@ export function applyContentRules(rawContent: string, ctx: RuleContext): string 
 		t = stripComments(t);
 		t = stripHighlights(t);
 		t = applyDinkusRule(t, ctx.preset['dbench-compile-dinkuses']);
+		// Final whitespace cleanup: inline rules strip content but
+		// leave the spaces / blank lines that flanked it. Collapse
+		// mid-line double-spaces and triple+ newline runs so the
+		// output reads cleanly.
+		t = normalizeWhitespaceArtifacts(t);
 		return t;
 	});
 
 	return body;
+}
+
+/**
+ * Tidy the whitespace the inline strip rules leave behind.
+ *
+ * Two artifacts:
+ *
+ * 1. `Hello ![[pic.png]] world` -> `Hello  world` — the embed strip
+ *    leaves a double space where the embed was flanked by spaces.
+ * 2. `para\n\n%% comment %%\n\npara` -> `para\n\n\n\npara` — the
+ *    comment strip leaves the surrounding blank lines, producing a
+ *    triple+ newline run that renders as an extra blank paragraph.
+ *
+ * Rules:
+ *
+ * - `(\S)[ \t]{2,}(\S)` -> `$1 $2` collapses runs of 2+ horizontal
+ *   whitespace between non-space characters. Leading indentation is
+ *   preserved (the lookaround requires a non-space before) and blank
+ *   lines are preserved (runs of whitespace across newlines aren't
+ *   matched by `[ \t]`).
+ * - `\n{3,}` -> `\n\n` collapses 3+ consecutive newlines to a single
+ *   blank line.
+ *
+ * Runs inside `transformOutsideCode`, so code fences are skipped and
+ * fenced content keeps its authored whitespace.
+ *
+ * Tradeoff: writers who intentionally type two spaces after a period
+ * (old-school typography) lose that. Markdown renderers collapse
+ * such spaces to one anyway, so the effect isn't visible in the
+ * rendered output; and the per-rule alternative (strip N adjacent
+ * spaces in each inline rule) is fragile. Acceptable V1 behavior.
+ */
+export function normalizeWhitespaceArtifacts(text: string): string {
+	return text
+		.replace(/(\S)[ \t]{2,}(\S)/g, '$1 $2')
+		.replace(/\n{3,}/g, '\n\n');
 }
 
 // ---- Rule 3: frontmatter --------------------------------------------

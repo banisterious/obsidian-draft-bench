@@ -6,6 +6,7 @@ import {
 	applyFrontmatterRule,
 	applyWikilinkRule,
 	buildSceneHeading,
+	normalizeWhitespaceArtifacts,
 	shiftH1sInBody,
 	stripCalloutMarkers,
 	stripComments,
@@ -375,8 +376,10 @@ describe('applyContentRules', () => {
 			'# Planning\nnotes above\n## Draft\n' +
 			'See [[Target]] with #tag and ==highlight==.\n%%comment%%';
 		const result = applyContentRules(raw, baseCtx());
+		// The tag strip leaves a double space ("with  and") that
+		// `normalizeWhitespaceArtifacts` then collapses to one.
 		expect(result).toBe(
-			'# Opening\n\nSee Target with  and highlight.\n'
+			'# Opening\n\nSee Target with and highlight.\n'
 		);
 	});
 
@@ -421,5 +424,50 @@ describe('applyContentRules', () => {
 		const preset = makePresetFm({ 'dbench-compile-dinkuses': 'normalize' });
 		const result = applyContentRules(raw, baseCtx({ preset }));
 		expect(result).toBe('# Opening\n\nfirst\n* * *\nsecond');
+	});
+
+	it('collapses the triple newline left behind when a paragraph-level comment is stripped', () => {
+		const raw =
+			'## Draft\nbefore the comment.\n\n%% stripped %%\n\nafter the comment.';
+		const result = applyContentRules(raw, baseCtx());
+		expect(result).toBe(
+			'# Opening\n\nbefore the comment.\n\nafter the comment.'
+		);
+	});
+
+	it('collapses the double space left behind when an inline embed is stripped', () => {
+		const raw = '## Draft\nHe called for Arthur. ![[arthur]] had arrived.';
+		const result = applyContentRules(raw, baseCtx());
+		expect(result).toBe(
+			'# Opening\n\nHe called for Arthur. had arrived.'
+		);
+	});
+});
+
+describe('normalizeWhitespaceArtifacts', () => {
+	it('collapses 2+ horizontal spaces between non-space characters', () => {
+		expect(normalizeWhitespaceArtifacts('a  b')).toBe('a b');
+		expect(normalizeWhitespaceArtifacts('a \t b')).toBe('a b');
+		expect(normalizeWhitespaceArtifacts('a    b')).toBe('a b');
+	});
+
+	it('preserves leading indentation (whitespace at line start)', () => {
+		// List continuation / code-style indentation should survive.
+		expect(normalizeWhitespaceArtifacts('    const x = 1;')).toBe(
+			'    const x = 1;'
+		);
+	});
+
+	it('collapses runs of 3+ newlines to exactly one blank line', () => {
+		expect(normalizeWhitespaceArtifacts('a\n\n\nb')).toBe('a\n\nb');
+		expect(normalizeWhitespaceArtifacts('a\n\n\n\n\nb')).toBe('a\n\nb');
+	});
+
+	it('preserves a single blank line (two consecutive newlines)', () => {
+		expect(normalizeWhitespaceArtifacts('a\n\nb')).toBe('a\n\nb');
+	});
+
+	it('preserves a single space between words', () => {
+		expect(normalizeWhitespaceArtifacts('hello world')).toBe('hello world');
 	});
 });

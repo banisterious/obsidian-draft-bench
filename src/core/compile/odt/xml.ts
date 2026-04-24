@@ -51,7 +51,7 @@ export const ODT_STYLES_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <style:style style:name="Text_20_body" style:display-name="Text body" style:family="paragraph" style:parent-style-name="Standard" style:class="text"><style:paragraph-properties fo:margin-top="0in" fo:margin-bottom="0.1in" fo:line-height="115%"/></style:style>
 <style:style style:name="Bold" style:family="text"><style:text-properties fo:font-weight="bold"/></style:style>
 <style:style style:name="Italic" style:family="text"><style:text-properties fo:font-style="italic"/></style:style>
-<style:style style:name="Section_20_Break_20_Title" style:display-name="Section Break Title" style:family="paragraph" style:parent-style-name="Standard" style:class="text"><style:paragraph-properties fo:text-align="center" fo:margin-top="0.15in" fo:margin-bottom="0.2in"/><style:text-properties fo:font-size="16pt" fo:font-weight="bold"/></style:style>
+<style:style style:name="Section_20_Break_20_Title" style:display-name="Section Break Title" style:family="paragraph" style:parent-style-name="Standard" style:class="text"><style:paragraph-properties fo:text-align="center" fo:margin-top="0.4in" fo:margin-bottom="0.4in"/><style:text-properties fo:font-size="28pt" fo:font-weight="bold"/></style:style>
 </office:styles>
 <office:automatic-styles>
 <style:page-layout style:name="Mpm1"><style:page-layout-properties fo:page-width="8.5in" fo:page-height="11in" fo:margin-top="1in" fo:margin-bottom="1in" fo:margin-left="1in" fo:margin-right="1in"/></style:page-layout>

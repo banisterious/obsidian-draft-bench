@@ -46,10 +46,17 @@ export function buildPdfDocDefinition(
 			body: { fontSize: 11, margin: [0, 0, 0, 6], lineHeight: 1.35 },
 			list: { fontSize: 11, margin: [0, 0, 0, 6], lineHeight: 1.35 },
 			sectionBreakTitle: {
-				fontSize: 16,
+				// Sized to match h1 chapter headings — section-break
+				// titles ("Part II") are a higher-level division than
+				// individual chapters in book typography, so they
+				// shouldn't render smaller than chapter headings.
+				// Centered + extra vertical margin signals the
+				// part-level role distinct from a left-aligned
+				// chapter heading.
+				fontSize: 28,
 				bold: true,
 				alignment: 'center',
-				margin: [0, 8, 0, 16],
+				margin: [0, 32, 0, 32],
 			},
 		},
 		defaultStyle: { font: 'Roboto', fontSize: 11 },

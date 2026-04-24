@@ -5,7 +5,10 @@ import {
 	type CompilePresetNote,
 	type ProjectNote,
 } from '../../../core/discovery';
+import { renderSection } from '../../manuscript-view/sections/section-base';
 import { NewCompilePresetModal } from '../../modals/new-compile-preset-modal';
+import { renderInclusionSection } from '../compile/sections/inclusion';
+import { renderMetadataSection } from '../compile/sections/metadata';
 import type { TabContext, TabDefinition } from './types';
 
 /**
@@ -215,9 +218,51 @@ function renderBody(state: CompileTabState): void {
 	);
 	if (!preset) return;
 
+	renderFormSection(state.bodyEl, 'metadata', 'Metadata', 'book-text', (body) => {
+		renderMetadataSection(body, state.context.app, preset);
+	});
+
+	renderFormSection(state.bodyEl, 'inclusion', 'Inclusion', 'list-filter', (body) => {
+		renderInclusionSection(
+			body,
+			state.context.app,
+			preset,
+			state.context.plugin.settings
+		);
+	});
+
 	state.bodyEl.createEl('p', {
 		cls: 'dbench-compile-tab__placeholder',
-		text: `Form sections (Metadata, Inclusion, Output, Content-handling, Last-compile) for "${preset.file.basename}" land in follow-up commits.`,
+		text: 'Output, content-handling, and last-compile sections land in follow-up commits.',
+	});
+}
+
+/**
+ * Wrap a section's body in the shared collapsible accordion. Reuses
+ * the manuscript-view `section-base` primitive (and its CSS class
+ * names). Class-name extraction to a shared `dbench-section-*`
+ * namespace is a future cleanup; the visual styling carries over
+ * cleanly since the section primitive is generic.
+ */
+function renderFormSection(
+	parent: HTMLElement,
+	id: string,
+	title: string,
+	icon: string,
+	contentRenderer: (body: HTMLElement) => void
+): void {
+	renderSection(parent, {
+		sectionId: `compile-${id}`,
+		title,
+		icon,
+		expanded: true,
+		onToggle: () => {
+			// V1 doesn't persist Compile tab section state across modal
+			// opens. The Manuscript leaf does (via getState()); the modal
+			// can adopt the same pattern when collapse-state retention
+			// becomes a writer ask.
+		},
+		contentRenderer,
 	});
 }
 

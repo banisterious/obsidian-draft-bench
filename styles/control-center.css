@@ -180,6 +180,36 @@
 	font-size: var(--font-ui-small);
 }
 
+/* Multi-select control used by the Inclusion section (status filter). */
+
+.dbench-compile-tab__multi-select {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--dbench-spacing-md);
+	align-items: center;
+}
+
+.dbench-compile-tab__multi-select-item {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--dbench-spacing-xs);
+	padding: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
+	border-radius: var(--dbench-radius-sm);
+	background-color: var(--background-secondary);
+	cursor: pointer;
+	font-size: var(--font-ui-small);
+}
+
+.dbench-compile-tab__multi-select-item input[type="checkbox"] {
+	margin: 0;
+}
+
+/* Monospace styling for textarea inputs (e.g., excludes wikilinks). */
+
+.dbench-compile-tab__monospace {
+	font-family: var(--font-monospace);
+}
+
 /* Mobile layout: stack nav above content */
 
 .dbench-control-center-modal--mobile .dbench-control-center__body {

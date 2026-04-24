@@ -2,6 +2,8 @@
 
 **Source:** distilled from a Charted Roots design session on why that plugin bundles both pdfmake and jsPDF. Preserved here verbatim (with light editorial touches) so the reasoning is available when Draft Bench or future plugins face the same bundle-size question. Draft Bench's adaptation footer follows at the end.
 
+> **Note on bundle-size figures below.** The ~2.4 MB stock-VFS number and ~80% custom-VFS saving quoted in the CR analysis reflect the pdfmake version CR is pinned to. When DB measured against `pdfmake@0.2.23`, `vfs_fonts.js` was 835 KB and shipped exactly the 4 variants DB uses — upstream had already trimmed the VFS. The extraction optimization is no longer available on current pdfmake. See the Adaptation footer (Optimization 1) for the measurement and the revised plan.
+
 ---
 
 ## Why Bundle Both pdfmake and jsPDF: The Full Argument
@@ -172,13 +174,35 @@ For a writing plugin, the first category is vastly more common than the second: 
 
 **Decision rule for post-V1 reconsideration:** if media inclusion lands AND rule 8b flips to resolve AND writers credibly complain about pdfmake's image fidelity on typical manuscript illustrations, re-read the CR analysis above and consider adding jsPDF for the image-centric code path. Otherwise, stay on pdfmake only.
 
-### Optimization 1: custom font VFS (straightforward win)
+### Optimization 1: custom font VFS (closed — pdfmake 0.2.x already ships a trimmed VFS)
 
-Current state (as of 2026-04-23): [render-pdf.ts](../../src/core/compile/render-pdf.ts) imports `pdfmake/build/vfs_fonts`, the stock 850 KB bundle of all Roboto variants. Draft Bench uses exactly four: Regular, Medium, Italic, MediumItalic (mapped to pdfmake's `normal` / `bold` / `italics` / `bolditalics` roles).
+**Finding (2026-04-23 measurement against `pdfmake@0.2.23`):** the extraction optimization no longer applies. Stock `pdfmake/build/vfs_fonts.js` on disk is **835 KB**, and enumerating its contents at runtime returns exactly the 4 variants DB uses:
 
-**Expected saving:** ~180 KB custom bundle vs. the 850 KB stock bundle = ~670 KB reduction once the renderer is reachable from the plugin entry. Same ratio as CR's 80% saving.
+| Entry | Base64 bytes | Approx raw TTF |
+|---|---|---|
+| Roboto-Regular.ttf | 204.7 KB | ~154 KB |
+| Roboto-Medium.ttf | 204.9 KB | ~154 KB |
+| Roboto-Italic.ttf | 212.1 KB | ~159 KB |
+| Roboto-MediumItalic.ttf | 212.5 KB | ~159 KB |
+| **Total (base64)** | **834.2 KB** | **~626 KB raw** |
 
-**Work required:** adapt CR's `build-fonts.js` pattern — a tiny Node script that reads the 4 Roboto TTFs out of node_modules, base64-encodes them, and emits `src/core/compile/pdf/fonts/vfs.ts` that exports a `TVirtualFileSystem`. Replace the `pdfmake/build/vfs_fonts` import with the generated module. Zero runtime behavior change; output PDFs look identical.
+Upstream has already narrowed the default VFS to the same 4 variants pdfmake's default style definitions reference. Extracting those 4 variants into a custom `vfs.ts` and base64-encoding them produces the same ~834 KB payload — no saving. CR's ~80% win was real when `vfs_fonts.js` shipped the full Roboto family (~10-11 fonts, ~2.4 MB); 0.2.x pre-trimmed that down and closed the gap.
+
+**Decision:** import `pdfmake/build/vfs_fonts` directly from [render-pdf.ts](../../src/core/compile/render-pdf.ts). No extraction script, no generated `src/core/compile/pdf/fonts/vfs.ts`, no maintenance burden for the VFS-regex extraction approach that CR documented. Same output; fewer moving parts.
+
+**CR gotchas preserved as "if we ever revisit" notes.** The five gotchas CR shared are still true if a future optimization path reopens this:
+
+1. **Base64 overhead is ~33%.** Any size math against pdfmake's VFS payload should target b64 bytes, not decoded TTF bytes. The table above shows both.
+2. **Regex extraction is version-brittle.** CR's `/var\s+vfs\s*=\s*(\{[\s\S]*?\});/` parser depends on pdfmake's `vfs_fonts.js` output shape. Pin pdfmake and re-check the regex on any bump. The `require('pdfmake/build/vfs_fonts').pdfMake.vfs` accessor is safer but still version-dependent on how pdfmake exports its VFS.
+3. **Unicode coverage.** Roboto covers Latin / Greek / Cyrillic / extended Latin well enough for manuscript prose. If DB ever adds box-drawing characters (scene-flow diagrams, ASCII-art trees), Roboto won't render them — CR bundles DejaVu Sans Mono (+285 KB) for that. Not a V1 concern.
+4. **Generated-file ownership.** If a custom VFS does get generated at some future point, decide up front whether the `.ts` output is committed (simpler fresh-clone story, inflates repo) or gitignored behind a build-step prerequisite (cleaner repo, adds a build-ordering dependency). CR commits theirs.
+5. **Lint/diff tooling.** A ~240 KB base64 string in a `.ts` file is functionally fine but makes the file uneditable and may confuse Prettier / ESLint / diff viewers. If we ever regenerate, add the path to `.prettierignore` and any ESLint ignore config up front.
+
+**Paths that could reopen this question post-V1:**
+
+- **Drop Medium + MediumItalic** (keep Regular + Italic only) and let pdfmake emit synthetic bold via `bold: true` on Regular. Saves ~420 KB. Tradeoff: heading weight is browser-style faux-bold rather than Roboto-Medium, a typographic downgrade but arguably fine for a manuscript PDF.
+- **Bundle a smaller serif family** (Merriweather, Tinos, Crimson Pro) if the consensus shifts from sans to serif for prose manuscripts. Usually no saving; different aesthetic.
+- **pdfmake upstream ships an even-smaller VFS.** Worth a recheck on every pdfmake bump — if upstream drops another variant, we want to know.
 
 Draft Bench doesn't need DejaVu Sans Mono — there are no ASCII tree connectors or box-drawing characters in manuscript prose. Roboto-only is sufficient.
 
@@ -194,12 +218,12 @@ Current state: [render-pdf.ts](../../src/core/compile/render-pdf.ts) statically 
 2. **Ship pdfmake as a separate asset file in the release, loaded at runtime.** The plugin's release bundle contains `main.js` + `pdfmake.js`; the plugin runtime-loads `pdfmake.js` from the plugin folder when first needed. Obsidian exposes the plugin folder path via the adapter API. Fragile across user install paths but feasible.
 3. **Download pdfmake from GitHub releases on first PDF compile, cache in plugin folder.** Network-dependent; needs offline-first fallback semantics. Probably too complex for V1.
 
-For V1, the lazy-loading investigation is deferrable. Ship with static import + custom VFS (~180 KB addition instead of 850 KB), measure real-world bundle impact, and revisit lazy-loading as a post-V1 optimization if writers or the Community Plugin review flag bundle size as blocking.
+For V1, the lazy-loading investigation is deferrable. Ship with static import of `pdfmake/build/vfs_fonts` (~835 KB), measure real-world bundle impact, and revisit lazy-loading as a post-V1 optimization if writers or the Community Plugin review flag bundle size as blocking. The custom-VFS partial mitigation the original plan relied on is no longer available (Optimization 1), so the case for lazy-loading is correspondingly stronger.
 
 ### Proposed sequence
 
-1. **Now (before P3.E):** implement the custom Roboto VFS. Small, testable change. Saves ~670 KB once render-pdf becomes reachable.
-2. **Post-V1:** investigate lazy-loading pdfmake via one of the candidate approaches above. Revisit if bundle size becomes a real pain point for writers or community-submission reviewers.
+1. **V1:** ship `pdfmake/build/vfs_fonts` imported statically. No extraction script. The one meaningful font-bundle optimization (custom VFS extraction) is closed by upstream's own trim on 0.2.x — pursuing it would be pure maintenance cost for zero runtime benefit.
+2. **Post-V1:** investigate lazy-loading pdfmake via one of the candidate approaches above. This is now the **primary** bundle-size lever since the font-VFS lever is gone. Revisit if bundle size becomes a real pain point for writers or community-submission reviewers.
 3. **Never (per dual-library analysis):** do not add jsPDF or pdf-lib. Draft Bench has one PDF use case; one library is correct.
 
 ### Revised bundle math for Draft Bench
@@ -207,14 +231,14 @@ For V1, the lazy-loading investigation is deferrable. Ship with static import + 
 | Component | Size | Loading strategy (V1) | Loading strategy (post-V1 lazy) |
 |---|---|---|---|
 | pdfmake core | ~1.4 MB | Static, once render-pdf is imported | Lazy, on first PDF compile |
-| Custom Roboto VFS (4 variants) | ~180 KB | Static, once render-pdf is imported | Static, pairs with pdfmake |
+| Stock Roboto VFS (4 variants) | ~835 KB | Static, once render-pdf is imported | Lazy, pairs with pdfmake |
 | JSZip (ODT renderer) | ~100 KB | Static, once render-odt is imported | Static, unchanged |
-| **main.js total (PDF + ODT wired)** | **~1.7 MB increase** | — | **~180 KB + ~100 KB = ~280 KB increase**; pdfmake deferred |
+| **main.js total (PDF + ODT wired)** | **~2.3 MB increase** | — | **~100 KB increase**; pdfmake + fonts deferred |
 
-V1 ship size: substantial but workable for a compile-capable plugin. Post-V1 lazy-load drops the initial cost dramatically while keeping the first-PDF-compile overhead one-time per install.
+V1 ship size: substantial (+~2.3 MB over current 162 KB) once the P3.E dispatcher makes render-pdf reachable. This raises the stakes on post-V1 lazy-loading — it's now the dominant optimization lever, not a nice-to-have.
 
 ### Outstanding questions for Draft Bench
 
-- **Does esbuild + Obsidian plugin runtime support code splitting cleanly?** No evidence in the current codebase either way. Investigation needed before committing to option 1 above.
+- **Does esbuild + Obsidian plugin runtime support code splitting cleanly?** No evidence in the current codebase either way. Investigation needed before committing to option 1 above. Answering this is now more urgent than it was when the custom-VFS plan existed as a partial mitigation.
 - **Is CR's lazy-load mechanism documented somewhere?** If so, crib it. If not, the next CR session might be a good place to extract the approach into a shared pattern.
-- **Bundle budget expectation.** Is there a community-plugins-submission reviewer threshold for main.js size? None documented, but plugins over 2 MB sometimes get push-back in submission reviews. Worth knowing before ship.
+- **Bundle budget expectation.** Is there a community-plugins-submission reviewer threshold for main.js size? None documented, but plugins over 2 MB sometimes get push-back in submission reviews. Worth knowing before ship — DB is heading toward ~2.5 MB total with PDF + ODT wired.

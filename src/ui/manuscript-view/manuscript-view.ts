@@ -83,20 +83,6 @@ export class ManuscriptView extends ItemView {
 	}
 
 	onOpen(): Promise<void> {
-		// Header action button for the Control Center modal. Uses
-		// Obsidian's built-in `addAction()` for the leaf title-bar
-		// (the same strip where close / pop-out live) so writers have
-		// a one-click path from the ambient leaf to the action-shaped
-		// modal without going to the palette. Complements the palette
-		// command `Open control center`.
-		this.addAction('settings-2', 'Open control center', () => {
-			new ControlCenterModal(
-				this.plugin.app,
-				this.plugin,
-				this.plugin.linker
-			).open();
-		});
-
 		// Reconcile plugin state with leaf state on open. Order:
 		// 1. If plugin has a selection, trust it (another surface wrote it).
 		// 2. Else if leaf state has one and the project still exists,
@@ -354,7 +340,7 @@ export class ManuscriptView extends ItemView {
 		});
 
 		const newProjectButton = header.createEl('button', {
-			cls: 'dbench-manuscript-view__new-project',
+			cls: 'dbench-manuscript-view__header-button',
 			attr: {
 				'aria-label': 'Create project',
 				title: 'Create project',
@@ -363,6 +349,27 @@ export class ManuscriptView extends ItemView {
 		setIcon(newProjectButton, 'plus');
 		newProjectButton.addEventListener('click', () => {
 			this.openCreateProjectCommand();
+		});
+
+		// Control Center entry point. Sidebar leaves hide the
+		// view-header strip where ItemView.addAction() puts buttons,
+		// so the entry point lives in our own picker header (which is
+		// inside contentEl and always visible regardless of leaf
+		// position).
+		const controlCenterButton = header.createEl('button', {
+			cls: 'dbench-manuscript-view__header-button',
+			attr: {
+				'aria-label': 'Open control center',
+				title: 'Open control center',
+			},
+		});
+		setIcon(controlCenterButton, 'settings-2');
+		controlCenterButton.addEventListener('click', () => {
+			new ControlCenterModal(
+				this.plugin.app,
+				this.plugin,
+				this.plugin.linker
+			).open();
 		});
 	}
 

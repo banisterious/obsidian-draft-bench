@@ -9,6 +9,7 @@ import { renderSection } from '../../manuscript-view/sections/section-base';
 import { NewCompilePresetModal } from '../../modals/new-compile-preset-modal';
 import { renderContentHandlingSection } from '../compile/sections/content-handling';
 import { renderInclusionSection } from '../compile/sections/inclusion';
+import { renderLastCompileSection } from '../compile/sections/last-compile';
 import { renderMetadataSection } from '../compile/sections/metadata';
 import { renderOutputSection } from '../compile/sections/output';
 import type { TabContext, TabDefinition } from './types';
@@ -247,9 +248,8 @@ function renderBody(state: CompileTabState): void {
 		}
 	);
 
-	state.bodyEl.createEl('p', {
-		cls: 'dbench-compile-tab__placeholder',
-		text: 'Last-compile section lands in a follow-up commit.',
+	renderFormSection(state.bodyEl, 'last-compile', 'Last compile', 'history', (body) => {
+		renderLastCompileSection(body, state.context.app, preset);
 	});
 }
 

@@ -210,6 +210,19 @@
 	font-family: var(--font-monospace);
 }
 
+/* Read-only value pills used in the Last-compile section. */
+
+.dbench-compile-tab__readonly-value {
+	display: inline-block;
+	padding: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
+	background-color: var(--background-secondary);
+	border-radius: var(--dbench-radius-sm);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	max-width: 100%;
+	overflow-wrap: anywhere;
+}
+
 /* Mobile layout: stack nav above content */
 
 .dbench-control-center-modal--mobile .dbench-control-center__body {

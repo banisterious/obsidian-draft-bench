@@ -321,7 +321,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   CONTROL-CENTER.CSS  (228 lines, 5.2 KB)
+   CONTROL-CENTER.CSS  (241 lines, 5.57 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -534,6 +534,19 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 
 .dbench-compile-tab__monospace {
 	font-family: var(--font-monospace);
+}
+
+/* Read-only value pills used in the Last-compile section. */
+
+.dbench-compile-tab__readonly-value {
+	display: inline-block;
+	padding: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
+	background-color: var(--background-secondary);
+	border-radius: var(--dbench-radius-sm);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	max-width: 100%;
+	overflow-wrap: anywhere;
 }
 
 /* Mobile layout: stack nav above content */
@@ -1228,12 +1241,12 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 8
-   Total:      1157 lines, 29.01 KB
+   Total:      1170 lines, 29.39 KB
    - variables.css: 71 lines, 2.34 KB
    - style-settings.css: 98 lines, 3.45 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - control-center.css: 228 lines, 5.2 KB
+   - control-center.css: 241 lines, 5.57 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 425 lines, 9.92 KB
    - settings-tab.css: 119 lines, 2.66 KB

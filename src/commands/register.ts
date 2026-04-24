@@ -9,6 +9,7 @@ import { registerNewDraftCommand } from './new-draft';
 import { registerOpenControlCenterCommand } from './open-control-center';
 import { registerReorderScenesCommand } from './reorder-scenes';
 import { registerRepairProjectCommand } from './repair-project';
+import { registerRunCompileCommand } from './run-compile';
 import { registerShowManuscriptViewCommand } from './show-manuscript-view';
 import { registerSetAsProjectCommand } from './retrofit/set-as-project';
 import { registerSetAsSceneCommand } from './retrofit/set-as-scene';
@@ -42,6 +43,7 @@ export function registerCommands(
 	registerShowManuscriptViewCommand(plugin, () => plugin);
 	registerReorderScenesCommand(plugin, linker);
 	registerRepairProjectCommand(plugin, linker);
+	registerRunCompileCommand(plugin);
 	registerSetAsProjectCommand(plugin, getSettings);
 	registerSetAsSceneCommand(plugin, getSettings);
 	registerSetAsDraftCommand(plugin, getSettings);

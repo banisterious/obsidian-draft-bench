@@ -297,15 +297,6 @@
 	margin: var(--dbench-spacing-xs) 0 0;
 }
 
-.dbench-manuscript-view__word-counts-heading {
-	margin: 0 0 var(--dbench-spacing-xs);
-	font-size: var(--font-ui-smaller);
-	font-weight: var(--font-semibold);
-	color: var(--text-muted);
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-}
-
 .dbench-manuscript-view__word-counts-body {
 	margin-bottom: var(--dbench-spacing-sm);
 }

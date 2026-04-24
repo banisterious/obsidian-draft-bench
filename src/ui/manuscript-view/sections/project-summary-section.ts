@@ -48,10 +48,6 @@ export function renderProjectSummaryBody(
 	const wordCounts = body.createDiv({
 		cls: 'dbench-manuscript-view__word-counts',
 	});
-	wordCounts.createEl('h3', {
-		cls: 'dbench-manuscript-view__word-counts-heading',
-		text: 'Word count',
-	});
 	const wordCountsBody = wordCounts.createDiv({
 		cls: 'dbench-manuscript-view__word-counts-body',
 	});
@@ -83,21 +79,25 @@ function buildWordCountsView(
 ): HTMLElement {
 	const wrapper = document.createElement('div');
 
+	// Targeted project: the progress hero carries "1,553 / 5,000 words
+	// (31%)" + the fill bar, so the big-number total below it would
+	// duplicate the count. Targetless project: show the big-number
+	// total since there's no hero to carry the count.
 	if (counts.projectTarget !== null) {
 		wrapper.appendChild(buildProgressHero(counts.total, counts.projectTarget));
+	} else {
+		const total = wrapper.createDiv({
+			cls: 'dbench-manuscript-view__word-counts-total',
+		});
+		total.createEl('span', {
+			cls: 'dbench-manuscript-view__word-counts-total-value',
+			text: formatNumber(counts.total),
+		});
+		total.createEl('span', {
+			cls: 'dbench-manuscript-view__word-counts-total-label',
+			text: counts.total === 1 ? 'word' : 'words',
+		});
 	}
-
-	const total = wrapper.createDiv({
-		cls: 'dbench-manuscript-view__word-counts-total',
-	});
-	total.createEl('span', {
-		cls: 'dbench-manuscript-view__word-counts-total-value',
-		text: formatNumber(counts.total),
-	});
-	total.createEl('span', {
-		cls: 'dbench-manuscript-view__word-counts-total-label',
-		text: counts.total === 1 ? 'word' : 'words',
-	});
 
 	const breakdown = wrapper.createEl('dl', {
 		cls: 'dbench-manuscript-view__status-breakdown',

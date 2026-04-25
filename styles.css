@@ -516,7 +516,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of manuscript-builder.css */
 
 /* --------------------------------------------------------------------------
-   WELCOME-MODAL.CSS  (96 lines, 2.26 KB)
+   WELCOME-MODAL.CSS  (94 lines, 2.19 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -535,7 +535,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: var(--dbench-spacing-md);
+	gap: var(--dbench-spacing-lg);
 	padding: var(--dbench-spacing-md);
 	max-width: 440px;
 	margin: 0 auto;
@@ -545,7 +545,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: var(--dbench-spacing-xs);
+	gap: var(--dbench-spacing-sm);
 	text-align: center;
 }
 
@@ -577,7 +577,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-welcome-modal__pitch {
 	display: flex;
 	flex-direction: column;
-	gap: var(--dbench-spacing-xs);
+	gap: var(--dbench-spacing-sm);
 	color: var(--text-normal);
 	line-height: 1.5;
 	text-align: center;
@@ -592,7 +592,6 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	flex-direction: column;
 	gap: var(--dbench-spacing-xs);
 	width: 100%;
-	margin-top: var(--dbench-spacing-sm);
 }
 
 /*
@@ -607,7 +606,6 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 }
 
 .dbench-welcome-modal__footer {
-	margin-top: var(--dbench-spacing-sm);
 	text-align: center;
 }
 
@@ -1506,13 +1504,13 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 9
-   Total:      1428 lines, 38.03 KB
+   Total:      1426 lines, 37.95 KB
    - variables.css: 87 lines, 2.99 KB
    - style-settings.css: 133 lines, 4.65 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
    - manuscript-builder.css: 137 lines, 3.35 KB
-   - welcome-modal.css: 96 lines, 2.26 KB
+   - welcome-modal.css: 94 lines, 2.19 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 640 lines, 16.68 KB
    - settings-tab.css: 119 lines, 2.66 KB

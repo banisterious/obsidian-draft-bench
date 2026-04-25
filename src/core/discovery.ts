@@ -1,6 +1,7 @@
 import type { App, TFile } from 'obsidian';
 import type { DbenchId } from '../model/types';
 import { isProjectFrontmatter, type ProjectFrontmatter } from '../model/project';
+import { isChapterFrontmatter, type ChapterFrontmatter } from '../model/chapter';
 import { isSceneFrontmatter, type SceneFrontmatter } from '../model/scene';
 import { isDraftFrontmatter, type DraftFrontmatter } from '../model/draft';
 import {
@@ -31,6 +32,12 @@ export interface ProjectNote {
 	frontmatter: ProjectFrontmatter;
 }
 
+/** A discovered chapter note paired with its parsed frontmatter. */
+export interface ChapterNote {
+	file: TFile;
+	frontmatter: ChapterFrontmatter;
+}
+
 /** A discovered scene note paired with its parsed frontmatter. */
 export interface SceneNote {
 	file: TFile;
@@ -57,6 +64,20 @@ export function findProjects(app: App): ProjectNote[] {
 	for (const file of app.vault.getMarkdownFiles()) {
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		if (isProjectFrontmatter(fm)) {
+			out.push({ file, frontmatter: fm });
+		}
+	}
+	return out;
+}
+
+/**
+ * Find every chapter note in the vault.
+ */
+export function findChapters(app: App): ChapterNote[] {
+	const out: ChapterNote[] = [];
+	for (const file of app.vault.getMarkdownFiles()) {
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		if (isChapterFrontmatter(fm)) {
 			out.push({ file, frontmatter: fm });
 		}
 	}
@@ -111,12 +132,49 @@ export function findCompilePresets(app: App): CompilePresetNote[] {
  * Match is on the stable ID companion (rename-safe), not the wikilink.
  * Scenes with empty `dbench-project-id` (orphan scenes that haven't
  * been attached to a project yet) are excluded.
+ *
+ * For chapter-aware projects, scenes-in-chapters carry both
+ * `dbench-project-id` (pointing to the project) and `dbench-chapter-id`
+ * (pointing to their chapter) per
+ * [chapter-type.md § 3](../../docs/planning/chapter-type.md). This
+ * function returns the flat list of all scenes across all chapters in
+ * the project. Use `findChaptersInProject` + `findScenesInChapter` when
+ * the hierarchy matters.
  */
 export function findScenesInProject(app: App, projectId: DbenchId): SceneNote[] {
 	if (projectId === '') return [];
 	return findScenes(app).filter(
 		(scene) => scene.frontmatter['dbench-project-id'] === projectId
 	);
+}
+
+/**
+ * Find chapters whose `dbench-project-id` matches the given project ID.
+ *
+ * Match is on the stable ID companion (rename-safe), not the wikilink.
+ * Chapters with empty `dbench-project-id` (orphan chapters that haven't
+ * been attached to a project yet) are excluded.
+ */
+export function findChaptersInProject(app: App, projectId: DbenchId): ChapterNote[] {
+	if (projectId === '') return [];
+	return findChapters(app).filter(
+		(chapter) => chapter.frontmatter['dbench-project-id'] === projectId
+	);
+}
+
+/**
+ * Find scenes whose `dbench-chapter-id` matches the given chapter ID.
+ *
+ * Match is on the stable ID companion (rename-safe), not the wikilink.
+ * The field is optional on `SceneFrontmatter` (chapter-less scenes
+ * don't carry it), so we read defensively from the underlying Record.
+ */
+export function findScenesInChapter(app: App, chapterId: DbenchId): SceneNote[] {
+	if (chapterId === '') return [];
+	return findScenes(app).filter((scene) => {
+		const fm = scene.frontmatter as unknown as Record<string, unknown>;
+		return fm['dbench-chapter-id'] === chapterId;
+	});
 }
 
 /**
@@ -130,6 +188,23 @@ export function findDraftsOfScene(app: App, sceneId: DbenchId): DraftNote[] {
 	return findDrafts(app).filter(
 		(draft) => draft.frontmatter['dbench-scene-id'] === sceneId
 	);
+}
+
+/**
+ * Find chapter-level drafts whose `dbench-chapter-id` matches the given
+ * chapter ID. Symmetric partner of `findDraftsOfScene` — chapter drafts
+ * carry `dbench-chapter` + `dbench-chapter-id` instead of
+ * `dbench-scene` + `dbench-scene-id`. Per
+ * [chapter-type.md § 4](../../docs/planning/chapter-type.md),
+ * disambiguation is implicit: which parent ref is present tells the
+ * draft target type.
+ */
+export function findDraftsOfChapter(app: App, chapterId: DbenchId): DraftNote[] {
+	if (chapterId === '') return [];
+	return findDrafts(app).filter((draft) => {
+		const fm = draft.frontmatter as unknown as Record<string, unknown>;
+		return fm['dbench-chapter-id'] === chapterId;
+	});
 }
 
 /**

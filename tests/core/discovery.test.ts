@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App, TFile } from 'obsidian';
 import {
+	findChapters,
+	findChaptersInProject,
 	findDrafts,
+	findDraftsOfChapter,
 	findDraftsOfProject,
 	findDraftsOfScene,
 	findNoteById,
 	findProjects,
 	findScenes,
+	findScenesInChapter,
 	findScenesInProject,
 } from '../../src/core/discovery';
 
@@ -176,6 +180,154 @@ describe('findScenesInProject', () => {
 	});
 });
 
+describe('findChapters', () => {
+	let app: App;
+
+	beforeEach(() => {
+		app = new App();
+	});
+
+	it('returns empty array on empty vault', () => {
+		expect(findChapters(app)).toEqual([]);
+	});
+
+	it('returns chapter notes only', () => {
+		const chapterFile = seed(app, 'Chapter 1.md', {
+			'dbench-type': 'chapter',
+			'dbench-id': 'chap-001-aaa-001',
+		});
+		seed(app, 'Scene.md', {
+			'dbench-type': 'scene',
+			'dbench-id': 'scen-001-bbb-001',
+		});
+		seed(app, 'My Novel.md', {
+			'dbench-type': 'project',
+			'dbench-id': 'proj-001-ccc-001',
+		});
+
+		const result = findChapters(app);
+		expect(result).toHaveLength(1);
+		expect(result[0].file).toBe(chapterFile);
+	});
+
+	it('returns multiple chapters in iteration order', () => {
+		seed(app, 'Chapter 1.md', {
+			'dbench-type': 'chapter',
+			'dbench-id': 'chap-001-aaa-001',
+		});
+		seed(app, 'Chapter 2.md', {
+			'dbench-type': 'chapter',
+			'dbench-id': 'chap-002-aaa-002',
+		});
+		expect(findChapters(app)).toHaveLength(2);
+	});
+});
+
+describe('findChaptersInProject', () => {
+	let app: App;
+
+	beforeEach(() => {
+		app = new App();
+	});
+
+	it('returns only chapters whose dbench-project-id matches', () => {
+		seed(app, 'Chapter A1.md', {
+			'dbench-type': 'chapter',
+			'dbench-id': 'chap-001-aaa-001',
+			'dbench-project-id': 'proj-001-aaa-001',
+		});
+		seed(app, 'Chapter A2.md', {
+			'dbench-type': 'chapter',
+			'dbench-id': 'chap-002-aaa-002',
+			'dbench-project-id': 'proj-001-aaa-001',
+		});
+		seed(app, 'Chapter B1.md', {
+			'dbench-type': 'chapter',
+			'dbench-id': 'chap-003-bbb-003',
+			'dbench-project-id': 'proj-002-bbb-002',
+		});
+
+		const result = findChaptersInProject(app, 'proj-001-aaa-001');
+		expect(result).toHaveLength(2);
+		expect(result.map((c) => c.file.path).sort()).toEqual([
+			'Chapter A1.md',
+			'Chapter A2.md',
+		]);
+	});
+
+	it('excludes orphan chapters (empty dbench-project-id)', () => {
+		seed(app, 'Orphan Chapter.md', {
+			'dbench-type': 'chapter',
+			'dbench-id': 'chap-001-aaa-001',
+			'dbench-project-id': '',
+		});
+		expect(findChaptersInProject(app, 'proj-001-aaa-001')).toEqual([]);
+	});
+
+	it('returns empty array for empty project ID', () => {
+		seed(app, 'Chapter.md', {
+			'dbench-type': 'chapter',
+			'dbench-id': 'chap-001-aaa-001',
+			'dbench-project-id': '',
+		});
+		expect(findChaptersInProject(app, '')).toEqual([]);
+	});
+});
+
+describe('findScenesInChapter', () => {
+	let app: App;
+
+	beforeEach(() => {
+		app = new App();
+	});
+
+	it('returns only scenes whose dbench-chapter-id matches', () => {
+		seed(app, 'Scene A1.md', {
+			'dbench-type': 'scene',
+			'dbench-id': 'scen-001-aaa-001',
+			'dbench-project-id': 'proj-001-aaa-001',
+			'dbench-chapter-id': 'chap-001-aaa-001',
+		});
+		seed(app, 'Scene A2.md', {
+			'dbench-type': 'scene',
+			'dbench-id': 'scen-002-aaa-002',
+			'dbench-project-id': 'proj-001-aaa-001',
+			'dbench-chapter-id': 'chap-001-aaa-001',
+		});
+		seed(app, 'Scene B1.md', {
+			'dbench-type': 'scene',
+			'dbench-id': 'scen-003-bbb-003',
+			'dbench-project-id': 'proj-001-aaa-001',
+			'dbench-chapter-id': 'chap-002-bbb-002',
+		});
+
+		const result = findScenesInChapter(app, 'chap-001-aaa-001');
+		expect(result).toHaveLength(2);
+		expect(result.map((s) => s.file.path).sort()).toEqual([
+			'Scene A1.md',
+			'Scene A2.md',
+		]);
+	});
+
+	it('excludes chapter-less scenes (no dbench-chapter-id at all)', () => {
+		seed(app, 'Flat Scene.md', {
+			'dbench-type': 'scene',
+			'dbench-id': 'scen-001-aaa-001',
+			'dbench-project-id': 'proj-001-aaa-001',
+		});
+		expect(findScenesInChapter(app, 'chap-001-aaa-001')).toEqual([]);
+	});
+
+	it('returns empty array for empty chapter ID', () => {
+		seed(app, 'Scene.md', {
+			'dbench-type': 'scene',
+			'dbench-id': 'scen-001-aaa-001',
+			'dbench-chapter-id': '',
+		});
+		expect(findScenesInChapter(app, '')).toEqual([]);
+	});
+});
+
 describe('findDraftsOfScene', () => {
 	let app: App;
 
@@ -211,6 +363,60 @@ describe('findDraftsOfScene', () => {
 			'dbench-scene-id': '',
 		});
 		expect(findDraftsOfScene(app, 'scen-001-bbb-001')).toEqual([]);
+	});
+});
+
+describe('findDraftsOfChapter', () => {
+	let app: App;
+
+	beforeEach(() => {
+		app = new App();
+	});
+
+	it('returns only chapter drafts whose dbench-chapter-id matches', () => {
+		seed(app, 'Chapter 1 - Draft 1.md', {
+			'dbench-type': 'draft',
+			'dbench-id': 'draf-001-aaa-001',
+			'dbench-chapter-id': 'chap-001-aaa-001',
+			'dbench-draft-number': 1,
+		});
+		seed(app, 'Chapter 1 - Draft 2.md', {
+			'dbench-type': 'draft',
+			'dbench-id': 'draf-002-aaa-002',
+			'dbench-chapter-id': 'chap-001-aaa-001',
+			'dbench-draft-number': 2,
+		});
+		seed(app, 'Chapter 2 - Draft 1.md', {
+			'dbench-type': 'draft',
+			'dbench-id': 'draf-003-bbb-003',
+			'dbench-chapter-id': 'chap-002-bbb-002',
+			'dbench-draft-number': 1,
+		});
+
+		const result = findDraftsOfChapter(app, 'chap-001-aaa-001');
+		expect(result).toHaveLength(2);
+		expect(result.map((d) => d.file.path).sort()).toEqual([
+			'Chapter 1 - Draft 1.md',
+			'Chapter 1 - Draft 2.md',
+		]);
+	});
+
+	it('excludes scene drafts (drafts with dbench-scene-id, no dbench-chapter-id)', () => {
+		seed(app, 'Scene Draft.md', {
+			'dbench-type': 'draft',
+			'dbench-id': 'draf-001-aaa-001',
+			'dbench-scene-id': 'scen-001-aaa-001',
+		});
+		expect(findDraftsOfChapter(app, 'chap-001-aaa-001')).toEqual([]);
+	});
+
+	it('returns empty array for empty chapter ID', () => {
+		seed(app, 'Chapter Draft.md', {
+			'dbench-type': 'draft',
+			'dbench-id': 'draf-001-aaa-001',
+			'dbench-chapter-id': '',
+		});
+		expect(findDraftsOfChapter(app, '')).toEqual([]);
 	});
 });
 

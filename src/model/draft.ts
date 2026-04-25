@@ -5,12 +5,24 @@ import type { DbenchId } from './types';
  *
  * Stamped by `stampDraftEssentials` at "new draft" time (or retrofit).
  *
- * `dbench-scene` and `dbench-scene-id` are empty for drafts of
- * single-scene projects (the draft's `dbench-project` identifies the
- * parent in that case; there's no intermediate scene).
+ * Three target shapes exist (per [chapter-type.md § 4](../../docs/planning/chapter-type.md)):
+ *
+ * - **Scene draft** — snapshot of a single scene. `dbench-scene` +
+ *   `dbench-scene-id` point to the parent scene; `dbench-chapter` /
+ *   `dbench-chapter-id` are absent.
+ * - **Chapter draft** — snapshot of a chapter (chapter body +
+ *   concatenated scene bodies in `dbench-order`). `dbench-chapter` +
+ *   `dbench-chapter-id` point to the parent chapter;
+ *   `dbench-scene` / `dbench-scene-id` are absent.
+ * - **Single-scene-project draft** — drafts of single-scene projects.
+ *   `dbench-scene` and `dbench-scene-id` are empty; the draft's
+ *   `dbench-project` identifies the parent.
+ *
+ * Disambiguation is implicit: which parent ref is present tells the
+ * draft target type. No explicit `dbench-draft-target` field.
  *
  * `dbench-draft-number` is plugin-managed and inferred from existing
- * drafts of the same scene; writers do not number manually.
+ * drafts of the same parent; writers do not number manually.
  */
 export interface DraftFrontmatter {
 	'dbench-type': 'draft';
@@ -19,6 +31,12 @@ export interface DraftFrontmatter {
 	'dbench-scene': string;
 	'dbench-scene-id': DbenchId | '';
 	'dbench-draft-number': number;
+	/**
+	 * Optional chapter parent — present for chapter-level drafts only.
+	 * Absent for scene drafts and single-scene-project drafts.
+	 */
+	'dbench-chapter'?: string;
+	'dbench-chapter-id'?: DbenchId;
 }
 
 /**

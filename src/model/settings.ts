@@ -43,6 +43,14 @@ export interface DraftBenchSettings {
 	scenesFolder: string;
 
 	/**
+	 * Default folder template for new chapters, **relative to the project's
+	 * folder**. Supports the `{project}` token. Default (empty string)
+	 * places chapter notes alongside the project note; set to `'Chapters/'`
+	 * to nest them in a subfolder. Mirrors `scenesFolder`'s shape.
+	 */
+	chaptersFolder: string;
+
+	/**
 	 * Where the drafts folder lives. See `DraftsFolderPlacement`.
 	 */
 	draftsFolderPlacement: DraftsFolderPlacement;
@@ -137,6 +145,7 @@ export interface DraftBenchSettings {
 export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	projectsFolder: 'Draft Bench/{project}/',
 	scenesFolder: '',
+	chaptersFolder: '',
 	draftsFolderPlacement: 'project-local',
 	draftsFolderName: 'Drafts',
 	templatesFolder: 'Draft Bench/Templates/',

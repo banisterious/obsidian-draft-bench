@@ -16,6 +16,20 @@ export interface SceneFrontmatter {
 	'dbench-id': DbenchId;
 	'dbench-project': string;
 	'dbench-project-id': DbenchId | '';
+	/**
+	 * Optional chapter parent (chapter-aware projects only). Per
+	 * [chapter-type.md § 3](../../docs/planning/chapter-type.md),
+	 * scenes-in-chapters carry both project + chapter refs. Absent on
+	 * scenes in chapter-less projects.
+	 */
+	'dbench-chapter'?: string;
+	'dbench-chapter-id'?: DbenchId;
+	/**
+	 * Position within the immediate parent. For scenes-in-chapters this
+	 * is position within the chapter (each chapter resets to 1, 2, 3...);
+	 * for chapter-less scenes this is position within the project (today's
+	 * behavior unchanged).
+	 */
 	'dbench-order': number;
 	'dbench-status': DbenchStatus;
 	'dbench-drafts': string[];

@@ -1,8 +1,8 @@
 import { Notice, type App, type TFile } from 'obsidian';
 import type { DbenchId, DbenchStatus } from '../model/types';
 import type { DraftBenchSettings } from '../model/settings';
-import type { ProjectNote, SceneNote } from './discovery';
-import { findScenesInProject } from './discovery';
+import type { ChapterNote, ProjectNote, SceneNote } from './discovery';
+import { findScenesInChapter, findScenesInProject } from './discovery';
 import { stampSceneEssentials } from './essentials';
 import {
 	ensureSceneTemplateFile,
@@ -35,6 +35,20 @@ const FILENAME_FORBIDDEN_CHARS = /[\\/:*?"<>|]/;
 export interface CreateSceneOptions {
 	/** The project this scene belongs to. */
 	project: ProjectNote;
+
+	/**
+	 * Optional chapter parent. When set, the new scene's
+	 * `dbench-chapter` + `dbench-chapter-id` point to this chapter, the
+	 * chapter's `dbench-scenes` reverse array gets the new wikilink (not
+	 * the project's), and `dbench-order` defaults to position-within-
+	 * this-chapter. Per
+	 * [chapter-type.md § 9](../../docs/planning/chapter-type.md), the
+	 * project must already be chapter-aware (have at least one chapter
+	 * existing) — `createChapter` enforces this; `createScene`'s
+	 * companion check refuses to drop a scene directly into a project
+	 * that already has chapters when `chapter` is omitted.
+	 */
+	chapter?: ChapterNote;
 
 	/** Scene title (also the filename). */
 	title: string;
@@ -111,11 +125,22 @@ function parentPath(filePath: string): string {
 }
 
 /**
- * Compute the next sort order for a new scene in `projectId`.
- * Returns `max(existing dbench-order) + 1`, or 1 if none exist.
+ * Compute the next sort order for a new scene directly in `projectId`
+ * (chapter-less projects). Returns `max(existing dbench-order) + 1`,
+ * or 1 if none exist.
+ *
+ * Note: in chapter-aware projects, scene order is within-chapter
+ * (per [chapter-type.md § 3](../../docs/planning/chapter-type.md)).
+ * Use `nextSceneOrderInChapter` for that case.
  */
 export function nextSceneOrder(app: App, projectId: DbenchId): number {
-	const existing = findScenesInProject(app, projectId);
+	const existing = findScenesInProject(app, projectId).filter((s) => {
+		// Chapter-less scenes only — exclude scenes that have a chapter
+		// parent so chapter-aware projects don't pollute the count.
+		const fm = s.frontmatter as unknown as Record<string, unknown>;
+		const chapterId = fm['dbench-chapter-id'];
+		return chapterId === undefined || chapterId === '' || chapterId === null;
+	});
 	if (existing.length === 0) return 1;
 	const maxOrder = Math.max(
 		...existing.map((s) => s.frontmatter['dbench-order'])
@@ -124,14 +149,35 @@ export function nextSceneOrder(app: App, projectId: DbenchId): number {
 }
 
 /**
- * Create a new scene note in `options.project`.
+ * Compute the next sort order for a new scene inside `chapterId`.
+ * Returns `max(existing dbench-order in this chapter) + 1`, or 1 if
+ * none exist.
+ */
+export function nextSceneOrderInChapter(app: App, chapterId: DbenchId): number {
+	const existing = findScenesInChapter(app, chapterId);
+	if (existing.length === 0) return 1;
+	const maxOrder = Math.max(
+		...existing.map((s) => s.frontmatter['dbench-order'])
+	);
+	return maxOrder + 1;
+}
+
+/**
+ * Create a new scene note in `options.project` (chapter-less) or
+ * inside `options.chapter` (chapter-aware).
  *
  * Two-file write per spec § Relationship Integrity:
- *   1. Create the scene note with the V1 template body and stamped
- *      essentials. Forward references (`dbench-project`,
- *      `dbench-project-id`) point at `options.project`.
- *   2. Update the project's reverse arrays (`dbench-scenes`,
- *      `dbench-scene-ids`).
+ *   1. Refuse to create a direct project-child scene in a project that
+ *      already has chapters (no-mixed-children rule per
+ *      [chapter-type.md § 9](../../docs/planning/chapter-type.md)).
+ *   2. Create the scene note with the V1 template body and stamped
+ *      essentials. Forward references — when chapter-less:
+ *      `dbench-project` + `dbench-project-id` point at the project.
+ *      When in a chapter: those still point at the project, plus
+ *      `dbench-chapter` + `dbench-chapter-id` point at the chapter.
+ *   3. Update the parent's reverse arrays — chapter-less: project's
+ *      `dbench-scenes` / `dbench-scene-ids`. In a chapter: chapter's
+ *      `dbench-scenes` / `dbench-scene-ids` instead.
  *
  * Returns the created scene file. Callers should run inside
  * `linker.withSuspended(...)` so intermediate states don't trigger
@@ -142,6 +188,20 @@ export async function createScene(
 	settings: DraftBenchSettings,
 	options: CreateSceneOptions
 ): Promise<TFile> {
+	const projectId = options.project.frontmatter['dbench-id'];
+
+	// No-mixed-children check (chapter-type.md § 9): if no chapter parent
+	// is supplied AND the project has chapters, refuse.
+	if (options.chapter === undefined) {
+		const projectFm = options.project.frontmatter as unknown as Record<string, unknown>;
+		const existingChapterIds = readArray(projectFm['dbench-chapter-ids']);
+		if (existingChapterIds.length > 0) {
+			throw new Error(
+				`Project "${options.project.file.basename}" has chapters; new scenes must be created inside a chapter.`
+			);
+		}
+	}
+
 	const { folderPath, filePath } = resolveScenePaths(
 		settings,
 		options.project,
@@ -156,9 +216,19 @@ export async function createScene(
 		await app.vault.createFolder(folderPath);
 	}
 
-	const projectId = options.project.frontmatter['dbench-id'];
 	const projectWikilink = `[[${options.project.file.basename}]]`;
-	const order = options.order ?? nextSceneOrder(app, projectId);
+	const chapterId = options.chapter?.frontmatter['dbench-id'] ?? '';
+	const chapterWikilink = options.chapter
+		? `[[${options.chapter.file.basename}]]`
+		: '';
+
+	// Order semantic depends on parent: within-chapter for scene-in-chapter,
+	// within-project for chapter-less scenes (per § 3).
+	const order = options.order
+		?? (options.chapter
+			? nextSceneOrderInChapter(app, chapterId)
+			: nextSceneOrder(app, projectId));
+
 	const defaultStatus = settings.statusVocabulary[0];
 	const status = options.status ?? defaultStatus;
 
@@ -178,6 +248,10 @@ export async function createScene(
 		// leaves them alone.
 		frontmatter['dbench-project'] = projectWikilink;
 		frontmatter['dbench-project-id'] = projectId;
+		if (options.chapter) {
+			frontmatter['dbench-chapter'] = chapterWikilink;
+			frontmatter['dbench-chapter-id'] = chapterId;
+		}
 		frontmatter['dbench-order'] = order;
 		frontmatter['dbench-status'] = status;
 		stampSceneEssentials(frontmatter, {
@@ -191,7 +265,9 @@ export async function createScene(
 	);
 	const sceneWikilink = `[[${file.basename}]]`;
 
-	await app.fileManager.processFrontMatter(options.project.file, (frontmatter) => {
+	// Update reverse array on the *immediate* parent (chapter or project).
+	const parentFile = options.chapter?.file ?? options.project.file;
+	await app.fileManager.processFrontMatter(parentFile, (frontmatter) => {
 		const scenes = readArray(frontmatter['dbench-scenes']);
 		const sceneIds = readArray(frontmatter['dbench-scene-ids']);
 		if (!scenes.includes(sceneWikilink)) scenes.push(sceneWikilink);

@@ -20,8 +20,20 @@ export interface ProjectFrontmatter {
 	'dbench-project-id': DbenchId;
 	'dbench-project-shape': ProjectShape;
 	'dbench-status': DbenchStatus;
+	/**
+	 * Reverse arrays for direct child scenes. Populated for chapter-less
+	 * projects; empty for chapter-aware projects (per
+	 * [chapter-type.md § 9](../../docs/planning/chapter-type.md), a
+	 * project's children are either chapters or direct scenes, not both).
+	 */
 	'dbench-scenes': string[];
 	'dbench-scene-ids': DbenchId[];
+	/**
+	 * Reverse arrays for child chapters. Populated for chapter-aware
+	 * projects; empty for chapter-less projects. Maintained by the linker.
+	 */
+	'dbench-chapters': string[];
+	'dbench-chapter-ids': DbenchId[];
 	/**
 	 * Reverse arrays for compile presets attached to this project.
 	 * Maintained by the linker; seeded as empty arrays by

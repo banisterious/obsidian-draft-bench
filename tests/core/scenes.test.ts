@@ -3,10 +3,17 @@ import { App } from 'obsidian';
 import {
 	createScene,
 	nextSceneOrder,
+	nextSceneOrderInChapter,
 	resolveScenePaths,
 } from '../../src/core/scenes';
+import { createChapter } from '../../src/core/chapters';
 import { createProject } from '../../src/core/projects';
-import { findProjects, findScenesInProject } from '../../src/core/discovery';
+import {
+	findChaptersInProject,
+	findProjects,
+	findScenesInChapter,
+	findScenesInProject,
+} from '../../src/core/discovery';
 import { isValidDbenchId } from '../../src/core/id';
 import { DEFAULT_SETTINGS, type DraftBenchSettings } from '../../src/model/settings';
 
@@ -355,5 +362,140 @@ describe('createScene with Templater installed', () => {
 		const body = await app.vault.read(file);
 		const withoutFm = body.replace(/^---\n[\s\S]*?\n---\n/, '');
 		expect(withoutFm).toContain('## Draft');
+	});
+});
+
+describe('createScene with chapter parent', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+	});
+
+	async function seedProjectAndChapter(title: string, chapterTitle: string) {
+		const project = await seedProject(app, settings, title);
+		await createChapter(app, settings, { project, title: chapterTitle });
+		const chapters = findChaptersInProject(app, project.frontmatter['dbench-id']);
+		return {
+			project: findProjects(app).find(
+				(p) => p.frontmatter['dbench-id'] === project.frontmatter['dbench-id']
+			)!,
+			chapter: chapters[0],
+		};
+	}
+
+	it('stamps chapter refs alongside project refs', async () => {
+		const { project, chapter } = await seedProjectAndChapter('Novel', 'Chapter 1');
+
+		const file = await createScene(app, settings, {
+			project,
+			chapter,
+			title: 'Scene 1.1',
+		});
+
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		expect(fm?.['dbench-project']).toBe('[[Novel]]');
+		expect(fm?.['dbench-project-id']).toBe(project.frontmatter['dbench-id']);
+		expect(fm?.['dbench-chapter']).toBe('[[Chapter 1]]');
+		expect(fm?.['dbench-chapter-id']).toBe(chapter.frontmatter['dbench-id']);
+	});
+
+	it('updates the chapter reverse array (not the project)', async () => {
+		const { project, chapter } = await seedProjectAndChapter('Novel', 'Chapter 1');
+
+		await createScene(app, settings, { project, chapter, title: 'Scene 1.1' });
+
+		const chapterFm = app.metadataCache.getFileCache(chapter.file)?.frontmatter;
+		expect(chapterFm?.['dbench-scenes']).toContain('[[Scene 1.1]]');
+
+		const projectFm = app.metadataCache.getFileCache(project.file)?.frontmatter;
+		expect(projectFm?.['dbench-scenes']).toEqual([]);
+	});
+
+	it('uses within-chapter ordering (each chapter resets to 1)', async () => {
+		const { project, chapter } = await seedProjectAndChapter('Novel', 'Chapter 1');
+
+		const s1 = await createScene(app, settings, { project, chapter, title: 'A' });
+		const s2 = await createScene(app, settings, { project, chapter, title: 'B' });
+
+		expect(app.metadataCache.getFileCache(s1)?.frontmatter?.['dbench-order']).toBe(1);
+		expect(app.metadataCache.getFileCache(s2)?.frontmatter?.['dbench-order']).toBe(2);
+
+		// Second chapter resets the count.
+		const refreshedProject = findProjects(app).find(
+			(p) => p.frontmatter['dbench-id'] === project.frontmatter['dbench-id']
+		)!;
+		await createChapter(app, settings, { project: refreshedProject, title: 'Chapter 2' });
+		const ch2 = findChaptersInProject(app, project.frontmatter['dbench-id']).find(
+			(c) => c.file.basename === 'Chapter 2'
+		)!;
+		const s3 = await createScene(app, settings, {
+			project: refreshedProject,
+			chapter: ch2,
+			title: 'C',
+		});
+		expect(app.metadataCache.getFileCache(s3)?.frontmatter?.['dbench-order']).toBe(1);
+	});
+
+	it('refuses chapter-less createScene when project has chapters (no-mixed-children)', async () => {
+		const { project } = await seedProjectAndChapter('Novel', 'Chapter 1');
+
+		await expect(
+			createScene(app, settings, { project, title: 'Direct Scene' })
+		).rejects.toThrow(/has chapters/i);
+	});
+
+	it('findScenesInChapter returns scenes for that chapter only', async () => {
+		const { project, chapter: ch1 } = await seedProjectAndChapter('Novel', 'Chapter 1');
+		const refreshedProject = findProjects(app).find(
+			(p) => p.frontmatter['dbench-id'] === project.frontmatter['dbench-id']
+		)!;
+		await createChapter(app, settings, { project: refreshedProject, title: 'Chapter 2' });
+		const ch2 = findChaptersInProject(app, project.frontmatter['dbench-id']).find(
+			(c) => c.file.basename === 'Chapter 2'
+		)!;
+
+		await createScene(app, settings, { project: refreshedProject, chapter: ch1, title: 'A' });
+		await createScene(app, settings, { project: refreshedProject, chapter: ch1, title: 'B' });
+		await createScene(app, settings, { project: refreshedProject, chapter: ch2, title: 'C' });
+
+		expect(findScenesInChapter(app, ch1.frontmatter['dbench-id'])).toHaveLength(2);
+		expect(findScenesInChapter(app, ch2.frontmatter['dbench-id'])).toHaveLength(1);
+
+		// findScenesInProject returns the flat list across all chapters.
+		expect(findScenesInProject(app, project.frontmatter['dbench-id'])).toHaveLength(3);
+	});
+});
+
+describe('nextSceneOrderInChapter', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+	});
+
+	it('returns 1 when no scenes exist in the chapter', async () => {
+		const project = await seedProject(app, settings, 'Novel');
+		await createChapter(app, settings, { project, title: 'Chapter 1' });
+		const chapter = findChaptersInProject(app, project.frontmatter['dbench-id'])[0];
+		expect(nextSceneOrderInChapter(app, chapter.frontmatter['dbench-id'])).toBe(1);
+	});
+
+	it('returns max+1 over scenes in this chapter', async () => {
+		const project = await seedProject(app, settings, 'Novel');
+		await createChapter(app, settings, { project, title: 'Chapter 1' });
+		const refreshedProject = findProjects(app).find(
+			(p) => p.frontmatter['dbench-id'] === project.frontmatter['dbench-id']
+		)!;
+		const chapter = findChaptersInProject(app, project.frontmatter['dbench-id'])[0];
+
+		await createScene(app, settings, { project: refreshedProject, chapter, title: 'A' });
+		await createScene(app, settings, { project: refreshedProject, chapter, title: 'B' });
+
+		expect(nextSceneOrderInChapter(app, chapter.frontmatter['dbench-id'])).toBe(3);
 	});
 });

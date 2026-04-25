@@ -83,6 +83,8 @@ export function stampProjectEssentials(
 	setIfMissing(frontmatter, 'dbench-status', defaultStatusOf(context));
 	setIfMissing(frontmatter, 'dbench-scenes', []);
 	setIfMissing(frontmatter, 'dbench-scene-ids', []);
+	setIfMissing(frontmatter, 'dbench-chapters', []);
+	setIfMissing(frontmatter, 'dbench-chapter-ids', []);
 	setIfMissing(frontmatter, 'dbench-compile-presets', []);
 	setIfMissing(frontmatter, 'dbench-compile-preset-ids', []);
 }

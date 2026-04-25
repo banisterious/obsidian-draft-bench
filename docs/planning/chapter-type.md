@@ -248,7 +248,7 @@ Today, `dbench-compile-heading-scope` has values `draft` (only `## Draft` body) 
 |---|---|---|
 | `draft` (existing) | `# <scene title>` per scene; only body below `## Draft` | V1 short-fiction default |
 | `full` (existing) | `# <scene title>` per scene; whole scene body | Internal-review compiles |
-| `chapter` (NEW) | `# <chapter title>` per chapter; scene titles **omitted**; bodies concatenated below the chapter heading | Novel compile (recommended default for chapter-aware projects) |
+| `chapter` (NEW) | `# <chapter title>` per chapter; chapter body's `## Draft` (if any); then concatenated scene `## Draft` bodies; **scene titles omitted** | Novel compile (default for chapter-aware projects) |
 
 In `chapter` mode, scene boundaries within a chapter become invisible in the output (no scene title H1; just continuous prose with the chapter's section breaks marking transitions). This matches how published novels read: chapter heading, then prose; no scene-titles surfaced to the reader.
 
@@ -257,11 +257,29 @@ In `chapter` mode, scene boundaries within a chapter become invisible in the out
 - New compile presets created via `Create compile preset` modal: if the source project has chapters, default `heading-scope: chapter`; otherwise default `heading-scope: draft` (current default for chapter-less). The Compile tab exposes the override.
 - Existing presets: stay on whatever value they have. Chapter-less heading-scope rules continue to work.
 
-**Section-break interaction:** Within a chapter, scenes can still emit section breaks via `dbench-section-break-title` / `dbench-section-break-style` — those become inter-scene dinkuses or page breaks within the chapter, as today. Unchanged.
+**Section-break interaction:** Within a chapter, scenes can still emit section breaks via `dbench-section-break-title` / `dbench-section-break-style` — those become inter-scene dinkuses or page breaks within the chapter, as today. Chapter starts implicitly act as a hard section boundary; no need to set section-break decoration on the first scene of each chapter.
 
-**Compile walking:** `CompileService.generate` walks `project → chapters in dbench-order → scenes in dbench-order` (two-level). For chapter-less projects, walks `project → scenes in dbench-order` (one-level). The walker dispatches on project shape.
+**Compile walking:** `CompileService.generate` walks `project → chapters in dbench-order → scenes in dbench-order` (two-level) when chapters exist. For chapter-less projects, walks `project → scenes in dbench-order` (one-level). The walker dispatches on project shape.
 
-**Decision:** TBD.
+**Concrete chapter compile output:**
+
+```
+# <chapter title>
+
+<chapter body's ## Draft section, if non-empty — chapter-introductory prose>
+
+<scene 1's ## Draft body>
+
+<scene 2's ## Draft body>
+
+...
+```
+
+**Decision:** ✅ **Ratified 2026-04-25.** Three sub-decisions locked together:
+
+1. **New `chapter` heading-scope value** — emits `# <chapter title>` per chapter, optional chapter body intro, scene `## Draft` bodies concatenated, scene titles omitted. Adds to existing `draft` and `full` values; existing presets continue working with their existing values.
+2. **Default heading-scope at preset creation:** `chapter` for chapter-aware projects; `draft` for chapter-less (today's default). Auto-selected by `NewCompilePresetModal` based on source project shape; user can override.
+3. **Excludes list accepts chapter wikilinks.** Existing Compile tab's "Excludes" textarea (today: scene basenames or `[[wikilinks]]`) extends to also accept chapter wikilinks. Excluding a chapter excludes the chapter heading + chapter body + all child scenes from the output.
 
 ---
 
@@ -349,8 +367,10 @@ Realistic estimate: 4-6 weeks of focused work for code + tests (base chapter typ
 ## Open questions
 
 - **Chapter naming / numbering convention.** Default chapter title is `Chapter N` (numeric)? Or empty / writer-set? My instinct: writer sets a free title (e.g., "The Lighthouse" or "Chapter 1"); plugin doesn't impose. Default placeholder in `NewChapterModal` is `Chapter <next-order>` for the writer to override.
-- **Compile preset's "Excludes" interaction with chapters.** Today excludes are scene-name strings or `[[wikilinks]]`. With chapters, does excluding a chapter exclude all its scenes? Or only directly-named scenes?
-- **Default `heading-scope` for chapter-aware projects' compile presets.** § 7 recommends `chapter` as default for new presets when the source project has chapters. Confirm.
+<!-- Resolved 2026-04-25 in § 7 ratification:
+   - Excludes list accepts chapter wikilinks; excluding a chapter excludes its scenes too.
+   - Default heading-scope for new presets is `chapter` for chapter-aware projects, `draft` otherwise. -->
+
 - **`Move to chapter` action — single-scene or bulk?** Probably both: context-menu single-file moves; multi-select bulk moves.
 - **Chapter creation from Manuscript view toolbar.** Add a "New chapter" button to the toolbar (alongside "New scene" / "New draft" / "Reorder")? Or only in the chapter-card UI?
 
@@ -368,6 +388,6 @@ Realistic estimate: 4-6 weeks of focused work for code + tests (base chapter typ
 | 4. Drafts | ✅ Both — scene drafts + chapter drafts (B1 raw-bodies form, same Drafts/ folder, implicit disambiguation) | 2026-04-25 | Adds ~1-2 weeks; total chapter-type estimate now 5-7 weeks |
 | 5. Status + word-count rollups | ✅ Writer-set status; live-computed word sums (body + scenes); per-chapter target optional + project target explicit-only | 2026-04-25 | Status is intent not derivation; no chapter-level word-count persistence; targets are writer commitments |
 | 6. Manuscript view hierarchy | ✅ Collapsible chapter cards (title + status chip + word-count progress + synopsis subline) with nested scene rows; collapse state in settings (`chapterCollapseState`); chapter-less projects unchanged | 2026-04-25 | Card pattern reuses scene-row visual idioms; settings-persistence matches D-07 lesson |
-| 7. Compile heading-scope | TBD | | Recommendation: add `chapter` value; default for chapter-aware projects |
+| 7. Compile heading-scope | ✅ Add `chapter` value (chapter title H1, scene titles omitted, chapter body intro before scenes); auto-default at preset creation by project shape; Excludes list accepts chapter wikilinks | 2026-04-25 | Existing `draft`/`full` values + presets unchanged |
 | 8. Reordering | TBD | | Recommendation: parent-scoped reorder modal; cross-chapter via retrofit |
 | 9. Backward-compat / mixed-children | TBD | | Recommendation: dual shape supported; no mixed children |

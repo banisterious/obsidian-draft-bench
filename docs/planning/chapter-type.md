@@ -140,18 +140,36 @@ For scene-in-project (chapter-less, the V1-as-shipped case): `dbench-chapter` an
 
 **Question:** Can a writer take a "chapter draft" snapshot — a single file capturing the entire chapter at a point in time?
 
-**Options:**
+**Decision:** ✅ **Both — scene drafts (existing) plus new chapter-level drafts. Ratified 2026-04-25.**
 
-- **A. Scene-only drafts (recommended).** Drafts continue to attach only to scenes. No new chapter-level draft type.
-- **B. Add chapter-level drafts.** New use case: writer revises a whole chapter, snapshots it, then iterates.
+**Snapshot form (B1):** captures raw file content of the chapter body + each child scene's body, concatenated in `dbench-order` with scene boundaries marked (dinkus or comment marker between files). Includes planning sections (Source passages / Beat outline / Open questions) from every file. Same "preserve the state of the work" semantic as scene drafts — a chapter draft taken mid-revision preserves writer planning thoughts as well as prose. If the writer wants a polished frozen artifact, that's what compile-to-MD already does.
 
-**Recommendation: A.** Three reasons:
+**Frontmatter shape on a chapter draft:**
 
-1. **Use case is rare in practice.** Writers iterate at the scene level; cross-scene revisions are usually about editing several scenes' bodies, not snapshotting a chapter as one artifact.
-2. **Workaround is clean.** A writer who wants a chapter snapshot can compile the chapter (via a single-chapter compile preset) to MD/vault. The output is a markdown file at a stable path.
-3. **Adds complexity disproportionate to value.** Chapter drafts would need their own filename convention, snapshot mechanic (concat scenes? read-as-of-time?), and reverse-array on chapters. The V1 cost outweighs the demand.
+```yaml
+dbench-type: draft
+dbench-id: ...
+dbench-project: "[[<project>]]"
+dbench-project-id: ...
+dbench-chapter: "[[<chapter>]]"          # NEW: chapter draft target
+dbench-chapter-id: ...                   # NEW: chapter draft target
+dbench-draft-number: <integer>
+```
 
-**Decision:** TBD.
+Mirrors scene draft's shape with chapter refs instead of scene refs. **Disambiguation is implicit** — scene drafts have `dbench-scene` / `dbench-scene-id`; chapter drafts have `dbench-chapter` / `dbench-chapter-id`. No explicit `dbench-draft-target` field; the present parent ref tells the type. Matches how draft-of-single-scene-project already uses `dbench-project` as the snapshot target.
+
+**Filename + location:** `<Chapter> - Draft N (YYYYMMDD).md` in the same `Drafts/` folder as scene drafts. Drafts mingle by type in one folder; frontmatter tells them apart. Bases queries can split by parent ref if a chapter-only draft view is wanted.
+
+**Reverse arrays on chapter notes:** `dbench-drafts` + `dbench-draft-ids` parallel to scene's existing reverse arrays. Linker handles both scene↔draft and chapter↔draft via separate `RelationshipConfig` entries.
+
+**Command + UI surface:**
+
+- Palette: **Draft Bench: New draft of this chapter** (parallel to existing `New draft of this scene`).
+- Context menu on chapter notes: "New draft of this chapter."
+- Manuscript view chapter card: "New draft" button alongside scene-row actions.
+- Existing scene-draft commands unchanged.
+
+**Cost:** ~1-2 weeks of focused work on top of base chapter type, plus ~30-50 tests. Total chapter-type estimate adjusts from 4-6 weeks to **5-7 weeks**.
 
 ---
 
@@ -296,20 +314,21 @@ Once design is ratified, implementation in this order:
 7. **Manuscript view rework.** Hierarchical render with collapsible chapter cards. Section module split into `chapter-card-section.ts` + scene rows-within-chapter. Chapter-less projects keep today's flat render.
 8. **Compile pipeline.** `compile-service` walks two-level. New `chapter` heading-scope value in `compile-rules`. Default heading-scope updated for chapter-aware project preset creation.
 9. **Modals + commands.** `NewChapterModal`, `Draft Bench: Create chapter` palette command, `Reorder chapters in project` command, retrofit "Set as chapter" action, "Move to chapter" bulk action. Context menu entries on chapter notes (Reorder scenes in this chapter; Run compile scoped to chapter).
-10. **Bidirectional sync hooks.** All chapter-modifying operations run inside `linker.withSuspended(...)`.
-11. **Tests.** Each new module gets unit + integration coverage. Estimate: +200-300 tests over current 664.
-12. **Dev-vault validation.** Walkthrough scenarios for chapter creation, scene-to-chapter assignment, reordering, status rollup, compile output. Add to `dev-vault/00 Compile walkthrough.md`.
-13. **Spec rewrites.** Specification.md updates per § Note Types, § Project Structure on Disk, § Manuscript view, § Book Builder, § Bidirectional linking, § Development Phases (chapter moves to V1).
-14. **Wiki content.** New page or extended Manuscript-Builder.md / Projects-And-Scenes.md sections explaining the chapter shape. Getting-Started.md updates for novelist flow.
+10. **Chapter-level drafts** (per § 4). New [src/core/chapter-drafts.ts](../../src/core/chapter-drafts.ts) parallel to `src/core/drafts.ts`: `createChapterDraft`, `resolveChapterDraftPaths`, `nextChapterDraftNumber`, snapshot mechanic that concatenates chapter body + child scene bodies in `dbench-order`. Linker `RelationshipConfig` entry for chapter↔draft. Integrity scan extends to chapter-draft relationships. New palette command `Draft Bench: New draft of this chapter`, context-menu entry on chapter notes, Manuscript view chapter-card "New draft" button.
+11. **Bidirectional sync hooks.** All chapter-modifying operations run inside `linker.withSuspended(...)`.
+12. **Tests.** Each new module gets unit + integration coverage. Estimate: +230-350 tests over current 664 (chapter base ~200-300; chapter-draft module ~30-50).
+13. **Dev-vault validation.** Walkthrough scenarios for chapter creation, scene-to-chapter assignment, reordering, status rollup, compile output, chapter-draft snapshots. Add to `dev-vault/00 Compile walkthrough.md`.
+14. **Spec rewrites.** Specification.md updates per § Note Types, § Project Structure on Disk, § Manuscript view, § Book Builder, § Bidirectional linking, § Development Phases (chapter moves to V1).
+15. **Wiki content.** New page or extended Manuscript-Builder.md / Projects-And-Scenes.md / Drafts-And-Versioning.md sections explaining the chapter shape and chapter-draft snapshots. Getting-Started.md updates for novelist flow.
 
-Realistic estimate: 3-5 weeks of focused work for code + tests; 1 week for spec + wiki. Total ~4-6 weeks.
+Realistic estimate: 4-6 weeks of focused work for code + tests (base chapter type ~3-5 weeks; chapter-level drafts add ~1-2 weeks per § 4); 1 week for spec + wiki. **Total ~5-7 weeks.**
 
 ---
 
 ## Out of scope for V1 chapter type
 
 - **Auxiliary content** (character / location / research / faction / timeline-event). Per [Charted Roots boundary](../../). Writers maintain plain notes.
-- **Chapter-level drafts.** Scene-only drafts stay; see § 4.
+<!-- Removed: chapter-level drafts ratified into V1 per § 4 (2026-04-25). -->
 - **Chapter synopsis field.** Add when Bases gets a chapter-summary view; see § 2.
 - **Cross-chapter drag-reorder** in Manuscript view. Use retrofit "Move to chapter" for V1.
 - **Mixed-children projects** (chapter and direct scene under same project). Enforced no by V1; see § 9.
@@ -338,7 +357,7 @@ Realistic estimate: 3-5 weeks of focused work for code + tests; 1 week for spec 
 | 1. Chapter modeling | ✅ A (chapter-as-note) | 2026-04-25 | Chapter notes mirror scene template (planning + `## Draft`); chapter `## Draft` is chapter-introductory prose only, emits before scenes in compile, not interleaved |
 | 2. Frontmatter shape | ✅ Ratified | 2026-04-25 | Project/scene-mirror with reverse arrays; `dbench-synopsis` included for Manuscript view chapter-card consumption |
 | 3. Scene parent | ✅ Both project + chapter refs; order within-immediate-parent; type stays `scene` | 2026-04-25 | Matches draft schema precedent (drafts carry both project + scene refs); preserves O(1) project lookup |
-| 4. Drafts | TBD | | Recommendation: A (scene-only) |
+| 4. Drafts | ✅ Both — scene drafts + chapter drafts (B1 raw-bodies form, same Drafts/ folder, implicit disambiguation) | 2026-04-25 | Adds ~1-2 weeks; total chapter-type estimate now 5-7 weeks |
 | 5. Status + word-count rollups | TBD | | Recommendation: writer-set status; live-computed word sums |
 | 6. Manuscript view hierarchy | TBD | | Recommendation: collapsible cards; collapse-state in settings |
 | 7. Compile heading-scope | TBD | | Recommendation: add `chapter` value; default for chapter-aware projects |

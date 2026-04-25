@@ -304,7 +304,11 @@ The existing `Reorder scenes` command becomes context-aware: if the active file 
 - **V1: handled via retrofit** — "Set as scene of chapter X" or a bulk "Move to chapter" action. Reorder modal stays single-parent-scoped; cross-parent moves are a separate operation.
 - **Post-V1:** consider drag-across-chapters in the Manuscript view if writers ask for it.
 
-**Decision:** TBD.
+**Decision:** ✅ **Ratified 2026-04-25.** Three sub-decisions locked together:
+
+1. **Single Reorder modal parameterized by parent scope.** Reuse the existing reorder primitive; the modal accepts a parent (chapter or project) and reorders that parent's children. One implementation, two contexts.
+2. **Cross-chapter scene moves via retrofit / context menu.** "Move to chapter X" action (single-file via context menu; bulk via multi-select). Reorder modal stays single-parent-scoped. Drag-across-chapters in Manuscript view is post-V1, gated on writer demand.
+3. **Existing `Reorder scenes` command becomes context-aware** — auto-resolves scope from active file (within-chapter if scene-in-chapter, within-project if chapter-less). New explicit `Draft Bench: Reorder chapters in project` palette command for chapter-level reordering. Optional explicit `Draft Bench: Reorder scenes in chapter` command for unambiguous chapter-scoped scene reordering when active-file resolution is wrong.
 
 ---
 
@@ -389,5 +393,5 @@ Realistic estimate: 4-6 weeks of focused work for code + tests (base chapter typ
 | 5. Status + word-count rollups | ✅ Writer-set status; live-computed word sums (body + scenes); per-chapter target optional + project target explicit-only | 2026-04-25 | Status is intent not derivation; no chapter-level word-count persistence; targets are writer commitments |
 | 6. Manuscript view hierarchy | ✅ Collapsible chapter cards (title + status chip + word-count progress + synopsis subline) with nested scene rows; collapse state in settings (`chapterCollapseState`); chapter-less projects unchanged | 2026-04-25 | Card pattern reuses scene-row visual idioms; settings-persistence matches D-07 lesson |
 | 7. Compile heading-scope | ✅ Add `chapter` value (chapter title H1, scene titles omitted, chapter body intro before scenes); auto-default at preset creation by project shape; Excludes list accepts chapter wikilinks | 2026-04-25 | Existing `draft`/`full` values + presets unchanged |
-| 8. Reordering | TBD | | Recommendation: parent-scoped reorder modal; cross-chapter via retrofit |
+| 8. Reordering | ✅ Single reorder modal parameterized by parent scope; cross-chapter scene moves via retrofit/context-menu; existing `Reorder scenes` command becomes context-aware; new `Reorder chapters in project` palette command | 2026-04-25 | Drag-across-chapters in Manuscript view deferred post-V1 |
 | 9. Backward-compat / mixed-children | TBD | | Recommendation: dual shape supported; no mixed children |

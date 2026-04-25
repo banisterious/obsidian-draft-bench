@@ -6,7 +6,7 @@
    Do not edit directly. Edit the component files, then run:
      npm run build:css
 
-   Components: 10
+   Components: 11
 */
 
 
@@ -514,6 +514,109 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 
 
 /* End of manuscript-builder.css */
+
+/* --------------------------------------------------------------------------
+   WELCOME-MODAL.CSS  (96 lines, 2.26 KB)
+   -------------------------------------------------------------------------- */
+
+/*
+ * Onboarding welcome modal. Single-screen layout: brand mark + title +
+ * tagline at top, pitch paragraph, three vertically-stacked CTAs, text
+ * link to the wiki Getting Started page in the footer.
+ *
+ * Inherit-first per ui-reference § 0: native modal chrome carries the
+ * modal frame, close button, and backdrop. Custom CSS is limited to
+ * layout (centered column, button stack), brand-mark sizing, and
+ * spacing. No custom colors, fonts, or borders — those follow the
+ * theme.
+ */
+
+.dbench-welcome-modal {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--dbench-spacing-md);
+	padding: var(--dbench-spacing-md);
+	max-width: 440px;
+	margin: 0 auto;
+}
+
+.dbench-welcome-modal__header {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--dbench-spacing-xs);
+	text-align: center;
+}
+
+/*
+ * Brand-mark sizing. Larger here than the manuscript-leaf empty state
+ * (72px) since the welcome modal is a focal first-run experience.
+ * Accent-tinted via `currentcolor` stroke on the SVG plus
+ * `color: var(--text-accent)` here.
+ */
+.dbench-welcome-modal__brand-mark {
+	width: 96px;
+	height: 96px;
+	color: var(--text-accent);
+	opacity: 0.85;
+}
+
+.dbench-welcome-modal__title {
+	margin: 0;
+	font-size: var(--h2-size);
+	color: var(--text-normal);
+}
+
+.dbench-welcome-modal__tagline {
+	margin: 0;
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.dbench-welcome-modal__pitch {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-xs);
+	color: var(--text-normal);
+	line-height: 1.5;
+	text-align: center;
+}
+
+.dbench-welcome-modal__pitch p {
+	margin: 0;
+}
+
+.dbench-welcome-modal__actions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-xs);
+	width: 100%;
+	margin-top: var(--dbench-spacing-sm);
+}
+
+/*
+ * Vertical-stacked buttons take full available width so the three CTAs
+ * read as a clear primary list. The first carries `.mod-cta` for native
+ * primary-action styling; the other two are plain native buttons. No
+ * custom button colors — theme owns those.
+ */
+.dbench-welcome-modal__action {
+	width: 100%;
+	padding: var(--dbench-spacing-sm) var(--dbench-spacing-md);
+}
+
+.dbench-welcome-modal__footer {
+	margin-top: var(--dbench-spacing-sm);
+	text-align: center;
+}
+
+.dbench-welcome-modal__docs-link {
+	color: var(--text-accent);
+}
+
+
+/* End of welcome-modal.css */
 
 /* --------------------------------------------------------------------------
    REORDER-MODAL.CSS  (103 lines, 2.31 KB)
@@ -1402,13 +1505,14 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    BUILD SUMMARY
    ==========================================================================
 
-   Components: 8
-   Total:      1332 lines, 35.77 KB
+   Components: 9
+   Total:      1428 lines, 38.03 KB
    - variables.css: 87 lines, 2.99 KB
    - style-settings.css: 133 lines, 4.65 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
    - manuscript-builder.css: 137 lines, 3.35 KB
+   - welcome-modal.css: 96 lines, 2.26 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 640 lines, 16.68 KB
    - settings-tab.css: 119 lines, 2.66 KB

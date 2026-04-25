@@ -111,6 +111,15 @@ export interface DraftBenchSettings {
 	firstProjectRevealed: boolean;
 
 	/**
+	 * One-shot flag: whether the onboarding welcome modal has been
+	 * shown to the writer. Set to true the first time the modal is
+	 * dismissed (any close path — CTA click, X button, escape).
+	 * Subsequent plugin loads don't auto-open the modal; writers can
+	 * still resurface it via the `Show welcome screen` palette command.
+	 */
+	welcomeShown: boolean;
+
+	/**
 	 * The last-selected project's `dbench-id`, or `null` when no
 	 * project is selected. Persisted here (rather than in Obsidian's
 	 * workspace state) so reload reliably restores the writer's
@@ -137,5 +146,6 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	enableBidirectionalSync: true,
 	syncOnFileModify: true,
 	firstProjectRevealed: false,
+	welcomeShown: false,
 	lastSelectedProjectId: null,
 };

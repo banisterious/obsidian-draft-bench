@@ -12,6 +12,7 @@ import {
 	ManuscriptView,
 	VIEW_TYPE_MANUSCRIPT,
 } from './src/ui/manuscript-view/manuscript-view';
+import { WelcomeModal } from './src/ui/modals/welcome-modal';
 
 export default class DraftBenchPlugin extends Plugin {
 	settings!: DraftBenchSettings;
@@ -71,7 +72,25 @@ export default class DraftBenchPlugin extends Plugin {
 		// our `<style>` tag is definitely in the DOM.
 		this.app.workspace.onLayoutReady(() => {
 			this.nudgeStyleSettingsParse();
+			this.maybeShowWelcomeModal();
 		});
+	}
+
+	/**
+	 * On first plugin load (or after a settings reset), show the
+	 * onboarding welcome modal once. The modal flips
+	 * `settings.welcomeShown` on close, so subsequent loads skip this
+	 * path. Writers can resurface the modal via the
+	 * `Show welcome screen` palette command.
+	 *
+	 * Gated on `onLayoutReady` because: (a) the workspace must exist
+	 * before a Modal can open; (b) we don't want to compete with
+	 * Obsidian's startup activity for the writer's attention. By the
+	 * time onLayoutReady fires the chrome is settled.
+	 */
+	private maybeShowWelcomeModal(): void {
+		if (this.settings.welcomeShown) return;
+		new WelcomeModal(this).open();
 	}
 
 	/**

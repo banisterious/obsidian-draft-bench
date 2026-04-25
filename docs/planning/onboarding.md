@@ -132,7 +132,11 @@ T2 ships before T1 so the welcome modal CTA wires to a working command on first 
 
 - **Example-project name:** `Example - The Last Lighthouse` (locked above in § Tier 2 § Shape).
 - **Example-project content authorship:** drafted at implementation time. Tone target: literary-friendly, generic enough not to feel like it's prescribing genre, concrete enough to feel like real writing rather than lorem ipsum.
-- **Welcome modal pitch paragraph:** "Draft Bench manages projects, scenes, and versioned drafts as plain markdown notes with `dbench-*` frontmatter. Compile your manuscript to MD, ODT, or PDF when you're ready to share it."
+- **Welcome modal pitch:** two short paragraphs (one `<p>` each) so the obsidianmd lint rule's `enforceCamelCaseLower: true` doesn't flag the second sentence's leading "Compile" as title-case mid-string. "Markdown" canonical-cased per the brand list. `dbench-*` jargon dropped from the welcome screen — too technical for first-run; the writer sees the actual frontmatter when the example project opens.
+
+  > Draft Bench manages projects, scenes, and versioned drafts as plain Markdown notes.
+  >
+  > Compile your manuscript to MD, ODT, or PDF when you're ready to share it.
 
 ---
 

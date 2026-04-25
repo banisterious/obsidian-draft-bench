@@ -30,6 +30,7 @@ const CONFIG = {
 		'base.css',                // Utility classes, keyframes, reset-ish rules
 		'notes.css',               // .dbench-project / .dbench-scene / .dbench-draft leaf styling
 		'manuscript-builder.css',  // Manuscript Builder modal (compile preset editor)
+		'welcome-modal.css',       // Onboarding welcome modal (first-run)
 		'modals.css',              // Shared modal base styles
 		'reorder-modal.css',       // Scene reordering modal (keyboard-first)
 		'manuscript-view.css',     // Manuscript workspace-leaf view (dockable)

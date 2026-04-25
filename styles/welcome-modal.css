@@ -1,0 +1,95 @@
+/*
+ * Onboarding welcome modal. Single-screen layout: brand mark + title +
+ * tagline at top, pitch paragraph, three vertically-stacked CTAs, text
+ * link to the wiki Getting Started page in the footer.
+ *
+ * Inherit-first per ui-reference § 0: native modal chrome carries the
+ * modal frame, close button, and backdrop. Custom CSS is limited to
+ * layout (centered column, button stack), brand-mark sizing, and
+ * spacing. No custom colors, fonts, or borders — those follow the
+ * theme.
+ */
+
+.dbench-welcome-modal {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--dbench-spacing-md);
+	padding: var(--dbench-spacing-md);
+	max-width: 440px;
+	margin: 0 auto;
+}
+
+.dbench-welcome-modal__header {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--dbench-spacing-xs);
+	text-align: center;
+}
+
+/*
+ * Brand-mark sizing. Larger here than the manuscript-leaf empty state
+ * (72px) since the welcome modal is a focal first-run experience.
+ * Accent-tinted via `currentcolor` stroke on the SVG plus
+ * `color: var(--text-accent)` here.
+ */
+.dbench-welcome-modal__brand-mark {
+	width: 96px;
+	height: 96px;
+	color: var(--text-accent);
+	opacity: 0.85;
+}
+
+.dbench-welcome-modal__title {
+	margin: 0;
+	font-size: var(--h2-size);
+	color: var(--text-normal);
+}
+
+.dbench-welcome-modal__tagline {
+	margin: 0;
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.dbench-welcome-modal__pitch {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-xs);
+	color: var(--text-normal);
+	line-height: 1.5;
+	text-align: center;
+}
+
+.dbench-welcome-modal__pitch p {
+	margin: 0;
+}
+
+.dbench-welcome-modal__actions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-xs);
+	width: 100%;
+	margin-top: var(--dbench-spacing-sm);
+}
+
+/*
+ * Vertical-stacked buttons take full available width so the three CTAs
+ * read as a clear primary list. The first carries `.mod-cta` for native
+ * primary-action styling; the other two are plain native buttons. No
+ * custom button colors — theme owns those.
+ */
+.dbench-welcome-modal__action {
+	width: 100%;
+	padding: var(--dbench-spacing-sm) var(--dbench-spacing-md);
+}
+
+.dbench-welcome-modal__footer {
+	margin-top: var(--dbench-spacing-sm);
+	text-align: center;
+}
+
+.dbench-welcome-modal__docs-link {
+	color: var(--text-accent);
+}

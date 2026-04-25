@@ -128,7 +128,11 @@ For scene-in-project (chapter-less, the V1-as-shipped case): `dbench-chapter` an
 
 **`dbench-order` semantic** is **scene-within-its-immediate-parent**: within-chapter for chapter-children scenes, within-project for chapter-less scenes. The Manuscript view sorts by walking the hierarchy, not by a global flat sort.
 
-**Decision:** TBD.
+**Decision:** ✅ **Ratified 2026-04-25.** Three sub-decisions locked together:
+
+1. **Both project + chapter references** on scenes-in-chapters. Matches existing draft schema (drafts carry both `dbench-project` and `dbench-scene`); preserves O(1) project-membership lookup; redundancy is intentional.
+2. **`dbench-order` is within-immediate-parent.** Each chapter's scenes restart at 1, 2, 3…; chapter-less scenes continue today's within-project ordering. Manuscript view walks the hierarchy.
+3. **Scene-in-chapter retains `dbench-type: scene`.** Chapter membership is a frontmatter relationship, not a different scene subtype. No `dbench-type: chapter-scene` proliferation.
 
 ---
 
@@ -333,7 +337,7 @@ Realistic estimate: 3-5 weeks of focused work for code + tests; 1 week for spec 
 |---|---|---|---|
 | 1. Chapter modeling | ✅ A (chapter-as-note) | 2026-04-25 | Chapter notes mirror scene template (planning + `## Draft`); chapter `## Draft` is chapter-introductory prose only, emits before scenes in compile, not interleaved |
 | 2. Frontmatter shape | ✅ Ratified | 2026-04-25 | Project/scene-mirror with reverse arrays; `dbench-synopsis` included for Manuscript view chapter-card consumption |
-| 3. Scene parent | TBD | | Recommendation: A (project always referenced; chapter as secondary) |
+| 3. Scene parent | ✅ Both project + chapter refs; order within-immediate-parent; type stays `scene` | 2026-04-25 | Matches draft schema precedent (drafts carry both project + scene refs); preserves O(1) project lookup |
 | 4. Drafts | TBD | | Recommendation: A (scene-only) |
 | 5. Status + word-count rollups | TBD | | Recommendation: writer-set status; live-computed word sums |
 | 6. Manuscript view hierarchy | TBD | | Recommendation: collapsible cards; collapse-state in settings |

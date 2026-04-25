@@ -13,11 +13,11 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
 1. **[Getting Started](Getting-Started)**: install the plugin and create your first project.
 2. **[Projects and Scenes](Projects-And-Scenes)**: the core data model.
 3. **[Drafts and Versioning](Drafts-And-Versioning)**: how Draft Bench handles draft history.
-4. **[Control Center](Control-Center)**: the tabbed hub for everything.
+4. **[Manuscript Builder](Manuscript-Builder)**: the compile modal (and the dockable Manuscript view it pairs with).
 
 ## Documentation
 
-- **Getting started**: [Getting Started](Getting-Started) · [Control Center](Control-Center)
+- **Getting started**: [Getting Started](Getting-Started) · [Manuscript Builder](Manuscript-Builder)
 - **Core workflow**: [Projects and Scenes](Projects-And-Scenes) · [Drafts and Versioning](Drafts-And-Versioning) · [Templates](Templates)
 - **Reference**: [Essential Properties](Essential-Properties) · [Settings and Configuration](Settings-And-Configuration) · [Context Menu Actions](Context-Menu-Actions)
 - **Help**: [FAQ](FAQ) · [Release History](Release-History)

@@ -54,13 +54,13 @@ The plugin creates the project folder (or single note) and stamps the frontmatte
 
 ### 2. Add a scene (folder projects)
 
-From the Control Center's **Manuscript** tab, click **New scene**. Enter a title, position in order, and initial status. The plugin creates a scene note with the default [scene template](Templates) applied — planning sections above a blank draft area.
+In the **Manuscript view** (right sidebar), click **New scene** in the toolbar. Or run **Draft Bench: New scene** from the command palette. Enter a title, position in order, and initial status. The plugin creates a scene note with the default [scene template](Templates) applied — planning sections above a blank draft area.
 
 Write your first draft in the body of the scene note.
 
 ### 3. Take a draft snapshot
 
-When you want to capture the current state of a scene before revising, run **New draft of this scene** from the command palette, the Manuscript tab toolbar, or the scene's right-click menu. Draft Bench:
+When you want to capture the current state of a scene before revising, run **New draft of this scene** from the command palette, the Manuscript view's toolbar, or the scene's right-click menu. Draft Bench:
 
 1. Snapshots the scene's current body into `Drafts/<Scene> - Draft N (YYYYMMDD).md` with `dbench-type: draft` frontmatter.
 2. Carries the prose forward in the scene note so you can keep revising.
@@ -68,15 +68,22 @@ When you want to capture the current state of a scene before revising, run **New
 
 Prior drafts remain real markdown files, openable in split panes for side-by-side comparison. See [Drafts and Versioning](Drafts-And-Versioning) for the full model.
 
-### 4. Work in the Control Center
+### 4. Work in the Manuscript view
 
-The [Control Center](Control-Center) is Draft Bench's main hub, with tabs for:
+The **Manuscript view** is Draft Bench's daily-writing surface — a dockable pane that opens in the right sidebar by default. It shows:
 
-- **Project**: overview, metadata, word count.
-- **Manuscript**: ordered list of scenes with status and prior-draft count; click-through to any scene.
-- **Templates**: scene template management.
-- **Compile**: manuscript export (Phase 3+).
-- **Settings**: configuration.
+- The active project with a project picker for switching between them.
+- An ordered scene list (sorted by `dbench-order`) with status chips and per-scene word counts.
+- A status breakdown for the project (idea / draft / revision / final by default).
+- A toolbar with **New scene**, **New draft**, **Reorder scenes**, and a primary **Compile** button.
+
+Open it via the ribbon icon, the **Draft Bench: Show manuscript view** palette command, or by right-clicking a project note.
+
+### 5. Compile your manuscript
+
+When you're ready to share your work, click **Compile** in the Manuscript view toolbar (or run **Draft Bench: Build manuscript** from the palette) to open the [Manuscript Builder](Manuscript-Builder) — a focused modal for editing compile presets and running the compile. Output formats: Markdown (vault or disk), ODT, and PDF.
+
+Plugin configuration (folders, drafts placement, status vocabulary, scene template, Bases folder, bidirectional sync) lives in **Settings -> Community plugins -> Draft Bench**, not in a tab.
 
 ## Retrofitting Existing Notes
 
@@ -84,7 +91,7 @@ If you have short stories, drafts, or project notes already in Obsidian, you don
 
 - **Set as project / scene / draft**: type a note for the first time; stamps all essentials.
 - **Complete essential properties**: fill in missing fields on a partially-typed note.
-- **Add dbench-id**: just the stable identifier.
+- **Add identifier**: just the stable `dbench-id`.
 
 All actions are idempotent — safe to run any number of times without clobbering existing data. See [Context Menu Actions](Context-Menu-Actions).
 
@@ -93,5 +100,5 @@ All actions are idempotent — safe to run any number of times without clobberin
 - [Projects and Scenes](Projects-And-Scenes): the data model in depth.
 - [Drafts and Versioning](Drafts-And-Versioning): how Draft Bench handles draft history.
 - [Essential Properties](Essential-Properties): `dbench-*` frontmatter cheat sheet.
-- [Control Center](Control-Center): the tabbed hub.
+- [Manuscript Builder](Manuscript-Builder): the compile modal and dockable Manuscript view.
 - [FAQ](FAQ): common questions.

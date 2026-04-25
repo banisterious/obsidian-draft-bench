@@ -26,13 +26,13 @@ See [Getting Started § Your First Project](Getting-Started).
 
 Story order comes from the `dbench-order` property on each scene. Reordering happens in a dedicated modal, opened from:
 
-- The Manuscript tab toolbar.
+- The Manuscript view's toolbar.
 - The scene's right-click context menu.
 - The command palette: **Draft Bench: Reorder scenes**.
 
 File and folder names are **never** renamed on reorder — only `dbench-order` changes. This keeps wikilinks, git history, and sync relationships intact.
 
-**Important:** file-explorer alphabetical sort will not match story order. The Manuscript tab is the canonical ordered view.
+**Important:** file-explorer alphabetical sort will not match story order. The Manuscript view (the dockable pane in the right sidebar) is the canonical ordered view.
 
 ## Folder flexibility
 

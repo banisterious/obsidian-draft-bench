@@ -24,9 +24,9 @@ For notes that don't yet have a `dbench-type` property, **Set as...** stamps the
 
 For notes that already have `dbench-type` but are missing other essentials (e.g., `dbench-id`, `dbench-status`), **Complete essential properties** fills in only the missing fields. It never overwrites existing values.
 
-### Add dbench-id
+### Add identifier
 
-Standalone action — adds only the stable identifier. Useful for notes that have type information but predate the ID system, or when you want just the ID without other essentials.
+Standalone action — adds only the stable `dbench-id`. Useful for notes that have type information but predate the ID system, or when you want just the ID without other essentials.
 
 ## Scopes
 

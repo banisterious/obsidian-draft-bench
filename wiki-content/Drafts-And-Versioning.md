@@ -22,7 +22,7 @@ Full-manuscript parallel versions are planned as a separate feature under **Revi
 Use **New draft of this scene** via:
 
 - The command palette.
-- The Manuscript tab toolbar.
+- The Manuscript view's toolbar.
 - The scene's right-click context menu.
 
 When invoked, the plugin:

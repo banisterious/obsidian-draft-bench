@@ -4,7 +4,7 @@
 
 ### Getting Started
 - [Getting Started](Getting-Started)
-- [Control Center](Control-Center)
+- [Manuscript Builder](Manuscript-Builder)
 
 ### Core Workflow
 - [Projects and Scenes](Projects-And-Scenes)

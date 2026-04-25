@@ -15,11 +15,11 @@ Draft Bench and Longform share core ideas — scene-based writing, project struc
 
 ## Does it work on mobile?
 
-V1 is desktop-only. Mobile support is under post-V1 evaluation — the primary UX (Control Center, reorder modal, Style Settings integration) was designed for a desktop form factor.
+V1 is desktop-only. Mobile support is under post-V1 evaluation — the primary UX (Manuscript view, Manuscript Builder, reorder modal, Style Settings integration) was designed for a desktop form factor.
 
 ## Can I use existing notes?
 
-Yes. Right-click any note (or folder, or multi-selection) and use one of the [retrofit actions](Context-Menu-Actions): **Set as project / scene / draft**, **Complete essential properties**, or **Add dbench-id**. All are idempotent and never overwrite existing data.
+Yes. Right-click any note (or folder, or multi-selection) and use one of the [retrofit actions](Context-Menu-Actions): **Set as project / scene / draft**, **Complete essential properties**, or **Add identifier**. All are idempotent and never overwrite existing data.
 
 ## Where does my draft history live?
 
@@ -43,7 +43,7 @@ No. Draft Bench is deliberately not an AI writing assistant and does not call la
 
 ## Why doesn't file-explorer order match story order?
 
-Story order is determined by the `dbench-order` frontmatter property, not by filename. This lets you reorder scenes cheaply (no file or folder renames, no wikilink cascade) and organize files by any other criterion (status, POV, date) without breaking manuscript order. The **Manuscript tab** in the Control Center is the canonical ordered view.
+Story order is determined by the `dbench-order` frontmatter property, not by filename. This lets you reorder scenes cheaply (no file or folder renames, no wikilink cascade) and organize files by any other criterion (status, POV, date) without breaking manuscript order. The **Manuscript view** (the dockable pane in the right sidebar) is the canonical ordered view.
 
 ## Can I use Draft Bench alongside other Obsidian plugins?
 

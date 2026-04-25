@@ -71,7 +71,7 @@ Each section below presents a design decision: the question, options considered,
 
 **Question:** What fields does a chapter note carry?
 
-**Recommendation:** Mirror the project / scene shape with chapter-specific additions. Locked subset:
+**Decision:** ✅ **Ratified 2026-04-25.** Chapter frontmatter:
 
 ```yaml
 dbench-type: chapter
@@ -81,6 +81,7 @@ dbench-project-id: <project's dbench-id>
 dbench-order: <integer; chapter position within project>
 dbench-status: <from settings.statusVocabulary; default = first entry>
 dbench-target-words: <optional; integer>
+dbench-synopsis: <optional; string; single-line chapter summary>
 # Reverse arrays — plugin-maintained
 dbench-scenes: ["[[Scene A]]", "[[Scene B]]"]
 dbench-scene-ids: ["abc-...", "def-..."]
@@ -90,13 +91,12 @@ Rationale per field:
 
 - **`dbench-project` + `dbench-project-id`** — direct parent reference; matches scene's parent-reference pattern.
 - **`dbench-order`** — chapter position within the project; integer; sole source of truth for chapter ordering.
-- **`dbench-status`** — chapters have their own status (see § 5 for status rollup discussion).
+- **`dbench-status`** — chapters have their own writer-set status (see § 5 for status rollup discussion).
 - **`dbench-target-words`** — optional; lets novelists set per-chapter word targets and see progress in the Manuscript view's chapter-level rollup.
+- **`dbench-synopsis`** — optional one-line chapter summary. Surfaces in the Manuscript view's chapter-card as a hover-tooltip or always-visible subline. Round-trips through the Properties panel; queryable in Bases for chapter-summary views without retrofitting frontmatter later.
 - **`dbench-scenes` / `dbench-scene-ids`** — reverse arrays of scenes belonging to this chapter; plugin-maintained.
 
-**Open question:** Does a chapter need a synopsis field (`dbench-synopsis`)? Useful for index-card display in a future Bases view; optional in V1. **Recommendation: defer** — add when Bases gets a chapter-summary view. Until then, the chapter note's body opening paragraph serves the same purpose.
-
-**Decision:** TBD.
+**Synopsis ratified for V1 (not deferred)** — the Manuscript view's chapter-card UI is a near-term consumer (one-line summary under chapter title), so the field earns its weight at V1 rather than waiting for a future Bases view to motivate it. Empty by default; writers fill in only when useful.
 
 ---
 
@@ -332,7 +332,7 @@ Realistic estimate: 3-5 weeks of focused work for code + tests; 1 week for spec 
 | Section | Decision | Date | Notes |
 |---|---|---|---|
 | 1. Chapter modeling | ✅ A (chapter-as-note) | 2026-04-25 | Chapter notes mirror scene template (planning + `## Draft`); chapter `## Draft` is chapter-introductory prose only, emits before scenes in compile, not interleaved |
-| 2. Frontmatter shape | TBD | | Recommendation: project/scene-mirror with reverse arrays |
+| 2. Frontmatter shape | ✅ Ratified | 2026-04-25 | Project/scene-mirror with reverse arrays; `dbench-synopsis` included for Manuscript view chapter-card consumption |
 | 3. Scene parent | TBD | | Recommendation: A (project always referenced; chapter as secondary) |
 | 4. Drafts | TBD | | Recommendation: A (scene-only) |
 | 5. Status + word-count rollups | TBD | | Recommendation: writer-set status; live-computed word sums |

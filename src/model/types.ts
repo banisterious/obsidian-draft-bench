@@ -7,10 +7,13 @@
 
 /**
  * The discriminator value of `dbench-type`. V1 vocabulary:
- * `project`, `scene`, `draft`, `compile-preset`. Post-V1 will add
- * `chapter` and others.
+ * `project`, `chapter`, `scene`, `draft`, `compile-preset`.
+ *
+ * `chapter` was promoted from Phase 5+ into V1 on 2026-04-25 per the
+ * novelist-audience pivot. See [chapter-type.md](../../docs/planning/chapter-type.md)
+ * for the full design rationale.
  */
-export type DbenchType = 'project' | 'scene' | 'draft' | 'compile-preset';
+export type DbenchType = 'project' | 'chapter' | 'scene' | 'draft' | 'compile-preset';
 
 /**
  * A Draft Bench stable identifier (format `abc-123-def-456`).

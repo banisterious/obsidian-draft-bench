@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	stampChapterEssentials,
 	stampCompilePresetEssentials,
 	stampDbenchId,
 	stampDraftEssentials,
@@ -105,6 +106,88 @@ describe('stampProjectEssentials', () => {
 		const fm: Record<string, unknown> = { 'dbench-project': '' };
 		stampProjectEssentials(fm, ctx('Project'));
 		expect(fm['dbench-project']).toBe('');
+	});
+});
+
+describe('stampChapterEssentials', () => {
+	it('stamps all ten chapter keys onto an empty frontmatter', () => {
+		const fm: Record<string, unknown> = {};
+		stampChapterEssentials(fm, ctx('Chapter 1'));
+
+		expect(fm['dbench-type']).toBe('chapter');
+		expect(isValidDbenchId(fm['dbench-id'])).toBe(true);
+		expect(fm['dbench-project']).toBe('');
+		expect(fm['dbench-project-id']).toBe('');
+		expect(fm['dbench-order']).toBe(9999);
+		expect(fm['dbench-status']).toBe('idea');
+		expect(fm['dbench-scenes']).toEqual([]);
+		expect(fm['dbench-scene-ids']).toEqual([]);
+		expect(fm['dbench-drafts']).toEqual([]);
+		expect(fm['dbench-draft-ids']).toEqual([]);
+	});
+
+	it('does not stamp optional target-words or synopsis', () => {
+		const fm: Record<string, unknown> = {};
+		stampChapterEssentials(fm, ctx('Chapter 1'));
+		expect(fm['dbench-target-words']).toBeUndefined();
+		expect(fm['dbench-synopsis']).toBeUndefined();
+	});
+
+	it('is idempotent', () => {
+		const fm: Record<string, unknown> = {};
+		stampChapterEssentials(fm, ctx('Chapter'));
+		const snapshot = { ...fm };
+		stampChapterEssentials(fm, ctx('Chapter'));
+		expect(fm).toEqual(snapshot);
+	});
+
+	it('preserves dbench-order: 0 (must not be replaced with default 9999)', () => {
+		const fm: Record<string, unknown> = { 'dbench-order': 0 };
+		stampChapterEssentials(fm, ctx('Chapter'));
+		expect(fm['dbench-order']).toBe(0);
+	});
+
+	it('preserves an existing project assignment', () => {
+		const fm: Record<string, unknown> = {
+			'dbench-project': '[[The Salt Road]]',
+			'dbench-project-id': 'abc-123-def-456',
+		};
+		stampChapterEssentials(fm, ctx('Chapter'));
+		expect(fm['dbench-project']).toBe('[[The Salt Road]]');
+		expect(fm['dbench-project-id']).toBe('abc-123-def-456');
+	});
+
+	it('preserves writer-set target-words and synopsis', () => {
+		const fm: Record<string, unknown> = {
+			'dbench-target-words': 3000,
+			'dbench-synopsis': 'Mara reaches the lighthouse.',
+		};
+		stampChapterEssentials(fm, ctx('Chapter'));
+		expect(fm['dbench-target-words']).toBe(3000);
+		expect(fm['dbench-synopsis']).toBe('Mara reaches the lighthouse.');
+	});
+
+	it('preserves existing reverse arrays', () => {
+		const fm: Record<string, unknown> = {
+			'dbench-scenes': ['[[Existing Scene]]'],
+			'dbench-scene-ids': ['ppp-000-qqq-111'],
+		};
+		stampChapterEssentials(fm, ctx('Chapter'));
+		expect(fm['dbench-scenes']).toEqual(['[[Existing Scene]]']);
+		expect(fm['dbench-scene-ids']).toEqual(['ppp-000-qqq-111']);
+	});
+
+	it('preserves non-dbench properties', () => {
+		const fm: Record<string, unknown> = { tags: ['novel-chapter'], pov: 'Mara' };
+		stampChapterEssentials(fm, ctx('Chapter'));
+		expect(fm['tags']).toEqual(['novel-chapter']);
+		expect(fm['pov']).toBe('Mara');
+	});
+
+	it('uses context.defaultStatus when provided', () => {
+		const fm: Record<string, unknown> = {};
+		stampChapterEssentials(fm, { basename: 'Chapter', defaultStatus: 'in-progress' });
+		expect(fm['dbench-status']).toBe('in-progress');
 	});
 });
 

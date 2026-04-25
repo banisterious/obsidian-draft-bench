@@ -42,6 +42,7 @@ export interface EssentialsContext {
 
 const DEFAULT_PROJECT_SHAPE = 'folder';
 const DEFAULT_SCENE_ORDER = 9999;
+const DEFAULT_CHAPTER_ORDER = 9999;
 const DEFAULT_DRAFT_NUMBER = 1;
 
 /**
@@ -84,6 +85,39 @@ export function stampProjectEssentials(
 	setIfMissing(frontmatter, 'dbench-scene-ids', []);
 	setIfMissing(frontmatter, 'dbench-compile-presets', []);
 	setIfMissing(frontmatter, 'dbench-compile-preset-ids', []);
+}
+
+/**
+ * Stamp chapter essentials onto `frontmatter`.
+ *
+ * Adds (when absent): `dbench-type`, `dbench-id`, `dbench-project`
+ * (empty placeholder until the writer assigns a project),
+ * `dbench-project-id` (empty placeholder), `dbench-order` (high
+ * default so the chapter sorts at the end of its project's chapter
+ * list), `dbench-status`, and the empty `dbench-scenes` /
+ * `dbench-scene-ids` / `dbench-drafts` / `dbench-draft-ids` reverse
+ * arrays.
+ *
+ * Optional `dbench-target-words` and `dbench-synopsis` are NOT
+ * stamped; writers set them via the Properties panel when desired.
+ *
+ * `context.defaultStatus` seeds `dbench-status` when absent; callers
+ * should pass `settings.statusVocabulary[0]`. Idempotent.
+ */
+export function stampChapterEssentials(
+	frontmatter: Record<string, unknown>,
+	context: EssentialsContext
+): void {
+	setIfMissing(frontmatter, 'dbench-type', 'chapter');
+	setIfMissing(frontmatter, 'dbench-id', generateDbenchId());
+	setIfMissing(frontmatter, 'dbench-project', '');
+	setIfMissing(frontmatter, 'dbench-project-id', '');
+	setIfMissing(frontmatter, 'dbench-order', DEFAULT_CHAPTER_ORDER);
+	setIfMissing(frontmatter, 'dbench-status', defaultStatusOf(context));
+	setIfMissing(frontmatter, 'dbench-scenes', []);
+	setIfMissing(frontmatter, 'dbench-scene-ids', []);
+	setIfMissing(frontmatter, 'dbench-drafts', []);
+	setIfMissing(frontmatter, 'dbench-draft-ids', []);
 }
 
 /**

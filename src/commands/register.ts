@@ -4,6 +4,7 @@ import type { DraftBenchLinker } from '../core/linker';
 import { registerBuildManuscriptCommand } from './build-manuscript';
 import { registerCompileCurrentProjectCommand } from './compile-current-project';
 import { registerCreateCompilePresetCommand } from './create-compile-preset';
+import { registerCreateExampleProjectCommand } from './create-example-project';
 import { registerCreateProjectCommand } from './create-project';
 import { registerDuplicateCompilePresetCommand } from './duplicate-compile-preset';
 import { registerInstallBasesCommand } from './install-bases';
@@ -39,6 +40,7 @@ export function registerCommands(
 	registerBuildManuscriptCommand(plugin, () => plugin, linker);
 	registerCompileCurrentProjectCommand(plugin);
 	registerCreateProjectCommand(plugin, getSettings, () => plugin);
+	registerCreateExampleProjectCommand(plugin, linker);
 	registerCreateCompilePresetCommand(plugin, linker);
 	registerDuplicateCompilePresetCommand(plugin, linker);
 	registerInstallBasesCommand(plugin);

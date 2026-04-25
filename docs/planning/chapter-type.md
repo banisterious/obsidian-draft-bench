@@ -57,7 +57,13 @@ Each section below presents a design decision: the question, options considered,
 
 **Counter-consideration:** Option C is genuinely lighter. If we later regret the file-count cost, virtual grouping is a fallback. But the file-count cost is small (1 chapter note per 5 scene notes is a rounding error against typical novelist vault sizes), and the body-utility argument makes Option A worth its modest weight from day one.
 
-**Decision:** TBD — ratify before moving on.
+**Decision:** ✅ **A (chapter-as-note), ratified 2026-04-25.**
+
+**Implications locked alongside ratification:**
+
+- Chapter notes follow the same planning-sections-plus-`## Draft` template shape as scenes (Source passages / Beat outline / Open questions / Draft). Settings gain a `chapterTemplatePath` parallel to `sceneTemplatePath`; Templater pass-through applies.
+- The chapter's `## Draft` section is **chapter-introductory prose only** — it emits before the chapter's scenes in compile, not interleaved between them. Mid-chapter bridges between scenes continue to live in scenes or use `dbench-section-break-title` decorations on scenes, as today.
+- Most chapters will have an empty `## Draft` section — the body's value is the planning sections (Source passages / Beat outline / Open questions) plus *optional* chapter-introductory prose (epigraphs, opening framing, time-of-year setting). Empty `## Draft` emits nothing in compile.
 
 ---
 
@@ -325,7 +331,7 @@ Realistic estimate: 3-5 weeks of focused work for code + tests; 1 week for spec 
 
 | Section | Decision | Date | Notes |
 |---|---|---|---|
-| 1. Chapter modeling | TBD | | Recommendation: A (chapter-as-note) |
+| 1. Chapter modeling | ✅ A (chapter-as-note) | 2026-04-25 | Chapter notes mirror scene template (planning + `## Draft`); chapter `## Draft` is chapter-introductory prose only, emits before scenes in compile, not interleaved |
 | 2. Frontmatter shape | TBD | | Recommendation: project/scene-mirror with reverse arrays |
 | 3. Scene parent | TBD | | Recommendation: A (project always referenced; chapter as secondary) |
 | 4. Drafts | TBD | | Recommendation: A (scene-only) |

@@ -327,7 +327,12 @@ A writer can:
 - Convert flat to hierarchical via a "Group scenes into chapter" retrofit action (post-V1 candidate; V1 acceptable answer is "create a chapter, then move scenes via Set-as-scene-of-chapter").
 - Have a project with mixed children — some scenes directly under project, some under chapters? **Recommendation: NO.** A project's children are either chapters or scenes, not both. This keeps the Manuscript view's render logic and the compile walker simple. If a writer wants a mid-novel "interlude" outside chapters, they create a single-scene chapter for it.
 
-**Decision:** TBD on the "no-mixed-children" rule. The recommendation is to enforce this; if pushed back on, the alternative is a "loose chapters" mode where the project's `dbench-scenes` reverse array can include both scene and chapter ids.
+**Decision:** ✅ **Ratified 2026-04-25.** Two sub-decisions:
+
+1. **Backward-compat: chapter-less projects coexist forever.** Already locked at the meta level; confirmed explicitly. Existing flat `project → scenes` projects continue to work; the Manuscript view, compile pipeline, integrity service, retrofit actions, and Bases all support both shapes. A writer can stay flat indefinitely.
+2. **Mixed-children rule: NO.** A project's children are either chapters or direct scenes, not both. Prologue / Interlude / Epilogue patterns use single-scene chapters (a chapter named "Prologue" containing one scene). Hidden constraint that drove this: chapter heading-scope (§ 7) emits chapter titles as H1 — mixed children would break the "N chapters = N H1s" guarantee with no clean answer for a direct scene's heading level. Single-scene chapters resolve the heading question naturally and match how published novels typically render in TOCs.
+
+Integrity service catches mixed-children states as a `PROJECT_MIXED_CHILDREN` issue (auto-repair: prompt the writer to convert direct scenes to single-scene chapters or move them under existing chapters; manual-only repair, not silent).
 
 ---
 
@@ -339,7 +344,7 @@ Once design is ratified, implementation in this order:
 2. **Discovery.** [src/core/discovery.ts](../../src/core/discovery.ts) extended with `ChapterNote`, `findChapters`, `findChaptersInProject`, `findScenesInChapter`. Existing `findScenesInProject` updated to walk through chapters.
 3. **Core operations.** New [src/core/chapters.ts](../../src/core/chapters.ts) with `createChapter`, `resolveChapterPaths`, `nextChapterOrder`. `createScene` extended to optionally accept a `chapter` parent.
 4. **Linker.** [src/core/linker.ts](../../src/core/linker.ts) gains `RelationshipConfig` entries for project↔chapter and chapter↔scene. Existing project↔scene relationship still works for chapter-less projects.
-5. **Integrity.** [src/core/integrity.ts](../../src/core/integrity.ts) extends `scanProject` with chapter relationship passes. New issue kinds: `CHAPTER_MISSING_IN_PROJECT`, `STALE_CHAPTER_IN_PROJECT`, `SCENE_MISSING_IN_CHAPTER`, `STALE_SCENE_IN_CHAPTER`, `PROJECT_CHAPTER_CONFLICT`, `CHAPTER_SCENE_CONFLICT`.
+5. **Integrity.** [src/core/integrity.ts](../../src/core/integrity.ts) extends `scanProject` with chapter relationship passes. New issue kinds: `CHAPTER_MISSING_IN_PROJECT`, `STALE_CHAPTER_IN_PROJECT`, `SCENE_MISSING_IN_CHAPTER`, `STALE_SCENE_IN_CHAPTER`, `PROJECT_CHAPTER_CONFLICT`, `CHAPTER_SCENE_CONFLICT`, `PROJECT_MIXED_CHILDREN` (manual-only repair per § 9).
 6. **Settings.** Add `chapterCollapseState: Record<DbenchId, boolean>` to `DraftBenchSettings`.
 7. **Manuscript view rework.** Hierarchical render with collapsible chapter cards. Section module split into `chapter-card-section.ts` + scene rows-within-chapter. Chapter-less projects keep today's flat render.
 8. **Compile pipeline.** `compile-service` walks two-level. New `chapter` heading-scope value in `compile-rules`. Default heading-scope updated for chapter-aware project preset creation.
@@ -394,4 +399,4 @@ Realistic estimate: 4-6 weeks of focused work for code + tests (base chapter typ
 | 6. Manuscript view hierarchy | ✅ Collapsible chapter cards (title + status chip + word-count progress + synopsis subline) with nested scene rows; collapse state in settings (`chapterCollapseState`); chapter-less projects unchanged | 2026-04-25 | Card pattern reuses scene-row visual idioms; settings-persistence matches D-07 lesson |
 | 7. Compile heading-scope | ✅ Add `chapter` value (chapter title H1, scene titles omitted, chapter body intro before scenes); auto-default at preset creation by project shape; Excludes list accepts chapter wikilinks | 2026-04-25 | Existing `draft`/`full` values + presets unchanged |
 | 8. Reordering | ✅ Single reorder modal parameterized by parent scope; cross-chapter scene moves via retrofit/context-menu; existing `Reorder scenes` command becomes context-aware; new `Reorder chapters in project` palette command | 2026-04-25 | Drag-across-chapters in Manuscript view deferred post-V1 |
-| 9. Backward-compat / mixed-children | TBD | | Recommendation: dual shape supported; no mixed children |
+| 9. Backward-compat / mixed-children | ✅ Dual shape (flat + hierarchical) supported forever; no mixed children (project's top-level kids are all chapters OR all direct scenes); prologue/interlude/epilogue use single-scene chapters; integrity catches mixed states with manual-only repair | 2026-04-25 | Compile heading-scope rule (§ 7) drove the no-mixed-children call |

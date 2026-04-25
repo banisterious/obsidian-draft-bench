@@ -194,10 +194,14 @@ Mirrors scene draft's shape with chapter refs instead of scene refs. **Disambigu
 
 **Targets:**
 
-- Chapter `dbench-target-words` is optional. When set, the Manuscript view shows a per-chapter progress bar. Project-level target remains the project's `dbench-target-words`.
+- Chapter `dbench-target-words` is optional. When set, the Manuscript view shows a per-chapter progress bar (chapter card displays `1,847 / 3,000 words (62%)` style). Project-level target remains the project's `dbench-target-words`.
 - Project target = explicit only, not sum-of-chapter-targets. The target is a writer commitment, not a derivation.
 
-**Decision:** TBD.
+**Decision:** ✅ **Ratified 2026-04-25.** Three sub-decisions locked together:
+
+1. **Status: A** — chapter has its own writer-set `dbench-status` from `settings.statusVocabulary`. Status is intent, not a sum; derived status fights writer intent.
+2. **Word-count rollup: A** — chapter total = chapter body's `## Draft` word count + sum of child scenes' `## Draft` word counts. Computed live by `WordCountCache`; no `dbench-word-count` field; no staleness risk.
+3. **Targets:** per-chapter `dbench-target-words` optional; project-level target stays explicit-only (no derivation either way). Both are writer commitments, not derivations.
 
 ---
 
@@ -358,7 +362,7 @@ Realistic estimate: 4-6 weeks of focused work for code + tests (base chapter typ
 | 2. Frontmatter shape | ✅ Ratified | 2026-04-25 | Project/scene-mirror with reverse arrays; `dbench-synopsis` included for Manuscript view chapter-card consumption |
 | 3. Scene parent | ✅ Both project + chapter refs; order within-immediate-parent; type stays `scene` | 2026-04-25 | Matches draft schema precedent (drafts carry both project + scene refs); preserves O(1) project lookup |
 | 4. Drafts | ✅ Both — scene drafts + chapter drafts (B1 raw-bodies form, same Drafts/ folder, implicit disambiguation) | 2026-04-25 | Adds ~1-2 weeks; total chapter-type estimate now 5-7 weeks |
-| 5. Status + word-count rollups | TBD | | Recommendation: writer-set status; live-computed word sums |
+| 5. Status + word-count rollups | ✅ Writer-set status; live-computed word sums (body + scenes); per-chapter target optional + project target explicit-only | 2026-04-25 | Status is intent not derivation; no chapter-level word-count persistence; targets are writer commitments |
 | 6. Manuscript view hierarchy | TBD | | Recommendation: collapsible cards; collapse-state in settings |
 | 7. Compile heading-scope | TBD | | Recommendation: add `chapter` value; default for chapter-aware projects |
 | 8. Reordering | TBD | | Recommendation: parent-scoped reorder modal; cross-chapter via retrofit |

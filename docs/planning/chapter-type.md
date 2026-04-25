@@ -228,7 +228,11 @@ The current leaf shows: project meta row, status breakdown, ordered scene list w
 
 **Chapter-less projects:** Manuscript view falls back to today's flat scene list — no card hierarchy when there are no chapters. The two display modes coexist; the view adapts to the project's actual shape.
 
-**Decision:** TBD.
+**Decision:** ✅ **Ratified 2026-04-25.** Three sub-decisions locked together:
+
+1. **Render shape: A** — collapsible chapter cards with nested scene rows. Each card surfaces chapter title + status chip + word-count progress (against `dbench-target-words` if set) + `dbench-synopsis` subline + collapse toggle.
+2. **Collapse state persistence: plugin settings (`data.json`)** keyed by chapter id via new `chapterCollapseState: Record<DbenchId, boolean>` field. Default = expanded. Persistence survives reload. Matches the D-07 lesson (commit `fa1701e`) of preferring `saveSettings` over `requestSaveLayout` for state that must survive reload.
+3. **Chapter-less projects: unchanged** — today's flat scene list with no chapter scaffolding. View adapts to project's actual shape; no "chapters might exist someday" empty-state cruft.
 
 ---
 
@@ -363,7 +367,7 @@ Realistic estimate: 4-6 weeks of focused work for code + tests (base chapter typ
 | 3. Scene parent | ✅ Both project + chapter refs; order within-immediate-parent; type stays `scene` | 2026-04-25 | Matches draft schema precedent (drafts carry both project + scene refs); preserves O(1) project lookup |
 | 4. Drafts | ✅ Both — scene drafts + chapter drafts (B1 raw-bodies form, same Drafts/ folder, implicit disambiguation) | 2026-04-25 | Adds ~1-2 weeks; total chapter-type estimate now 5-7 weeks |
 | 5. Status + word-count rollups | ✅ Writer-set status; live-computed word sums (body + scenes); per-chapter target optional + project target explicit-only | 2026-04-25 | Status is intent not derivation; no chapter-level word-count persistence; targets are writer commitments |
-| 6. Manuscript view hierarchy | TBD | | Recommendation: collapsible cards; collapse-state in settings |
+| 6. Manuscript view hierarchy | ✅ Collapsible chapter cards (title + status chip + word-count progress + synopsis subline) with nested scene rows; collapse state in settings (`chapterCollapseState`); chapter-less projects unchanged | 2026-04-25 | Card pattern reuses scene-row visual idioms; settings-persistence matches D-07 lesson |
 | 7. Compile heading-scope | TBD | | Recommendation: add `chapter` value; default for chapter-aware projects |
 | 8. Reordering | TBD | | Recommendation: parent-scoped reorder modal; cross-chapter via retrofit |
 | 9. Backward-compat / mixed-children | TBD | | Recommendation: dual shape supported; no mixed children |

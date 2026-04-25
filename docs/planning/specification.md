@@ -33,9 +33,9 @@ Non-goals are not a prioritization exercise — they are features that do not be
 
 **Modals generate YAML; users don't edit it by hand.** Every note-creating action flows through a modal that builds the correct frontmatter. Context menus provide "Add to Project as…" actions for existing notes. The property schema is an implementation detail the user can inspect but never needs to touch.
 
-**Progressive disclosure.** A beginner gets a "Create Project" button that produces a working project with zero configuration. A power user gets a Control Center with full access to templates, compile presets, property schemas, and project settings. The simple path and the advanced path coexist without either cluttering the other.
+**Progressive disclosure.** A beginner gets a "Create Project" button that produces a working project with zero configuration. A power user gets dedicated surfaces (Manuscript view, Manuscript Builder) with full access to scenes, drafts, compile presets, and project metadata. The simple path and the advanced path coexist without either cluttering the other.
 
-**Control Center as primary UI.** A tabbed, non-transient modal (following the pattern established in Oneirometrics, Sonigraph, and Charted Roots) serves as the plugin's main hub. Context menus, ribbon icons, and command palette actions provide parallel access to common operations.
+**Dedicated surfaces over a single hub.** Draft Bench's primary UI is a dockable Manuscript view (ambient writing companion) plus a focused Manuscript Builder modal (compile workflow). A multi-tab Control Center hub is parked for a later design pass when the plugin has enough cross-cutting content to justify it. Context menus, ribbon icons, and command palette actions provide parallel access to common operations.
 
 **Type-extensible architecture.** Note types (project, scene, draft — plus future chapter, beat, character, location, etc.) are entries in a registry the plugin consults at runtime. Adding a new type later is a settings-level change plus a template — not a refactor.
 
@@ -53,7 +53,7 @@ Every note managed by Draft Bench carries a set of frontmatter properties that i
 | `dbench-project-id` | string | all plugin-managed notes | Stable-ID companion to `dbench-project`. Maintained by the linker. |
 | `dbench-order` | number | orderable types (scene, and later chapter) | Sort position within the note's ordering scope. |
 | `dbench-status` | string (optional) | project, scene, and later chapter | Workflow status (e.g., `idea`, `draft`, `revision`, `final`). |
-| `dbench-target-words` | positive integer (optional) | project, scene | Authoring target used by the Control Center progress bars. Writer-set via the Properties panel or template frontmatter; not stamped at creation. |
+| `dbench-target-words` | positive integer (optional) | project, scene | Authoring target used by the Manuscript view's progress bars. Writer-set via the Properties panel or template frontmatter; not stamped at creation. |
 | `dbench-<target-type>` | wikilink (optional) | notes that reference a typed parent | Typed forward relationship pointer (e.g., `dbench-scene` on a draft). See § Typed Relationships. |
 | `dbench-<target-type>-id` | string (optional) | same as above | Stable-ID companion to the typed forward pointer. |
 
@@ -105,7 +105,7 @@ Outlining and synopses are not separate types. Structural planning lives in the 
 
 Before describing the project shapes, a foundational principle: **Draft Bench identifies plugin-managed notes by frontmatter, not by filesystem location.** The `dbench-type` property identifies a note's role; `dbench-project` (wikilink + `dbench-project-id` companion, per § Relationship Integrity) identifies which project a note belongs to. These frontmatter properties are authoritative — a note with `dbench-type: scene` and `dbench-project: [[The Salt Road]]` is part of that project regardless of where in the vault it lives.
 
-Services that read from the vault (Control Center tabs, the linker, compile, repair) scan `app.vault.getMarkdownFiles()` and filter by frontmatter. Nothing in the read path checks folder paths.
+Services that read from the vault (the Manuscript view, the Manuscript Builder, the linker, compile, repair) scan `app.vault.getMarkdownFiles()` and filter by frontmatter. Nothing in the read path checks folder paths.
 
 **What this means for writers:** organize the vault however you prefer. Put scenes in status-named folders, group by POV, mix Draft Bench notes with unrelated vault content — the plugin is folder-agnostic. The project-shape conventions described below are *creation defaults* (where new notes land by default), not enforced structures (moving a note later never breaks membership).
 
@@ -265,7 +265,7 @@ dbench-draft-ids: [zma-361-vxq-907, ...]
 ---
 ```
 
-Reverse arrays give the Control Center cheap population (read one property, not a vault scan) and a canonical redundant record of what belongs to a parent, enabling repair when forward references break.
+Reverse arrays give the Manuscript view cheap population (read one property, not a vault scan) and a canonical redundant record of what belongs to a parent, enabling repair when forward references break.
 
 #### V1 relationships under the linker
 
@@ -300,7 +300,7 @@ This is acceptable because: (1) the scene or draft is never silently lost — th
 
 #### Batch repair service
 
-A `DraftBenchIntegrityService` owns the "Repair project links" command (available from the command palette, Control Center Settings tab, and project context menu). It performs a full scan-and-reconcile pass on a project:
+A `DraftBenchIntegrityService` owns the "Repair project links" command (available from the command palette and project context menu). It performs a full scan-and-reconcile pass on a project:
 
 - Finds scenes whose `dbench-project` wikilink doesn't resolve but whose `dbench-project-id` is valid -> rebuilds the wikilink.
 - Finds orphan scenes (inside the project folder by filesystem, but missing or wrong `dbench-project`) -> prompts the user to re-assign.
@@ -333,17 +333,18 @@ After a suspended operation completes, the plugin runs a targeted re-sync on the
 
 This section describes what the UI surfaces do. For **how** to build them — component patterns, CSS conventions, modal structures, accessibility guarantees, empty/loading states — see the companion [UI/UX Reference](ui-reference.md), which captures the patterns adapted from Charted Roots.
 
-### Manuscript view and Control Center
+### Manuscript view and Manuscript Builder
 
-Draft Bench's UI has two primary surfaces, split per [D-07](decisions/D-07-control-center-split.md) to match the shape of what each surface hosts:
+Draft Bench's UI has two primary surfaces, split per [D-07](decisions/D-07-control-center-split.md) to match the shape of what each surface hosts. (The split was originally Manuscript view + Control Center; the Control Center concept was deferred for V1 — see [control-center-reference.md](control-center-reference.md) — and replaced by a focused Manuscript Builder modal that owns the compile workflow.)
 
 **Manuscript view (dockable workspace leaf).** The ambient writing companion. Lives in the right sidebar by default; can be dragged to the left sidebar, the main pane, or detached to a popout window. Hosts:
 
 - **Project picker** at the top — dropdown of all discoverable projects. Selection persists across reloads.
-- **Toolbar** with four buttons: **New scene**, **New draft of current scene**, **Reorder scenes**, **Compile** (Phase 3+). Buttons invoke the existing commands / dedicated modals; the leaf stays open.
+- **Compile CTA** above the toolbar (primary action, opens the Manuscript Builder for the active project's preset workflow).
+- **Toolbar** with three buttons: **New scene**, **New draft of current scene**, **Reorder scenes**. Buttons invoke the existing commands / dedicated modals; the leaf stays open.
 - **Project summary** section (collapsible): status, shape, identifier, total word count, hero progress bar when `dbench-target-words` is set on the project, per-status word/scene breakdown.
-- **Manuscript list** section (collapsible): ordered scene list with click-through, status pill, word-count or per-scene progress bar (when `dbench-target-words` is set), draft count.
-- **Empty states**: welcome + "Create your first project" CTA when no projects exist in the vault; compact prompt when projects exist but none is selected.
+- **Manuscript list** section (collapsible): ordered scene list with click-through, status chip, word-count or per-scene progress bar (when `dbench-target-words` is set), draft count.
+- **Empty states**: brand-mark + "Your manuscript begins here" CTA when no projects exist; compact prompt when projects exist but none is selected.
 
 Invoked via:
 
@@ -352,22 +353,23 @@ Invoked via:
 - Project-note context menu entry `Show manuscript view` (selects that project, reveals the leaf).
 - Auto-reveals on first project creation (one-shot behavior; writers who close the leaf afterward stay closed).
 
-**Control Center (action-shaped modal).** Short-lived flows that benefit from modal focus. Tabs:
+**Manuscript Builder (compile-preset modal).** Single-purpose modal hosting the compile-preset editor + Run CTA. Five collapsible form sections (Metadata, Inclusion, Output, Content handling, Last compile) operate on the active project's selected preset; a header dropdown switches presets and a "+ New preset" button opens the create modal. No tab navigation — the modal does one thing.
 
-- **Templates**: Manage the built-in scene template and, in later phases, user-defined templates. Stub in V1; full UI in Phase 3.
-- **Compile**: Book Builder interface (see Compile section). Stub until Phase 3 ships.
+Invoked via:
 
-Invoked via the palette command `Draft Bench: Open control center`. The modal doesn't duplicate Manuscript view content — Project overview and scene-list navigation belong on the ambient surface, not in a short-lived dialog.
+- Header gear button on the Manuscript leaf.
+- Palette command `Draft Bench: Build manuscript`.
+- Project-note context menu entry `Build manuscript`.
 
-**Cross-surface state.** Both surfaces share a single plugin-level `selectedProjectId` so selecting a project in one is reflected in the other. The Manuscript view additionally persists its selection via Obsidian's workspace-layout state API so reloads restore the previous project.
+**Cross-surface state.** Both surfaces share a single plugin-level `selectedProjectId` so selecting a project in one is reflected in the other. The Manuscript view additionally persists its selection via plugin settings so reloads restore the previous project.
 
-**Settings.** Plugin configuration lives in Obsidian's native Settings panel (Options -> Community plugins -> Draft Bench), not in either surface. A future Dashboard could include a launcher tile that jumps to the native settings tab via `app.setting.open()` + `openTabById('draft-bench')`; no settings UI is duplicated.
+**Settings.** Plugin configuration lives in Obsidian's native Settings panel (Options -> Community plugins -> Draft Bench), not in either surface. A future Dashboard / Control Center could include a launcher tile that jumps to the native settings tab via `app.setting.open()` + `openTabById('draft-bench')`; no settings UI is duplicated.
 
 For further reading:
 
-- [D-07](decisions/D-07-control-center-split.md) — the split decision record with locked and still-open questions.
+- [D-07](decisions/D-07-control-center-split.md) — the original split decision (Manuscript view + Control Center). Subsequent decision to replace the Control Center with the Manuscript Builder is captured in [control-center-reference.md § Draft Bench's current direction](control-center-reference.md#draft-benchs-current-direction).
 - [dockable-view-reference.md](dockable-view-reference.md) — Obsidian `ItemView` patterns that inform the Manuscript leaf's implementation.
-- [control-center-reference.md](control-center-reference.md) — Charted Roots architectural reference for a later Control Center / Dashboard design pass.
+- [control-center-reference.md](control-center-reference.md) — Charted Roots architectural reference, parked for a later Control Center / Dashboard design pass when DB has enough cross-cutting content to justify a hub.
 
 ### Scene reordering
 
@@ -379,7 +381,7 @@ Scene reordering happens in a dedicated modal, not inline in the Manuscript tab.
 - Row affordances: a drag handle on the left edge for mouse users; keyboard users focus a row and use arrow keys (or J/K) to move it. Drag-and-drop and keyboard each cover the full reorder surface.
 - Preview of the new sequence before commit.
 - Commit writes `dbench-order` on each affected scene via `FileManager.processFrontMatter`. No file or folder renames.
-- Triggered from: Control Center's Manuscript tab, the scene context menu, or the command palette.
+- Triggered from: the Manuscript view's toolbar, the scene context menu, or the command palette.
 
 ### Context menu actions
 
@@ -461,8 +463,8 @@ All commands are registered with the `Draft Bench:` prefix (matching Obsidian's 
 
 All context menu actions are also available as commands, plus:
 
-- `Draft Bench: Open Control Center`
-- `Draft Bench: Open current project's Control Center`
+- `Draft Bench: Build manuscript`
+- `Draft Bench: Show manuscript view`
 - `Draft Bench: Create project`
 - `Draft Bench: New scene in project`
 - `Draft Bench: New draft of this scene`
@@ -492,7 +494,7 @@ Draft Bench uses Obsidian's `Notice` API for all user-visible feedback. Conventi
 
 Draft Bench's UI surface is designed to be keyboard-operable end to end. Three guarantees:
 
-**Every plugin action is a named command.** Every action accessible via ribbon icon, context menu, or Control Center button is also registered as a Draft Bench command. Obsidian's Hotkeys settings then lets users bind any shortcut they want — the plugin does not ship default hotkeys (bundling defaults risks conflicting with user-set hotkeys and other plugins).
+**Every plugin action is a named command.** Every action accessible via ribbon icon, context menu, or Manuscript Builder button is also registered as a Draft Bench command. Obsidian's Hotkeys settings then lets users bind any shortcut they want — the plugin does not ship default hotkeys (bundling defaults risks conflicting with user-set hotkeys and other plugins).
 
 **Modals support keyboard-only operation.** Tab order reflects visual order, Escape closes, Enter commits the primary action. List-heavy modals (Reorder scenes, and future multi-select modals) support arrow-key navigation, with standard shortcuts where they exist (J/K for up/down in the reorder modal, matching convention used elsewhere in Obsidian).
 
@@ -649,7 +651,7 @@ Three surfaces mirror the three operations writers perform:
 
 **Create** — palette command `Draft Bench: Create compile preset` or "New preset" button in the Compile tab opens a minimal modal with three fields: preset name, project (auto-filled from active file context), output format (default md). All other fields stamped with defaults on the new preset note.
 
-**Edit** — the Control Center's Compile tab renders a form view of the active project's presets. Header: preset picker + "New preset" + "Run compile" buttons. Body: grouped collapsible sections (Metadata, Inclusion, Output, Content-handling, Last compile) with appropriate per-field affordances (radio groups for enums, toggles for booleans, multi-select for status filter, scene picker for excludes, read-only display for compile state). Saves via `processFrontMatter` on change; the Properties panel remains a valid alternative surface.
+**Edit** — the Manuscript Builder modal renders a form view of the active project's presets. Header: preset picker + "New preset" + "Run compile" buttons. Body: grouped collapsible sections (Metadata, Inclusion, Output, Content-handling, Last compile) with appropriate per-field affordances (radio groups for enums, toggles for booleans, multi-select for status filter, scene picker for excludes, read-only display for compile state). Saves via `processFrontMatter` on change; the Properties panel remains a valid alternative surface.
 
 **Run** — palette command `Draft Bench: Run compile` with smart file-context resolution (active preset = run that preset; active scene / project / draft = pick from project's presets; unrelated = project picker -> preset picker). The Compile tab's "Run compile" button runs the currently-selected preset directly.
 
@@ -743,7 +745,7 @@ The data model and UI accommodate these features without architectural changes.
 
 ### Platform
 
-V1 is desktop-only (`isDesktopOnly: true` in `manifest.json`). Mobile compatibility is a post-V1 evaluation — mobile Obsidian restricts some API surface and imposes bundle-size constraints, and the primary UX (Control Center, reorder modal, Style Settings integration) is designed around a desktop form factor.
+V1 is desktop-only (`isDesktopOnly: true` in `manifest.json`). Mobile compatibility is a post-V1 evaluation — mobile Obsidian restricts some API surface and imposes bundle-size constraints, and the primary UX (Manuscript view, Manuscript Builder, reorder modal, Style Settings integration) is designed around a desktop form factor.
 
 ### Dependencies
 
@@ -756,7 +758,7 @@ V1 is desktop-only (`isDesktopOnly: true` in `manifest.json`). Mobile compatibil
 
 Target: comfortable operation on vaults with multiple projects totaling hundreds of scenes. Property reads via Obsidian's metadata cache (not raw file parsing). Scene reordering updates only the affected notes' `dbench-order` values.
 
-**Vault-wide scanning is cheap.** Discovery calls `app.vault.getMarkdownFiles()` (O(1) list access, returns the full vault index) and filters by frontmatter via `metadataCache.getFileCache()` — an in-memory hash lookup, not a filesystem read. For a vault of 10,000 notes containing three Draft Bench projects with 30 scenes, a Control Center open scans all 10,000 entries but reads cached YAML for each; typical completion is a few milliseconds on desktop hardware. The scan is linear in vault size and therefore scales until the metadata cache itself becomes expensive — somewhere well north of 10,000 notes on modern hardware.
+**Vault-wide scanning is cheap.** Discovery calls `app.vault.getMarkdownFiles()` (O(1) list access, returns the full vault index) and filters by frontmatter via `metadataCache.getFileCache()` — an in-memory hash lookup, not a filesystem read. For a vault of 10,000 notes containing three Draft Bench projects with 30 scenes, a Manuscript view open scans all 10,000 entries but reads cached YAML for each; typical completion is a few milliseconds on desktop hardware. The scan is linear in vault size and therefore scales until the metadata cache itself becomes expensive — somewhere well north of 10,000 notes on modern hardware.
 
 For very large mixed-purpose vaults where scan time becomes user-visible, the optional folder filter (Phase 5+, see [D-04](../planning/decisions/D-04-folder-flexibility.md)) lets writers scope Draft Bench's discovery to specific folders. This is the architectural escape hatch for the frontmatter-based discovery model.
 
@@ -769,7 +771,7 @@ For very large mixed-purpose vaults where scan time becomes user-visible, the op
 
 ### Relation to Existing Plugins
 
-Draft Bench is a standalone plugin. It does not share code with Oneirometrics, Sonigraph, or Charted Roots, but follows their established UI patterns (Control Center, settings conventions, modal design language). Compile/export code from Charted Roots' Book Builder may be studied and adapted.
+Draft Bench is a standalone plugin. It does not share code with Oneirometrics, Sonigraph, or Charted Roots, but follows their established UI patterns (settings conventions, modal design language). Compile/export code from Charted Roots' Book Builder was studied and adapted (see [book-builder-reference.md](book-builder-reference.md)).
 
 ### Plugin compatibility
 
@@ -823,7 +825,7 @@ The specific page inventory for each tree will emerge as features land. This sec
 - Scene creation (notes with typed frontmatter, built-in scene template applied).
 - New draft command: snapshot current scene/project body into the drafts folder with `dbench-type: draft`, auto-numbered.
 - Relationship integrity: `DraftBenchLinker` live sync service + `DraftBenchIntegrityService` batch repair (see § Relationship Integrity).
-- Control Center skeleton (Project and Manuscript tabs; Manuscript tab is read-only for order).
+- Manuscript view leaf (Project summary + Manuscript list; subsequently expanded across Phase 2 and Phase 3).
 - Scene reordering modal (updates `dbench-order`, no file renames).
 - Property retrofit actions: "Set as project / scene / draft," "Complete essential properties," "Add identifier" (see § Applying Draft Bench properties to existing notes). Single-file, multi-file, and folder scopes.
 - Context menu actions (create project, new scene, new draft, add to project, reorder scenes, retrofit actions).
@@ -832,12 +834,12 @@ The specific page inventory for each tree will emerge as features land. This sec
 
 ### Phase 2: Templates and Polish
 - User-defined scene template management (multiple named templates, selectable at scene creation).
-- Status workflow (set/change via context menu and Control Center; resolve status-vocabulary open question).
-- Word counts (per-scene, per-project, displayed in Manuscript tab). Optional `dbench-target-words` surfaces progress bars on the Project and Manuscript tabs.
+- Status workflow (set/change via context menu and the Manuscript view; resolve status-vocabulary open question).
+- Word counts (per-scene, per-project, displayed in the Manuscript view). Optional `dbench-target-words` surfaces progress bars on the project summary and per-scene rows.
 - Bases starter views (template `.base` files for manuscript table, status queue, corkboard).
 
 ### Phase 3: Compile and onboarding
-- Book Builder UI (Compile tab in Control Center).
+- Manuscript Builder modal hosting the compile-preset editor + Run CTA.
 - Include/exclude scenes, section breaks, title page, frontmatter stripping.
 - Output to vault MD and saved MD.
 - ODT and PDF export.

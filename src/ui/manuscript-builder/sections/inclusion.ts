@@ -1,12 +1,12 @@
 import { Setting, type App } from 'obsidian';
-import type { CompilePresetNote } from '../../../../core/discovery';
-import type { DraftBenchSettings } from '../../../../model/settings';
+import type { CompilePresetNote } from '../../../core/discovery';
+import type { DraftBenchSettings } from '../../../model/settings';
 import { writeField } from './write-field';
 
 /**
  * Inclusion section of the Compile tab form.
  *
- * Per [D-06 § Inclusion model](../../../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md),
+ * Per [D-06 § Inclusion model](../../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md),
  * V1 has three flat knobs:
  *
  * - `dbench-compile-scene-source` — `auto` only in V1; explicit
@@ -50,7 +50,7 @@ export function renderInclusionSection(
 		)
 		.addTextArea((textArea) => {
 			textArea.inputEl.rows = 4;
-			textArea.inputEl.addClass('dbench-compile-tab__monospace');
+			textArea.inputEl.addClass('dbench-manuscript-builder__monospace');
 			textArea
 				.setValue(preset.frontmatter['dbench-compile-scene-excludes'].join('\n'))
 				.onChange(async (value) => {
@@ -70,7 +70,7 @@ export function renderInclusionSection(
 
 /**
  * Multi-select chips injected into a Setting's `.controlEl`. Per
- * [ui-reference.md § 3 Divergence 3](../../../../../docs/planning/ui-reference.md),
+ * [ui-reference.md § 3 Divergence 3](../../../../docs/planning/ui-reference.md),
  * the Setting shell stays inherited (label, description, native
  * row layout); only the control surface is custom because Obsidian's
  * Setting API has no built-in multi-select primitive.
@@ -88,7 +88,7 @@ function renderStatusFilter(
 	settings: DraftBenchSettings
 ): void {
 	const wrapper = parent.createDiv({
-		cls: 'dbench-compile-tab__status-chips',
+		cls: 'dbench-manuscript-builder__status-chips',
 	});
 
 	const current = new Set(
@@ -97,7 +97,7 @@ function renderStatusFilter(
 
 	for (const status of settings.statusVocabulary) {
 		const label = wrapper.createEl('label', {
-			cls: 'dbench-compile-tab__status-chip',
+			cls: 'dbench-manuscript-builder__status-chip',
 		});
 		const checkbox = label.createEl('input', {
 			type: 'checkbox',

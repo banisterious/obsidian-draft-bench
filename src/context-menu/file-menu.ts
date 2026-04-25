@@ -13,7 +13,7 @@ import {
 	setAsScene,
 } from '../core/retrofit';
 import { isProjectFrontmatter } from '../model/project';
-import { ControlCenterModal } from '../ui/control-center/control-center-modal';
+import { ManuscriptBuilderModal } from '../ui/manuscript-builder/manuscript-builder-modal';
 import { activateManuscriptView } from '../ui/manuscript-view/activate';
 import { RepairProjectModal } from '../ui/modals/repair-project-modal';
 import {
@@ -68,7 +68,7 @@ function buildSingleFileItems(
 			addRetrofitMenuItem(
 				menu,
 				'Show manuscript view',
-				'pencil-ruler',
+				'scroll-text',
 				() => {
 					plugin.selection.set(fm['dbench-id']);
 					void activateManuscriptView(app);
@@ -76,13 +76,13 @@ function buildSingleFileItems(
 			);
 			addRetrofitMenuItem(
 				menu,
-				'Open control center',
-				'settings-2',
+				'Build manuscript',
+				'book-up',
 				() => {
-					// Set selection first so the Compile tab lands on this
-					// project's presets when the modal opens.
+					// Set selection first so the Manuscript Builder lands
+					// on this project's presets when it opens.
 					plugin.selection.set(fm['dbench-id']);
-					new ControlCenterModal(app, plugin, linker).open();
+					new ManuscriptBuilderModal(app, plugin, linker).open();
 				}
 			);
 			addRetrofitMenuItem(

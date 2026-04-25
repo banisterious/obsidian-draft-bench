@@ -1,6 +1,7 @@
 import type DraftBenchPlugin from '../../main';
 import type { DraftBenchSettings } from '../model/settings';
 import type { DraftBenchLinker } from '../core/linker';
+import { registerBuildManuscriptCommand } from './build-manuscript';
 import { registerCompileCurrentProjectCommand } from './compile-current-project';
 import { registerCreateCompilePresetCommand } from './create-compile-preset';
 import { registerCreateProjectCommand } from './create-project';
@@ -8,7 +9,6 @@ import { registerDuplicateCompilePresetCommand } from './duplicate-compile-prese
 import { registerInstallBasesCommand } from './install-bases';
 import { registerNewSceneCommand } from './new-scene';
 import { registerNewDraftCommand } from './new-draft';
-import { registerOpenControlCenterCommand } from './open-control-center';
 import { registerReorderScenesCommand } from './reorder-scenes';
 import { registerRepairProjectCommand } from './repair-project';
 import { registerRunCompileCommand } from './run-compile';
@@ -36,6 +36,7 @@ export function registerCommands(
 	getSettings: () => DraftBenchSettings,
 	linker: DraftBenchLinker
 ): void {
+	registerBuildManuscriptCommand(plugin, () => plugin, linker);
 	registerCompileCurrentProjectCommand(plugin);
 	registerCreateProjectCommand(plugin, getSettings, () => plugin);
 	registerCreateCompilePresetCommand(plugin, linker);
@@ -43,7 +44,6 @@ export function registerCommands(
 	registerInstallBasesCommand(plugin);
 	registerNewSceneCommand(plugin, getSettings, linker);
 	registerNewDraftCommand(plugin, getSettings, linker);
-	registerOpenControlCenterCommand(plugin, () => plugin, linker);
 	registerShowManuscriptViewCommand(plugin, () => plugin);
 	registerReorderScenesCommand(plugin, linker);
 	registerRepairProjectCommand(plugin, linker);

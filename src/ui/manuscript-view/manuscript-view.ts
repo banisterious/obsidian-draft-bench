@@ -15,7 +15,7 @@ import {
 	type SceneNote,
 } from '../../core/discovery';
 import { sortScenesByOrder } from '../../core/sort-scenes';
-import { ControlCenterModal } from '../control-center/control-center-modal';
+import { ManuscriptBuilderModal } from '../manuscript-builder/manuscript-builder-modal';
 import { renderSection } from './sections/section-base';
 import { renderProjectSummaryBody } from './sections/project-summary-section';
 import { renderManuscriptListBody } from './sections/manuscript-list-section';
@@ -79,7 +79,7 @@ export class ManuscriptView extends ItemView {
 	}
 
 	getIcon(): string {
-		return 'pencil-ruler';
+		return 'scroll-text';
 	}
 
 	onOpen(): Promise<void> {
@@ -296,7 +296,7 @@ export class ManuscriptView extends ItemView {
 		wrapper.createEl('p', {
 			cls: 'dbench-manuscript-view__empty-footnote',
 			// eslint-disable-next-line obsidianmd/ui/sentence-case -- quoted palette command name preserves its branded casing
-			text: 'Templates and compile actions live in the control center (Draft Bench: Open control center).',
+			text: 'Compile actions live in the Manuscript Builder (Draft Bench: Build manuscript).',
 		});
 	}
 
@@ -361,21 +361,21 @@ export class ManuscriptView extends ItemView {
 			this.openCreateProjectCommand();
 		});
 
-		// Control Center entry point. Sidebar leaves hide the
+		// Manuscript Builder entry point. Sidebar leaves hide the
 		// view-header strip where ItemView.addAction() puts buttons,
 		// so the entry point lives in our own picker header (which is
 		// inside contentEl and always visible regardless of leaf
 		// position).
-		const controlCenterButton = header.createEl('button', {
+		const builderButton = header.createEl('button', {
 			cls: 'dbench-manuscript-view__header-button',
 			attr: {
-				'aria-label': 'Open control center',
-				title: 'Open control center',
+				'aria-label': 'Build manuscript',
+				title: 'Build manuscript',
 			},
 		});
-		setIcon(controlCenterButton, 'settings-2');
-		controlCenterButton.addEventListener('click', () => {
-			new ControlCenterModal(
+		setIcon(builderButton, 'book-up');
+		builderButton.addEventListener('click', () => {
+			new ManuscriptBuilderModal(
 				this.plugin.app,
 				this.plugin,
 				this.plugin.linker

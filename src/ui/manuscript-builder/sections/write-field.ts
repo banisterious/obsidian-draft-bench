@@ -1,5 +1,5 @@
 import type { App } from 'obsidian';
-import type { CompilePresetNote } from '../../../../core/discovery';
+import type { CompilePresetNote } from '../../../core/discovery';
 
 /**
  * Persist a single preset-frontmatter field. Writes via

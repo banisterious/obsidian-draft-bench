@@ -1,12 +1,12 @@
 import { Setting, type App } from 'obsidian';
-import type { CompilePresetNote } from '../../../../core/discovery';
+import type { CompilePresetNote } from '../../../core/discovery';
 import type {
 	CompileDinkusRule,
 	CompileEmbedRule,
 	CompileFrontmatterRule,
 	CompileHeadingScope,
 	CompileWikilinkRule,
-} from '../../../../model/compile-preset';
+} from '../../../model/compile-preset';
 import { writeField } from './write-field';
 
 const HEADING_SCOPE_LABELS: Record<CompileHeadingScope, string> = {
@@ -38,7 +38,7 @@ const DINKUS_LABELS: Record<CompileDinkusRule, string> = {
 /**
  * Content-handling section of the Compile tab form.
  *
- * Per [D-06 § Content-handling rules](../../../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md),
+ * Per [D-06 § Content-handling rules](../../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md),
  * five rules are per-preset (heading scope, frontmatter,
  * wikilinks, embeds, dinkuses); the other eleven are hardcoded and
  * not surfaced here. Embed rule's `resolve` mode is reserved for

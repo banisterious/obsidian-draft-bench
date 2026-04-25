@@ -11,7 +11,7 @@ Planning doc for a deliberate design pass on the Manuscript leaf — the dockabl
 - **Ordering: design pass before onboarding.** Phase 3 onboarding is the next Phase 3 item after this refinement; onboarding lands on a polished leaf rather than one mid-redesign.
 - **Empty state: brand-mark variant, option 2 (accent-tinted).** Uses [draft-bench-favicon-mark.svg](../assets/branding/draft-bench-favicon-mark.svg) inlined with `stroke="currentColor"` tinted via `color: var(--text-accent)`. Copy: "Your manuscript begins here" + "Create your first project to start tracking scenes, drafts, and compile presets." Primary "Create project" button + secondary "Learn more" button. Applies to the Manuscript leaf's empty state when no project is selected. No custom illustration work; the brand mark was already designed.
 
-**Scope:** The Manuscript leaf only. Control Center modal (Templates + Compile tabs) and settings tab are explicitly out of scope for this pass — they get their own design reviews when they grow enough content to warrant it.
+**Scope:** The Manuscript leaf only. The Manuscript Builder modal (which replaced the retired Control Center, see [control-center-reference.md § Draft Bench's current direction](control-center-reference.md#draft-benchs-current-direction)) and the settings tab are explicitly out of scope for this pass — they get their own design reviews when they grow enough content to warrant it.
 
 **Non-goals:** Replace Obsidian's native theming, ship a proprietary visual identity that fights user themes, or block shipping while the design is being iterated on. The inherit-first meta-rule from [ui-reference.md § 0](ui-reference.md) still applies; this pass is about picking a *few* deliberate accents, not overriding the theme.
 

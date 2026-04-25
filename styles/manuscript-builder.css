@@ -1,0 +1,136 @@
+/*
+ * Manuscript Builder modal — dedicated surface for editing a
+ * project's compile presets and triggering a compile run.
+ *
+ * Layout: header (title + project read-out + preset picker + buttons),
+ * body (stack of collapsible form sections — Metadata, Inclusion,
+ * Output, Content handling, Last compile).
+ *
+ * Replaces the retired Control Center modal's compile-tab content.
+ * Section renderers (under src/ui/manuscript-builder/sections/) use
+ * `.dbench-manuscript-builder__*` classes consistently with this
+ * file; the legacy `.dbench-compile-tab__*` namespace was retired
+ * with the Control Center.
+ */
+
+/*
+ * Modal width override. Obsidian's default modal (~600-700px) is
+ * too narrow for Setting rows with multi-line descriptions —
+ * "Destination" truncates to "Des...", descriptions wrap every few
+ * words. 960px gives the body comfortable room; `min(... , 92vw)`
+ * keeps the modal responsive on smaller viewports.
+ */
+.dbench-manuscript-builder-modal {
+	width: min(960px, 92vw);
+}
+
+.dbench-manuscript-builder {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-lg);
+}
+
+.dbench-manuscript-builder__title {
+	margin: 0 0 var(--dbench-spacing-sm);
+	font-size: var(--h2-size);
+}
+
+.dbench-manuscript-builder__header {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-sm);
+	padding-bottom: var(--dbench-spacing-md);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.dbench-manuscript-builder__project-row {
+	display: flex;
+	align-items: center;
+	gap: var(--dbench-spacing-sm);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.dbench-manuscript-builder__project-icon {
+	display: inline-flex;
+	align-items: center;
+}
+
+.dbench-manuscript-builder__project-name {
+	color: var(--text-normal);
+	font-weight: var(--font-semibold);
+}
+
+.dbench-manuscript-builder__preset-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--dbench-spacing-sm);
+}
+
+.dbench-manuscript-builder__preset-picker {
+	flex: 1 1 auto;
+	min-width: 12em;
+}
+
+.dbench-manuscript-builder__preset-empty {
+	flex: 1 1 auto;
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.dbench-manuscript-builder__buttons {
+	display: flex;
+	gap: var(--dbench-spacing-sm);
+}
+
+.dbench-manuscript-builder__body {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-md);
+}
+
+.dbench-manuscript-builder__empty {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-sm);
+	padding: var(--dbench-spacing-xl) var(--dbench-spacing-lg);
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.dbench-manuscript-builder__empty-message {
+	margin: 0;
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.dbench-manuscript-builder__empty-hint {
+	margin: 0;
+	font-size: var(--font-ui-small);
+}
+
+/*
+ * Status-filter chip layout (Inclusion section). The chip is a
+ * plain <label> + checkbox + text; this rule lays them out
+ * horizontally. Native checkbox styling carries the visual weight
+ * (per ui-reference.md § 0).
+ */
+.dbench-manuscript-builder__status-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--dbench-spacing-md);
+	align-items: center;
+}
+
+.dbench-manuscript-builder__status-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--dbench-spacing-xs);
+	cursor: pointer;
+}
+
+/* Monospace styling for textarea inputs (e.g., excludes wikilinks). */
+.dbench-manuscript-builder__monospace {
+	font-family: var(--font-monospace);
+}

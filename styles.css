@@ -11,7 +11,7 @@
 
 
 /* --------------------------------------------------------------------------
-   VARIABLES.CSS  (71 lines, 2.34 KB)
+   VARIABLES.CSS  (87 lines, 2.99 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -83,13 +83,29 @@ body {
 	--dbench-draft-background: var(--background-primary);
 	--dbench-draft-text-color: var(--text-normal);
 	--dbench-draft-border-left: 3px solid var(--text-faint);
+
+	/*
+	 * Status color palette for the Manuscript leaf (Direction B —
+	 * Ulysses warm). One foreground color per default-vocabulary
+	 * status; the chip background is derived at paint time via
+	 * `color-mix` so overriding the foreground via Style Settings
+	 * also shifts the background (no mismatch). Muted tones so status
+	 * reads as supporting metadata, not shouting. Out-of-vocabulary
+	 * statuses inherit `--dbench-status-default`.
+	 */
+	--dbench-status-brainstorm: #5b8cd6;
+	--dbench-status-idea: #5b8cd6;
+	--dbench-status-draft: #9aa0a6;
+	--dbench-status-revision: #d4a443;
+	--dbench-status-final: #74b275;
+	--dbench-status-default: var(--text-muted);
 }
 
 
 /* End of variables.css */
 
 /* --------------------------------------------------------------------------
-   STYLE-SETTINGS.CSS  (98 lines, 3.45 KB)
+   STYLE-SETTINGS.CSS  (133 lines, 4.65 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -187,6 +203,41 @@ settings:
         description: CSS border shorthand. Default is a thin theme-muted line. Set to "none" to remove.
         type: variable-text
         default: "3px solid var(--text-faint)"
+    -
+        id: dbench-status-palette-heading
+        title: Manuscript status colors
+        description: Muted accents for status chips on scene rows and colored dots in the status breakdown. Use "var(--text-muted)" to disable a color (the chip falls back to the default neutral tint).
+        type: heading
+        level: 1
+        collapsed: true
+    -
+        id: --dbench-status-brainstorm
+        title: Brainstorm / idea color
+        description: Foreground color for the brainstorm and idea chips and dots.
+        type: variable-color
+        format: hex
+        default: "#5b8cd6"
+    -
+        id: --dbench-status-draft
+        title: Draft color
+        description: Foreground color for the draft chip and dot.
+        type: variable-color
+        format: hex
+        default: "#9aa0a6"
+    -
+        id: --dbench-status-revision
+        title: Revision color
+        description: Foreground color for the revision chip and dot.
+        type: variable-color
+        format: hex
+        default: "#d4a443"
+    -
+        id: --dbench-status-final
+        title: Final color
+        description: Foreground color for the final chip and dot.
+        type: variable-color
+        format: hex
+        default: "#74b275"
 
 */
 
@@ -321,113 +372,47 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   CONTROL-CENTER.CSS  (219 lines, 5.02 KB)
+   MANUSCRIPT-BUILDER.CSS  (137 lines, 3.35 KB)
    -------------------------------------------------------------------------- */
 
 /*
- * Control Center modal — tabbed plugin hub.
+ * Manuscript Builder modal — dedicated surface for editing a
+ * project's compile presets and triggering a compile run.
  *
- * Layout: a header with the plugin title and a project picker, then a
- * two-column body (sidebar nav on the left, active tab content on the
- * right). Mobile stacks the nav above the content.
+ * Layout: header (title + project read-out + preset picker + buttons),
+ * body (stack of collapsible form sections — Metadata, Inclusion,
+ * Output, Content handling, Last compile).
  *
- * Phase 1 ships the skeleton per spec § Control Center; Phase 2 fills
- * in tab content (word counts, templates, etc.).
+ * Replaces the retired Control Center modal's compile-tab content.
+ * Section renderers (under src/ui/manuscript-builder/sections/) use
+ * `.dbench-manuscript-builder__*` classes consistently with this
+ * file; the legacy `.dbench-compile-tab__*` namespace was retired
+ * with the Control Center.
  */
 
-.dbench-control-center__header {
-	display: flex;
-	flex-direction: column;
-	gap: var(--dbench-spacing-sm);
-	padding: var(--dbench-spacing-lg) var(--dbench-spacing-lg)
-		var(--dbench-spacing-md);
-	border-bottom: 1px solid var(--background-modifier-border);
+/*
+ * Modal width override. Obsidian's default modal (~600-700px) is
+ * too narrow for Setting rows with multi-line descriptions —
+ * "Destination" truncates to "Des...", descriptions wrap every few
+ * words. 960px gives the body comfortable room; `min(... , 92vw)`
+ * keeps the modal responsive on smaller viewports.
+ */
+.dbench-manuscript-builder-modal {
+	width: min(960px, 92vw);
 }
 
-.dbench-control-center__title {
-	margin: 0;
-	font-size: var(--h2-size);
-}
-
-.dbench-control-center__body {
-	display: flex;
-	min-height: 50vh;
-	max-height: 70vh;
-}
-
-.dbench-control-center__nav {
-	flex: 0 0 180px;
-	display: flex;
-	flex-direction: column;
-	gap: var(--dbench-spacing-xs);
-	padding: var(--dbench-spacing-md);
-	border-right: 1px solid var(--background-modifier-border);
-	overflow-y: auto;
-}
-
-.dbench-control-center__nav-item {
-	display: flex;
-	align-items: center;
-	gap: var(--dbench-spacing-sm);
-	padding: var(--dbench-spacing-sm) var(--dbench-spacing-md);
-	background: transparent;
-	border: none;
-	border-radius: var(--dbench-radius-sm);
-	color: var(--text-normal);
-	cursor: pointer;
-	text-align: left;
-	font-size: var(--font-ui-small);
-	transition: background-color var(--dbench-transition-fast);
-}
-
-.dbench-control-center__nav-item:hover {
-	background-color: var(--background-modifier-hover);
-}
-
-.dbench-control-center__nav-item--active {
-	background-color: var(--background-modifier-active-hover);
-	color: var(--text-accent);
-}
-
-.dbench-control-center__nav-icon {
-	display: inline-flex;
-	align-items: center;
-	flex: 0 0 auto;
-}
-
-.dbench-control-center__nav-label {
-	flex: 1 1 auto;
-}
-
-.dbench-control-center__content {
-	flex: 1 1 auto;
-	padding: var(--dbench-spacing-lg);
-	overflow-y: auto;
-}
-
-/* Shared placeholder text inside tab bodies (Templates / Compile stubs). */
-
-.dbench-control-center__placeholder {
-	color: var(--text-muted);
-	font-style: italic;
-}
-
-/* Project and Manuscript tab rules were retired when those tabs
- * moved to the dockable Manuscript view (D-07). Their styles live
- * at styles/manuscript-view.css. Templates and Compile tabs inherit
- * the shared placeholder rule above. */
-
-/* Compile tab (P3.D). Shell layout: header with project read-out +
- * preset picker + buttons, body with collapsible form sections
- * landing in follow-up commits. */
-
-.dbench-compile-tab {
+.dbench-manuscript-builder {
 	display: flex;
 	flex-direction: column;
 	gap: var(--dbench-spacing-lg);
 }
 
-.dbench-compile-tab__header {
+.dbench-manuscript-builder__title {
+	margin: 0 0 var(--dbench-spacing-sm);
+	font-size: var(--h2-size);
+}
+
+.dbench-manuscript-builder__header {
 	display: flex;
 	flex-direction: column;
 	gap: var(--dbench-spacing-sm);
@@ -435,7 +420,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.dbench-compile-tab__project-row {
+.dbench-manuscript-builder__project-row {
 	display: flex;
 	align-items: center;
 	gap: var(--dbench-spacing-sm);
@@ -443,46 +428,46 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	font-size: var(--font-ui-small);
 }
 
-.dbench-compile-tab__project-icon {
+.dbench-manuscript-builder__project-icon {
 	display: inline-flex;
 	align-items: center;
 }
 
-.dbench-compile-tab__project-name {
+.dbench-manuscript-builder__project-name {
 	color: var(--text-normal);
 	font-weight: var(--font-semibold);
 }
 
-.dbench-compile-tab__preset-row {
+.dbench-manuscript-builder__preset-row {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: var(--dbench-spacing-sm);
 }
 
-.dbench-compile-tab__preset-picker {
+.dbench-manuscript-builder__preset-picker {
 	flex: 1 1 auto;
 	min-width: 12em;
 }
 
-.dbench-compile-tab__preset-empty {
+.dbench-manuscript-builder__preset-empty {
 	flex: 1 1 auto;
 	color: var(--text-muted);
 	font-style: italic;
 }
 
-.dbench-compile-tab__buttons {
+.dbench-manuscript-builder__buttons {
 	display: flex;
 	gap: var(--dbench-spacing-sm);
 }
 
-.dbench-compile-tab__body {
+.dbench-manuscript-builder__body {
 	display: flex;
 	flex-direction: column;
 	gap: var(--dbench-spacing-md);
 }
 
-.dbench-compile-tab__empty {
+.dbench-manuscript-builder__empty {
 	display: flex;
 	flex-direction: column;
 	gap: var(--dbench-spacing-sm);
@@ -491,30 +476,31 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	color: var(--text-muted);
 }
 
-.dbench-compile-tab__empty-message {
+.dbench-manuscript-builder__empty-message {
 	margin: 0;
 	font-weight: var(--font-semibold);
 	color: var(--text-normal);
 }
 
-.dbench-compile-tab__empty-hint {
+.dbench-manuscript-builder__empty-hint {
 	margin: 0;
 	font-size: var(--font-ui-small);
 }
 
-/* Status-filter chip layout. The chip itself is a plain <label> +
- * checkbox + text; this rule is the layout-only wrapper that lays
- * the chips out horizontally. Native checkbox styling carries the
- * visual weight (per ui-reference.md § 0). */
-
-.dbench-compile-tab__status-chips {
+/*
+ * Status-filter chip layout (Inclusion section). The chip is a
+ * plain <label> + checkbox + text; this rule lays them out
+ * horizontally. Native checkbox styling carries the visual weight
+ * (per ui-reference.md § 0).
+ */
+.dbench-manuscript-builder__status-chips {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--dbench-spacing-md);
 	align-items: center;
 }
 
-.dbench-compile-tab__status-chip {
+.dbench-manuscript-builder__status-chip {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--dbench-spacing-xs);
@@ -522,29 +508,12 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 }
 
 /* Monospace styling for textarea inputs (e.g., excludes wikilinks). */
-
-.dbench-compile-tab__monospace {
+.dbench-manuscript-builder__monospace {
 	font-family: var(--font-monospace);
 }
 
-/* Mobile layout: stack nav above content */
 
-.dbench-control-center-modal--mobile .dbench-control-center__body {
-	flex-direction: column;
-	max-height: none;
-}
-
-.dbench-control-center-modal--mobile .dbench-control-center__nav {
-	flex: 0 0 auto;
-	flex-flow: row wrap;
-	border-right: none;
-	border-bottom: 1px solid var(--background-modifier-border);
-	overflow-x: auto;
-	overflow-y: hidden;
-}
-
-
-/* End of control-center.css */
+/* End of manuscript-builder.css */
 
 /* --------------------------------------------------------------------------
    REORDER-MODAL.CSS  (103 lines, 2.31 KB)
@@ -657,7 +626,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-VIEW.CSS  (419 lines, 9.88 KB)
+   MANUSCRIPT-VIEW.CSS  (640 lines, 16.68 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -692,8 +661,21 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	display: flex;
 	flex-direction: column;
 	gap: var(--dbench-spacing-md);
-	align-items: stretch;
-	padding: var(--dbench-spacing-lg) var(--dbench-spacing-md);
+	align-items: center;
+	text-align: center;
+	padding: var(--dbench-spacing-xl) var(--dbench-spacing-md);
+}
+
+/* Brand mark — accent-tinted (Direction B empty-state option 2).
+   `currentcolor` stroke inherits from the rule's color; setting
+   color to var(--text-accent) tints the whole mark without
+   hard-coding a palette. Opacity softens it so the heading below
+   retains primary focus. */
+.dbench-manuscript-view__empty-mark {
+	width: 72px;
+	height: 72px;
+	color: var(--text-accent);
+	opacity: 0.7;
 }
 
 .dbench-manuscript-view__empty-heading {
@@ -704,12 +686,13 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 
 .dbench-manuscript-view__empty-body {
 	margin: 0;
+	max-width: 260px;
 	color: var(--text-muted);
 	line-height: 1.5;
 }
 
 .dbench-manuscript-view__empty-cta {
-	align-self: flex-start;
+	align-self: center;
 }
 
 .dbench-manuscript-view__empty-footnote {
@@ -783,9 +766,14 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	flex: 0 0 auto;
 }
 
+/* Small-caps treatment (Direction B): writing-tool tradition;
+   section heads read as categorical labels, not body text. */
 .dbench-manuscript-view__section-title {
 	flex: 1 1 auto;
+	font-size: var(--font-ui-smaller);
 	font-weight: var(--font-semibold);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
 	color: var(--text-normal);
 }
 
@@ -842,6 +830,62 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	color: var(--text-normal);
 }
 
+/*
+ * Compile CTA — primary project action, promoted out of the 3-button
+ * toolbar row so it reads as the "finish line" action. `.mod-cta`
+ * supplies Obsidian's native accent treatment; the row here just
+ * handles spacing + full-width layout.
+ */
+.dbench-manuscript-view__compile-cta-row {
+	margin-bottom: var(--dbench-spacing-xs);
+}
+
+/*
+ * Override `.mod-cta`'s solid accent fill with a softer gradient +
+ * subtle shadow treatment. Still reads as the primary action;
+ * doesn't dominate the sidebar. Shadow color derives from the
+ * theme accent via `color-mix` so it stays theme-correct in any
+ * theme. `.dbench-...&.mod-cta` selector raises specificity enough
+ * to override Obsidian's `.mod-cta` background.
+ */
+.dbench-manuscript-view__compile-cta.mod-cta {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--dbench-spacing-xs);
+	width: 100%;
+	padding: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
+	min-height: 30px;
+	border-radius: var(--dbench-radius-md);
+	background: linear-gradient(
+		135deg,
+		var(--interactive-accent-hover),
+		var(--interactive-accent)
+	);
+	box-shadow: 0 1px 3px
+		color-mix(in srgb, var(--interactive-accent) 35%, transparent);
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-normal);
+	cursor: pointer;
+	transition: box-shadow 120ms ease, transform 120ms ease;
+}
+
+.dbench-manuscript-view__compile-cta.mod-cta:hover {
+	box-shadow: 0 2px 6px
+		color-mix(in srgb, var(--interactive-accent) 45%, transparent);
+}
+
+.dbench-manuscript-view__compile-cta.mod-cta:active {
+	transform: translateY(1px);
+	box-shadow: 0 1px 2px
+		color-mix(in srgb, var(--interactive-accent) 25%, transparent);
+}
+
+.dbench-manuscript-view__compile-cta-icon {
+	display: inline-flex;
+	align-items: center;
+}
+
 .dbench-manuscript-view__toolbar {
 	display: flex;
 	flex-wrap: wrap;
@@ -891,7 +935,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	display: grid;
 	grid-template-columns: max-content 1fr;
 	gap: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
-	margin: 0 0 var(--dbench-spacing-md);
+	margin: 0 0 var(--dbench-spacing-xs);
 }
 
 .dbench-manuscript-view__meta-label {
@@ -905,13 +949,30 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	word-break: break-word;
 }
 
-.dbench-manuscript-view__word-counts-heading {
-	margin: 0 0 var(--dbench-spacing-xs);
-	font-size: var(--font-ui-smaller);
-	font-weight: var(--font-semibold);
+/*
+ * Details disclosure for technical metadata (Shape + Identifier).
+ * Native `<details>` element so theme inheritance handles the
+ * summary row + chevron rotation without custom JS. Inner meta grid
+ * carries the `--details` modifier so its top margin collapses into
+ * the summary row instead of stacking awkwardly.
+ */
+.dbench-manuscript-view__details {
+	margin: 0 0 var(--dbench-spacing-md);
+}
+
+.dbench-manuscript-view__details-summary {
+	color: var(--text-faint);
+	font-size: var(--font-smaller);
+	cursor: pointer;
+	padding: var(--dbench-spacing-xs) 0;
+}
+
+.dbench-manuscript-view__details-summary:hover {
 	color: var(--text-muted);
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
+}
+
+.dbench-manuscript-view__meta--details {
+	margin: var(--dbench-spacing-xs) 0 0;
 }
 
 .dbench-manuscript-view__word-counts-body {
@@ -925,14 +986,23 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	margin-bottom: var(--dbench-spacing-sm);
 }
 
+/*
+ * Modest treatment for the "N words" display on targetless projects.
+ * Previously used `--h3-size` which rendered an oversized "0" on
+ * fresh projects ("0 WORDS!" felt shouty). Now sized inline with
+ * the rest of the section text; semibold alone conveys the primary-
+ * info weight.
+ */
 .dbench-manuscript-view__word-counts-total-value {
-	font-size: var(--h3-size);
+	font-size: var(--font-ui-medium);
 	font-weight: var(--font-semibold);
 	font-variant-numeric: tabular-nums;
+	color: var(--text-normal);
 }
 
 .dbench-manuscript-view__word-counts-total-label {
 	color: var(--text-muted);
+	font-size: var(--font-smaller);
 }
 
 .dbench-manuscript-view__progress-hero {
@@ -953,13 +1023,26 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 }
 
 .dbench-manuscript-view__progress-fill {
-	background-color: var(--interactive-accent);
+	/* Gradient fill (Direction B): subtle lift from a lighter accent
+	   tint to the full accent color; reads as designed without being
+	   gaudy. `color-mix` keeps the stops theme-inherited — no
+	   hard-coded palette. */
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--interactive-accent) 70%, transparent),
+		var(--interactive-accent)
+	);
 	height: 100%;
+	border-radius: inherit;
 	transition: width 120ms ease;
 }
 
 .dbench-manuscript-view__progress-hero--overage .dbench-manuscript-view__progress-fill {
-	background-color: var(--color-orange, #e0800c);
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--color-orange, #e0800c) 70%, transparent),
+		var(--color-orange, #e0800c)
+	);
 }
 
 .dbench-manuscript-view__status-breakdown {
@@ -970,8 +1053,42 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 }
 
 .dbench-manuscript-view__status-label {
+	display: flex;
+	align-items: center;
+	gap: var(--dbench-spacing-xs);
 	color: var(--text-muted);
 	text-transform: capitalize;
+}
+
+/*
+ * Colored dot prefix on breakdown labels. Same color variable the
+ * scene-row chip uses, so a writer overriding one value matches both
+ * surfaces. Out-of-vocabulary statuses get the default-neutral color.
+ */
+.dbench-manuscript-view__status-label::before {
+	content: "";
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--dbench-status-default);
+	flex-shrink: 0;
+}
+
+.dbench-manuscript-view__status-label[data-status="brainstorm"]::before,
+.dbench-manuscript-view__status-label[data-status="idea"]::before {
+	background: var(--dbench-status-brainstorm);
+}
+
+.dbench-manuscript-view__status-label[data-status="draft"]::before {
+	background: var(--dbench-status-draft);
+}
+
+.dbench-manuscript-view__status-label[data-status="revision"]::before {
+	background: var(--dbench-status-revision);
+}
+
+.dbench-manuscript-view__status-label[data-status="final"]::before {
+	background: var(--dbench-status-final);
 }
 
 .dbench-manuscript-view__status-value {
@@ -997,19 +1114,39 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	grid-template-rows: auto auto;
 	gap: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
 	align-items: center;
-	padding: var(--dbench-spacing-sm) 0;
+	padding: var(--dbench-spacing-sm) var(--dbench-spacing-xs);
+	margin: 0 calc(var(--dbench-spacing-xs) * -1);
+	border-radius: var(--dbench-radius-sm);
 	border-bottom: 1px solid var(--background-modifier-border);
+	transition: background-color 120ms ease;
 }
 
 .dbench-manuscript-view__scene-row:last-child {
 	border-bottom: none;
 }
 
+.dbench-manuscript-view__scene-row:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+/* Scene-order number rendered as a small capsule — Direction B
+   treatment. `align-self: start` keeps it top-aligned with the
+   title, not vertically centered across both grid rows. */
 .dbench-manuscript-view__scene-order {
 	grid-row: 1 / 3;
+	align-self: start;
+	justify-self: center;
+	display: grid;
+	place-items: center;
+	min-width: 22px;
+	height: 22px;
+	padding: 0 6px;
+	background: var(--background-modifier-border);
+	border-radius: var(--dbench-radius-sm);
 	color: var(--text-muted);
+	font-size: var(--font-smallest);
 	font-variant-numeric: tabular-nums;
-	text-align: right;
+	font-weight: var(--font-semibold);
 }
 
 /* Layout-only rules; color + hover styling come from `.internal-link`
@@ -1026,18 +1163,15 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-manuscript-view__scene-words {
 	grid-column: 3;
 	grid-row: 1;
-	color: var(--text-muted);
-	font-size: var(--font-smaller);
-	font-variant-numeric: tabular-nums;
-	text-align: right;
-}
-
-.dbench-manuscript-view__scene-words--with-target {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-end;
 	gap: 2px;
 	min-width: 120px;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+	font-variant-numeric: tabular-nums;
+	text-align: right;
 }
 
 .dbench-manuscript-view__scene-progress-label {
@@ -1053,21 +1187,77 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 }
 
 .dbench-manuscript-view__scene-progress-fill {
-	background-color: var(--interactive-accent);
+	/* Matches the project-hero gradient treatment (Direction B). */
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--interactive-accent) 70%, transparent),
+		var(--interactive-accent)
+	);
 	height: 100%;
+	border-radius: inherit;
 	transition: width 120ms ease;
 }
 
 .dbench-manuscript-view__scene-words--overage .dbench-manuscript-view__scene-progress-fill {
-	background-color: var(--color-orange, #e0800c);
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--color-orange, #e0800c) 70%, transparent),
+		var(--color-orange, #e0800c)
+	);
 }
 
-.dbench-manuscript-view__scene-status {
+/*
+ * Status chip — small pill with colored dot + label. Rendered on
+ * each scene row (grid column 2, row 2, below the scene title) and
+ * optionally elsewhere in future. Foreground color comes from the
+ * per-status variable; background is derived from the same color via
+ * `color-mix` so overriding the foreground shifts the background
+ * too, no mismatch.
+ */
+.dbench-manuscript-view__status-chip {
 	grid-column: 2;
 	grid-row: 2;
-	color: var(--text-muted);
+	display: inline-flex;
+	align-items: center;
+	gap: var(--dbench-spacing-xs);
+	align-self: start;
+	justify-self: start;
+	padding: 2px var(--dbench-spacing-sm) 2px var(--dbench-spacing-xs);
+	border-radius: 999px;
+	color: var(--dbench-status-default);
+	background: color-mix(in srgb, currentcolor 12%, transparent);
 	font-size: var(--font-smallest);
-	text-transform: capitalize;
+	line-height: 1.4;
+}
+
+.dbench-manuscript-view__status-chip-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentcolor;
+	flex-shrink: 0;
+}
+
+.dbench-manuscript-view__status-chip-label {
+	text-transform: lowercase;
+	letter-spacing: 0.02em;
+}
+
+.dbench-manuscript-view__status-chip[data-status="brainstorm"],
+.dbench-manuscript-view__status-chip[data-status="idea"] {
+	color: var(--dbench-status-brainstorm);
+}
+
+.dbench-manuscript-view__status-chip[data-status="draft"] {
+	color: var(--dbench-status-draft);
+}
+
+.dbench-manuscript-view__status-chip[data-status="revision"] {
+	color: var(--dbench-status-revision);
+}
+
+.dbench-manuscript-view__status-chip[data-status="final"] {
+	color: var(--dbench-status-final);
 }
 
 .dbench-manuscript-view__scene-drafts {
@@ -1213,14 +1403,14 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 8
-   Total:      1142 lines, 28.79 KB
-   - variables.css: 71 lines, 2.34 KB
-   - style-settings.css: 98 lines, 3.45 KB
+   Total:      1332 lines, 35.77 KB
+   - variables.css: 87 lines, 2.99 KB
+   - style-settings.css: 133 lines, 4.65 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - control-center.css: 219 lines, 5.02 KB
+   - manuscript-builder.css: 137 lines, 3.35 KB
    - reorder-modal.css: 103 lines, 2.31 KB
-   - manuscript-view.css: 419 lines, 9.88 KB
+   - manuscript-view.css: 640 lines, 16.68 KB
    - settings-tab.css: 119 lines, 2.66 KB
 */
 

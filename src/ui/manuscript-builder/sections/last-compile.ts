@@ -1,6 +1,6 @@
 import { Setting, type App, type TextComponent } from 'obsidian';
-import { computeLastCompileStatus } from '../../../../core/compile/last-compile-status';
-import type { CompilePresetNote } from '../../../../core/discovery';
+import { computeLastCompileStatus } from '../../../core/compile/last-compile-status';
+import type { CompilePresetNote } from '../../../core/discovery';
 
 /**
  * Last-compile section of the Compile tab form. Read-only display of
@@ -8,7 +8,7 @@ import type { CompilePresetNote } from '../../../../core/discovery';
  * "N scenes changed since last compile" readout per D-06's UI
  * commitment.
  *
- * Per [ui-reference.md § 0](../../../../../docs/planning/ui-reference.md),
+ * Per [ui-reference.md § 0](../../../../docs/planning/ui-reference.md),
  * each row is a `Setting` row with `addText().setDisabled(true)` so
  * the read-only value picks up Obsidian's native disabled-text-input
  * styling instead of a custom pill class. The async update mutates

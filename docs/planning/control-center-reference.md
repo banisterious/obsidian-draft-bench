@@ -1,20 +1,26 @@
 # Control Center reference: Charted Roots architecture
 
-**Status:** Reference material. **Not** a design spec for Draft Bench's Control Center.
+**Status:** Reference material. **Not** a design spec for Draft Bench's Control Center. The Control Center concept is **deferred for V1** — Draft Bench replaced its initial two-tab Control Center modal with a focused [Manuscript Builder modal](#draft-benchs-current-direction) when validation surfaced that two tabs of stub-or-form content didn't justify a hub. The doc below survives so that, when DB grows enough cross-cutting operations to need a real hub, the CR architecture is one click away.
 
 **Purpose.** Captures the full Charted Roots (CR) Control Center model so that later DB Control Center work — when the plugin has enough content to justify it — starts from a concrete, well-understood prior art rather than a blank page. The summary below was drafted in a previous session by reading CR's source; file paths and line numbers are approximate and reflect CR's state around April 2026, so treat them as search starting points, not stable anchors.
 
 **How to use this document.**
 
-- **V1 ships the minimal Control Center skeleton** described in [specification.md § Control Center](specification.md#control-center): a tabbed modal with Project / Manuscript / Templates / Compile / Settings tabs and basic rendering. That remains the authoritative design for Phase 1 and Phase 2.
-- **This document is for the later pass**, once DB has real content to surface (word counts, project summaries, recent scenes, compile status), and a DB-specific Control Center design becomes worth doing as its own design exercise.
-- **Fresh eyes intended.** Draft Bench will adopt some CR patterns and reject others; the decision of *which* ones belongs to a future, DB-focused design discussion, not to this document. Everything below is context for that discussion, not a prescribed adoption list. In particular, CR's Dashboard tab, Tools group, and tier-two caching may or may not fit DB — that's a call for later.
+- **V1 does not ship a Control Center.** The compile-preset editor (its only justified content as of this writing) lives in the dedicated [Manuscript Builder modal](#draft-benchs-current-direction). The Templates tab content is parked until template features ship; Settings stays in Obsidian's native settings panel.
+- **This document is for the later pass**, once DB has real content to surface across multiple cross-cutting tabs (word counts at a glance, project switcher, recent scenes, data-quality batch surface, etc.), and a DB-specific Control Center design becomes worth doing as its own exercise.
+- **Fresh eyes intended.** Draft Bench will adopt some CR patterns and reject others; the decision of *which* ones belongs to a future, DB-focused design discussion, not to this document. Everything below is context for that discussion, not a prescribed adoption list.
+
+## Draft Bench's current direction
+
+V1 ships the **Manuscript Builder modal** (`src/ui/manuscript-builder/manuscript-builder-modal.ts`) — a single-purpose modal that hosts the compile-preset editor (Metadata, Inclusion, Output, Content handling, Last compile sections + a Run CTA). Entry points: ribbon-adjacent leaf gear button, palette command `Draft Bench: Build manuscript`, and the project-note context menu's "Build manuscript" entry.
+
+The Control Center concept is **kept on file** rather than deleted — when DB grows enough surfaces (Dashboard, Data Quality, Templates with real content, etc.), this doc is the prior art to start from. Until then, no modal carries the "Control Center" branding to avoid the half-built-hub feeling that prompted the retire decision.
 
 **Related docs.**
 
-- [specification.md § Control Center](specification.md#control-center): authoritative V1 tab list and invocation surfaces.
+- [specification.md § Manuscript view and Control Center](specification.md#manuscript-view-and-control-center): V1 surface inventory.
 - [ui-reference.md § 1 Control Center](ui-reference.md#1-control-center-tabbed-plugin-hub): breadth-first CR UI/UX patterns; companion to this doc.
-- [docs/developer/architecture.md](../developer/architecture.md): DB's intended source layout, including the P1.D Control Center skeleton step.
+- [docs/developer/architecture.md](../developer/architecture.md): DB's source layout.
 
 ---
 

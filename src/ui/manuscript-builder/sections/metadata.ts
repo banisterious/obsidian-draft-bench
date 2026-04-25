@@ -1,6 +1,6 @@
 import { Setting, type App } from 'obsidian';
-import type { CompilePresetNote } from '../../../../core/discovery';
-import type { CompileDateFormat } from '../../../../model/compile-preset';
+import type { CompilePresetNote } from '../../../core/discovery';
+import type { CompileDateFormat } from '../../../model/compile-preset';
 import { writeField } from './write-field';
 
 const DATE_FORMAT_LABELS: Record<CompileDateFormat, string> = {
@@ -17,7 +17,7 @@ const DATE_FORMAT_LABELS: Record<CompileDateFormat, string> = {
  * mirrors the write so subsequent reads in the same render pass see
  * the new value.
  *
- * Per [D-06 § Preset schema shape](../../../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md),
+ * Per [D-06 § Preset schema shape](../../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md),
  * empty defaults are intentional — the compile pipeline falls back
  * to project title / plugin defaults when a metadata field is empty.
  */

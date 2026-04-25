@@ -1,11 +1,11 @@
 import { Setting, type App } from 'obsidian';
-import type { CompilePresetNote } from '../../../../core/discovery';
+import type { CompilePresetNote } from '../../../core/discovery';
 import type {
 	CompileChapterNumbering,
 	CompileFormat,
 	CompileOutput,
 	CompilePageSize,
-} from '../../../../model/compile-preset';
+} from '../../../model/compile-preset';
 import { writeField } from './write-field';
 
 const FORMAT_LABELS: Record<CompileFormat, string> = {
@@ -33,7 +33,7 @@ const CHAPTER_NUMBERING_LABELS: Record<CompileChapterNumbering, string> = {
 /**
  * Output section of the Compile tab form.
  *
- * Per [D-06 § Output format](../../../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md):
+ * Per [D-06 § Output format](../../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md):
  * format + output destination are orthogonal flat fields. Vault
  * destination is meaningful only when format=md (PDF / ODT always
  * write to disk regardless), but the picker stays enabled in both

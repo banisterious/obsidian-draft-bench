@@ -57,7 +57,7 @@ export default class DraftBenchPlugin extends Plugin {
 		registerCommands(this, () => this.settings, this.linker);
 		registerContextMenu(this, this.linker);
 
-		this.addRibbonIcon('pencil-ruler', 'Open Draft Bench', () => {
+		this.addRibbonIcon('scroll-text', 'Open Draft Bench', () => {
 			void activateManuscriptView(this.app);
 		});
 

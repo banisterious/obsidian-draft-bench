@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	formatScenesChanged,
 	formatTimestamp,
-} from '../../src/ui/control-center/compile/sections/last-compile';
+} from '../../src/ui/manuscript-builder/sections/last-compile';
 
 describe('formatTimestamp', () => {
 	it('formats valid ISO strings to a locale-formatted string', () => {

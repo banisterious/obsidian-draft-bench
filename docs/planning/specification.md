@@ -600,10 +600,10 @@ Deferred post-V1: **draft-version cross-section** (compile a specific historical
 
 ### Output formats
 
-V1 ships three formats. Format and destination are encoded as two orthogonal preset fields:
+V1 ships four formats. Format and destination are encoded as two orthogonal preset fields:
 
 ```yaml
-dbench-compile-format: md           # md | pdf | odt
+dbench-compile-format: md           # md | pdf | odt | docx
 dbench-compile-output: vault        # vault | disk (vault meaningful only when format=md)
 ```
 
@@ -611,10 +611,11 @@ dbench-compile-output: vault        # vault | disk (vault meaningful only when f
 - **Markdown to disk** (`format: md`, `output: disk`): markdown file saved outside the vault via Obsidian's native save dialog.
 - **PDF** (`format: pdf`): direct export via [pdfmake](https://pdfmake.github.io/docs/) with lazy-loaded VFS fonts (Roboto + DejaVu Sans Mono). Dynamically imported on first compile so the ~200KB library and ~1.5MB font VFS don't affect plugin load time. Save dialog for destination.
 - **ODT** (`format: odt`): OpenDocument Text via a JSZip-built archive (mimetype + manifest + styles.xml + content.xml subset). System fonts, no bundling. Save dialog for destination.
+- **DOCX** (`format: docx`): Microsoft Word format via the [docx](https://docx.js.org/) library (a self-contained DOCX writer that needs no external Pandoc dependency). Shares the same MD-AST intermediate as ODT and PDF (parser at `src/core/compile/md-ast.ts`); a `render-docx.ts` orchestrator emits the DOCX archive. System fonts, no bundling. Save dialog for destination. Targeted because most agents and editors expect Word-format submissions, so producing a DOCX from MD or ODT outside the plugin is friction every submission cycle.
 
-One preset, one output. Writers wanting multiple formats (e.g., MD for vault records + PDF for submission) create two presets; cheap under the compile-as-artifact model.
+One preset, one output. Writers wanting multiple formats (e.g., MD for vault records + DOCX for submission) create two presets; cheap under the compile-as-artifact model.
 
-Post-V1: EPUB / DOCX / RTF formats, Kindle direct-send, per-preset output path override, auto-versioned output filenames.
+Post-V1: EPUB / RTF formats, Kindle direct-send, per-preset output path override, auto-versioned output filenames.
 
 ### Section breaks
 
@@ -843,7 +844,7 @@ The specific page inventory for each tree will emerge as features land. This sec
 - Manuscript Builder modal hosting the compile-preset editor + Run CTA.
 - Include/exclude scenes, section breaks, title page, frontmatter stripping.
 - Output to vault MD and saved MD.
-- ODT and PDF export.
+- ODT, PDF, and DOCX export.
 - Compile presets (save, duplicate, edit).
 - Onboarding: welcome modal, guided first-project creation, example-project generator. Appropriate now because the core feature surface exists to guide users through.
 
@@ -853,8 +854,17 @@ The specific page inventory for each tree will emerge as features land. This sec
 - Revision snapshots: including project-level full-manuscript snapshots distinct from per-scene drafts (see § Draft Management and § Writing Sessions, Goals, and Revision Snapshots).
 
 ### Phase 5+: Extended Types and Integrations
-- Chapter type (enables novelist archetype comfortably).
-- Additional note types (character, location, research, etc.).
+- Additional note types (character, location, research, etc.) — bounded by the [Charted Roots cross-plugin scope](branding.md#positioning-relative-to-adjacent-obsidian-plugins): DB owns narrative, CR owns world. Auxiliary content stays user-managed in V1.
 - Optional folder filter: scoped vault scanning for mixed-purpose vaults. Off by default; writers with large or diverse vaults can restrict Draft Bench's discovery to include/exclude folder lists. Matches Charted Roots' `FolderFilterService` pattern.
 - Templater integration (deeper than pass-through, if warranted).
 - Mobile support (if warranted).
+
+(Chapter type was moved to V1 / Phase 4 per the 2026-04-25 scope expansion. Tracked across the chapter-type implementation steps.)
+
+### Post-V1 candidates
+
+Features under consideration but not committed to a specific version. See [post-v1-candidates.md](post-v1-candidates.md) for the ranked list with scope sketches, rationale, effort estimates, and dependencies. Strongest candidates as of 2026-04-26:
+
+1. **Scrivener `.scriv` import** — migration path from the dominant prior tool.
+2. **Project-level full-manuscript snapshots** — already promised under § Writing Sessions; the "First Draft / Second Draft" sense in the Longform model.
+3. **Scrivenings-style continuous Manuscript view (alternate mode)** — read/scan the entire manuscript inline as one scrollable read.

@@ -383,11 +383,12 @@ Error semantics: per-scene try/catch; failed scenes produce an error marker in o
 
 **P3.C — Output renderers.**
 
-Three renderers sharing the markdown intermediate from P3.B.
+Four renderers sharing the markdown intermediate from P3.B (the MD-AST facade at `src/core/compile/md-ast.ts`).
 
 - `src/core/compile/render-md.ts` — vault path (`<project folder>/Compiled/<preset name>.md`, overwrites) or save dialog depending on `dbench-compile-output`.
 - `src/core/compile/render-pdf.ts` — pdfmake with lazy-loaded VFS fonts (Roboto + DejaVu Sans Mono). Dynamic-imported on first compile; cached for subsequent runs. Save dialog for destination.
 - `src/core/compile/render-odt.ts` — JSZip archive (mimetype + manifest + styles.xml + content.xml subset). System fonts. Save dialog for destination.
+- `src/core/compile/render-docx.ts` — Microsoft Word format via the [docx](https://docx.js.org/) library; produces a self-contained DOCX archive without an external Pandoc dependency. Shares the MD-AST intermediate; injectable `DocxDiskDeps` mirrors the pattern from render-odt / render-pdf. System fonts, no bundling. Save dialog for destination. Targets the submission workflow (most agents/editors expect Word). Implementation slots in after chapter-aware compile (chapter-type Step 8) so the renderer-set work happens once, not twice.
 
 **P3.D — Compile tab form UI.**
 

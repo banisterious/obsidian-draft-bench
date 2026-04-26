@@ -215,22 +215,22 @@ Each context menu action has a palette-command counterpart for keyboard parity (
 
 ### Output format
 
-V1 ships three formats. Format and destination are orthogonal, encoded as two flat fields:
+V1 ships four formats. Format and destination are orthogonal, encoded as two flat fields:
 
 ```yaml
-dbench-compile-format: md           # md | pdf | odt
+dbench-compile-format: md           # md | pdf | odt | docx
 dbench-compile-output: vault        # vault | disk (vault meaningful only when format=md)
 ```
 
-**Defaults for a new preset:** `format: md`, `output: vault`. First-time compile produces an immediately-visible vault artifact with no save-dialog interrupt. Writer can switch to PDF / ODT for submission work. Aligns with compile-as-artifact ("run it, see what happened, tune, run again").
+**Defaults for a new preset:** `format: md`, `output: vault`. First-time compile produces an immediately-visible vault artifact with no save-dialog interrupt. Writer can switch to PDF / ODT / DOCX for submission work. Aligns with compile-as-artifact ("run it, see what happened, tune, run again").
 
 **Vault-MD output path convention:** `<project folder>/Compiled/<preset name>.md`. Plugin creates the `Compiled/` subfolder on first compile if absent. No preset-level path override in V1 (post-V1 adds `dbench-compile-vault-output-path` if writers want custom locations). Re-compile overwrites the same path silently; writers who want version history use git, vault snapshots, or per-version preset duplicates.
 
-**Disk outputs** (saved-md, pdf, odt): Obsidian's save dialog each compile. `dbench-last-output-path` stores the last-used path for informational display in the Compile tab's Last-compile section; the dialog does not auto-fill based on it, avoiding accidental overwrites of submitted drafts with work-in-progress versions.
+**Disk outputs** (saved-md, pdf, odt, docx): Obsidian's save dialog each compile. `dbench-last-output-path` stores the last-used path for informational display in the Compile tab's Last-compile section; the dialog does not auto-fill based on it, avoiding accidental overwrites of submitted drafts with work-in-progress versions.
 
 **One preset, one output.** Writers wanting multiple outputs (e.g., MD for vault records + PDF for submission) create two presets; cheap under the compile-as-artifact model.
 
-**Out of scope for V1:** EPUB / DOCX / RTF formats; Kindle / KDP direct-send; auto-versioned output filenames; preset-level output path override.
+**Out of scope for V1:** EPUB / RTF formats; Kindle / KDP direct-send; auto-versioned output filenames; preset-level output path override.
 
 ### Content-handling rules
 

@@ -2,7 +2,7 @@
 
 The Manuscript Builder is Draft Bench's compile surface — a focused modal for editing a project's compile presets and running a compile.
 
-It pairs with the **[Manuscript view](#manuscript-view)** (a dockable workspace pane), which is where day-to-day writing work happens. The Manuscript view shows your ordered scene list, status breakdown, and word-count progress; the Manuscript Builder is where you turn that material into a finished output (Markdown, ODT, or PDF) when you're ready to share.
+It pairs with the **[Manuscript view](#manuscript-view)** (a dockable workspace pane), which is where day-to-day writing work happens. The Manuscript view shows your ordered scene list, status breakdown, and word-count progress; the Manuscript Builder is where you turn that material into a finished output (Markdown, ODT, PDF, or DOCX) when you're ready to share.
 
 ---
 
@@ -20,7 +20,7 @@ The modal is a stack of collapsible sections. Each section's fields persist dire
 
 ### Metadata
 
-Title, subtitle, author, and date format. Used by output renderers (PDF / ODT) for cover pages and headers.
+Title, subtitle, author, and date format. Used by output renderers (PDF / ODT / DOCX) for cover pages and headers.
 
 ### Inclusion
 
@@ -31,7 +31,7 @@ Which scenes to include. V1 uses an "auto" scene source: every scene in the proj
 
 ### Output
 
-- **Format**: `md` (Markdown), `odt`, or `pdf`.
+- **Format**: `md` (Markdown), `odt`, `pdf`, or `docx`.
 - **Destination**: `vault` (writes into the project folder) or `disk` (opens an OS save dialog).
 - **Page size**, **cover**, **table of contents**, **chapter numbering**, **section breaks**: format-specific knobs.
 

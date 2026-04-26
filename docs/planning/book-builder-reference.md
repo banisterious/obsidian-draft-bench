@@ -436,7 +436,7 @@ Skipped entirely:
 - **One starter template, not three.** V1 default: "all scenes in `dbench-order`, no dividers." Post-V1 can add "chapter-grouped" and "custom selection" templates.
 - **Logo on cover page** is a nice-to-have; default to text-only cover in V1. Literary manuscripts rarely carry a logo.
 - **Chapter numbering:** default to "none" (literary manuscripts typically don't number scenes in compile output); numeric and roman remain easy to add.
-- **ODT ships in V1** (unlike CR's Book Builder reference which suggests deferring it). Rationale in [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md): writers submitting to workshops / editors commonly want ODT or DOCX; ODT is the closest plugin-shippable format and JSZip already handles the mechanics.
+- **ODT and DOCX ship in V1** (unlike CR's Book Builder reference which suggests deferring both). Rationale in [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md): writers submitting to workshops / agents / editors overwhelmingly want Word-format output (DOCX) and the [docx](https://docx.js.org/) library is a self-contained no-Pandoc path; ODT covers the OpenOffice/LibreOffice user via JSZip, which already handles the archive mechanics.
 
 **Architectural divergence to note:** CR's Book Builder delegates per-chapter markdown-to-PDF/ODT conversion to the Reports system's renderers. Draft Bench has no Reports substrate, so the rendering code co-locates inside the compile service. A future post-V1 Reports feature (character summaries, per-scene stats, compile-diff reports, etc.) would motivate extracting the rendering layer at that time.
 

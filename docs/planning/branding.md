@@ -170,8 +170,8 @@ Deliberately narrow. The narrative spine — projects, chapters, scenes, drafts,
 - Plotting tools (plot grids, subway maps, beat-sheet templates, timeline modes). StoryLine's territory; out of scope for V1 per spec § Non-goals.
 - Entity management (characters, locations, custom categories). Belongs to Charted Roots or to user-managed plain notes.
 - Analytics (pacing, echo finder, plot-hole detection, prose readability). Genuinely useful; not what Draft Bench is for.
-- All-format export. Draft Bench targets MD, PDF, ODT for V1 — the formats writers actually submit and share. DOCX is on the post-V1 list.
-- Migration importers. Scrivener `.scriv` import is on the post-V1 list as a possible feature (writers coming from Scrivener are a real audience), but V1 is for writers starting fresh in Obsidian or already vault-native.
+- All-format export. V1 ships MD, PDF, ODT, and DOCX (the formats writers actually submit and share); EPUB / RTF / Kindle direct-send and per-preset output paths stay post-V1. See [post-v1-candidates.md](post-v1-candidates.md) for the candidate list.
+- Migration importers. Scrivener `.scriv` import is the strongest post-V1 candidate (writers coming from Scrivener are a real audience), but V1 is for writers starting fresh in Obsidian or already vault-native. See [post-v1-candidates.md](post-v1-candidates.md).
 
 **Short answer for the README / wiki ("How is Draft Bench different from StoryLine?"):**
 

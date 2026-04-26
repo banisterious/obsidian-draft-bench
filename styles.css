@@ -727,7 +727,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-VIEW.CSS  (640 lines, 16.68 KB)
+   MANUSCRIPT-VIEW.CSS  (759 lines, 20.18 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1310,25 +1310,32 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /*
  * Status chip — small pill with colored dot + label. Rendered on
  * each scene row (grid column 2, row 2, below the scene title) and
- * optionally elsewhere in future. Foreground color comes from the
- * per-status variable; background is derived from the same color via
- * `color-mix` so overriding the foreground shifts the background
+ * on chapter card headers (flex layout). Foreground color comes from
+ * the per-status variable; background is derived from the same color
+ * via `color-mix` so overriding the foreground shifts the background
  * too, no mismatch.
+ *
+ * Visual rules live on the bare class. Layout (grid placement) lives
+ * on context-scoped selectors so the chip travels cleanly between
+ * scene rows and other surfaces.
  */
 .dbench-manuscript-view__status-chip {
-	grid-column: 2;
-	grid-row: 2;
 	display: inline-flex;
 	align-items: center;
 	gap: var(--dbench-spacing-xs);
-	align-self: start;
-	justify-self: start;
 	padding: 2px var(--dbench-spacing-sm) 2px var(--dbench-spacing-xs);
 	border-radius: 999px;
 	color: var(--dbench-status-default);
 	background: color-mix(in srgb, currentcolor 12%, transparent);
 	font-size: var(--font-smallest);
 	line-height: 1.4;
+}
+
+.dbench-manuscript-view__scene-row .dbench-manuscript-view__status-chip {
+	grid-column: 2;
+	grid-row: 2;
+	align-self: start;
+	justify-self: start;
 }
 
 .dbench-manuscript-view__status-chip-dot {
@@ -1368,6 +1375,118 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	font-size: var(--font-smallest);
 	font-variant-numeric: tabular-nums;
 	text-align: right;
+}
+
+/*
+ * Chapter cards (chapter-aware projects). Each card is a collapsible
+ * section with a header row (chevron + order + title + status +
+ * word-count rollup) and a body holding the chapter's scene rows.
+ * Per § 5 of chapter-type.md, the chapter rollup is chapter body's
+ * `## Draft` plus the sum of child scenes' `## Draft`. Hierarchy:
+ *
+ *     dbench-manuscript-view__chapter-list
+ *       dbench-manuscript-view__chapter-card[--expanded]
+ *         dbench-manuscript-view__chapter-header  (clickable toggle)
+ *           __chapter-chevron / __chapter-order / __chapter-title /
+ *           __status-chip / __chapter-words
+ *         dbench-manuscript-view__chapter-body[--collapsed]
+ *           dbench-manuscript-view__scene-list
+ *             dbench-manuscript-view__scene-row * N
+ */
+.dbench-manuscript-view__chapter-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-sm);
+}
+
+.dbench-manuscript-view__chapter-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	background: var(--background-secondary);
+	overflow: hidden;
+}
+
+.dbench-manuscript-view__chapter-header {
+	display: grid;
+	grid-template-columns: auto auto 1fr auto auto;
+	align-items: center;
+	gap: var(--dbench-spacing-sm);
+	padding: var(--dbench-spacing-sm) var(--dbench-spacing-md);
+	cursor: pointer;
+	transition: background-color 120ms ease;
+}
+
+.dbench-manuscript-view__chapter-header:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.dbench-manuscript-view__chapter-header:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+}
+
+.dbench-manuscript-view__chapter-chevron {
+	display: grid;
+	place-items: center;
+	color: var(--text-muted);
+}
+
+.dbench-manuscript-view__chapter-order {
+	display: grid;
+	place-items: center;
+	min-width: 26px;
+	height: 22px;
+	padding: 0 var(--dbench-spacing-xs);
+	background: var(--background-modifier-border);
+	border-radius: var(--dbench-radius-sm);
+	color: var(--text-muted);
+	font-size: var(--font-smallest);
+	font-variant-numeric: tabular-nums;
+	font-weight: var(--font-semibold);
+}
+
+.dbench-manuscript-view__chapter-title {
+	font-weight: var(--font-semibold);
+	font-size: var(--font-ui-medium);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dbench-manuscript-view__chapter-words {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+	min-width: 130px;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+.dbench-manuscript-view__chapter-words--overage .dbench-manuscript-view__scene-progress-fill {
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--color-orange, #e0800c) 70%, transparent),
+		var(--color-orange, #e0800c)
+	);
+}
+
+.dbench-manuscript-view__chapter-body {
+	padding: 0 var(--dbench-spacing-md) var(--dbench-spacing-sm);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.dbench-manuscript-view__chapter-body--collapsed {
+	display: none;
+}
+
+/* Scene rows nested inside a chapter card sit flush with the card's
+ * inner padding and lose their last-child border-bottom-none rule
+ * since the card's own border closes the visual frame. */
+.dbench-manuscript-view__chapter-body .dbench-manuscript-view__scene-row:first-child {
+	border-top: none;
 }
 
 
@@ -1504,7 +1623,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 9
-   Total:      1426 lines, 37.95 KB
+   Total:      1545 lines, 41.46 KB
    - variables.css: 87 lines, 2.99 KB
    - style-settings.css: 133 lines, 4.65 KB
    - base.css: 40 lines, 0.75 KB
@@ -1512,7 +1631,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - manuscript-builder.css: 137 lines, 3.35 KB
    - welcome-modal.css: 94 lines, 2.19 KB
    - reorder-modal.css: 103 lines, 2.31 KB
-   - manuscript-view.css: 640 lines, 16.68 KB
+   - manuscript-view.css: 759 lines, 20.18 KB
    - settings-tab.css: 119 lines, 2.66 KB
 */
 

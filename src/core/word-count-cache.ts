@@ -1,5 +1,5 @@
 import type { App, TFile } from 'obsidian';
-import type { ProjectNote, SceneNote } from './discovery';
+import type { ChapterNote, ProjectNote, SceneNote } from './discovery';
 import { findScenesInProject } from './discovery';
 import { readTargetWords } from './targets';
 import { countScene } from './word-count';
@@ -77,6 +77,26 @@ export class WordCountCache {
 	 */
 	async countForScene(scene: SceneNote): Promise<number> {
 		return this.countForFile(scene.file);
+	}
+
+	/**
+	 * Aggregate word count for a chapter: chapter body's `## Draft`
+	 * plus the sum of child scenes' `## Draft` sections. Per § 5 of
+	 * chapter-type.md, this is the live-computed rollup that surfaces
+	 * on the Manuscript view chapter card. Caller passes the resolved
+	 * scenes-in-chapter list (typically from `findScenesInChapter` +
+	 * `sortScenesByOrder`) so this method stays free of discovery
+	 * concerns.
+	 */
+	async countForChapter(
+		chapter: ChapterNote,
+		scenes: SceneNote[]
+	): Promise<number> {
+		let total = await this.countForFile(chapter.file);
+		for (const scene of scenes) {
+			total += await this.countForScene(scene);
+		}
+		return total;
 	}
 
 	/**

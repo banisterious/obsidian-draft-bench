@@ -9,8 +9,10 @@ import {
 } from 'obsidian';
 import type DraftBenchPlugin from '../../../main';
 import {
+	findChaptersInProject,
 	findProjects,
 	findScenesInProject,
+	type ChapterNote,
 	type ProjectNote,
 	type SceneNote,
 } from '../../core/discovery';
@@ -20,6 +22,7 @@ import { ManuscriptBuilderModal } from '../manuscript-builder/manuscript-builder
 import { renderSection } from './sections/section-base';
 import { renderProjectSummaryBody } from './sections/project-summary-section';
 import { renderManuscriptListBody } from './sections/manuscript-list-section';
+import { renderChapterListBody } from './sections/chapter-card-section';
 import { renderCompileCta, renderToolbar } from './sections/toolbar';
 
 /**
@@ -191,15 +194,16 @@ export class ManuscriptView extends ItemView {
 		const project = this.resolveSelectedProject();
 		if (!project) return;
 
-		// Gate: the modified file is the project note itself, or one of
-		// its scenes. Non-project vault noise is ignored.
-		const scenes = findScenesInProject(
-			this.plugin.app,
-			project.frontmatter['dbench-id']
-		);
+		// Gate: the modified file is the project note itself, one of
+		// its scenes, or one of its chapters. Non-project vault noise
+		// is ignored.
+		const projectId = project.frontmatter['dbench-id'];
+		const scenes = findScenesInProject(this.plugin.app, projectId);
+		const chapters = findChaptersInProject(this.plugin.app, projectId);
 		const isProjectNote = file.path === project.file.path;
 		const isProjectScene = scenes.some((s) => s.file.path === file.path);
-		if (!isProjectNote && !isProjectScene) return;
+		const isProjectChapter = chapters.some((c) => c.file.path === file.path);
+		if (!isProjectNote && !isProjectScene && !isProjectChapter) return;
 
 		// Invalidate word-count cache for the touched file regardless;
 		// the re-render reads the fresh count.
@@ -256,15 +260,23 @@ export class ManuscriptView extends ItemView {
 		renderCompileCta(content, this.plugin, project);
 		renderToolbar(content, this.plugin, project);
 
-		const scenes = sortScenesByOrder(
-			findScenesInProject(
-				this.plugin.app,
-				project.frontmatter['dbench-id']
-			)
+		const projectId = project.frontmatter['dbench-id'];
+		const chapters = findChaptersInProject(this.plugin.app, projectId).sort(
+			(a, b) =>
+				(a.frontmatter['dbench-order'] ?? 0) -
+				(b.frontmatter['dbench-order'] ?? 0)
 		);
 
 		this.renderProjectSummarySection(content, project);
-		this.renderManuscriptListSection(content, scenes);
+
+		if (chapters.length > 0) {
+			this.renderManuscriptHierarchySection(content, chapters);
+		} else {
+			const scenes = sortScenesByOrder(
+				findScenesInProject(this.plugin.app, projectId)
+			);
+			this.renderManuscriptListSection(content, scenes);
+		}
 
 		// Preserve scroll position after full re-render.
 		window.requestAnimationFrame(() => {
@@ -434,6 +446,44 @@ export class ManuscriptView extends ItemView {
 			scenes,
 			this.plugin.app,
 			this.plugin.wordCounts,
+			(scene) => {
+				void this.plugin.app.workspace.getLeaf(false).openFile(scene.file);
+			}
+		);
+	}
+
+	private renderManuscriptHierarchySection(
+		container: HTMLElement,
+		chapters: ChapterNote[]
+	): void {
+		const expanded = this.readSectionState(SECTION_MANUSCRIPT_LIST, true);
+		const summary =
+			chapters.length === 1
+				? '1 chapter'
+				: `${chapters.length} chapters`;
+		const body = renderSection(container, {
+			sectionId: SECTION_MANUSCRIPT_LIST,
+			title: 'Manuscript',
+			icon: 'align-left',
+			summary,
+			expanded,
+			onToggle: (id, isExpanded) => {
+				this.viewState.sectionStates[id] = isExpanded;
+				this.plugin.app.workspace.requestSaveLayout();
+			},
+		});
+		if (!body) return;
+		renderChapterListBody(
+			body,
+			chapters,
+			this.plugin.app,
+			this.plugin.wordCounts,
+			this.plugin,
+			(chapter) => {
+				void this.plugin.app.workspace
+					.getLeaf(false)
+					.openFile(chapter.file);
+			},
 			(scene) => {
 				void this.plugin.app.workspace.getLeaf(false).openFile(scene.file);
 			}

@@ -1067,6 +1067,290 @@ describe('CompileService.generate — chapter-aware dispatch (Step 8)', () => {
 	});
 });
 
+describe('CompileService.generate — chapter wikilink excludes (Step 8)', () => {
+	let app: App;
+	let service: CompileService;
+	const projectId = 'prj-001-tst-001';
+
+	beforeEach(() => {
+		app = new App();
+		service = new CompileService(app);
+	});
+
+	async function seedTwoChapterProject(): Promise<void> {
+		await seedChapter(app, {
+			path: 'Novel/Chapter 1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			body: '## Draft\nChapter 1 intro.',
+		});
+		await seedChapter(app, {
+			path: 'Novel/Chapter 2.md',
+			id: 'ch2-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+			body: '## Draft\nChapter 2 intro.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Chapter 1/A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Chapter 1',
+			order: 1,
+			body: '## Draft\nA prose.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Chapter 1/B.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Chapter 1',
+			order: 2,
+			body: '## Draft\nB prose.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Chapter 2/C.md',
+			id: 'scc-003-tst-003',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch2-002-tst-002',
+			chapterTitle: 'Chapter 2',
+			order: 1,
+			body: '## Draft\nC prose.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Chapter 2/D.md',
+			id: 'scd-004-tst-004',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch2-002-tst-002',
+			chapterTitle: 'Chapter 2',
+			order: 2,
+			body: '## Draft\nD prose.',
+		});
+	}
+
+	it('drops a chapter heading + intro + all child scenes when its wikilink is in excludes', async () => {
+		await seedTwoChapterProject();
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+			'dbench-compile-scene-excludes': ['[[Chapter 1]]'],
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe(
+			'# Chapter 2\n\nChapter 2 intro.\n\nC prose.\n\nD prose.'
+		);
+		expect(result.markdown).not.toContain('Chapter 1');
+		expect(result.markdown).not.toContain('A prose.');
+		expect(result.markdown).not.toContain('B prose.');
+	});
+
+	it('accepts a bare chapter basename (no wikilink brackets) as an exclude entry', async () => {
+		await seedTwoChapterProject();
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+			'dbench-compile-scene-excludes': ['Chapter 1'],
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe(
+			'# Chapter 2\n\nChapter 2 intro.\n\nC prose.\n\nD prose.'
+		);
+	});
+
+	it('counts an excluded chapter\'s scenes toward scenesSkipped', async () => {
+		await seedTwoChapterProject();
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+			'dbench-compile-scene-excludes': ['[[Chapter 1]]'],
+		});
+		const result = await service.generate(preset);
+
+		// Chapter 1 had 2 scenes (A, B); both are skipped via the
+		// chapter exclude. Chapter 2 has 2 surviving scenes (C, D).
+		expect(result.scenesCompiled).toBe(2);
+		expect(result.scenesSkipped).toBe(2);
+	});
+
+	it('mixes chapter and scene excludes in the same list', async () => {
+		await seedTwoChapterProject();
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+			// Drop chapter 1 entirely AND scene C inside chapter 2.
+			// Chapter 2 still has D, so it survives.
+			'dbench-compile-scene-excludes': ['[[Chapter 1]]', '[[C]]'],
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe('# Chapter 2\n\nChapter 2 intro.\n\nD prose.');
+		expect(result.scenesCompiled).toBe(1);
+		// 2 from chapter 1 + scene C = 3 skipped; 4 total scenes.
+		expect(result.scenesSkipped).toBe(3);
+	});
+
+	it('warns when every chapter is excluded', async () => {
+		await seedTwoChapterProject();
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+			'dbench-compile-scene-excludes': ['[[Chapter 1]]', '[[Chapter 2]]'],
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe('');
+		expect(result.scenesSkipped).toBe(4);
+		expect(result.warnings).toEqual([
+			'Preset "Workshop" filtered out all 4 scenes; nothing to compile.',
+		]);
+	});
+
+	it('honors chapter excludes in heading-scope=draft on a chapter-aware project too (not just chapter mode)', async () => {
+		await seedTwoChapterProject();
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'draft',
+			'dbench-compile-scene-excludes': ['[[Chapter 1]]'],
+		});
+		const result = await service.generate(preset);
+
+		// Chapter 1 dropped; chapter 2's two scenes emit with scene
+		// H1s (heading-scope=draft suppresses chapter heading emission).
+		expect(result.markdown).toBe('# C\n\nC prose.\n\n# D\n\nD prose.');
+		expect(result.markdown).not.toContain('# Chapter');
+	});
+
+	it('treats a chapter wikilink as a no-op on chapter-less projects (nothing matches)', async () => {
+		// Flat project with two scenes; an exclude entry pointing to a
+		// chapter that doesn't exist should be inert. Pre-Step-8
+		// behavior preserved.
+		await seedScene(app, {
+			path: 'Novel/A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			body: 'A.',
+		});
+		await seedScene(app, {
+			path: 'Novel/B.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+			body: 'B.',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-scene-excludes': ['[[Chapter 1]]'],
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe('# A\n\nA.\n\n# B\n\nB.');
+		expect(result.scenesCompiled).toBe(2);
+		expect(result.scenesSkipped).toBe(0);
+	});
+
+	it('still excludes scenes by basename in chapter-aware mode (existing scene-exclude semantic preserved)', async () => {
+		await seedTwoChapterProject();
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+			'dbench-compile-scene-excludes': ['[[B]]'],
+		});
+		const result = await service.generate(preset);
+
+		// Chapter 1 keeps its heading + intro + scene A (not B).
+		// Chapter 2 keeps its heading + intro + C + D.
+		expect(result.markdown).toBe(
+			'# Chapter 1\n\nChapter 1 intro.\n\nA prose.\n\n' +
+				'# Chapter 2\n\nChapter 2 intro.\n\nC prose.\n\nD prose.'
+		);
+		expect(result.scenesCompiled).toBe(3);
+		expect(result.scenesSkipped).toBe(1);
+	});
+
+	it('skips a chapter whose only scene was filtered out (no dangling chapter heading)', async () => {
+		// Chapter 1 has 1 scene that gets filtered by the status filter;
+		// Chapter 2 has 1 scene that survives. Chapter 1 should not
+		// emit a heading since it has no surviving prose under it.
+		await seedChapter(app, {
+			path: 'Novel/Empty Chapter.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			body: '## Draft\nWould-be intro.',
+		});
+		await seedChapter(app, {
+			path: 'Novel/Surviving Chapter.md',
+			id: 'ch2-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+			body: '## Draft\nKept intro.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Empty Chapter/Drafty.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Empty Chapter',
+			order: 1,
+			body: '## Draft\nDrafty prose.',
+			status: 'idea',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Surviving Chapter/Final.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch2-002-tst-002',
+			chapterTitle: 'Surviving Chapter',
+			order: 1,
+			body: '## Draft\nFinal prose.',
+			status: 'final',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+			'dbench-compile-scene-statuses': ['final'],
+			'dbench-compile-chapter-numbering': 'numeric',
+		});
+		const result = await service.generate(preset);
+
+		// "Empty Chapter" doesn't emit at all; numbering reflects only
+		// the chapters that actually emit (Surviving = #1).
+		expect(result.markdown).toBe(
+			'# 1. Surviving Chapter\n\nKept intro.\n\nFinal prose.'
+		);
+		expect(result.markdown).not.toContain('Empty Chapter');
+		expect(result.markdown).not.toContain('Would-be intro');
+		expect(result.scenesCompiled).toBe(1);
+		expect(result.scenesSkipped).toBe(1);
+	});
+});
+
 describe("CompileService.generate — chapter heading-scope ('chapter' mode, Step 8)", () => {
 	let app: App;
 	let service: CompileService;

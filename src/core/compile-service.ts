@@ -148,7 +148,10 @@ export class CompileService {
 			return emptyResult(warnings, errors);
 		}
 
-		const selected = filterScenes(allScenes, preset.frontmatter);
+		const excludeSet = buildExcludeSet(
+			preset.frontmatter['dbench-compile-scene-excludes']
+		);
+		const selected = filterScenes(allScenes, preset.frontmatter, excludeSet);
 		const scenesSkipped = allScenes.length - selected.length;
 		if (selected.length === 0) {
 			warnings.push(
@@ -209,6 +212,9 @@ export class CompileService {
 				(a.frontmatter['dbench-order'] ?? 0) -
 				(b.frontmatter['dbench-order'] ?? 0)
 		);
+		const excludeSet = buildExcludeSet(
+			preset.frontmatter['dbench-compile-scene-excludes']
+		);
 
 		const plans: Array<{ chapter: ChapterNote; selected: SceneNote[] }> = [];
 		let totalScenes = 0;
@@ -218,7 +224,17 @@ export class CompileService {
 				findScenesInChapter(this.app, chapter.frontmatter['dbench-id'])
 			);
 			totalScenes += chapterScenes.length;
-			const selected = filterScenes(chapterScenes, preset.frontmatter);
+			// Excluding a chapter drops the whole segment: heading,
+			// intro, every child scene. The chapter's scenes still
+			// count toward totalScenes so they're reflected in
+			// scenesSkipped, matching the writer's "I dropped N scenes"
+			// expectation when they exclude a chapter wikilink.
+			if (excludeSet.has(chapter.file.basename)) continue;
+			const selected = filterScenes(
+				chapterScenes,
+				preset.frontmatter,
+				excludeSet
+			);
 			totalSelected += selected.length;
 			plans.push({ chapter, selected });
 		}
@@ -254,6 +270,13 @@ export class CompileService {
 		let chapterIndex = 0;
 		let sceneIndex = 0;
 		for (const plan of plans) {
+			// Skip chapters whose scenes were all filtered out (status
+			// filter or scene exclude). Emitting a heading + intro with
+			// no prose underneath would surprise writers; chapter
+			// numbering also reflects what actually emits, not what
+			// might have. The "all filtered" warning earlier still
+			// fires when *every* chapter ends up empty.
+			if (plan.selected.length === 0) continue;
 			chapterIndex++;
 			if (chapterMode) {
 				acc.bodies.push(
@@ -362,6 +385,28 @@ export class CompileService {
 }
 
 /**
+ * Parse `dbench-compile-scene-excludes` into a set of basenames.
+ *
+ * Entries may be wikilinks (`[[Name]]`) or bare basenames; both forms
+ * are normalized here so the UI affordances (P3.D) can write whichever
+ * is convenient. The same set is consulted by the chapter walker — a
+ * chapter basename match drops the chapter's whole segment (heading +
+ * intro + child scenes).
+ *
+ * The frontmatter key is `dbench-compile-scene-excludes` for V1
+ * backward-compat with pre-Step-8 presets; renaming would force a
+ * migration. The field accepts both scene and chapter wikilinks.
+ */
+function buildExcludeSet(excludes: string[]): Set<string> {
+	return new Set(
+		excludes.map((entry) => {
+			const match = entry.match(/^\[\[(.+?)\]\]$/);
+			return match ? match[1] : entry;
+		})
+	);
+}
+
+/**
  * Apply the preset's inclusion knobs (status filter + exclude list) to
  * an ordered list of scenes.
  *
@@ -370,27 +415,19 @@ export class CompileService {
  *   are kept. Scenes with missing or empty status are excluded (strict
  *   match per D-06 — "missing status = not ready"). A future Data
  *   Quality surface will flag these as fixable pre-compile.
- * - **Excludes.** Any scene whose basename matches an entry in
- *   `dbench-compile-scene-excludes` is dropped. Entries may be
- *   wikilinks (`[[Name]]`) or bare basenames; both forms are
- *   normalized here so the UI affordances (P3.D) can write whichever
- *   is convenient.
+ * - **Excludes.** Any scene whose basename appears in the exclude set
+ *   is dropped. The set is built once per compile by the dispatcher
+ *   so chapter and scene checks stay consistent and the regex parse
+ *   doesn't run per-scene.
  */
 function filterScenes(
 	scenes: SceneNote[],
-	fm: CompilePresetNote['frontmatter']
+	fm: CompilePresetNote['frontmatter'],
+	excludeSet: Set<string>
 ): SceneNote[] {
 	const statuses = fm['dbench-compile-scene-statuses'];
-	const excludes = fm['dbench-compile-scene-excludes'];
-	const excludeNames = new Set(
-		excludes.map((entry) => {
-			const match = entry.match(/^\[\[(.+?)\]\]$/);
-			return match ? match[1] : entry;
-		})
-	);
-
 	return scenes.filter((scene) => {
-		if (excludeNames.has(scene.file.basename)) return false;
+		if (excludeSet.has(scene.file.basename)) return false;
 		if (statuses.length > 0) {
 			const status = scene.frontmatter['dbench-status'];
 			if (!status || !statuses.includes(status)) return false;

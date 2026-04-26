@@ -1,6 +1,6 @@
 import { TFile, type App, type EventRef } from 'obsidian';
 import type { DraftBenchSettings } from '../model/settings';
-import { findNoteById, findProjects, findScenes } from './discovery';
+import { findChapters, findNoteById, findProjects, findScenes } from './discovery';
 
 /**
  * `DraftBenchLinker` — live bidirectional sync service.
@@ -192,7 +192,17 @@ export class DraftBenchLinker {
 		const childId = readString(childFm['dbench-id']);
 		if (childId === '') return;
 
-		const declaredParentId = readString(childFm[config.childParentIdField]);
+		// When `appliesToChild` returns false, the config still runs to
+		// clean up stale references but treats the declared parent as
+		// empty so it never adds the child to any reverse array. Used by
+		// scene→project: a scene-in-chapter (one with `dbench-chapter-id`
+		// set) carries both project + chapter ids per § 3, but per § 9
+		// the project's reverse arrays list direct children only, so the
+		// scene must not appear there.
+		const applies = config.appliesToChild?.(childFm) ?? true;
+		const declaredParentId = applies
+			? readString(childFm[config.childParentIdField])
+			: '';
 		const childWikilink = `[[${childFile.basename}]]`;
 
 		for (const candidate of config.candidateParents(this.app)) {
@@ -356,24 +366,59 @@ interface RelationshipConfig {
 	candidateParents: (
 		app: App
 	) => Array<{ file: TFile; frontmatter: Record<string, unknown> }>;
+	/**
+	 * Optional gate. When provided and returns false, the reconciler
+	 * runs in cleanup-only mode for this config: stale references are
+	 * still pruned from candidate parents, but the child is never added
+	 * to any reverse array. Used to suppress the scene→project
+	 * relationship for scenes-in-chapters (which carry both
+	 * `dbench-project-id` and `dbench-chapter-id` but belong only in the
+	 * chapter's reverse arrays per § 3 + § 9 of chapter-type.md).
+	 */
+	appliesToChild?: (childFm: Record<string, unknown>) => boolean;
 }
 
 /**
  * Per-type reconciliation rules. Keyed by `dbench-type` of the child.
  *
- * - `scene`: one parent, the enclosing project.
- * - `draft`: two possible parents depending on the declared fields.
+ * - `chapter`: one parent, the enclosing project. Reverse arrays
+ *   `dbench-chapters` / `dbench-chapter-ids` on the project. Per § 9 of
+ *   chapter-type.md, project shape is not filtered here — integrity
+ *   surfaces mixed-children violations (a project carrying both
+ *   chapters and direct scenes) rather than the linker silently
+ *   dropping them.
+ * - `scene`: two possible parents. Chapter-less scenes attach to the
+ *   project (existing behavior); scenes-in-chapters attach to their
+ *   chapter (per § 3, scenes-in-chapters carry both project + chapter
+ *   refs). The scene→project config has an `appliesToChild` gate that
+ *   suppresses the add when `dbench-chapter-id` is present, so the
+ *   project's `dbench-scenes` reverse array stays a list of *direct*
+ *   children only (per § 9 + the doc on `ProjectFrontmatter.dbench-scenes`).
+ * - `draft`: three possible parents depending on the declared fields.
  *   Scene-parented drafts live in folder projects; project-parented
- *   drafts live in single-scene projects. Both configs run on every
- *   draft modify; the one whose declared parent id doesn't resolve
- *   is a no-op on adds but still cleans up any stale references —
- *   which lets the linker recover when a writer converts a project
- *   between folder and single-scene shapes.
+ *   drafts live in single-scene projects; chapter-parented drafts live
+ *   in chapter-aware projects (§ 4). All three configs run on every
+ *   draft modify; the one whose declared parent id doesn't resolve is
+ *   a no-op on adds but still cleans up any stale references — which
+ *   lets the linker recover when a writer converts a draft between
+ *   target shapes.
  * - `compile-preset`: one parent, the enclosing project (either shape).
  *   Reverse arrays `dbench-compile-presets` / `dbench-compile-preset-ids`
  *   live on the project note.
  */
 const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
+	chapter: [
+		{
+			childParentIdField: 'dbench-project-id',
+			parentWikilinkField: 'dbench-chapters',
+			parentIdField: 'dbench-chapter-ids',
+			candidateParents: (app) =>
+				findProjects(app).map((p) => ({
+					file: p.file,
+					frontmatter: p.frontmatter as unknown as Record<string, unknown>,
+				})),
+		},
+	],
 	scene: [
 		{
 			childParentIdField: 'dbench-project-id',
@@ -383,6 +428,17 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 				findProjects(app).map((p) => ({
 					file: p.file,
 					frontmatter: p.frontmatter as unknown as Record<string, unknown>,
+				})),
+			appliesToChild: (fm) => readString(fm['dbench-chapter-id']) === '',
+		},
+		{
+			childParentIdField: 'dbench-chapter-id',
+			parentWikilinkField: 'dbench-scenes',
+			parentIdField: 'dbench-scene-ids',
+			candidateParents: (app) =>
+				findChapters(app).map((c) => ({
+					file: c.file,
+					frontmatter: c.frontmatter as unknown as Record<string, unknown>,
 				})),
 		},
 	],
@@ -395,6 +451,16 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 				findScenes(app).map((s) => ({
 					file: s.file,
 					frontmatter: s.frontmatter as unknown as Record<string, unknown>,
+				})),
+		},
+		{
+			childParentIdField: 'dbench-chapter-id',
+			parentWikilinkField: 'dbench-drafts',
+			parentIdField: 'dbench-draft-ids',
+			candidateParents: (app) =>
+				findChapters(app).map((c) => ({
+					file: c.file,
+					frontmatter: c.frontmatter as unknown as Record<string, unknown>,
 				})),
 		},
 		{

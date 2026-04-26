@@ -848,18 +848,28 @@ The specific page inventory for each tree will emerge as features land. This sec
 - Compile presets (save, duplicate, edit).
 - Onboarding: welcome modal, guided first-project creation, example-project generator. Appropriate now because the core feature surface exists to guide users through.
 
-### Phase 4: Sessions, Goals, and Snapshots
+### Phase 4: Chapter type
+
+Promoted from "Phase 5+" to V1 on 2026-04-25 to make novelists comfortable at first contact. Full design in [chapter-type.md](chapter-type.md); 15 implementation steps with rough effort 5-7 weeks for code + tests.
+
+- New `dbench-type: chapter` note type with frontmatter mirroring scenes (project ref, status, order, target words, synopsis, reverse arrays for child scenes and chapter-level drafts).
+- No-mixed-children invariant per § 9: a project's top-level children are all chapters or all direct scenes, never both. Chapter-less projects keep the existing flat shape.
+- Chapter-level drafts (§ 4 ratification — Tier 2): same `Drafts/` folder as scene drafts, disambiguated by which parent ref is present.
+- Linker + integrity scans extended for project<->chapter, chapter<->scene, chapter<->draft relationships plus a manual-only `PROJECT_MIXED_CHILDREN` issue.
+- Manuscript view rework: collapsible chapter cards with nested scene rows for chapter-aware projects; chapter-less projects keep the flat list.
+- Compile pipeline: two-level walking (project -> chapters -> scenes), new `chapter` heading-scope value, chapter-aware preset defaults.
+- Modals + commands: `Draft Bench: Create chapter`, `Reorder chapters in project`, retrofit `Set as chapter` and `Move to chapter`.
+
+### Phase 5: Sessions, Goals, and Snapshots
 - Writing session tracking.
 - Word count goals and progress.
 - Revision snapshots: including project-level full-manuscript snapshots distinct from per-scene drafts (see § Draft Management and § Writing Sessions, Goals, and Revision Snapshots).
 
-### Phase 5+: Extended Types and Integrations
-- Additional note types (character, location, research, etc.) — bounded by the [Charted Roots cross-plugin scope](branding.md#positioning-relative-to-adjacent-obsidian-plugins): DB owns narrative, CR owns world. Auxiliary content stays user-managed in V1.
+### Phase 6+: Extended Types and Integrations
+- Additional note types (character, location, research, etc.), bounded by the [Charted Roots cross-plugin scope](branding.md#positioning-relative-to-adjacent-obsidian-plugins): DB owns narrative, CR owns world. Auxiliary content stays user-managed in V1.
 - Optional folder filter: scoped vault scanning for mixed-purpose vaults. Off by default; writers with large or diverse vaults can restrict Draft Bench's discovery to include/exclude folder lists. Matches Charted Roots' `FolderFilterService` pattern.
 - Templater integration (deeper than pass-through, if warranted).
 - Mobile support (if warranted).
-
-(Chapter type was moved to V1 / Phase 4 per the 2026-04-25 scope expansion. Tracked across the chapter-type implementation steps.)
 
 ### Post-V1 candidates
 

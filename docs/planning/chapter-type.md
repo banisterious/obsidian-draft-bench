@@ -1,8 +1,8 @@
 # Chapter type (V1 scope expansion)
 
-Planning doc for the addition of `dbench-type: chapter` to V1's vocabulary. Originally scoped as Phase 5+ in [specification.md](specification.md), promoted to V1 on 2026-04-25 to make novelists comfortable at first contact rather than tolerating them.
+Planning doc for the addition of `dbench-type: chapter` to V1's vocabulary. Originally scoped as Phase 5+ in [specification.md](specification.md), promoted to V1 on 2026-04-25 (now Phase 4 in the spec) to make novelists comfortable at first contact rather than tolerating them.
 
-**Status:** Design pending ratification. No code yet. Ratify each section below, then implementation begins.
+**Status:** Design ratified across nine sections (10 commits between 2026-04-25 and 2026-04-26). Implementation in progress; Steps 1-7 of 15 shipped. See [the implementation sequence](#implementation-sequence) below for current status.
 
 ---
 

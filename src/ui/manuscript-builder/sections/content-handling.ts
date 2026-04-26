@@ -12,6 +12,7 @@ import { writeField } from './write-field';
 const HEADING_SCOPE_LABELS: Record<CompileHeadingScope, string> = {
 	draft: 'Draft section only (below the `## Draft` heading)',
 	full: 'Full body (including planning sections)',
+	chapter: 'Chapter (per-chapter heading; scene titles omitted)',
 };
 
 const FRONTMATTER_LABELS: Record<CompileFrontmatterRule, string> = {

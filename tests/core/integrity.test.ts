@@ -20,6 +20,8 @@ interface ProjectSeedExtras {
 	reverseDraftIds?: string[];
 	reversePresets?: string[];
 	reversePresetIds?: string[];
+	reverseChapters?: string[];
+	reverseChapterIds?: string[];
 }
 
 async function seedFolderProject(
@@ -41,8 +43,88 @@ async function seedFolderProject(
 		'dbench-status': 'draft',
 		'dbench-scenes': reverseScenes,
 		'dbench-scene-ids': reverseSceneIds,
+		'dbench-chapters': extras.reverseChapters ?? [],
+		'dbench-chapter-ids': extras.reverseChapterIds ?? [],
 		'dbench-compile-presets': extras.reversePresets ?? [],
 		'dbench-compile-preset-ids': extras.reversePresetIds ?? [],
+	});
+	return file;
+}
+
+async function seedChapter(
+	app: App,
+	path: string,
+	id: string,
+	projectTitle: string,
+	projectId: string,
+	reverseScenes: string[] = [],
+	reverseSceneIds: string[] = [],
+	reverseDrafts: string[] = [],
+	reverseDraftIds: string[] = []
+): Promise<TFile> {
+	const file = await app.vault.create(path, '');
+	app.metadataCache._setFrontmatter(file, {
+		'dbench-type': 'chapter',
+		'dbench-id': id,
+		'dbench-project': `[[${projectTitle}]]`,
+		'dbench-project-id': projectId,
+		'dbench-order': 1,
+		'dbench-status': 'idea',
+		'dbench-scenes': reverseScenes,
+		'dbench-scene-ids': reverseSceneIds,
+		'dbench-drafts': reverseDrafts,
+		'dbench-draft-ids': reverseDraftIds,
+	});
+	return file;
+}
+
+async function seedSceneInChapter(
+	app: App,
+	path: string,
+	id: string,
+	projectTitle: string,
+	projectId: string,
+	chapterTitle: string,
+	chapterId: string,
+	reverseDrafts: string[] = [],
+	reverseDraftIds: string[] = []
+): Promise<TFile> {
+	const file = await app.vault.create(path, '');
+	app.metadataCache._setFrontmatter(file, {
+		'dbench-type': 'scene',
+		'dbench-id': id,
+		'dbench-project': `[[${projectTitle}]]`,
+		'dbench-project-id': projectId,
+		'dbench-chapter': `[[${chapterTitle}]]`,
+		'dbench-chapter-id': chapterId,
+		'dbench-order': 1,
+		'dbench-status': 'idea',
+		'dbench-drafts': reverseDrafts,
+		'dbench-draft-ids': reverseDraftIds,
+	});
+	return file;
+}
+
+async function seedDraftOfChapter(
+	app: App,
+	path: string,
+	id: string,
+	chapterTitle: string,
+	chapterId: string,
+	projectTitle: string,
+	projectId: string
+): Promise<TFile> {
+	const file = await app.vault.create(path, '');
+	app.metadataCache._setFrontmatter(file, {
+		'dbench-type': 'draft',
+		'dbench-id': id,
+		'dbench-project': `[[${projectTitle}]]`,
+		'dbench-project-id': projectId,
+		'dbench-scene': '',
+		'dbench-scene-id': '',
+		'dbench-chapter': `[[${chapterTitle}]]`,
+		'dbench-chapter-id': chapterId,
+		'dbench-draft-number': 1,
 	});
 	return file;
 }
@@ -647,5 +729,556 @@ describe('applyRepairs', () => {
 		const fm = app.metadataCache.getFileCache(projectFile)?.frontmatter;
 		expect(fm?.['dbench-scenes']).toEqual([]);
 		expect(fm?.['dbench-scene-ids']).toEqual([]);
+	});
+});
+
+describe('scanProject — chapter<->project issues', () => {
+	it('flags a chapter declaring the project but missing from reverse arrays', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		expect(kinds(report.issues)).toEqual(['CHAPTER_MISSING_IN_PROJECT']);
+		expect(report.issues[0].autoRepairable).toBe(true);
+	});
+
+	it('flags a stale chapter entry pointing to a non-existent note', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			[],
+			[],
+			{
+				reverseChapters: ['[[Ghost chapter]]'],
+				reverseChapterIds: ['chp-ghost-tst-000'],
+			}
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		expect(kinds(report.issues)).toEqual(['STALE_CHAPTER_IN_PROJECT']);
+		expect(report.issues[0].autoRepairable).toBe(true);
+	});
+
+	it('flags a wikilink/id-companion conflict (not auto-repairable)', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			[],
+			[],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-002-tst-002'], // id points elsewhere
+			}
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch02.md',
+			'chp-002-tst-002',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		const conflicts = report.issues.filter(
+			(i) => i.kind === 'PROJECT_CHAPTER_CONFLICT'
+		);
+		expect(conflicts).toHaveLength(1);
+		expect(conflicts[0].autoRepairable).toBe(false);
+	});
+
+	it('is clean when chapter is properly listed on both sides', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			[],
+			[],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-001-tst-001'],
+			}
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		expect(report.issues).toEqual([]);
+	});
+});
+
+describe('scanProject — chapter<->scene issues', () => {
+	it('flags a scene-in-chapter missing from chapter reverse arrays', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			[],
+			[],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-001-tst-001'],
+			}
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		await seedSceneInChapter(
+			app,
+			'Novel/Chapters/Ch01/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001',
+			'Ch01',
+			'chp-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		expect(kinds(report.issues)).toContain('SCENE_MISSING_IN_CHAPTER');
+		// Scene is NOT flagged as missing from project's dbench-scenes —
+		// scenes-in-chapters belong to the chapter, not the project.
+		expect(kinds(report.issues)).not.toContain('SCENE_MISSING_IN_PROJECT');
+	});
+
+	it('flags a stale scene entry in chapter reverse arrays', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			[],
+			[],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-001-tst-001'],
+			}
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001',
+			['[[Ghost scene]]'],
+			['sc-ghost-tst-000']
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		const issueKinds = kinds(report.issues);
+		expect(issueKinds).toContain('STALE_SCENE_IN_CHAPTER');
+	});
+
+	it('flags chapter<->scene wikilink/id conflict', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			[],
+			[],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-001-tst-001'],
+			}
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001',
+			['[[SceneA]]'],
+			['sc2-002-tst-002'] // id points elsewhere
+		);
+		await seedSceneInChapter(
+			app,
+			'Novel/Chapters/Ch01/SceneA.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001',
+			'Ch01',
+			'chp-001-tst-001'
+		);
+		await seedSceneInChapter(
+			app,
+			'Novel/Chapters/Ch01/SceneB.md',
+			'sc2-002-tst-002',
+			'Novel',
+			'prj-001-tst-001',
+			'Ch01',
+			'chp-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		const conflicts = report.issues.filter(
+			(i) => i.kind === 'CHAPTER_SCENE_CONFLICT'
+		);
+		expect(conflicts).toHaveLength(1);
+		expect(conflicts[0].autoRepairable).toBe(false);
+	});
+});
+
+describe('scanProject — chapter<->draft issues', () => {
+	it('flags a chapter draft missing from chapter reverse arrays', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			[],
+			[],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-001-tst-001'],
+			}
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		await seedDraftOfChapter(
+			app,
+			'Novel/Drafts/Ch01 - Draft 1.md',
+			'drf-001-tst-001',
+			'Ch01',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		expect(kinds(report.issues)).toContain('DRAFT_MISSING_IN_CHAPTER');
+	});
+
+	it('flags a stale draft entry in chapter reverse arrays', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			[],
+			[],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-001-tst-001'],
+			}
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[Ghost draft]]'],
+			['drf-ghost-tst-000']
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		expect(kinds(report.issues)).toContain('STALE_DRAFT_IN_CHAPTER');
+	});
+
+	it('flags chapter<->draft wikilink/id conflict', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			[],
+			[],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-001-tst-001'],
+			}
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[Ch01 - Draft 1]]'],
+			['drf-002-tst-002'] // id points elsewhere
+		);
+		await seedDraftOfChapter(
+			app,
+			'Novel/Drafts/Ch01 - Draft 1.md',
+			'drf-001-tst-001',
+			'Ch01',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		await seedDraftOfChapter(
+			app,
+			'Novel/Drafts/Ch01 - Draft 2.md',
+			'drf-002-tst-002',
+			'Ch01',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		const conflicts = report.issues.filter(
+			(i) => i.kind === 'CHAPTER_DRAFT_CONFLICT'
+		);
+		expect(conflicts).toHaveLength(1);
+		expect(conflicts[0].autoRepairable).toBe(false);
+	});
+});
+
+describe('scanProject — PROJECT_MIXED_CHILDREN', () => {
+	it('flags a project with both chapters and direct scenes', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			['[[Direct Scene]]'],
+			['sc1-001-tst-001'],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-001-tst-001'],
+			}
+		);
+		await seedScene(
+			app,
+			'Novel/Direct Scene.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		const mixed = report.issues.filter(
+			(i) => i.kind === 'PROJECT_MIXED_CHILDREN'
+		);
+		expect(mixed).toHaveLength(1);
+		expect(mixed[0].autoRepairable).toBe(false);
+		expect(mixed[0].repair).toBeUndefined();
+	});
+
+	it('does not flag a project with only chapters', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			[],
+			[],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-001-tst-001'],
+			}
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		expect(kinds(report.issues)).not.toContain('PROJECT_MIXED_CHILDREN');
+	});
+
+	it('does not flag a project with only direct scenes', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			['[[Opening]]'],
+			['sc1-001-tst-001']
+		);
+		await seedScene(
+			app,
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		expect(kinds(report.issues)).not.toContain('PROJECT_MIXED_CHILDREN');
+	});
+});
+
+describe('scanProject — chapter-aware project clean baseline', () => {
+	it('returns no issues for a fully-synced chapter-aware project', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			[],
+			[],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-001-tst-001'],
+			}
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001',
+			['[[Opening]]'],
+			['sc1-001-tst-001'],
+			['[[Ch01 - Draft 1]]'],
+			['drf-001-tst-001']
+		);
+		await seedSceneInChapter(
+			app,
+			'Novel/Chapters/Ch01/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001',
+			'Ch01',
+			'chp-001-tst-001'
+		);
+		await seedDraftOfChapter(
+			app,
+			'Novel/Drafts/Ch01 - Draft 1.md',
+			'drf-001-tst-001',
+			'Ch01',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		expect(report.issues).toEqual([]);
+	});
+});
+
+describe('applyRepairs — chapter relationships', () => {
+	it('adds a missing chapter to project reverse arrays', async () => {
+		const app = new App();
+		const projectFile = await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		const result = await applyRepairs(app, report);
+
+		expect(result.repaired).toBe(1);
+		expect(result.errors).toBe(0);
+
+		const fm = app.metadataCache.getFileCache(projectFile)?.frontmatter;
+		expect(fm?.['dbench-chapters']).toEqual(['[[Ch01]]']);
+		expect(fm?.['dbench-chapter-ids']).toEqual(['chp-001-tst-001']);
+	});
+
+	it('skips PROJECT_MIXED_CHILDREN as conflict (manual-only)', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			['[[Direct]]'],
+			['sc1-001-tst-001'],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-001-tst-001'],
+			}
+		);
+		await seedScene(
+			app,
+			'Novel/Direct.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		await seedChapter(
+			app,
+			'Novel/Chapters/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		const result = await applyRepairs(app, report);
+
+		// Mixed-children issue stays in conflictsSkipped; other issues
+		// may still be auto-repaired.
+		expect(
+			result.repaired + result.conflictsSkipped + result.errors
+		).toBe(report.issues.length);
+		expect(result.conflictsSkipped).toBeGreaterThanOrEqual(1);
 	});
 });

@@ -1,9 +1,12 @@
 import { type App, type TFile } from 'obsidian';
 import {
+	findChaptersInProject,
 	findCompilePresetsOfProject,
+	findDraftsOfChapter,
 	findDraftsOfProject,
 	findDraftsOfScene,
 	findNoteById,
+	findScenesInChapter,
 	findScenesInProject,
 	type ProjectNote,
 } from './discovery';
@@ -49,6 +52,13 @@ import {
  *
  * Naming shape: `<PARENT>_<CATEGORY>_<CHILD>` for reverse-array and
  * conflict issues, where CATEGORY is one of MISSING / STALE / CONFLICT.
+ *
+ * `PROJECT_MIXED_CHILDREN` (per § 9 of chapter-type.md) is the lone
+ * state-violation code, flagged when a project carries both chapters
+ * and direct scenes; it sits outside the `<PARENT>_<CATEGORY>_<CHILD>`
+ * shape because it describes a structural invariant rather than a
+ * single forward-ref / reverse-array pair. Manual-only repair: the
+ * writer must convert the project to one shape or the other.
  */
 export type IntegrityIssueKind =
 	| 'SCENE_MISSING_IN_PROJECT'
@@ -62,7 +72,17 @@ export type IntegrityIssueKind =
 	| 'PROJECT_DRAFT_CONFLICT'
 	| 'PRESET_MISSING_IN_PROJECT'
 	| 'STALE_PRESET_IN_PROJECT'
-	| 'PROJECT_PRESET_CONFLICT';
+	| 'PROJECT_PRESET_CONFLICT'
+	| 'CHAPTER_MISSING_IN_PROJECT'
+	| 'STALE_CHAPTER_IN_PROJECT'
+	| 'PROJECT_CHAPTER_CONFLICT'
+	| 'SCENE_MISSING_IN_CHAPTER'
+	| 'STALE_SCENE_IN_CHAPTER'
+	| 'CHAPTER_SCENE_CONFLICT'
+	| 'DRAFT_MISSING_IN_CHAPTER'
+	| 'STALE_DRAFT_IN_CHAPTER'
+	| 'CHAPTER_DRAFT_CONFLICT'
+	| 'PROJECT_MIXED_CHILDREN';
 
 export interface IntegrityIssue {
 	kind: IntegrityIssueKind;
@@ -110,10 +130,35 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 	const issues: IntegrityIssue[] = [];
 	const projectId = project.frontmatter['dbench-id'];
 	const shape = project.frontmatter['dbench-project-shape'];
+	const allScenes = findScenesInProject(app, projectId);
+	const directScenes = allScenes.filter(
+		(s) =>
+			!readString(
+				(s.frontmatter as unknown as Record<string, unknown>)[
+					'dbench-chapter-id'
+				]
+			)
+	);
+	const chapters = findChaptersInProject(app, projectId);
 
-	// Scene <-> project. Always checked (folder projects have scenes;
-	// single-scene projects should have none, but a stale reverse entry
-	// here is still worth surfacing).
+	// PROJECT_MIXED_CHILDREN: § 9 invariant. A project's top-level
+	// children are all chapters or all direct scenes, never both.
+	// Manual-only repair (the writer must decide which shape to keep);
+	// auto-fixing either way would silently destroy hierarchy.
+	if (chapters.length > 0 && directScenes.length > 0) {
+		issues.push({
+			kind: 'PROJECT_MIXED_CHILDREN',
+			autoRepairable: false,
+			description: `${project.file.basename} has both chapters (${chapters.length}) and direct scenes (${directScenes.length}). Per chapter-type.md § 9, a project's children must be all chapters or all direct scenes; convert one set to the other.`,
+		});
+	}
+
+	// Scene <-> project. Direct children only — scenes-in-chapters are
+	// scanned via the chapter <-> scene pass below. Filtering on the
+	// declared-children side and the predicate side keeps the scan from
+	// flagging chapter-aware projects as "missing direct-children scenes
+	// in dbench-scenes" when the project's reverse arrays are intentionally
+	// empty.
 	issues.push(
 		...scanRelationship({
 			app,
@@ -124,8 +169,10 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 			parentId: projectId,
 			wikilinkField: 'dbench-scenes',
 			idField: 'dbench-scene-ids',
-			declaredChildren: findScenesInProject(app, projectId).map(toGeneric),
-			childDeclaresParent: (fm) => fm['dbench-project-id'] === projectId,
+			declaredChildren: directScenes.map(toGeneric),
+			childDeclaresParent: (fm) =>
+				fm['dbench-project-id'] === projectId &&
+				!readString(fm['dbench-chapter-id']),
 			childTypeLabel: 'Scene',
 			kinds: {
 				missing: 'SCENE_MISSING_IN_PROJECT',
@@ -135,8 +182,89 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 		})
 	);
 
-	// Scene <-> draft. One relationship pass per scene in the project.
-	for (const scene of findScenesInProject(app, projectId)) {
+	// Chapter <-> project. One relationship pass per project. No shape
+	// filter: integrity surfaces chapters in any project shape (a
+	// chapter in a single-scene project would surface here as a stale
+	// reference once it fails to roundtrip — the linker doesn't reject
+	// such configurations).
+	issues.push(
+		...scanRelationship({
+			app,
+			parent: {
+				file: project.file,
+				frontmatter: project.frontmatter as unknown as Record<string, unknown>,
+			},
+			parentId: projectId,
+			wikilinkField: 'dbench-chapters',
+			idField: 'dbench-chapter-ids',
+			declaredChildren: chapters.map(toGeneric),
+			childDeclaresParent: (fm) => fm['dbench-project-id'] === projectId,
+			childTypeLabel: 'Chapter',
+			kinds: {
+				missing: 'CHAPTER_MISSING_IN_PROJECT',
+				stale: 'STALE_CHAPTER_IN_PROJECT',
+				conflict: 'PROJECT_CHAPTER_CONFLICT',
+			},
+		})
+	);
+
+	// Chapter <-> scene. One relationship pass per chapter.
+	for (const chapter of chapters) {
+		const chapterId = chapter.frontmatter['dbench-id'];
+		issues.push(
+			...scanRelationship({
+				app,
+				parent: {
+					file: chapter.file,
+					frontmatter: chapter.frontmatter as unknown as Record<
+						string,
+						unknown
+					>,
+				},
+				parentId: chapterId,
+				wikilinkField: 'dbench-scenes',
+				idField: 'dbench-scene-ids',
+				declaredChildren: findScenesInChapter(app, chapterId).map(toGeneric),
+				childDeclaresParent: (fm) => fm['dbench-chapter-id'] === chapterId,
+				childTypeLabel: 'Scene',
+				kinds: {
+					missing: 'SCENE_MISSING_IN_CHAPTER',
+					stale: 'STALE_SCENE_IN_CHAPTER',
+					conflict: 'CHAPTER_SCENE_CONFLICT',
+				},
+			})
+		);
+
+		// Chapter <-> draft (chapter-level drafts per § 4).
+		issues.push(
+			...scanRelationship({
+				app,
+				parent: {
+					file: chapter.file,
+					frontmatter: chapter.frontmatter as unknown as Record<
+						string,
+						unknown
+					>,
+				},
+				parentId: chapterId,
+				wikilinkField: 'dbench-drafts',
+				idField: 'dbench-draft-ids',
+				declaredChildren: findDraftsOfChapter(app, chapterId).map(toGeneric),
+				childDeclaresParent: (fm) => fm['dbench-chapter-id'] === chapterId,
+				childTypeLabel: 'Draft',
+				kinds: {
+					missing: 'DRAFT_MISSING_IN_CHAPTER',
+					stale: 'STALE_DRAFT_IN_CHAPTER',
+					conflict: 'CHAPTER_DRAFT_CONFLICT',
+				},
+			})
+		);
+	}
+
+	// Scene <-> draft. One relationship pass per scene in the project
+	// (including scenes-in-chapters: scene-level drafts attach to their
+	// scene regardless of chapter parentage).
+	for (const scene of allScenes) {
 		issues.push(
 			...scanRelationship({
 				app,

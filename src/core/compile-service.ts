@@ -1,4 +1,5 @@
 import type { App } from 'obsidian';
+import { buildChapterHeading } from './compile/chapter-rules';
 import { applyContentRules } from './compile/content-rules';
 import { renumberFootnotes } from './compile/footnote-renumber';
 import { buildSectionBreak } from './compile/section-breaks';
@@ -248,11 +249,32 @@ export class CompileService {
 			stripAccumulator,
 		};
 
-		let compileIndex = 0;
+		const chapterMode =
+			preset.frontmatter['dbench-compile-heading-scope'] === 'chapter';
+		let chapterIndex = 0;
+		let sceneIndex = 0;
 		for (const plan of plans) {
-			for (const scene of plan.selected) {
-				compileIndex++;
-				await this.processScene(scene, compileIndex, preset, acc);
+			chapterIndex++;
+			if (chapterMode) {
+				acc.bodies.push(
+					buildChapterHeading(
+						plan.chapter.file.basename,
+						chapterIndex,
+						preset.frontmatter
+					)
+				);
+				const intro = await this.processChapterIntro(plan.chapter, preset, acc);
+				if (intro.length > 0) acc.bodies.push(intro);
+			}
+			for (let i = 0; i < plan.selected.length; i++) {
+				sceneIndex++;
+				await this.processScene(
+					plan.selected[i],
+					sceneIndex,
+					preset,
+					acc,
+					{ suppressSectionBreak: chapterMode && i === 0 }
+				);
 			}
 		}
 
@@ -271,7 +293,8 @@ export class CompileService {
 		scene: SceneNote,
 		compileIndex: number,
 		preset: CompilePresetNote,
-		acc: SceneAccumulator
+		acc: SceneAccumulator,
+		options: { suppressSectionBreak?: boolean } = {}
 	): Promise<void> {
 		try {
 			const raw = await this.app.vault.read(scene.file);
@@ -286,8 +309,10 @@ export class CompileService {
 			});
 			const renumbered = renumberFootnotes(transformed, acc.footnoteOffset);
 			acc.footnoteOffset += renumbered.consumedCount;
-			const sectionBreak = buildSectionBreak(scene, preset.frontmatter);
-			if (sectionBreak) acc.bodies.push(sectionBreak);
+			if (!options.suppressSectionBreak) {
+				const sectionBreak = buildSectionBreak(scene, preset.frontmatter);
+				if (sectionBreak) acc.bodies.push(sectionBreak);
+			}
 			acc.bodies.push(renumbered.content);
 			acc.scenesCompiled++;
 		} catch (err) {
@@ -296,6 +321,42 @@ export class CompileService {
 			acc.bodies.push(
 				`<!-- Draft Bench: failed to read "${scene.file.basename}": ${message} -->`
 			);
+		}
+	}
+
+	/**
+	 * Process the chapter note's body for inclusion under its heading
+	 * in chapter mode. Runs the same content-rule pipeline as scenes
+	 * (frontmatter strip, draft slice, H1 shift, inline transforms,
+	 * footnote renumber) but without prepending a heading — chapter
+	 * headings are emitted separately by the walker.
+	 *
+	 * Returns the trimmed body content; empty string when the chapter
+	 * has no `## Draft` section (the common case — most chapters carry
+	 * planning prose plus an empty `## Draft`). Chapter content does
+	 * not contribute to `chapterHashes`; per chapter-type § 7, hashing
+	 * stays scoped to scenes for V1.
+	 */
+	private async processChapterIntro(
+		chapter: ChapterNote,
+		preset: CompilePresetNote,
+		acc: SceneAccumulator
+	): Promise<string> {
+		try {
+			const raw = await this.app.vault.read(chapter.file);
+			const transformed = applyContentRules(raw, {
+				preset: preset.frontmatter,
+				sceneTitle: chapter.file.basename,
+				compileIndex: 0,
+				stripAccumulator: acc.stripAccumulator,
+			});
+			const renumbered = renumberFootnotes(transformed, acc.footnoteOffset);
+			acc.footnoteOffset += renumbered.consumedCount;
+			return renumbered.content.trim();
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			acc.errors.push({ scenePath: chapter.file.path, message });
+			return `<!-- Draft Bench: failed to read chapter "${chapter.file.basename}": ${message} -->`;
 		}
 	}
 }

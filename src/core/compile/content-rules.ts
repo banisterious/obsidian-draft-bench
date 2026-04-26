@@ -68,14 +68,17 @@ export function applyContentRules(rawContent: string, ctx: RuleContext): string 
 	body = applyBodyScopeRule(body, ctx.preset['dbench-compile-heading-scope']);
 	body = body.trim();
 
-	// Rule 2: shift in-body H1s down, then prepend the scene-title H1.
+	// Rule 2: shift in-body H1s down, then prepend the scene-title H1
+	// (suppressed in chapter heading-scope — buildSceneHeading returns
+	// '' there, and join skips empty parts so the body emerges naked
+	// for the chapter walker to compose with the chapter heading).
 	body = shiftH1sInBody(body);
 	const heading = buildSceneHeading(
 		ctx.sceneTitle,
 		ctx.compileIndex,
 		ctx.preset
 	);
-	body = body.length > 0 ? `${heading}\n\n${body}` : heading;
+	body = [heading, body].filter((part) => part.length > 0).join('\n\n');
 
 	// Rules 10 + 11: line-level strip-by-filter / strip-by-regex.
 	body = stripCalloutMarkers(body);
@@ -167,6 +170,11 @@ export function applyBodyScopeRule(
 	body: string,
 	mode: CompileHeadingScope
 ): string {
+	// 'draft' and 'chapter' both slice to the `## Draft` section; only
+	// 'full' returns the whole body (planning sections included).
+	// Chapter mode reuses the draft-slice because chapter compile output
+	// concatenates per-scene draft prose under a single chapter H1; the
+	// scene's planning sections are never emitted.
 	return mode === 'full' ? body : sliceToDraft(body);
 }
 
@@ -198,6 +206,10 @@ export function buildSceneHeading(
 	index: number,
 	preset: CompilePresetFrontmatter
 ): string {
+	// Chapter heading-scope suppresses per-scene H1s entirely — the
+	// chapter walker emits one H1 per chapter and concatenates scene
+	// drafts as continuous prose beneath it (per chapter-type § 7).
+	if (preset['dbench-compile-heading-scope'] === 'chapter') return '';
 	const numbering = preset['dbench-compile-chapter-numbering'];
 	if (numbering === 'numeric') return `# ${index}. ${title}`;
 	if (numbering === 'roman') return `# ${toRoman(index)}. ${title}`;

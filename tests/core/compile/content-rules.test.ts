@@ -91,6 +91,13 @@ describe('applyBodyScopeRule', () => {
 		const body = 'Orphan prose with no heading.';
 		expect(applyBodyScopeRule(body, 'draft')).toBe(body);
 	});
+
+	it('chapter mode slices like draft mode (planning sections excluded)', () => {
+		const body = '# Planning\nnotes\n## Draft\nThe prose.';
+		expect(applyBodyScopeRule(body, 'chapter')).toBe(
+			applyBodyScopeRule(body, 'draft')
+		);
+	});
 });
 
 // -- Rule 2: heading transformation ------------------------------------
@@ -127,6 +134,29 @@ describe('buildSceneHeading', () => {
 		expect(
 			buildSceneHeading('Opening', 4, makePresetFm({ 'dbench-compile-chapter-numbering': 'roman' }))
 		).toBe('# IV. Opening');
+	});
+
+	it('returns an empty string in chapter heading-scope (chapter walker emits its own H1)', () => {
+		expect(
+			buildSceneHeading(
+				'Opening',
+				1,
+				makePresetFm({ 'dbench-compile-heading-scope': 'chapter' })
+			)
+		).toBe('');
+	});
+
+	it('suppresses scene H1 in chapter mode even with chapter-numbering set', () => {
+		expect(
+			buildSceneHeading(
+				'Opening',
+				3,
+				makePresetFm({
+					'dbench-compile-heading-scope': 'chapter',
+					'dbench-compile-chapter-numbering': 'numeric',
+				})
+			)
+		).toBe('');
 	});
 });
 
@@ -426,6 +456,21 @@ describe('applyContentRules', () => {
 		const raw = '---\ntitle: X\n---\n## Draft\n';
 		const result = applyContentRules(raw, baseCtx());
 		expect(result).toBe('# Opening');
+	});
+
+	it('emits the body without any heading in chapter mode', () => {
+		const raw =
+			'---\ntitle: X\n---\n# Planning\nnotes\n## Draft\nThe prose.';
+		const preset = makePresetFm({ 'dbench-compile-heading-scope': 'chapter' });
+		const result = applyContentRules(raw, baseCtx({ preset }));
+		expect(result).toBe('The prose.');
+	});
+
+	it('emits an empty string in chapter mode when the draft slice is empty', () => {
+		const raw = '## Draft\n';
+		const preset = makePresetFm({ 'dbench-compile-heading-scope': 'chapter' });
+		const result = applyContentRules(raw, baseCtx({ preset }));
+		expect(result).toBe('');
 	});
 
 	it('leaves fenced code blocks verbatim', () => {

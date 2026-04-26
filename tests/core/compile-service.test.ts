@@ -98,10 +98,12 @@ async function seedSceneInChapter(
 		order: number;
 		body: string;
 		status?: DbenchStatus;
+		sectionBreakTitle?: string;
+		sectionBreakStyle?: SectionBreakStyle;
 	}
 ): Promise<TFile> {
 	const file = await app.vault.create(options.path, options.body);
-	app.metadataCache._setFrontmatter(file, {
+	const fm: Record<string, unknown> = {
 		'dbench-type': 'scene',
 		'dbench-id': options.id,
 		'dbench-project': `[[${options.projectTitle}]]`,
@@ -112,7 +114,14 @@ async function seedSceneInChapter(
 		'dbench-status': options.status ?? 'draft',
 		'dbench-drafts': [],
 		'dbench-draft-ids': [],
-	});
+	};
+	if (options.sectionBreakTitle !== undefined) {
+		fm['dbench-section-break-title'] = options.sectionBreakTitle;
+	}
+	if (options.sectionBreakStyle !== undefined) {
+		fm['dbench-section-break-style'] = options.sectionBreakStyle;
+	}
+	app.metadataCache._setFrontmatter(file, fm);
 	return file;
 }
 
@@ -1055,5 +1064,345 @@ describe('CompileService.generate — chapter-aware dispatch (Step 8)', () => {
 		expect(result.markdown).toBe('# Inside\n\nInside chapter.');
 		expect(result.markdown).not.toContain('Orphan');
 		expect(result.scenesCompiled).toBe(1);
+	});
+});
+
+describe("CompileService.generate — chapter heading-scope ('chapter' mode, Step 8)", () => {
+	let app: App;
+	let service: CompileService;
+	const projectId = 'prj-001-tst-001';
+
+	beforeEach(() => {
+		app = new App();
+		service = new CompileService(app);
+	});
+
+	it('emits one H1 per chapter and concatenates scene drafts beneath, with no scene H1s', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Chapter 1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Chapter 1/Scene A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Chapter 1',
+			order: 1,
+			body: '## Draft\nScene A prose.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Chapter 1/Scene B.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Chapter 1',
+			order: 2,
+			body: '## Draft\nScene B prose.',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe(
+			'# Chapter 1\n\nScene A prose.\n\nScene B prose.'
+		);
+		expect(result.markdown).not.toContain('# Scene A');
+		expect(result.markdown).not.toContain('# Scene B');
+	});
+
+	it('emits the chapter intro between heading and first scene when the chapter draft is non-empty', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Chapter 1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			body:
+				'# Source passages\nresearch\n## Draft\nA framing epigraph.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Chapter 1/Scene A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Chapter 1',
+			order: 1,
+			body: '## Draft\nScene A prose.',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe(
+			'# Chapter 1\n\nA framing epigraph.\n\nScene A prose.'
+		);
+	});
+
+	it('omits the chapter intro entirely when the chapter draft slice is empty', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Chapter 1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			// No `## Draft` heading -> sliceToDraft returns the whole
+			// body, but the body is just planning sections; in the
+			// common case writers leave `## Draft` blank.
+			body: '## Draft\n',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Chapter 1/Scene A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Chapter 1',
+			order: 1,
+			body: '## Draft\nScene A prose.',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe('# Chapter 1\n\nScene A prose.');
+	});
+
+	it('suppresses section breaks before the first scene of each chapter (chapter heading is the break)', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Ch1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedChapter(app, {
+			path: 'Novel/Ch2.md',
+			id: 'ch2-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+		});
+		// Both first scenes have a section-break-title declared.
+		// Without suppression, output would awkwardly contain a
+		// section break right after each chapter heading.
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 1,
+			body: '## Draft\nA.',
+			sectionBreakTitle: 'Wrong place',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/B.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 2,
+			body: '## Draft\nB.',
+			sectionBreakTitle: 'Mid chapter',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch2/C.md',
+			id: 'scc-003-tst-003',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch2-002-tst-002',
+			chapterTitle: 'Ch2',
+			order: 1,
+			body: '## Draft\nC.',
+			sectionBreakTitle: 'Also wrong',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+		});
+		const result = await service.generate(preset);
+
+		// Chapter 1: heading -> A (no break) -> mid-chapter break -> B
+		// Chapter 2: heading -> C (no break)
+		expect(result.markdown).not.toContain('Wrong place');
+		expect(result.markdown).not.toContain('Also wrong');
+		expect(result.markdown).toContain('Mid chapter');
+	});
+
+	it('applies numeric chapter numbering to the chapter heading', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Ch1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedChapter(app, {
+			path: 'Novel/Ch2.md',
+			id: 'ch2-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 1,
+			body: '## Draft\nA.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch2/B.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch2-002-tst-002',
+			chapterTitle: 'Ch2',
+			order: 1,
+			body: '## Draft\nB.',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+			'dbench-compile-chapter-numbering': 'numeric',
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe(
+			'# 1. Ch1\n\nA.\n\n# 2. Ch2\n\nB.'
+		);
+	});
+
+	it('keeps walking chapter -> scene order when heading-scope=draft on a chapter-aware project (no chapter headings, scene H1s present)', async () => {
+		// Dispatch is independent of heading-scope: chapters get walked
+		// because the project has chapters, but with heading-scope=draft
+		// the chapter walker emits scene H1s and no chapter headings —
+		// equivalent to the writer overriding chapter mode.
+		await seedChapter(app, {
+			path: 'Novel/Ch1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 1,
+			body: 'A.',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'draft',
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe('# A\n\nA.');
+		expect(result.markdown).not.toContain('# Ch1');
+	});
+
+	it('emits an error marker for an unreadable chapter file without halting the chapter or compile', async () => {
+		const ch = await seedChapter(app, {
+			path: 'Novel/Broken Chapter.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Broken Chapter/Scene A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Broken Chapter',
+			order: 1,
+			body: '## Draft\nScene survives.',
+		});
+		const originalRead = app.vault.read.bind(app.vault);
+		app.vault.read = async (file: TFile): Promise<string> => {
+			if (file.path === ch.path) throw new Error('Disk fault');
+			return originalRead(file);
+		};
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+		});
+		const result = await service.generate(preset);
+
+		expect(result.errors).toContainEqual({
+			scenePath: ch.path,
+			message: 'Disk fault',
+		});
+		expect(result.markdown).toContain(
+			'<!-- Draft Bench: failed to read chapter "Broken Chapter": Disk fault -->'
+		);
+		// Scene still compiles even though chapter intro failed.
+		expect(result.scenesCompiled).toBe(1);
+		expect(result.markdown).toContain('Scene survives.');
+		// Heading still emitted.
+		expect(result.markdown).toContain('# Broken Chapter');
+	});
+
+	it('renumbers footnotes continuously across chapter intros and scene drafts', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Ch1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+			body: '## Draft\nIntro[^a].\n\n[^a]: Intro note.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 1,
+			body: '## Draft\nScene[^b].\n\n[^b]: Scene note.',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+		});
+		const result = await service.generate(preset);
+
+		// Intro consumes footnote 1; scene consumes footnote 2.
+		expect(result.markdown).toContain('Intro[^1].');
+		expect(result.markdown).toContain('[^1]: Intro note.');
+		expect(result.markdown).toContain('Scene[^2].');
+		expect(result.markdown).toContain('[^2]: Scene note.');
 	});
 });

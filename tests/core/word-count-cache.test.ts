@@ -2,10 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from 'obsidian';
 import { WordCountCache } from '../../src/core/word-count-cache';
 import { createProject } from '../../src/core/projects';
+import { createChapter } from '../../src/core/chapters';
 import { createScene } from '../../src/core/scenes';
 import {
+	findChaptersInProject,
 	findProjects,
 	findScenesInProject,
+	type ChapterNote,
 	type ProjectNote,
 	type SceneNote,
 } from '../../src/core/discovery';
@@ -47,6 +50,31 @@ async function seedScene(
 	);
 	if (!scene) throw new Error(`seeded scene ${title} not discoverable`);
 	return scene;
+}
+
+async function seedChapter(
+	app: App,
+	settings: DraftBenchSettings,
+	project: ProjectNote,
+	title: string,
+	bodyBelowDraft = 'Chapter body four words.'
+): Promise<ChapterNote> {
+	const file = await createChapter(app, settings, { project, title });
+	const fm = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
+	const fmBlock =
+		'---\n' +
+		Object.entries(fm)
+			.map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+			.join('\n') +
+		'\n---\n';
+	await app.vault.modify(file, `${fmBlock}## Draft\n\n${bodyBelowDraft}\n`);
+	file.stat.mtime = Date.now();
+	const chapter = findChaptersInProject(
+		app,
+		project.frontmatter['dbench-id']
+	).find((c) => c.file.basename === title);
+	if (!chapter) throw new Error(`seeded chapter ${title} not discoverable`);
+	return chapter;
 }
 
 describe('WordCountCache', () => {
@@ -268,6 +296,103 @@ describe('WordCountCache', () => {
 			const counts = await cache.countForProject(refreshed);
 			expect(counts.scenesWithTargets).toBe(1);
 			expect(counts.sceneTargetSum).toBe(2000);
+		});
+
+		it('chaptersByStatus stays empty for chapter-less projects', async () => {
+			const project = await seedProject(app, settings, 'Flat');
+			await seedScene(app, settings, project, 'A', 'one two three');
+
+			const counts = await cache.countForProject(project);
+			expect(counts.chaptersByStatus).toEqual({});
+		});
+
+		it('chapter-only project: totals come from chapter bodies', async () => {
+			const project = await seedProject(app, settings, 'AllChapters');
+			await seedChapter(app, settings, project, 'Ch01', 'four words right here'); // 4
+			await seedChapter(app, settings, project, 'Ch02', 'two words'); // 2
+
+			const refreshed = findProjects(app).find(
+				(p) => p.file.path === project.file.path
+			)!;
+			const counts = await cache.countForProject(refreshed);
+			expect(counts.total).toBe(6);
+			expect(counts.wordsByStatus.idea).toBe(6);
+			expect(counts.chaptersByStatus.idea).toBe(2);
+			expect(counts.scenesByStatus).toEqual({});
+		});
+
+		it('chapter-aware project with scenes-in-chapter: chapter bodies augment total + status', async () => {
+			const project = await seedProject(app, settings, 'Mixed');
+			const chapter = await seedChapter(
+				app,
+				settings,
+				project,
+				'Ch01',
+				'three chapter words'
+			); // 3
+			// Flip chapter status to 'revision' so its body lands in a
+			// distinct bucket from the scenes' default 'idea'.
+			await app.fileManager.processFrontMatter(chapter.file, (fm) => {
+				fm['dbench-status'] = 'revision';
+			});
+			const refreshedProject = findProjects(app).find(
+				(p) => p.file.path === project.file.path
+			)!;
+			const refreshedChapter = findChaptersInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((c) => c.file.basename === 'Ch01')!;
+
+			await createScene(app, settings, {
+				project: refreshedProject,
+				chapter: refreshedChapter,
+				title: 'A',
+			});
+			await createScene(app, settings, {
+				project: refreshedProject,
+				chapter: refreshedChapter,
+				title: 'B',
+			});
+			// Overwrite scene bodies for predictable counts.
+			const sceneA = findScenesInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((s) => s.file.basename === 'A')!;
+			const sceneB = findScenesInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((s) => s.file.basename === 'B')!;
+			const fmBlock = (file: typeof sceneA.file): string => {
+				const fm =
+					app.metadataCache.getFileCache(file)?.frontmatter ?? {};
+				return (
+					'---\n' +
+					Object.entries(fm)
+						.map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+						.join('\n') +
+					'\n---\n'
+				);
+			};
+			await app.vault.modify(
+				sceneA.file,
+				`${fmBlock(sceneA.file)}## Draft\n\nfive small scene words here\n`
+			); // 5
+			sceneA.file.stat.mtime = Date.now();
+			await app.vault.modify(
+				sceneB.file,
+				`${fmBlock(sceneB.file)}## Draft\n\ntwo words\n`
+			); // 2
+			sceneB.file.stat.mtime = Date.now() + 1;
+
+			const counts = await cache.countForProject(refreshedProject);
+			// Scenes (idea, 5+2=7) + chapter (revision, 3) = 10.
+			expect(counts.total).toBe(10);
+			expect(counts.wordsByStatus.idea).toBe(7);
+			expect(counts.wordsByStatus.revision).toBe(3);
+			expect(counts.scenesByStatus.idea).toBe(2);
+			expect(counts.scenesByStatus.revision).toBeUndefined();
+			expect(counts.chaptersByStatus.revision).toBe(1);
+			expect(counts.chaptersByStatus.idea).toBeUndefined();
 		});
 	});
 

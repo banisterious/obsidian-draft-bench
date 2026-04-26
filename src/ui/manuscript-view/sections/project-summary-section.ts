@@ -105,8 +105,8 @@ function buildWordCountsView(
 
 	// Iterate the writer's configured vocabulary first (so rows appear in
 	// their chosen order), then append any out-of-vocab buckets the cache
-	// discovered on scenes (statuses the writer has since removed but
-	// haven't been migrated off existing notes). Empty buckets are skipped.
+	// discovered on scenes/chapters (statuses the writer has since removed
+	// but haven't been migrated off existing notes). Empty buckets are skipped.
 	const seen = new Set<string>();
 	const rows: string[] = [];
 	for (const status of vocabulary) {
@@ -121,17 +121,25 @@ function buildWordCountsView(
 			rows.push(status);
 		}
 	}
+	for (const status of Object.keys(counts.chaptersByStatus)) {
+		if (!seen.has(status)) {
+			seen.add(status);
+			rows.push(status);
+		}
+	}
 
 	let renderedAny = false;
 	for (const status of rows) {
 		const sceneCount = counts.scenesByStatus[status] ?? 0;
-		if (sceneCount === 0) continue;
+		const chapterCount = counts.chaptersByStatus[status] ?? 0;
+		if (sceneCount === 0 && chapterCount === 0) continue;
 		renderedAny = true;
 		appendStatusRow(
 			breakdown,
 			status,
 			counts.wordsByStatus[status] ?? 0,
-			sceneCount
+			sceneCount,
+			chapterCount
 		);
 	}
 
@@ -173,7 +181,8 @@ function appendStatusRow(
 	dl: HTMLElement,
 	status: string,
 	words: number,
-	scenes: number
+	scenes: number,
+	chapters: number
 ): void {
 	// `data-status` drives the ::before colored-dot style in
 	// manuscript-view.css; lowercased so CSS selectors match
@@ -185,10 +194,27 @@ function appendStatusRow(
 	});
 	dl.createEl('dd', {
 		cls: 'dbench-manuscript-view__status-value',
-		text: `${scenes} ${scenes === 1 ? 'scene' : 'scenes'}, ${formatNumber(
+		text: `${formatUnitCount(scenes, chapters)}, ${formatNumber(
 			words
 		)} ${words === 1 ? 'word' : 'words'}`,
 	});
+}
+
+/**
+ * Compose the unit-count label for one status row. Chapter-less
+ * projects show "N scenes"; chapter-aware-only buckets show
+ * "K chapters"; mixed buckets (e.g., a scene-in-chapter and a chapter
+ * sharing a status) show "N scenes + K chapters" so the label stays
+ * faithful to what's in each bucket.
+ */
+function formatUnitCount(scenes: number, chapters: number): string {
+	const sceneLabel = `${scenes} ${scenes === 1 ? 'scene' : 'scenes'}`;
+	const chapterLabel = `${chapters} ${
+		chapters === 1 ? 'chapter' : 'chapters'
+	}`;
+	if (chapters === 0) return sceneLabel;
+	if (scenes === 0) return chapterLabel;
+	return `${sceneLabel} + ${chapterLabel}`;
 }
 
 function appendMetaRow(dl: HTMLElement, label: string, value: string): void {

@@ -55,11 +55,22 @@ export interface CachedMetadata {
 export type VaultEventName = 'modify' | 'delete' | 'rename';
 
 /**
- * Opaque handle returned by `Vault.on()`. Used with `offref()` to
- * remove the listener.
+ * MetadataCache event names supported by the mock. `changed` fires
+ * after Obsidian has reparsed a file's frontmatter (later than
+ * `vault.on('modify')`); `resolved` fires after the initial vault
+ * load completes; `deleted` fires when a tracked file is removed
+ * from the vault.
+ */
+export type MetadataCacheEventName = 'changed' | 'resolved' | 'deleted';
+
+/**
+ * Opaque handle returned by `Vault.on()` / `MetadataCache.on()`.
+ * Used with `offref()` to remove the listener. The event tag carries
+ * the source name so `Vault.offref` and `MetadataCache.offref` can
+ * route by event.
  */
 export interface EventRef {
-	event: VaultEventName;
+	event: VaultEventName | MetadataCacheEventName;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	callback: (...args: any[]) => void;
 }
@@ -135,7 +146,7 @@ export class Vault {
 	}
 
 	offref(ref: EventRef): void {
-		this.listeners.get(ref.event)?.delete(ref);
+		this.listeners.get(ref.event as VaultEventName)?.delete(ref);
 	}
 
 	// Wire up the metadata cache so that processFrontMatter can keep it in sync.
@@ -199,12 +210,17 @@ export class Vault {
 
 export class MetadataCache {
 	private cache = new Map<string, CachedMetadata>();
+	private listeners = new Map<MetadataCacheEventName, Set<EventRef>>();
 
 	getFileCache(file: TFile): CachedMetadata | null {
 		return this.cache.get(file.path) ?? null;
 	}
 
 	// Internal: update the cache when a file's frontmatter changes.
+	// Does NOT fire 'changed' — production Obsidian fires that event
+	// after its own reparse step, and tests prefer to control the
+	// firing explicitly via `_fire` so they can assert pre/post-event
+	// state independently of cache mutation order.
 	_updateFrontmatter(file: TFile, frontmatter: Record<string, unknown>): void {
 		this.cache.set(file.path, { frontmatter });
 	}
@@ -221,6 +237,54 @@ export class MetadataCache {
 			this.cache.set(newPath, entry);
 			this.cache.delete(oldPath);
 		}
+	}
+
+	on(
+		event: 'changed',
+		callback: (file: TFile, data: string, cache: CachedMetadata) => void
+	): EventRef;
+	on(event: 'resolved', callback: () => void): EventRef;
+	on(
+		event: 'deleted',
+		callback: (file: TFile, prevCache: CachedMetadata | null) => void
+	): EventRef;
+	on(
+		event: MetadataCacheEventName,
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		callback: (...args: any[]) => void
+	): EventRef {
+		const ref: EventRef = { event, callback };
+		let set = this.listeners.get(event);
+		if (!set) {
+			set = new Set();
+			this.listeners.set(event, set);
+		}
+		set.add(ref);
+		return ref;
+	}
+
+	offref(ref: EventRef): void {
+		const set = this.listeners.get(ref.event as MetadataCacheEventName);
+		set?.delete(ref);
+	}
+
+	// Test helper: fire a metadataCache event manually. The 'changed'
+	// callback signature in real Obsidian is `(file, data, cache)`; the
+	// mock forwards whatever args are given so tests can pass just the
+	// file when the linker doesn't read data/cache.
+	_fire(event: 'changed', file: TFile, data?: string, cache?: CachedMetadata): void;
+	_fire(event: 'resolved'): void;
+	_fire(event: 'deleted', file: TFile, prevCache?: CachedMetadata | null): void;
+	_fire(event: MetadataCacheEventName, ...args: unknown[]): void {
+		const set = this.listeners.get(event);
+		if (!set) return;
+		for (const ref of set) {
+			ref.callback(...args);
+		}
+	}
+
+	_listenerCount(event: MetadataCacheEventName): number {
+		return this.listeners.get(event)?.size ?? 0;
 	}
 }
 

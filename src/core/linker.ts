@@ -41,22 +41,37 @@ export class DraftBenchLinker {
 	) {}
 
 	/**
-	 * Register vault event listeners. Idempotent: calling start
-	 * twice without an intervening stop is a no-op for already-
-	 * registered events.
+	 * Register vault + metadataCache event listeners. Idempotent:
+	 * calling start twice without an intervening stop is a no-op for
+	 * already-registered events.
 	 *
 	 * Honors settings at registration time:
 	 * - If `enableBidirectionalSync` is false, no listeners register.
-	 * - If `syncOnFileModify` is false, the modify listener doesn't
-	 *   register (delete and rename still do, since those are cheap
-	 *   and represent intent the linker shouldn't miss).
+	 * - If `syncOnFileModify` is false, the metadataCache 'changed'
+	 *   listener doesn't register (delete and rename still do, since
+	 *   those are cheap and represent intent the linker shouldn't miss).
+	 *
+	 * Why `metadataCache.on('changed')` instead of `vault.on('modify')`:
+	 * vault 'modify' fires synchronously when the file is written,
+	 * BEFORE Obsidian has reparsed the new frontmatter. The linker
+	 * reads `metadataCache.getFileCache(file)?.frontmatter` to decide
+	 * how to reconcile, so reading at modify-time returned the
+	 * pre-write cache and produced stale-state reconciliations
+	 * (surfaced 2026-04-26 by the chapter-type walkthrough's Test 11
+	 * revert path). The 'changed' event fires AFTER the cache reparse,
+	 * so the cache is always current when the handler runs.
+	 *
+	 * `delete` and `rename` stay on vault: their cache state isn't
+	 * race-prone in the same way (delete clears the cache, rename
+	 * carries the file reference itself; neither relies on a
+	 * fresh-frontmatter read).
 	 */
 	start(): void {
 		const settings = this.getSettings();
 		if (!settings.enableBidirectionalSync) return;
 
 		if (settings.syncOnFileModify && this.modifyRef === null) {
-			this.modifyRef = this.app.vault.on('modify', (file) => {
+			this.modifyRef = this.app.metadataCache.on('changed', (file) => {
 				if (this.suspended > 0) return;
 				if (!(file instanceof TFile)) return;
 				this.handleModify(file);
@@ -79,14 +94,14 @@ export class DraftBenchLinker {
 	}
 
 	/**
-	 * Remove all registered vault event listeners. Idempotent.
+	 * Remove all registered event listeners. Idempotent.
 	 *
 	 * Called via `Plugin.register(() => linker.stop())` so plugin
 	 * teardown runs it automatically.
 	 */
 	stop(): void {
 		if (this.modifyRef) {
-			this.app.vault.offref(this.modifyRef);
+			this.app.metadataCache.offref(this.modifyRef);
 			this.modifyRef = null;
 		}
 		if (this.deleteRef) {

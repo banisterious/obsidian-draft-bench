@@ -26,7 +26,7 @@ describe('DraftBenchLinker — lifecycle', () => {
 
 	it('registers modify, delete, and rename listeners on start', () => {
 		linker.start();
-		expect(app.vault._listenerCount('modify')).toBe(1);
+		expect(app.metadataCache._listenerCount('changed')).toBe(1);
 		expect(app.vault._listenerCount('delete')).toBe(1);
 		expect(app.vault._listenerCount('rename')).toBe(1);
 	});
@@ -34,7 +34,7 @@ describe('DraftBenchLinker — lifecycle', () => {
 	it('stop() removes all listeners', () => {
 		linker.start();
 		linker.stop();
-		expect(app.vault._listenerCount('modify')).toBe(0);
+		expect(app.metadataCache._listenerCount('changed')).toBe(0);
 		expect(app.vault._listenerCount('delete')).toBe(0);
 		expect(app.vault._listenerCount('rename')).toBe(0);
 	});
@@ -43,7 +43,7 @@ describe('DraftBenchLinker — lifecycle', () => {
 		linker.start();
 		linker.start();
 		linker.start();
-		expect(app.vault._listenerCount('modify')).toBe(1);
+		expect(app.metadataCache._listenerCount('changed')).toBe(1);
 		expect(app.vault._listenerCount('delete')).toBe(1);
 		expect(app.vault._listenerCount('rename')).toBe(1);
 	});
@@ -52,13 +52,13 @@ describe('DraftBenchLinker — lifecycle', () => {
 		linker.start();
 		linker.stop();
 		linker.stop();
-		expect(app.vault._listenerCount('modify')).toBe(0);
+		expect(app.metadataCache._listenerCount('changed')).toBe(0);
 	});
 
 	it('skips registration entirely when enableBidirectionalSync is off', () => {
 		settings.enableBidirectionalSync = false;
 		linker.start();
-		expect(app.vault._listenerCount('modify')).toBe(0);
+		expect(app.metadataCache._listenerCount('changed')).toBe(0);
 		expect(app.vault._listenerCount('delete')).toBe(0);
 		expect(app.vault._listenerCount('rename')).toBe(0);
 	});
@@ -66,7 +66,7 @@ describe('DraftBenchLinker — lifecycle', () => {
 	it('skips modify only when syncOnFileModify is off (delete and rename still register)', () => {
 		settings.syncOnFileModify = false;
 		linker.start();
-		expect(app.vault._listenerCount('modify')).toBe(0);
+		expect(app.metadataCache._listenerCount('changed')).toBe(0);
 		expect(app.vault._listenerCount('delete')).toBe(1);
 		expect(app.vault._listenerCount('rename')).toBe(1);
 	});
@@ -168,7 +168,7 @@ describe('DraftBenchLinker — event dispatch', () => {
 
 	it('handler stubs do not throw when invoked via vault events', async () => {
 		const file = makeFile('Test.md');
-		expect(() => app.vault._fire('modify', file)).not.toThrow();
+		expect(() => app.metadataCache._fire('changed', file)).not.toThrow();
 		expect(() => app.vault._fire('delete', file)).not.toThrow();
 		expect(() => app.vault._fire('rename', file, 'OldPath.md')).not.toThrow();
 	});
@@ -176,7 +176,7 @@ describe('DraftBenchLinker — event dispatch', () => {
 	it('handlers do not run while suspended', async () => {
 		const file = makeFile('Test.md');
 		await linker.withSuspended(async () => {
-			expect(() => app.vault._fire('modify', file)).not.toThrow();
+			expect(() => app.metadataCache._fire('changed', file)).not.toThrow();
 			expect(() => app.vault._fire('delete', file)).not.toThrow();
 			expect(() => app.vault._fire('rename', file, 'OldPath.md')).not.toThrow();
 		});
@@ -262,7 +262,7 @@ describe('DraftBenchLinker — scene<->project sync', () => {
 			app.metadataCache.getFileCache(project)?.frontmatter?.['dbench-scenes']
 		).toEqual([]);
 
-		app.vault._fire('modify', scene);
+		app.metadataCache._fire('changed', scene);
 		await flush();
 
 		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
@@ -300,7 +300,7 @@ describe('DraftBenchLinker — scene<->project sync', () => {
 			'dbench-project-id': 'prj-new-tst-002',
 		});
 
-		app.vault._fire('modify', scene);
+		app.metadataCache._fire('changed', scene);
 		await flush();
 
 		const oldFm = app.metadataCache.getFileCache(oldProject)?.frontmatter;
@@ -329,7 +329,7 @@ describe('DraftBenchLinker — scene<->project sync', () => {
 			'dbench-scene-ids': ['sc1-001-tst-001'],
 		});
 
-		app.vault._fire('modify', scene);
+		app.metadataCache._fire('changed', scene);
 		await flush();
 
 		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
@@ -351,7 +351,7 @@ describe('DraftBenchLinker — scene<->project sync', () => {
 		);
 
 		await linker.withSuspended(async () => {
-			app.vault._fire('modify', scene);
+			app.metadataCache._fire('changed', scene);
 			await flush();
 		});
 
@@ -578,7 +578,7 @@ describe('DraftBenchLinker — scene<->draft sync', () => {
 			app.metadataCache.getFileCache(scene)?.frontmatter?.['dbench-drafts']
 		).toEqual([]);
 
-		app.vault._fire('modify', draft);
+		app.metadataCache._fire('changed', draft);
 		await flush();
 
 		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
@@ -631,7 +631,7 @@ describe('DraftBenchLinker — scene<->draft sync', () => {
 			'dbench-scene-id': 'sc2-002-tst-002',
 		});
 
-		app.vault._fire('modify', draft);
+		app.metadataCache._fire('changed', draft);
 		await flush();
 
 		const oldFm = app.metadataCache.getFileCache(oldScene)?.frontmatter;
@@ -802,7 +802,7 @@ describe('DraftBenchLinker — single-scene-project<->draft sync', () => {
 			app.metadataCache.getFileCache(project)?.frontmatter?.['dbench-drafts']
 		).toEqual([]);
 
-		app.vault._fire('modify', draft);
+		app.metadataCache._fire('changed', draft);
 		await flush();
 
 		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
@@ -826,7 +826,7 @@ describe('DraftBenchLinker — single-scene-project<->draft sync', () => {
 			'prj-001-tst-001'
 		);
 
-		app.vault._fire('modify', draft);
+		app.metadataCache._fire('changed', draft);
 		await flush();
 
 		// The folder project doesn't have dbench-drafts field at all.
@@ -968,7 +968,7 @@ describe('DraftBenchLinker — compile-preset<->project sync', () => {
 			'prj-001-tst-001'
 		);
 
-		app.vault._fire('modify', preset);
+		app.metadataCache._fire('changed', preset);
 		await flush();
 
 		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
@@ -995,7 +995,7 @@ describe('DraftBenchLinker — compile-preset<->project sync', () => {
 		);
 
 		// First sync: preset lands in Old project's reverse arrays.
-		app.vault._fire('modify', preset);
+		app.metadataCache._fire('changed', preset);
 		await flush();
 
 		expect(
@@ -1012,7 +1012,7 @@ describe('DraftBenchLinker — compile-preset<->project sync', () => {
 			'dbench-project': '[[New]]',
 			'dbench-project-id': 'prj-new-tst-002',
 		});
-		app.vault._fire('modify', preset);
+		app.metadataCache._fire('changed', preset);
 		await flush();
 
 		expect(
@@ -1040,9 +1040,9 @@ describe('DraftBenchLinker — compile-preset<->project sync', () => {
 			'prj-001-tst-001'
 		);
 
-		app.vault._fire('modify', preset);
+		app.metadataCache._fire('changed', preset);
 		await flush();
-		app.vault._fire('modify', preset);
+		app.metadataCache._fire('changed', preset);
 		await flush();
 
 		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
@@ -1063,7 +1063,7 @@ describe('DraftBenchLinker — compile-preset<->project sync', () => {
 			'prj-001-tst-001'
 		);
 
-		app.vault._fire('modify', preset);
+		app.metadataCache._fire('changed', preset);
 		await flush();
 		expect(
 			app.metadataCache.getFileCache(project)?.frontmatter?.[
@@ -1092,7 +1092,7 @@ describe('DraftBenchLinker — compile-preset<->project sync', () => {
 			'prj-001-tst-001'
 		);
 
-		app.vault._fire('modify', preset);
+		app.metadataCache._fire('changed', preset);
 		await flush();
 
 		const oldPath = app.vault._rename(
@@ -1121,7 +1121,7 @@ describe('DraftBenchLinker — compile-preset<->project sync', () => {
 			'prj-001-tst-001'
 		);
 
-		app.vault._fire('modify', preset);
+		app.metadataCache._fire('changed', preset);
 		await flush();
 
 		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
@@ -1210,7 +1210,7 @@ describe('DraftBenchLinker — chapter<->project sync', () => {
 			app.metadataCache.getFileCache(project)?.frontmatter?.['dbench-chapters']
 		).toEqual([]);
 
-		app.vault._fire('modify', chapter);
+		app.metadataCache._fire('changed', chapter);
 		await flush();
 
 		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
@@ -1246,7 +1246,7 @@ describe('DraftBenchLinker — chapter<->project sync', () => {
 			'dbench-project-id': 'prj-new-tst-002',
 		});
 
-		app.vault._fire('modify', chapter);
+		app.metadataCache._fire('changed', chapter);
 		await flush();
 
 		const oldFm = app.metadataCache.getFileCache(oldProject)?.frontmatter;
@@ -1270,9 +1270,9 @@ describe('DraftBenchLinker — chapter<->project sync', () => {
 			'prj-001-tst-001'
 		);
 
-		app.vault._fire('modify', chapter);
+		app.metadataCache._fire('changed', chapter);
 		await flush();
-		app.vault._fire('modify', chapter);
+		app.metadataCache._fire('changed', chapter);
 		await flush();
 
 		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
@@ -1294,7 +1294,7 @@ describe('DraftBenchLinker — chapter<->project sync', () => {
 		);
 
 		await linker.withSuspended(async () => {
-			app.vault._fire('modify', chapter);
+			app.metadataCache._fire('changed', chapter);
 			await flush();
 		});
 
@@ -1466,7 +1466,7 @@ describe('DraftBenchLinker — chapter<->scene sync (scenes-in-chapters)', () =>
 			app.metadataCache.getFileCache(chapter)?.frontmatter?.['dbench-scenes']
 		).toEqual([]);
 
-		app.vault._fire('modify', scene);
+		app.metadataCache._fire('changed', scene);
 		await flush();
 
 		const chFm = app.metadataCache.getFileCache(chapter)?.frontmatter;
@@ -1495,7 +1495,7 @@ describe('DraftBenchLinker — chapter<->scene sync (scenes-in-chapters)', () =>
 			'chp-001-tst-001'
 		);
 
-		app.vault._fire('modify', scene);
+		app.metadataCache._fire('changed', scene);
 		await flush();
 
 		// Project's `dbench-scenes` lists direct children only (per § 9);
@@ -1540,7 +1540,7 @@ describe('DraftBenchLinker — chapter<->scene sync (scenes-in-chapters)', () =>
 			'dbench-chapter-id': 'chp-001-tst-001',
 		});
 
-		app.vault._fire('modify', scene);
+		app.metadataCache._fire('changed', scene);
 		await flush();
 
 		// Project's reverse arrays should be cleaned (scene-in-chapter
@@ -1587,7 +1587,7 @@ describe('DraftBenchLinker — chapter<->scene sync (scenes-in-chapters)', () =>
 			'dbench-chapter-id': 'chp-002-tst-002',
 		});
 
-		app.vault._fire('modify', scene);
+		app.metadataCache._fire('changed', scene);
 		await flush();
 
 		const oldFm = app.metadataCache.getFileCache(oldChapter)?.frontmatter;
@@ -1773,7 +1773,7 @@ describe('DraftBenchLinker — chapter<->draft sync', () => {
 			app.metadataCache.getFileCache(chapter)?.frontmatter?.['dbench-drafts']
 		).toEqual([]);
 
-		app.vault._fire('modify', draft);
+		app.metadataCache._fire('changed', draft);
 		await flush();
 
 		const chFm = app.metadataCache.getFileCache(chapter)?.frontmatter;
@@ -1820,7 +1820,7 @@ describe('DraftBenchLinker — chapter<->draft sync', () => {
 			'dbench-chapter-id': 'chp-002-tst-002',
 		});
 
-		app.vault._fire('modify', draft);
+		app.metadataCache._fire('changed', draft);
 		await flush();
 
 		const oldFm = app.metadataCache.getFileCache(oldChapter)?.frontmatter;
@@ -1847,9 +1847,9 @@ describe('DraftBenchLinker — chapter<->draft sync', () => {
 			'prj-001-tst-001'
 		);
 
-		app.vault._fire('modify', draft);
+		app.metadataCache._fire('changed', draft);
 		await flush();
-		app.vault._fire('modify', draft);
+		app.metadataCache._fire('changed', draft);
 		await flush();
 
 		const chFm = app.metadataCache.getFileCache(chapter)?.frontmatter;
@@ -1960,7 +1960,7 @@ describe('DraftBenchLinker — chapter<->draft sync', () => {
 			'prj-001-tst-001'
 		);
 
-		app.vault._fire('modify', draft);
+		app.metadataCache._fire('changed', draft);
 		await flush();
 
 		// Chapter holds the draft; scene's draft arrays remain empty.

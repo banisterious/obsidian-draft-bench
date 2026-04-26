@@ -13,6 +13,14 @@ Draft Bench and Longform share core ideas — scene-based writing, project struc
 - **Flexible folder structure.** Scenes can live anywhere in your vault; the plugin identifies them by frontmatter, not folder location.
 - **Compile without JavaScript.** A form-based Book Builder (Phase 3+) will support compile presets, scene selection, and multi-format export.
 
+## How is Draft Bench different from StoryLine?
+
+Draft Bench is narrow on purpose. It handles the manuscript spine — projects, chapters, scenes, drafts, compile — and stays out of the rest. If you want one plugin that also tracks characters, locations, plot grids, beat sheets, timelines, and stats, [StoryLine](https://github.com/PixeroJan/obsidian-storyline) is excellent at that and very actively shipping.
+
+If you want a focused tool for organizing scenes, snapshotting drafts, and compiling a manuscript — with Bases for everything else and your own notes (or a sibling plugin like [Charted Roots](https://github.com/banisterious/charted-roots)) for world-building — Draft Bench is built for that.
+
+The two coexist fine: namespaces don't collide, and a vault can run both. Choose by which scope feels right for your workflow.
+
 ## Does it work on mobile?
 
 V1 is desktop-only. Mobile support is under post-V1 evaluation — the primary UX (Manuscript view, Manuscript Builder, reorder modal, Style Settings integration) was designed for a desktop form factor.

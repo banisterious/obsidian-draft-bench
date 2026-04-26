@@ -143,6 +143,40 @@ Brief notes for copy across README, docs, notice messages, and release notes. Th
 - **Understatement over enthusiasm.** Release notes describe what changed, not how great it is. Bug fixes say what was broken. Features say what they do. Exclamation marks are not used except in genuinely celebratory contexts (first release, 1.0, major milestones).
 - **The plugin is "Draft Bench," not "we."** Release notes and README copy use the plugin name or the passive voice rather than a royal "we," since the plugin has one author.
 
+## Positioning relative to adjacent Obsidian plugins
+
+Draft Bench is one of several Obsidian writing plugins. The space is small but no longer empty, and writers evaluating tools will compare. Capturing the positioning here so the README, wiki, and community-submission copy stay consistent and don't have to re-derive it from conversation.
+
+**Adjacent plugins (as of 2026-04):**
+
+- **[Longform](https://github.com/kevboh/longform)** — the original Obsidian writing plugin. Scene-as-note model, drag-to-reorder manuscript view, compile to single-file output. Single-author maintenance, slower release cadence. The closest spiritual ancestor; Draft Bench's `Drafts/` and compile concepts owe a real debt to Longform's prior art.
+- **[StoryLine](https://github.com/PixeroJan/obsidian-storyline)** (Jan Sandström) — kitchen-sink Scrivener-in-Obsidian. Multi-view (Corkboard, Kanban Board, Plotgrid, Timeline, Plotlines subway map, Manuscript Scrivenings-style continuous editor, Characters, Locations, Navigator, Stats), Codex hub for entity types, beat-sheet templates, plot-hole detection, pacing analysis, Scrivener `.scriv` import, six export formats, series mode. Very actively shipping (v1.9.5 in ~2 months from public start).
+
+**Where Draft Bench sits:**
+
+Deliberately narrow. The narrative spine — projects, chapters, scenes, drafts, compile — and not the surrounding world. Auxiliary content (characters, locations, research) stays user-managed in V1; the [Charted Roots](https://github.com/banisterious/charted-roots) plugin is the sibling that owns world-building. This is a design commitment, not an unfinished scope. (See `feedback_cross_plugin_scope` in personal memory: "DB owns narrative; CR owns world; auxiliary content stays user-managed.")
+
+**What's distinctive about Draft Bench against this landscape:**
+
+1. **Drafts as a first-class type.** `dbench-type: draft` is a noun, not a side-effect. Snapshots of scenes, chapters, and single-scene projects live in a configurable `Drafts/` folder, disambiguated by which parent ref is present. Neither Longform nor StoryLine has a comparable archived-snapshot model.
+2. **Compile-as-artifact with first-class preset notes.** Compile presets are vault notes (`dbench-type: compile-preset`), not modal-only configuration. Includes content-handling rules with per-preset overrides, footnote renumbering across scenes, section-break decorations, djb2 chapter hashing for compile-state drift tracking.
+3. **Bidirectional linking + integrity service.** Stable IDs, dual-stored forward refs, plugin-maintained reverse arrays, live sync on vault events, batch repair UI with SNAKE_CASE issue codes. A long-term vault-hygiene commitment that surfaces drift writers might otherwise miss.
+4. **Markdown-first with frontmatter discipline.** All plugin-managed properties carry the `dbench-` namespace prefix. A vault opened without Draft Bench installed still reads cleanly: scenes are notes, drafts are notes, compile presets are notes. Nothing locked behind plugin-only state.
+5. **Theme-respectful styling.** Opt-in via Style Settings; the plugin ships class hooks and minimum defaults, not opinionated chrome. Writers who customize their vault's appearance don't have to fight the plugin to keep it.
+6. **Bases-native.** Starter `.base` views ship for projects, scenes, and drafts. Discovery, filtering, and grouping use the writer's own Bases setup rather than custom view registrations.
+
+**Where Draft Bench doesn't compete (and isn't trying to):**
+
+- Plotting tools (plot grids, subway maps, beat-sheet templates, timeline modes). StoryLine's territory; out of scope for V1 per spec § Non-goals.
+- Entity management (characters, locations, custom categories). Belongs to Charted Roots or to user-managed plain notes.
+- Analytics (pacing, echo finder, plot-hole detection, prose readability). Genuinely useful; not what Draft Bench is for.
+- All-format export. Draft Bench targets MD, PDF, ODT for V1 — the formats writers actually submit and share. DOCX is on the post-V1 list.
+- Migration importers. Scrivener `.scriv` import is on the post-V1 list as a possible feature (writers coming from Scrivener are a real audience), but V1 is for writers starting fresh in Obsidian or already vault-native.
+
+**Short answer for the README / wiki ("How is Draft Bench different from StoryLine?"):**
+
+Draft Bench is narrow on purpose. It handles the manuscript spine — projects, chapters, scenes, drafts, compile — and stays out of the rest. If you want one plugin that also tracks characters, locations, plot grids, beat sheets, and stats, StoryLine is excellent at that. If you want a focused tool for organizing scenes, snapshotting drafts, and compiling a manuscript, with Bases for everything else and your own notes for world-building, Draft Bench is built for that.
+
 ## Related documents
 
 - [specification.md](specification.md): Plugin specification

@@ -784,6 +784,7 @@ Draft Bench is designed to coexist with plugins writers commonly use. Before eac
 | Obsidian Bases | Every `dbench-*` property is Bases-queryable. Template `.base` files ship as a Phase 2 stretch goal. |
 | Dataview | Alternative query layer; `dbench-*` properties work in Dataview queries for writers who prefer it. |
 | Longform | Coexists (different namespaces: `longform-*` vs. `dbench-*`). Writers migrating between plugins need a conversion step; no automated migration is shipped. |
+| StoryLine | Coexists (different namespaces). Different scope: StoryLine bundles entity management (characters, locations), plot grids, beat sheets, timelines, and stats; Draft Bench stays narrow on the manuscript spine and defers entity/world content to sibling plugins or user-managed notes. See [branding.md § Positioning relative to adjacent Obsidian plugins](branding.md) for the full comparison. |
 | Custom file-explorer sort plugins | A plugin that reads frontmatter keys can sort by `dbench-order` to restore filesystem-sort = story-order if desired. See [D-02](../planning/decisions/D-02-ordering-and-filesystem-sort.md). |
 
 **Known-caution combinations:**

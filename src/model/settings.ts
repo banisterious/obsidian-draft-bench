@@ -136,6 +136,19 @@ export interface DraftBenchSettings {
 	 * `plugin.selection` on load.
 	 */
 	lastSelectedProjectId: string | null;
+
+	/**
+	 * Per-chapter expanded/collapsed state for the Manuscript view's
+	 * chapter cards (chapter-aware projects only). Keyed by the
+	 * chapter's `dbench-id`. Missing entries default to expanded.
+	 *
+	 * Persisted via `saveSettings()` rather than Obsidian's workspace
+	 * state because `requestSaveLayout` is debounced and loses late-
+	 * session toggles on reload (per the same lesson that drove
+	 * `lastSelectedProjectId` here). Empty `{}` on first install — no
+	 * eager seeding, since chapters may not exist yet.
+	 */
+	chapterCollapseState: Record<string, boolean>;
 }
 
 /**
@@ -157,4 +170,5 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	firstProjectRevealed: false,
 	welcomeShown: false,
 	lastSelectedProjectId: null,
+	chapterCollapseState: {},
 };

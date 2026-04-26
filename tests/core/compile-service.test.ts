@@ -48,6 +48,75 @@ async function seedScene(
 }
 
 /**
+ * Seed a chapter into the mock vault. Mirrors `seedScene`: stores an
+ * (empty by default) body and populates the metadata cache with the
+ * full chapter frontmatter shape. The chapter's body is unused by the
+ * walker pre-Step-8-commit-3; bodies become relevant once the chapter
+ * heading-scope rule lands.
+ */
+async function seedChapter(
+	app: App,
+	options: {
+		path: string;
+		id: string;
+		projectId: string;
+		projectTitle: string;
+		order: number;
+		body?: string;
+	}
+): Promise<TFile> {
+	const file = await app.vault.create(options.path, options.body ?? '');
+	app.metadataCache._setFrontmatter(file, {
+		'dbench-type': 'chapter',
+		'dbench-id': options.id,
+		'dbench-project': `[[${options.projectTitle}]]`,
+		'dbench-project-id': options.projectId,
+		'dbench-order': options.order,
+		'dbench-status': 'draft',
+		'dbench-scenes': [],
+		'dbench-scene-ids': [],
+		'dbench-drafts': [],
+		'dbench-draft-ids': [],
+	});
+	return file;
+}
+
+/**
+ * Seed a scene that lives inside a chapter (chapter-aware project
+ * shape). Mirrors `seedScene` plus the chapter linkage fields per
+ * [chapter-type.md § 3](../../docs/planning/chapter-type.md).
+ */
+async function seedSceneInChapter(
+	app: App,
+	options: {
+		path: string;
+		id: string;
+		projectId: string;
+		projectTitle: string;
+		chapterId: string;
+		chapterTitle: string;
+		order: number;
+		body: string;
+		status?: DbenchStatus;
+	}
+): Promise<TFile> {
+	const file = await app.vault.create(options.path, options.body);
+	app.metadataCache._setFrontmatter(file, {
+		'dbench-type': 'scene',
+		'dbench-id': options.id,
+		'dbench-project': `[[${options.projectTitle}]]`,
+		'dbench-project-id': options.projectId,
+		'dbench-chapter': `[[${options.chapterTitle}]]`,
+		'dbench-chapter-id': options.chapterId,
+		'dbench-order': options.order,
+		'dbench-status': options.status ?? 'draft',
+		'dbench-drafts': [],
+		'dbench-draft-ids': [],
+	});
+	return file;
+}
+
+/**
  * Build a preset note with all-defaults frontmatter, letting the
  * caller override specific inclusion fields. The preset file itself
  * isn't written to the mock vault — `CompileService` only reads
@@ -574,5 +643,417 @@ describe('CompileService.generate', () => {
 		const result = await service.generate(preset);
 
 		expect(result.markdown).toBe('# Opening\n\nThe actual prose.');
+	});
+});
+
+describe('CompileService.generate — chapter-aware dispatch (Step 8)', () => {
+	let app: App;
+	let service: CompileService;
+	const projectId = 'prj-001-tst-001';
+
+	beforeEach(() => {
+		app = new App();
+		service = new CompileService(app);
+	});
+
+	it('walks chapter -> scene order when the project has any chapters', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Chapter 1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedChapter(app, {
+			path: 'Novel/Chapter 2.md',
+			id: 'ch2-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Chapter 1/Scene A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Chapter 1',
+			order: 1,
+			body: 'Chapter 1 scene A.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Chapter 2/Scene B.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch2-002-tst-002',
+			chapterTitle: 'Chapter 2',
+			order: 1,
+			body: 'Chapter 2 scene B.',
+		});
+
+		const preset = makePreset({ projectId });
+		const result = await service.generate(preset);
+
+		// Per-scene H1 emission unchanged in commit 2; chapter heading
+		// emission lands in commit 3.
+		expect(result.markdown).toBe(
+			'# Scene A\n\nChapter 1 scene A.\n\n' +
+				'# Scene B\n\nChapter 2 scene B.'
+		);
+		expect(result.scenesCompiled).toBe(2);
+		expect(result.scenesSkipped).toBe(0);
+	});
+
+	it('respects chapter dbench-order across creation order', async () => {
+		// Seed chapter 2 first to prove ordering is by dbench-order, not
+		// insertion order.
+		await seedChapter(app, {
+			path: 'Novel/Two.md',
+			id: 'ch2-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+		});
+		await seedChapter(app, {
+			path: 'Novel/One.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Two/Second scene.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch2-002-tst-002',
+			chapterTitle: 'Two',
+			order: 1,
+			body: 'Second.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/One/First scene.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'One',
+			order: 1,
+			body: 'First.',
+		});
+
+		const result = await service.generate(makePreset({ projectId }));
+
+		expect(result.markdown).toBe(
+			'# First scene\n\nFirst.\n\n# Second scene\n\nSecond.'
+		);
+	});
+
+	it('orders scenes within a chapter by dbench-order', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Only.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Only/Third.md',
+			id: 'scc-003-tst-003',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Only',
+			order: 3,
+			body: 'Third.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Only/First.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Only',
+			order: 1,
+			body: 'First.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Only/Second.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Only',
+			order: 2,
+			body: 'Second.',
+		});
+
+		const result = await service.generate(makePreset({ projectId }));
+
+		expect(result.markdown).toBe(
+			'# First\n\nFirst.\n\n# Second\n\nSecond.\n\n# Third\n\nThird.'
+		);
+	});
+
+	it('counts scenesSkipped across all chapters when the status filter drops some', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Ch1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedChapter(app, {
+			path: 'Novel/Ch2.md',
+			id: 'ch2-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/Kept1.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 1,
+			body: 'Kept one.',
+			status: 'final',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/Skipped.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 2,
+			body: 'Skipped.',
+			status: 'idea',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch2/Kept2.md',
+			id: 'scc-003-tst-003',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch2-002-tst-002',
+			chapterTitle: 'Ch2',
+			order: 1,
+			body: 'Kept two.',
+			status: 'final',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-scene-statuses': ['final'],
+		});
+		const result = await service.generate(preset);
+
+		expect(result.scenesCompiled).toBe(2);
+		expect(result.scenesSkipped).toBe(1);
+		expect(result.markdown).toBe(
+			'# Kept1\n\nKept one.\n\n# Kept2\n\nKept two.'
+		);
+	});
+
+	it('warns and returns empty when chapters exist but contain no scenes', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Empty.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+
+		const result = await service.generate(makePreset({ projectId }));
+
+		expect(result.markdown).toBe('');
+		expect(result.scenesCompiled).toBe(0);
+		expect(result.scenesSkipped).toBe(0);
+		expect(result.warnings).toEqual([
+			'Project has no scenes; preset "Workshop" compiles to an empty document.',
+		]);
+	});
+
+	it('warns when filters eliminate every scene across all chapters', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Ch1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 1,
+			body: 'A.',
+			status: 'idea',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/B.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 2,
+			body: 'B.',
+			status: 'idea',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-scene-statuses': ['final'],
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe('');
+		expect(result.scenesSkipped).toBe(2);
+		expect(result.warnings).toEqual([
+			'Preset "Workshop" filtered out all 2 scenes; nothing to compile.',
+		]);
+	});
+
+	it('renumbers footnotes continuously across chapters', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Ch1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedChapter(app, {
+			path: 'Novel/Ch2.md',
+			id: 'ch2-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			order: 2,
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/A.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 1,
+			body: 'First scene[^a].\n\n[^a]: A note.',
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch2/B.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch2-002-tst-002',
+			chapterTitle: 'Ch2',
+			order: 1,
+			body: 'Second scene[^b].\n\n[^b]: B note.',
+		});
+
+		const result = await service.generate(makePreset({ projectId }));
+
+		// Footnotes should renumber to [^1] in chapter 1's scene and
+		// [^2] in chapter 2's scene — proving the offset spans chapters.
+		expect(result.markdown).toContain('First scene[^1].');
+		expect(result.markdown).toContain('[^1]: A note.');
+		expect(result.markdown).toContain('Second scene[^2].');
+		expect(result.markdown).toContain('[^2]: B note.');
+	});
+
+	it('emits an error marker for an unreadable scene in a chapter without halting the rest', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Ch1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		const goodFile = await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/Good.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 1,
+			body: 'Good prose.',
+		});
+		const badFile = await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/Broken.md',
+			id: 'scb-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 2,
+			body: '',
+		});
+		// Force a read error on the second scene.
+		const originalRead = app.vault.read.bind(app.vault);
+		app.vault.read = async (file: TFile): Promise<string> => {
+			if (file.path === badFile.path) {
+				throw new Error('Disk fault');
+			}
+			return originalRead(file);
+		};
+
+		const result = await service.generate(makePreset({ projectId }));
+
+		expect(result.scenesCompiled).toBe(1);
+		expect(result.errors).toEqual([
+			{ scenePath: badFile.path, message: 'Disk fault' },
+		]);
+		expect(result.markdown).toContain('# Good\n\nGood prose.');
+		expect(result.markdown).toContain(
+			'<!-- Draft Bench: failed to read "Broken": Disk fault -->'
+		);
+		// The good file still got read; ensure we didn't short-circuit
+		// the whole chapter.
+		expect(goodFile.path).toBe('Novel/Ch1/Good.md');
+	});
+
+	it('silently skips scenes orphaned at the project level (no dbench-chapter-id) in chapter-aware mode', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Ch1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/Inside.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 1,
+			body: 'Inside chapter.',
+		});
+		// Direct project scene (no chapter linkage). Per § 9 mixed-children
+		// rule this shouldn't exist; the integrity service catches it via
+		// PROJECT_MIXED_CHILDREN. The compile walker silently ignores it
+		// rather than guessing a fallback emission point.
+		await seedScene(app, {
+			path: 'Novel/Orphan.md',
+			id: 'scz-999-tst-999',
+			projectId,
+			projectTitle: 'Novel',
+			order: 99,
+			body: 'Orphan should not appear.',
+		});
+
+		const result = await service.generate(makePreset({ projectId }));
+
+		expect(result.markdown).toBe('# Inside\n\nInside chapter.');
+		expect(result.markdown).not.toContain('Orphan');
+		expect(result.scenesCompiled).toBe(1);
 	});
 });

@@ -93,6 +93,24 @@
 
 ---
 
+### Manuscript view title links honor Obsidian's open-in-tab affordances
+
+**Scope.** Title links in the Manuscript view (chapter cards' chapter titles, scene rows' scene titles) currently always open in the active leaf. Extend them to honor Obsidian's standard wikilink affordances: Ctrl/Cmd-click and middle-click open in a new tab; right-click opens a context menu with "Open in new tab," "Open to the right," "Open in new window" (the same actions Obsidian shows for native wikilinks).
+
+**Rationale.** Writers expect title links to behave like native wikilinks. The current "always open in active leaf" behavior is a paper cut — surfaced during the chapter-card walkthrough (Step 7 testing, 2026-04-26): a writer comparing scenes side-by-side has to manually drag the just-opened tab into a split, every time. Native-affordance support adds zero clutter (right-click is hidden until needed) and removes a real friction point during revision passes.
+
+**Effort.** Small. Two implementation pieces:
+- Click handler upgrade: detect `evt.ctrlKey || evt.metaKey` (or `evt.button === 1` for middle-click) before calling `getLeaf(false)`; pass the new-tab flag through to `workspace.openLinkText` or `workspace.getLeaf(true)`.
+- Context menu: hook `contextmenu` on the title link, build an Obsidian `Menu` with the standard four actions, attach to the click event.
+
+Probably ~50 LOC across `scene-row.ts` and `chapter-card-section.ts`. Could land as pre-V1 polish if a small Phase 4 / pre-BRAT pass picks it up.
+
+**Dependencies.** None.
+
+**Note.** Likely belongs to "polish" rather than post-V1 if the cost is genuinely small. Tracked here so it doesn't get lost in conversation; promote to a Phase 4 polish step or pre-BRAT hardening when there's bandwidth.
+
+---
+
 ### Custom field registry with Settings UI
 
 **Scope.** Settings tab section where writers can register custom `dbench-*` fields with type + validation + (for enums) allowed values. Custom fields then surface in the scene-row UI, in templates, and in compile-rule overrides. StoryLine's "Custom Scene Fields" feature.

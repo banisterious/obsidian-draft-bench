@@ -582,19 +582,24 @@ Three flat preset fields control which scenes enter the compile set:
 ```yaml
 dbench-compile-scene-source: auto       # V1 value; explicit reserved post-V1
 dbench-compile-scene-statuses: []       # [] = all; ["final"] = filter
-dbench-compile-scene-excludes: []       # wikilink array of scenes to skip
+dbench-compile-scene-excludes: []       # wikilink array of scenes (and chapters) to skip
 ```
 
 Pipeline order: collect all scenes in `dbench-order` -> filter by status (strict: missing status excluded if filter is non-empty) -> remove excluded scenes -> compile set.
+
+The `dbench-compile-scene-excludes` field accepts both scene wikilinks and chapter wikilinks (kebab-named field is V1 backward-compat). A chapter wikilink drops the chapter's heading + intro + every child scene from the output; the dropped scenes still count toward the "filtered out N scenes" warning. Bare basenames work too (`Chapter 3` and `[[Chapter 3]]` are equivalent).
 
 Default status filter is empty (all statuses) so a new preset compiles visibly during early drafting. A future Data Quality surface will flag missing-status scenes as a fixable pre-compile issue (see [data-quality-reference.md](data-quality-reference.md)).
 
 ### Granularity tiers
 
-V1 supports two granularity modes via `dbench-compile-heading-scope`:
+V1 supports three granularity modes via `dbench-compile-heading-scope`:
 
-- **Scene-level, draft-only** (default, `scope: draft`): include only content below each scene's `^## Draft` heading. Planning sections (Source passages, Beat outline, Open questions) are excluded. Matches the built-in scene template's manuscript-only region.
+- **Scene-level, draft-only** (`scope: draft`): include only content below each scene's `^## Draft` heading. Planning sections (Source passages, Beat outline, Open questions) are excluded. Matches the built-in scene template's manuscript-only region. Default for chapter-less projects.
 - **Scene-level, full body** (`scope: full`): include the entire scene body, including planning sections. Useful for internal review compiles; rarely used for submission output.
+- **Chapter-level** (`scope: chapter`): emit one `# <chapter title>` per chapter, then the chapter body's `## Draft` content (chapter-introductory prose) if non-empty, then concatenated scene `## Draft` bodies with scene titles omitted. Produces continuous prose under each chapter heading — the typical novel-compile shape. Default for chapter-aware projects (per [chapter-type.md § 7](chapter-type.md)).
+
+The default for new presets is auto-selected at create time by inspecting the source project's shape: chapter-aware projects get `scope: chapter`, chapter-less projects get `scope: draft`. Writers override via the Compile tab; existing presets are never silently changed.
 
 Deferred post-V1: **draft-version cross-section** (compile a specific historical draft per scene, e.g., "Draft 2 across the manuscript," using each scene's `dbench-drafts` array). Useful for snapshotting a complete revision state; not V1-essential.
 

@@ -11,6 +11,7 @@ import { registerInstallBasesCommand } from './install-bases';
 import { registerNewChapterCommand } from './new-chapter';
 import { registerNewSceneCommand } from './new-scene';
 import { registerNewDraftCommand } from './new-draft';
+import { registerReorderChaptersCommand } from './reorder-chapters';
 import { registerReorderScenesCommand } from './reorder-scenes';
 import { registerRepairProjectCommand } from './repair-project';
 import { registerRunCompileCommand } from './run-compile';
@@ -51,6 +52,7 @@ export function registerCommands(
 	registerNewDraftCommand(plugin, getSettings, linker);
 	registerShowManuscriptViewCommand(plugin, () => plugin);
 	registerShowWelcomeCommand(plugin);
+	registerReorderChaptersCommand(plugin, linker);
 	registerReorderScenesCommand(plugin, linker);
 	registerRepairProjectCommand(plugin, linker);
 	registerRunCompileCommand(plugin);

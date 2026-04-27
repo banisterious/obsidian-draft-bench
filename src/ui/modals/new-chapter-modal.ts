@@ -14,9 +14,11 @@ import type { DraftBenchLinker } from '../../core/linker';
  * the linker doesn't react to the intermediate two-file write
  * state (new chapter file + project's reverse-array append).
  *
- * The chapter template is hardcoded in V1 (`BUILTIN_CHAPTER_TEMPLATE`
- * in `src/core/chapters.ts`); writer-customizable templates land
- * in a follow-up Step 3.5 commit per the chapter-type plan.
+ * The chapter template is writer-customizable: the built-in body lives
+ * at `BUILTIN_CHAPTER_TEMPLATE` in `src/core/templates.ts`, seeded as
+ * `<templatesFolder>/chapter-template.md` on first chapter creation.
+ * Settings.chapterTemplatePath overrides the path; Templater runs
+ * pass-through when installed.
  *
  * Mixed-children rule: per chapter-type.md § 9, a project that
  * already has direct scenes (scenes without a chapter parent)

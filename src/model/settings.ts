@@ -79,6 +79,15 @@ export interface DraftBenchSettings {
 	sceneTemplatePath: string;
 
 	/**
+	 * Override path for the chapter template file. When empty (default),
+	 * the plugin uses `<templatesFolder>/chapter-template.md`. Mirrors
+	 * `sceneTemplatePath`'s shape; the seeded built-in body matches the
+	 * scene template (planning sections + `## Draft`) per
+	 * [chapter-type.md § 1](../../docs/planning/chapter-type.md).
+	 */
+	chapterTemplatePath: string;
+
+	/**
 	 * Folder where generated starter Bases (`.base` files) are written.
 	 * The install command creates the folder if absent and skips any
 	 * file that already exists at the target path (no overwrite).
@@ -163,6 +172,7 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	draftsFolderName: 'Drafts',
 	templatesFolder: 'Draft Bench/Templates/',
 	sceneTemplatePath: '',
+	chapterTemplatePath: '',
 	basesFolder: 'Draft Bench/Bases',
 	statusVocabulary: [...DEFAULT_STATUS_VOCABULARY],
 	enableBidirectionalSync: true,

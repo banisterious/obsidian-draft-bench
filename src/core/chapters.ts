@@ -1,14 +1,26 @@
-import type { App, TFile } from 'obsidian';
+import { Notice, type App, type TFile } from 'obsidian';
 import type { DbenchId, DbenchStatus } from '../model/types';
 import type { DraftBenchSettings } from '../model/settings';
-import type { ProjectNote } from './discovery';
+import type { ChapterNote, ProjectNote } from './discovery';
 import { findChaptersInProject, findScenesInProject } from './discovery';
 import { stampChapterEssentials } from './essentials';
+import {
+	ensureChapterTemplateFile,
+	isoDate,
+	resolveChapterTemplate,
+	substituteChapterTokens,
+	type ChapterTemplateContext,
+} from './templates';
+import {
+	isTemplaterEnabled,
+	renderTemplateThroughTemplater,
+} from './templater';
 
 /**
- * Chapter creation: resolves the target file path, writes the built-in
- * chapter template body, stamps essentials linked to the parent project,
- * and appends to the project's `dbench-chapters` / `dbench-chapter-ids`
+ * Chapter creation: resolves the target file path, renders the chapter
+ * template (seeding the built-in default if the user's template file
+ * is absent), stamps essentials linked to the parent project, and
+ * appends to the project's `dbench-chapters` / `dbench-chapter-ids`
  * reverse arrays.
  *
  * Per [chapter-type.md § 9](../../docs/planning/chapter-type.md), a
@@ -23,33 +35,9 @@ import { stampChapterEssentials } from './essentials';
  * intermediate states. The reverse-array update happens inline; once
  * the linker handles project↔chapter (Step 4), this manual update can
  * become belt-and-suspenders or be removed.
- *
- * Chapter template customization (settings.chapterTemplatePath +
- * Templater pass-through) is deferred to a follow-up step. V1's first
- * chapter implementation ships with a hardcoded built-in template.
  */
 
 const FILENAME_FORBIDDEN_CHARS = /[\\/:*?"<>|]/;
-
-/**
- * Built-in chapter template. Mirrors the V1 scene template shape
- * (planning sections + `## Draft`) per [chapter-type.md § 1](../../docs/planning/chapter-type.md):
- * the chapter body's `## Draft` is chapter-introductory prose only,
- * emitting before the chapter's scenes in compile.
- *
- * Settings-customizable chapter template + Templater pass-through land
- * in a follow-up step (mirroring the existing scene-template machinery
- * in templates.ts).
- */
-export const BUILTIN_CHAPTER_TEMPLATE = `## Source passages
-
-## Beat outline
-
-## Open questions
-
-## Draft
-
-`;
 
 export interface CreateChapterOptions {
 	/** The project this chapter belongs to. */
@@ -148,7 +136,9 @@ export function nextChapterOrder(app: App, projectId: DbenchId): number {
  * Two-file write (matches the project↔scene pattern):
  *   1. Refuse if the project has direct scenes (no-mixed-children rule
  *      per § 9).
- *   2. Create the chapter note with the built-in template body and
+ *   2. Render the chapter template (with optional Templater pass-through
+ *      and plugin-token substitution), seeding the built-in template
+ *      file on first use; create the chapter note with that body and
  *      stamped essentials. Forward references (`dbench-project`,
  *      `dbench-project-id`) point at `options.project`.
  *   3. Update the project's reverse arrays (`dbench-chapters`,
@@ -197,7 +187,16 @@ export async function createChapter(
 	const defaultStatus = settings.statusVocabulary[0];
 	const status = options.status ?? defaultStatus;
 
-	const file = await app.vault.create(filePath, BUILTIN_CHAPTER_TEMPLATE);
+	const context: ChapterTemplateContext = {
+		project: projectWikilink,
+		projectTitle: options.project.file.basename,
+		chapterTitle: options.title.trim(),
+		chapterOrder: order,
+		date: isoDate(),
+		previousChapterTitle: previousChapterTitleAt(app, projectId, order),
+	};
+
+	const file = await renderChapterBody(app, settings, context, filePath);
 
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Pre-set chapter-specific fields so stampChapterEssentials'
@@ -236,4 +235,73 @@ export async function createChapter(
 function readArray(value: unknown): string[] {
 	if (Array.isArray(value)) return value as string[];
 	return [];
+}
+
+/**
+ * Produce the chapter file with its initial body. Mirrors
+ * `renderSceneBody` in scenes.ts: when Templater is installed, the
+ * chapter file is created empty, Templater processes the template
+ * with the new chapter file as its `tp.file.*` context, and the
+ * plugin-token substitution runs on the result. When Templater is
+ * absent (or throws), the file is created with the plain plugin-token-
+ * substituted body. A Templater failure surfaces as a Notice but
+ * doesn't block chapter creation.
+ */
+async function renderChapterBody(
+	app: App,
+	settings: DraftBenchSettings,
+	context: ChapterTemplateContext,
+	filePath: string
+): Promise<TFile> {
+	if (isTemplaterEnabled(app)) {
+		const templateFile = await ensureChapterTemplateFile(app, settings);
+		const emptyFile = await app.vault.create(filePath, '');
+		const processed = await renderTemplateThroughTemplater(
+			app,
+			templateFile,
+			emptyFile
+		);
+		if (processed === null) {
+			new Notice(
+				'Templater failed to process the chapter template; using the plain template body.'
+			);
+			const fallback = substituteChapterTokens(
+				await app.vault.read(templateFile),
+				context
+			);
+			await app.vault.modify(emptyFile, fallback);
+			return emptyFile;
+		}
+		const body = substituteChapterTokens(processed, context);
+		await app.vault.modify(emptyFile, body);
+		return emptyFile;
+	}
+
+	const body = await resolveChapterTemplate(app, settings, context);
+	return app.vault.create(filePath, body);
+}
+
+/**
+ * Return the basename of the chapter whose `dbench-order` is the
+ * largest value strictly less than `order` within `projectId`, or `''`
+ * if `order` is the first chapter in the project. Used to populate the
+ * `{{previous_chapter_title}}` template token.
+ */
+function previousChapterTitleAt(
+	app: App,
+	projectId: DbenchId,
+	order: number
+): string {
+	const chapters = findChaptersInProject(app, projectId).filter(
+		(c) => c.frontmatter['dbench-order'] < order
+	);
+	if (chapters.length === 0) return '';
+	const previous = chapters.reduce<ChapterNote>(
+		(best, current) =>
+			current.frontmatter['dbench-order'] > best.frontmatter['dbench-order']
+				? current
+				: best,
+		chapters[0]
+	);
+	return previous.file.basename;
 }

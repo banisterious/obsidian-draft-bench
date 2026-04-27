@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from 'obsidian';
 import {
-	BUILTIN_CHAPTER_TEMPLATE,
 	createChapter,
 	nextChapterOrder,
 	resolveChapterPaths,
 } from '../../src/core/chapters';
+import { BUILTIN_CHAPTER_TEMPLATE } from '../../src/core/templates';
 import { createProject } from '../../src/core/projects';
 import { createScene } from '../../src/core/scenes';
 import {

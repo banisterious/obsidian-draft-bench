@@ -161,6 +161,22 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 					});
 				new FileSuggest(this.app, text.inputEl);
 			});
+
+		new Setting(containerEl)
+			.setName('Chapter template')
+			.setDesc(
+				'Markdown file used for new chapters. Leave empty to use chapter-template.md inside the templates folder; set to override with any markdown file in the vault. Plugin tokens like {{chapter_title}} and {{project_title}} are substituted at creation time.'
+			)
+			.addText((text) => {
+				text
+					.setPlaceholder('Draft Bench/Templates/chapter-template.md')
+					.setValue(settings.chapterTemplatePath)
+					.onChange(async (value) => {
+						settings.chapterTemplatePath = value;
+						await this.plugin.saveSettings();
+					});
+				new FileSuggest(this.app, text.inputEl);
+			});
 	}
 
 	private renderBases(): void {

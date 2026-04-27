@@ -2,7 +2,7 @@
 
 Planning doc for the addition of `dbench-type: chapter` to V1's vocabulary. Originally scoped as Phase 5+ in [specification.md](specification.md), promoted to V1 on 2026-04-25 (now Phase 4 in the spec) to make novelists comfortable at first contact rather than tolerating them.
 
-**Status:** Design ratified across nine sections (10 commits between 2026-04-25 and 2026-04-26). Implementation in progress; Steps 1-8 of 15 shipped (chapter-aware compile pipeline now ships the `chapter` heading-scope value, chapter wikilink excludes, and project-shape-aware preset defaults — see § 7). See [the implementation sequence](#implementation-sequence) below for current status.
+**Status:** Design ratified across nine sections (10 commits between 2026-04-25 and 2026-04-26). Implementation in progress; Steps 1-9 of 15 shipped (chapter-aware compile pipeline + DOCX renderer + UI surfaces: NewChapterModal, "New chapter in project" + "Reorder chapters in project" palette commands, "Set as chapter" retrofit, "Move to chapter" context menu — see § 7 + § 11). See [the implementation sequence](#implementation-sequence) below for current status.
 
 ---
 

@@ -14,8 +14,11 @@ import {
 	setAsScene,
 } from '../core/retrofit';
 import { isProjectFrontmatter } from '../model/project';
+import { findChaptersInProject } from '../core/discovery';
+import { isSceneFrontmatter } from '../model/scene';
 import { ManuscriptBuilderModal } from '../ui/manuscript-builder/manuscript-builder-modal';
 import { activateManuscriptView } from '../ui/manuscript-view/activate';
+import { MoveToChapterModal } from '../ui/modals/move-to-chapter-modal';
 import { RepairProjectModal } from '../ui/modals/repair-project-modal';
 import {
 	addPresetMenuItems,
@@ -107,6 +110,10 @@ function buildSingleFileItems(
 
 	if (type === 'scene' || type === 'draft') {
 		addSceneOrDraftCompileItem(plugin, menu, file);
+	}
+
+	if (type === 'scene') {
+		addMoveToChapterMenuItem(plugin, menu, file);
 	}
 
 	if (type === null) {
@@ -201,4 +208,30 @@ function buildFolderItems(
 	addRetrofitMenuItem(menu, 'Add identifier', 'hash', () =>
 		runBatch(app, settings, files, addDbenchId, { action: 'Add identifier' })
 	);
+}
+
+/**
+ * Add "Move to chapter" for a scene whose project has at least one
+ * chapter. Hidden when the scene's project is chapter-less (no
+ * chapter to move to) or when the project link can't be resolved.
+ *
+ * Single-file scope per chapter-type Q2 deferral; multi-select bulk
+ * moves are post-V1.
+ */
+function addMoveToChapterMenuItem(
+	plugin: DraftBenchPlugin,
+	menu: Menu,
+	file: TFile
+): void {
+	const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+	if (!isSceneFrontmatter(fm)) return;
+	const projectId = fm['dbench-project-id'];
+	if (typeof projectId !== 'string' || projectId === '') return;
+
+	const chapters = findChaptersInProject(plugin.app, projectId);
+	if (chapters.length === 0) return;
+
+	addRetrofitMenuItem(menu, 'Move to chapter', 'arrow-right-from-line', () => {
+		new MoveToChapterModal(plugin.app, { file, frontmatter: fm }).open();
+	});
 }

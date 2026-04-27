@@ -69,6 +69,12 @@ ISSUES.md
 # Personal planning — use-case drafts with real writing content
 docs/planning/use-cases/
 
+# Personal planning — cross-plugin reference notes (extracted from sibling repos)
+docs/planning/website-strategy-reference.md
+
+# Personal planning — website handoff prompt (regenerated per handoff)
+docs/planning/website-content/handoff-prompt.md
+
 # Local dev / test vault with dummy projects (recreate per docs/developer/dev-vault.md)
 dev-vault/
 

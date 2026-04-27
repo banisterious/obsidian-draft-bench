@@ -3,6 +3,7 @@ import { DEFAULT_STATUS_VOCABULARY } from '../model/types';
 import {
 	DEFAULT_COMPILE_PRESET_VALUES,
 	type CompileFormat,
+	type CompileHeadingScope,
 } from '../model/compile-preset';
 
 /**
@@ -195,6 +196,15 @@ export interface CompilePresetEssentialsContext extends EssentialsContext {
 	/** Parent project's `dbench-id`. */
 	projectId: string;
 	/**
+	 * Heading-scope override stamped on creation. Callers (typically
+	 * `createCompilePreset`) inspect the source project's shape and
+	 * pass `'chapter'` for chapter-aware projects so new presets
+	 * default to the right output mode without writer intervention.
+	 * When absent, uses the default-values entry (`'draft'`). Existing
+	 * keys win — writer-tuned values are never overwritten.
+	 */
+	headingScope?: CompileHeadingScope;
+	/**
 	 * Output format chosen at create time. When absent, uses the
 	 * default-values entry (`md`). Callers always pass this through
 	 * from the create modal; the optional signature exists only to
@@ -227,12 +237,20 @@ export function stampCompilePresetEssentials(
 	setIfMissing(frontmatter, 'dbench-project', context.projectWikilink);
 	setIfMissing(frontmatter, 'dbench-project-id', context.projectId);
 
-	// Apply the caller's format override first so it wins on fresh
-	// frontmatter, but `setIfMissing` still preserves any existing
-	// value a writer may have hand-edited. The defaults loop below
-	// then skips the format field because it's already present.
+	// Apply the caller's format and heading-scope overrides first so
+	// they win on fresh frontmatter; `setIfMissing` still preserves
+	// any existing value a writer may have hand-edited. The defaults
+	// loop below then skips these fields because they're already
+	// present.
 	if (context.format !== undefined) {
 		setIfMissing(frontmatter, 'dbench-compile-format', context.format);
+	}
+	if (context.headingScope !== undefined) {
+		setIfMissing(
+			frontmatter,
+			'dbench-compile-heading-scope',
+			context.headingScope
+		);
 	}
 
 	for (const [key, value] of Object.entries(DEFAULT_COMPILE_PRESET_VALUES)) {

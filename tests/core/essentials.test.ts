@@ -478,4 +478,24 @@ describe('stampCompilePresetEssentials', () => {
 		expect(fm['dbench-project']).toBe('[[A Salt-Worn Road]]');
 		expect(fm['dbench-project-id']).toBe('xyz-111-abc-222');
 	});
+
+	it("applies the headingScope override (e.g., 'chapter' for chapter-aware projects)", () => {
+		const fm: Record<string, unknown> = {};
+		stampCompilePresetEssentials(fm, presetCtx({ headingScope: 'chapter' }));
+		expect(fm['dbench-compile-heading-scope']).toBe('chapter');
+	});
+
+	it('preserves a writer-set heading-scope when re-stamping with a different override', () => {
+		const fm: Record<string, unknown> = {
+			'dbench-compile-heading-scope': 'full',
+		};
+		stampCompilePresetEssentials(fm, presetCtx({ headingScope: 'chapter' }));
+		expect(fm['dbench-compile-heading-scope']).toBe('full');
+	});
+
+	it("falls back to the default ('draft') when no headingScope override is supplied", () => {
+		const fm: Record<string, unknown> = {};
+		stampCompilePresetEssentials(fm, presetCtx());
+		expect(fm['dbench-compile-heading-scope']).toBe('draft');
+	});
 });

@@ -1,7 +1,11 @@
 import type { App, TFile } from 'obsidian';
 import type { CompileFormat } from '../model/compile-preset';
 import { stampCompilePresetEssentials } from './essentials';
-import type { CompilePresetNote, ProjectNote } from './discovery';
+import {
+	findChaptersInProject,
+	type CompilePresetNote,
+	type ProjectNote,
+} from './discovery';
 
 /**
  * Compile-preset creation and management.
@@ -156,6 +160,18 @@ export async function createCompilePreset(
 
 	const file = await app.vault.create(filePath, '');
 
+	// Auto-default heading-scope by project shape (Step 8 of
+	// chapter-type): chapter-aware projects get 'chapter' so the new
+	// preset emits one H1 per chapter; chapter-less projects keep
+	// 'draft' (today's per-scene H1 default). Writers can override
+	// either choice in the Compile tab. `setIfMissing` semantics
+	// inside `stampCompilePresetEssentials` mean this only takes
+	// effect on fresh frontmatter — existing presets are untouched
+	// when their frontmatter is re-stamped.
+	const projectIsChapterAware =
+		findChaptersInProject(app, options.project.frontmatter['dbench-id'])
+			.length > 0;
+
 	let presetId = '';
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		stampCompilePresetEssentials(frontmatter, {
@@ -163,6 +179,7 @@ export async function createCompilePreset(
 			projectWikilink: `[[${options.project.file.basename}]]`,
 			projectId: options.project.frontmatter['dbench-id'],
 			format: options.format,
+			headingScope: projectIsChapterAware ? 'chapter' : 'draft',
 		});
 		const id = frontmatter['dbench-id'];
 		if (typeof id === 'string') presetId = id;

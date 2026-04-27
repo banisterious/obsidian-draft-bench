@@ -12,6 +12,7 @@ import {
 	type ProjectNote,
 } from '../../src/core/discovery';
 import { createProject } from '../../src/core/projects';
+import { createChapter } from '../../src/core/chapters';
 import { DEFAULT_SETTINGS, type DraftBenchSettings } from '../../src/model/settings';
 import { isValidDbenchId } from '../../src/core/id';
 
@@ -124,6 +125,34 @@ describe('createCompilePreset', () => {
 		});
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		expect(fm?.['dbench-compile-format']).toBe('pdf');
+	});
+
+	it("auto-defaults heading-scope to 'chapter' on chapter-aware projects (Step 8)", async () => {
+		const project = await seedProject(app, settings, 'Chapter-Aware Novel');
+		await createChapter(app, settings, {
+			project,
+			title: 'Chapter 1',
+		});
+
+		const { file } = await createCompilePreset(app, {
+			project,
+			name: 'Workshop',
+		});
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		expect(fm?.['dbench-compile-heading-scope']).toBe('chapter');
+	});
+
+	it("auto-defaults heading-scope to 'draft' on chapter-less projects (today's behavior preserved)", async () => {
+		// No chapters seeded; this must keep the pre-Step-8 default so
+		// existing flat-project workflows are unaffected.
+		const project = await seedProject(app, settings, 'Flat Novel');
+
+		const { file } = await createCompilePreset(app, {
+			project,
+			name: 'Workshop',
+		});
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		expect(fm?.['dbench-compile-heading-scope']).toBe('draft');
 	});
 
 	it('refuses to overwrite an existing preset with the same name', async () => {

@@ -1,6 +1,7 @@
 import { TFile, type App } from 'obsidian';
 import type { CompilePresetNote, ProjectNote } from '../discovery';
 import type { CompileResult } from '../compile-service';
+import { getElectron, getNodeFs } from './disk-deps';
 
 /**
  * Markdown output renderer for the compile pipeline.
@@ -174,50 +175,3 @@ export function createMdDiskDeps(): MdDiskDeps {
 	};
 }
 
-// Host-process accessors. Obsidian desktop exposes both via
-// `window.require`; both return `null` in any environment where the
-// accessor isn't available (tests, mobile, some embed contexts).
-
-interface ElectronDialog {
-	showSaveDialog(options: {
-		defaultPath?: string;
-		filters?: Array<{ name: string; extensions: string[] }>;
-	}): Promise<{ canceled: boolean; filePath?: string }>;
-}
-
-interface ElectronModule {
-	remote?: { dialog?: ElectronDialog };
-	dialog?: ElectronDialog;
-}
-
-interface NodeFsModule {
-	promises: {
-		writeFile(
-			path: string,
-			content: string,
-			encoding: 'utf8'
-		): Promise<void>;
-	};
-}
-
-function getElectron(): ElectronModule | null {
-	const req = (window as unknown as { require?: (m: string) => unknown })
-		.require;
-	if (typeof req !== 'function') return null;
-	try {
-		return req('electron') as ElectronModule;
-	} catch {
-		return null;
-	}
-}
-
-function getNodeFs(): NodeFsModule | null {
-	const req = (window as unknown as { require?: (m: string) => unknown })
-		.require;
-	if (typeof req !== 'function') return null;
-	try {
-		return req('fs') as NodeFsModule;
-	} catch {
-		return null;
-	}
-}

@@ -2,6 +2,7 @@ import * as pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import type { CompileResult } from '../compile-service';
 import type { CompilePresetNote } from '../discovery';
+import { getElectron, getNodeFs } from './disk-deps';
 import { parseMarkdown } from './md-ast';
 import { buildPdfDocDefinition } from './pdf/doc-definition';
 
@@ -152,46 +153,3 @@ export function createPdfDiskDeps(): PdfDiskDeps {
 	};
 }
 
-// Host-process accessors mirror render-md.ts / render-odt.ts. Factor
-// out if a fourth consumer arrives — three copies isn't yet worth
-// the dependency churn.
-
-interface ElectronDialog {
-	showSaveDialog(options: {
-		defaultPath?: string;
-		filters?: Array<{ name: string; extensions: string[] }>;
-	}): Promise<{ canceled: boolean; filePath?: string }>;
-}
-
-interface ElectronModule {
-	remote?: { dialog?: ElectronDialog };
-	dialog?: ElectronDialog;
-}
-
-interface NodeFsModule {
-	promises: {
-		writeFile(path: string, content: Uint8Array): Promise<void>;
-	};
-}
-
-function getElectron(): ElectronModule | null {
-	const req = (window as unknown as { require?: (m: string) => unknown })
-		.require;
-	if (typeof req !== 'function') return null;
-	try {
-		return req('electron') as ElectronModule;
-	} catch {
-		return null;
-	}
-}
-
-function getNodeFs(): NodeFsModule | null {
-	const req = (window as unknown as { require?: (m: string) => unknown })
-		.require;
-	if (typeof req !== 'function') return null;
-	try {
-		return req('fs') as NodeFsModule;
-	} catch {
-		return null;
-	}
-}

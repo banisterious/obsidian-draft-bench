@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import type { CompileResult } from '../compile-service';
 import type { CompilePresetNote } from '../discovery';
+import { getElectron, getNodeFs } from './disk-deps';
 import { parseMarkdownForOdt } from './odt/parser';
 import {
 	buildContentXml,
@@ -116,45 +117,3 @@ export function createOdtDiskDeps(): OdtDiskDeps {
 	};
 }
 
-// Host-process accessors mirror render-md.ts. Factor-out candidate if
-// a third consumer (PDF) lands with the same shape.
-
-interface ElectronDialog {
-	showSaveDialog(options: {
-		defaultPath?: string;
-		filters?: Array<{ name: string; extensions: string[] }>;
-	}): Promise<{ canceled: boolean; filePath?: string }>;
-}
-
-interface ElectronModule {
-	remote?: { dialog?: ElectronDialog };
-	dialog?: ElectronDialog;
-}
-
-interface NodeFsModule {
-	promises: {
-		writeFile(path: string, content: Uint8Array): Promise<void>;
-	};
-}
-
-function getElectron(): ElectronModule | null {
-	const req = (window as unknown as { require?: (m: string) => unknown })
-		.require;
-	if (typeof req !== 'function') return null;
-	try {
-		return req('electron') as ElectronModule;
-	} catch {
-		return null;
-	}
-}
-
-function getNodeFs(): NodeFsModule | null {
-	const req = (window as unknown as { require?: (m: string) => unknown })
-		.require;
-	if (typeof req !== 'function') return null;
-	try {
-		return req('fs') as NodeFsModule;
-	} catch {
-		return null;
-	}
-}

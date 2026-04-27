@@ -86,13 +86,14 @@ export class NewCompilePresetModal extends Modal {
 		new Setting(contentEl)
 			.setName('Output format')
 			.setDesc(
-				'Markdown compiles into the vault; PDF and ODT export via a save dialog.'
+				'Markdown compiles into the vault; PDF, ODT, and DOCX export via a save dialog.'
 			)
 			.addDropdown((dropdown) =>
 				dropdown
 					.addOption('md', 'Markdown')
 					.addOption('pdf', 'PDF')
 					.addOption('odt', 'ODT')
+					.addOption('docx', 'DOCX')
 					.setValue(this.format)
 					.onChange((value) => {
 						this.format = value as CompileFormat;

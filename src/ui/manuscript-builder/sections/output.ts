@@ -12,6 +12,7 @@ const FORMAT_LABELS: Record<CompileFormat, string> = {
 	md: 'Markdown',
 	pdf: 'PDF',
 	odt: 'OpenDocument Text (ODT)',
+	docx: 'Word (DOCX)',
 };
 
 const OUTPUT_LABELS: Record<CompileOutput, string> = {

@@ -73,7 +73,7 @@ export interface CompilePresetFrontmatter {
 
 export type CompileDateFormat = 'iso' | 'mdy' | 'dmy' | 'ymd';
 export type CompileSceneSource = 'auto'; // post-V1 adds 'explicit'
-export type CompileFormat = 'md' | 'pdf' | 'odt';
+export type CompileFormat = 'md' | 'pdf' | 'odt' | 'docx';
 export type CompileOutput = 'vault' | 'disk';
 export type CompilePageSize = 'letter' | 'a4';
 export type CompileChapterNumbering = 'none' | 'numeric' | 'roman';

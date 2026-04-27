@@ -210,6 +210,16 @@ async function dispatch(
 		return r.kind === 'written' ? r.path : null;
 	}
 
+	if (format === 'docx') {
+		// Stub: type-exhaustive branch ahead of the real wiring in a
+		// follow-up commit. Selecting DOCX in the modal lands here
+		// until the renderer ships; the throw produces a clearer
+		// error than the generic "unsupported format" fallback.
+		throw new Error(
+			`DOCX renderer is not yet wired (preset "${preset.file.basename}"). Pick MD, PDF, or ODT for now.`
+		);
+	}
+
 	throw new Error(
 		`Unsupported compile format "${format as string}" in preset "${preset.file.basename}".`
 	);

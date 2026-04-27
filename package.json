@@ -52,6 +52,7 @@
 		"vitest": "^1.6.0"
 	},
 	"dependencies": {
+		"docx": "^9.6.1",
 		"jszip": "^3.10.1",
 		"pdfmake": "^0.2.23"
 	}

@@ -5,9 +5,11 @@ import type {
 	SceneNote,
 } from '../../../core/discovery';
 import { findScenesInChapter } from '../../../core/discovery';
+import type { DraftBenchLinker } from '../../../core/linker';
 import { sortScenesByOrder } from '../../../core/sort-scenes';
 import { readTargetWords } from '../../../core/targets';
 import type { WordCountCache } from '../../../core/word-count-cache';
+import { NewChapterDraftModal } from '../../modals/new-chapter-draft-modal';
 import {
 	renderSceneRow,
 	renderStatusChip,
@@ -35,6 +37,7 @@ export function renderChapterListBody(
 	app: App,
 	wordCountCache: WordCountCache,
 	plugin: DraftBenchPlugin,
+	linker: DraftBenchLinker,
 	onOpenChapter: (chapter: ChapterNote) => void,
 	onOpenScene: (scene: SceneNote) => void
 ): void {
@@ -62,6 +65,7 @@ export function renderChapterListBody(
 			scenes,
 			wordCountCache,
 			plugin,
+			linker,
 			onOpenChapter,
 			onOpenScene
 		);
@@ -74,6 +78,7 @@ function renderChapterCard(
 	scenes: SceneNote[],
 	wordCountCache: WordCountCache,
 	plugin: DraftBenchPlugin,
+	linker: DraftBenchLinker,
 	onOpenChapter: (chapter: ChapterNote) => void,
 	onOpenScene: (scene: SceneNote) => void
 ): void {
@@ -130,6 +135,27 @@ function renderChapterCard(
 		cls: 'dbench-manuscript-view__chapter-words',
 	});
 	wordEl.setText('...');
+
+	const newDraftBtn = header.createEl('button', {
+		cls: 'clickable-icon dbench-manuscript-view__chapter-action',
+		attr: {
+			'aria-label': 'New draft of this chapter',
+			type: 'button',
+		},
+	});
+	setIcon(newDraftBtn, 'file-stack');
+	newDraftBtn.addEventListener('click', (evt) => {
+		evt.preventDefault();
+		// Stop the click from bubbling to the header's toggle handler —
+		// opening the new-draft modal shouldn't also flip the collapse state.
+		evt.stopPropagation();
+		new NewChapterDraftModal(
+			plugin.app,
+			plugin.settings,
+			linker,
+			chapter
+		).open();
+	});
 
 	const cardBody = card.createDiv({
 		cls: 'dbench-manuscript-view__chapter-body',

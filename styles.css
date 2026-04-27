@@ -727,7 +727,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-VIEW.CSS  (759 lines, 20.18 KB)
+   MANUSCRIPT-VIEW.CSS  (769 lines, 20.38 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1473,6 +1473,16 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	);
 }
 
+.dbench-manuscript-view__chapter-action {
+	flex: 0 0 auto;
+	padding: var(--size-2-1, 2px);
+	color: var(--text-muted);
+}
+
+.dbench-manuscript-view__chapter-action:hover {
+	color: var(--text-normal);
+}
+
 .dbench-manuscript-view__chapter-body {
 	padding: 0 var(--dbench-spacing-md) var(--dbench-spacing-sm);
 	border-top: 1px solid var(--background-modifier-border);
@@ -1623,7 +1633,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 9
-   Total:      1545 lines, 41.46 KB
+   Total:      1555 lines, 41.66 KB
    - variables.css: 87 lines, 2.99 KB
    - style-settings.css: 133 lines, 4.65 KB
    - base.css: 40 lines, 0.75 KB
@@ -1631,7 +1641,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - manuscript-builder.css: 137 lines, 3.35 KB
    - welcome-modal.css: 94 lines, 2.19 KB
    - reorder-modal.css: 103 lines, 2.31 KB
-   - manuscript-view.css: 759 lines, 20.18 KB
+   - manuscript-view.css: 769 lines, 20.38 KB
    - settings-tab.css: 119 lines, 2.66 KB
 */
 

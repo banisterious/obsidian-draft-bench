@@ -741,6 +741,16 @@
 	);
 }
 
+.dbench-manuscript-view__chapter-action {
+	flex: 0 0 auto;
+	padding: var(--size-2-1, 2px);
+	color: var(--text-muted);
+}
+
+.dbench-manuscript-view__chapter-action:hover {
+	color: var(--text-normal);
+}
+
 .dbench-manuscript-view__chapter-body {
 	padding: 0 var(--dbench-spacing-md) var(--dbench-spacing-sm);
 	border-top: 1px solid var(--background-modifier-border);

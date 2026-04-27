@@ -479,6 +479,7 @@ export class ManuscriptView extends ItemView {
 			this.plugin.app,
 			this.plugin.wordCounts,
 			this.plugin,
+			this.plugin.linker,
 			(chapter) => {
 				void this.plugin.app.workspace
 					.getLeaf(false)

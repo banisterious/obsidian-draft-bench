@@ -9,6 +9,7 @@ import {
 	hasMissingId,
 	listMissingKeys,
 	readDbenchType,
+	setAsChapter,
 	setAsDraft,
 	setAsProject,
 	setAsScene,
@@ -151,6 +152,115 @@ describe('setAsScene', () => {
 		const result = await setAsScene(app, settings,file);
 		expect(result.outcome).toBe('skipped');
 		expect(result.reason).toMatch(/already a project/i);
+	});
+});
+
+describe('setAsChapter', () => {
+	it('stamps chapter essentials on an untyped note', async () => {
+		const app = new App();
+		const file = await seedFile(app, 'The Departure.md');
+		const result = await setAsChapter(app, settings, file);
+
+		expect(result.outcome).toBe('updated');
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		expect(fm?.['dbench-type']).toBe('chapter');
+		expect(fm?.['dbench-project']).toBe('');
+		expect(fm?.['dbench-project-id']).toBe('');
+		expect(fm?.['dbench-order']).toBe(9999);
+		expect(fm?.['dbench-status']).toBe(settings.statusVocabulary[0]);
+		expect(fm?.['dbench-scenes']).toEqual([]);
+		expect(fm?.['dbench-scene-ids']).toEqual([]);
+		expect(fm?.['dbench-drafts']).toEqual([]);
+		expect(fm?.['dbench-draft-ids']).toEqual([]);
+	});
+
+	it('skips when the note is already a scene', async () => {
+		const app = new App();
+		const file = await seedFile(app, 'note.md', {
+			'dbench-type': 'scene',
+		});
+		const result = await setAsChapter(app, settings, file);
+		expect(result.outcome).toBe('skipped');
+		expect(result.reason).toMatch(/already a scene/i);
+	});
+
+	it('infers the parent project + chapter order when the chapter sits in the project folder', async () => {
+		const app = new App();
+		// Project note seeded with a known id so the inference + order
+		// math is observable.
+		await seedFile(app, 'My Novel/My Novel.md', {
+			'dbench-type': 'project',
+			'dbench-id': 'prj-test-001',
+			'dbench-project': '[[My Novel]]',
+			'dbench-project-id': 'prj-test-001',
+			'dbench-project-shape': 'folder',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+			'dbench-chapters': [],
+			'dbench-chapter-ids': [],
+		});
+		// Existing chapter at order 2 to verify nextChapterOrder picks 3.
+		await seedFile(app, 'My Novel/Existing Chapter.md', {
+			'dbench-type': 'chapter',
+			'dbench-id': 'chp-existing-001',
+			'dbench-project': '[[My Novel]]',
+			'dbench-project-id': 'prj-test-001',
+			'dbench-order': 2,
+			'dbench-status': 'idea',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+
+		const file = await seedFile(app, 'My Novel/New Chapter.md');
+		const result = await setAsChapter(app, settings, file);
+
+		expect(result.outcome).toBe('updated');
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		expect(fm?.['dbench-project']).toBe('[[My Novel]]');
+		expect(fm?.['dbench-project-id']).toBe('prj-test-001');
+		expect(fm?.['dbench-order']).toBe(3);
+	});
+
+	it('refuses with an error when the inferred project has direct (chapter-less) scenes (mixed-children rule)', async () => {
+		const app = new App();
+		await seedFile(app, 'Flat/Flat.md', {
+			'dbench-type': 'project',
+			'dbench-id': 'prj-flat-001',
+			'dbench-project': '[[Flat]]',
+			'dbench-project-id': 'prj-flat-001',
+			'dbench-project-shape': 'folder',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+			'dbench-chapters': [],
+			'dbench-chapter-ids': [],
+		});
+		// A direct scene (no chapter parent) — mixed-children rule
+		// blocks adding chapters until this scene is moved.
+		await seedFile(app, 'Flat/Direct Scene.md', {
+			'dbench-type': 'scene',
+			'dbench-id': 'sc-direct-001',
+			'dbench-project': '[[Flat]]',
+			'dbench-project-id': 'prj-flat-001',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+
+		const file = await seedFile(app, 'Flat/New Chapter.md');
+		const result = await setAsChapter(app, settings, file);
+
+		expect(result.outcome).toBe('error');
+		expect(result.reason).toMatch(/direct scene/i);
+		// The note must remain untyped — we refused before stamping.
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		expect(fm?.['dbench-type']).toBeUndefined();
 	});
 });
 

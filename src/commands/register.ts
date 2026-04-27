@@ -18,6 +18,7 @@ import { registerRunCompileCommand } from './run-compile';
 import { registerShowManuscriptViewCommand } from './show-manuscript-view';
 import { registerShowWelcomeCommand } from './show-welcome';
 import { registerSetAsProjectCommand } from './retrofit/set-as-project';
+import { registerSetAsChapterCommand } from './retrofit/set-as-chapter';
 import { registerSetAsSceneCommand } from './retrofit/set-as-scene';
 import { registerSetAsDraftCommand } from './retrofit/set-as-draft';
 import { registerCompleteEssentialsCommand } from './retrofit/complete-essentials';
@@ -57,6 +58,7 @@ export function registerCommands(
 	registerRepairProjectCommand(plugin, linker);
 	registerRunCompileCommand(plugin);
 	registerSetAsProjectCommand(plugin, getSettings);
+	registerSetAsChapterCommand(plugin, getSettings);
 	registerSetAsSceneCommand(plugin, getSettings);
 	registerSetAsDraftCommand(plugin, getSettings);
 	registerCompleteEssentialsCommand(plugin, getSettings);

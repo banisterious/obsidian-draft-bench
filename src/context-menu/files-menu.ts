@@ -6,6 +6,7 @@ import {
 	hasMissingEssentials,
 	hasMissingId,
 	readDbenchType,
+	setAsChapter,
 	setAsDraft,
 	setAsProject,
 	setAsScene,
@@ -43,6 +44,11 @@ export function buildFilesMenuItems(
 		addRetrofitMenuItem(menu, 'Set as project', 'folder', () =>
 			runBatch(app, settings, files, setAsProject, {
 				action: 'Set as project',
+			})
+		);
+		addRetrofitMenuItem(menu, 'Set as chapter', 'book-marked', () =>
+			runBatch(app, settings, files, setAsChapter, {
+				action: 'Set as chapter',
 			})
 		);
 		addRetrofitMenuItem(menu, 'Set as scene', 'align-left', () =>

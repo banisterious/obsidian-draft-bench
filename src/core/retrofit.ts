@@ -1,11 +1,13 @@
 import { TFile, type App, type TFolder } from 'obsidian';
 import type { DraftBenchSettings } from '../model/settings';
 import {
+	stampChapterEssentials,
 	stampDbenchId,
 	stampDraftEssentials,
 	stampProjectEssentials,
 	stampSceneEssentials,
 } from './essentials';
+import { nextChapterOrder } from './chapters';
 import { findProjects, findScenesInProject, type ProjectNote } from './discovery';
 
 /**
@@ -34,6 +36,17 @@ const REQUIRED_KEYS_BY_TYPE: Record<string, readonly string[]> = {
 		'dbench-status',
 		'dbench-scenes',
 		'dbench-scene-ids',
+	],
+	chapter: [
+		'dbench-id',
+		'dbench-project',
+		'dbench-project-id',
+		'dbench-order',
+		'dbench-status',
+		'dbench-scenes',
+		'dbench-scene-ids',
+		'dbench-drafts',
+		'dbench-draft-ids',
 	],
 	scene: [
 		'dbench-id',
@@ -180,6 +193,82 @@ export async function setAsScene(
 				);
 			}
 			stampSceneEssentials(fm, {
+				basename: file.basename,
+				defaultStatus: settings.statusVocabulary[0],
+			});
+		});
+		return { outcome: 'updated', file };
+	} catch (err) {
+		return {
+			outcome: 'error',
+			file,
+			reason: err instanceof Error ? err.message : String(err),
+		};
+	}
+}
+
+/**
+ * Stamp chapter essentials on an untyped note. See `setAsProject`
+ * for return semantics.
+ *
+ * Inference mirrors `setAsScene`: when the file's immediate parent
+ * folder contains exactly one project note, `dbench-project`,
+ * `dbench-project-id`, and `dbench-order` are pre-populated from
+ * that project (`order = max(existing chapter order) + 1`). Any
+ * ambiguity (zero or multiple project notes in the folder) falls
+ * back to the empty-placeholder behavior; the writer fills in via
+ * the Properties panel.
+ *
+ * Mixed-children rule (chapter-type.md § 9): refuses with an
+ * `error` outcome when the inferred project already has direct
+ * scenes (scenes without a chapter parent). Promoting a note to
+ * a chapter under such a project would put it into a forbidden
+ * mixed-children state. Writers fix the orphan scenes first via
+ * "Move to chapter" before retrofitting.
+ */
+export async function setAsChapter(
+	app: App,
+	settings: DraftBenchSettings,
+	file: TFile
+): Promise<RetrofitResult> {
+	const existing = readDbenchType(app, file);
+	if (existing !== null) {
+		return { outcome: 'skipped', file, reason: `Already a ${existing}` };
+	}
+	try {
+		const inferred = inferProjectForScene(app, file);
+		if (inferred) {
+			const directScenes = findScenesInProject(
+				app,
+				inferred.frontmatter['dbench-id']
+			).filter((s) => {
+				const fm = s.frontmatter as unknown as Record<string, unknown>;
+				const chapterId = fm['dbench-chapter-id'];
+				return (
+					chapterId === undefined ||
+					chapterId === '' ||
+					chapterId === null
+				);
+			});
+			if (directScenes.length > 0) {
+				return {
+					outcome: 'error',
+					file,
+					reason: `Project "${inferred.file.basename}" has ${directScenes.length} direct scene${directScenes.length === 1 ? '' : 's'}; move them into a chapter first.`,
+				};
+			}
+		}
+
+		await app.fileManager.processFrontMatter(file, (fm) => {
+			if (inferred) {
+				fm['dbench-project'] = `[[${inferred.file.basename}]]`;
+				fm['dbench-project-id'] = inferred.frontmatter['dbench-id'];
+				fm['dbench-order'] = nextChapterOrder(
+					app,
+					inferred.frontmatter['dbench-id']
+				);
+			}
+			stampChapterEssentials(fm, {
 				basename: file.basename,
 				defaultStatus: settings.statusVocabulary[0],
 			});

@@ -8,6 +8,7 @@ import {
 	hasMissingEssentials,
 	hasMissingId,
 	readDbenchType,
+	setAsChapter,
 	setAsDraft,
 	setAsProject,
 	setAsScene,
@@ -116,6 +117,13 @@ function buildSingleFileItems(
 				failureVerb: 'set as project',
 			});
 		});
+		addRetrofitMenuItem(menu, 'Set as chapter', 'book-marked', async () => {
+			const result = await setAsChapter(app, plugin.settings, file);
+			noticeForSingleFile(result, {
+				success: 'Set as chapter',
+				failureVerb: 'set as chapter',
+			});
+		});
 		addRetrofitMenuItem(menu, 'Set as scene', 'align-left', async () => {
 			const result = await setAsScene(app, plugin.settings, file);
 			noticeForSingleFile(result, {
@@ -171,6 +179,9 @@ function buildFolderItems(
 	const { settings } = plugin;
 	addRetrofitMenuItem(menu, 'Set as project', 'folder', () =>
 		runBatch(app, settings, files, setAsProject, { action: 'Set as project' })
+	);
+	addRetrofitMenuItem(menu, 'Set as chapter', 'book-marked', () =>
+		runBatch(app, settings, files, setAsChapter, { action: 'Set as chapter' })
 	);
 	addRetrofitMenuItem(menu, 'Set as scene', 'align-left', () =>
 		runBatch(app, settings, files, setAsScene, { action: 'Set as scene' })

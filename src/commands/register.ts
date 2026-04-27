@@ -9,6 +9,7 @@ import { registerCreateProjectCommand } from './create-project';
 import { registerDuplicateCompilePresetCommand } from './duplicate-compile-preset';
 import { registerInstallBasesCommand } from './install-bases';
 import { registerNewChapterCommand } from './new-chapter';
+import { registerNewChapterDraftCommand } from './new-chapter-draft';
 import { registerNewSceneCommand } from './new-scene';
 import { registerNewDraftCommand } from './new-draft';
 import { registerReorderChaptersCommand } from './reorder-chapters';
@@ -49,6 +50,7 @@ export function registerCommands(
 	registerDuplicateCompilePresetCommand(plugin, linker);
 	registerInstallBasesCommand(plugin);
 	registerNewChapterCommand(plugin, getSettings, linker);
+	registerNewChapterDraftCommand(plugin, getSettings, linker);
 	registerNewSceneCommand(plugin, getSettings, linker);
 	registerNewDraftCommand(plugin, getSettings, linker);
 	registerShowManuscriptViewCommand(plugin, () => plugin);

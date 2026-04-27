@@ -13,12 +13,14 @@ import {
 	setAsProject,
 	setAsScene,
 } from '../core/retrofit';
+import { isChapterFrontmatter } from '../model/chapter';
 import { isProjectFrontmatter } from '../model/project';
 import { findChaptersInProject } from '../core/discovery';
 import { isSceneFrontmatter } from '../model/scene';
 import { ManuscriptBuilderModal } from '../ui/manuscript-builder/manuscript-builder-modal';
 import { activateManuscriptView } from '../ui/manuscript-view/activate';
 import { MoveToChapterModal } from '../ui/modals/move-to-chapter-modal';
+import { NewChapterDraftModal } from '../ui/modals/new-chapter-draft-modal';
 import { RepairProjectModal } from '../ui/modals/repair-project-modal';
 import {
 	addPresetMenuItems,
@@ -114,6 +116,10 @@ function buildSingleFileItems(
 
 	if (type === 'scene') {
 		addMoveToChapterMenuItem(plugin, menu, file);
+	}
+
+	if (type === 'chapter') {
+		addNewChapterDraftMenuItem(plugin, linker, menu, file);
 	}
 
 	if (type === null) {
@@ -233,5 +239,30 @@ function addMoveToChapterMenuItem(
 
 	addRetrofitMenuItem(menu, 'Move to chapter', 'arrow-right-from-line', () => {
 		new MoveToChapterModal(plugin.app, { file, frontmatter: fm }).open();
+	});
+}
+
+/**
+ * Add "New draft of this chapter" on chapter notes. Snapshots the
+ * chapter body plus child scenes via `NewChapterDraftModal` per
+ * chapter-type Step 10. Hidden when frontmatter doesn't shape as a
+ * chapter (defensive).
+ */
+function addNewChapterDraftMenuItem(
+	plugin: DraftBenchPlugin,
+	linker: DraftBenchLinker,
+	menu: Menu,
+	file: TFile
+): void {
+	const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+	if (!isChapterFrontmatter(fm)) return;
+
+	addRetrofitMenuItem(menu, 'New draft of this chapter', 'file-stack', () => {
+		new NewChapterDraftModal(
+			plugin.app,
+			plugin.settings,
+			linker,
+			{ file, frontmatter: fm }
+		).open();
 	});
 }

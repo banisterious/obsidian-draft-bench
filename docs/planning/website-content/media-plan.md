@@ -270,7 +270,7 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 
 - [ ] Theme + accent locked
 - [ ] Vault: `dev-vault`
-- [ ] Open: a compile-preset note (`Draft Bench/The Salt Road/Compile presets/Workshop.md` or similar)
+- [ ] Open: a compile-preset note (`Draft Bench/The Salt Road/Compile Presets/Workshop.md`)
 - [ ] Properties panel visible in the right pane (toggle if needed)
 - [ ] Show the full set of `dbench-compile-*` properties (heading scope, frontmatter handling, wikilinks, embeds, dinkuses, last-compile fields)
 
@@ -299,8 +299,8 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 
 - [ ] Theme + accent locked
 - [ ] Vault: `dev-vault`
-- [ ] Pre-condition: Bases starter views installed (run `Draft Bench: Install Bases starter views` if not yet done)
-- [ ] Open: `Draft Bench/Bases/projects.base` (or wherever the projects view lives)
+- [ ] Pre-condition: Bases starter views installed (run palette command **`Draft Bench: Install starter Bases views`** once; generates files at `Draft Bench/Bases/`)
+- [ ] Open: `Draft Bench/Bases/projects.base` (the projects starter view)
 - [ ] View shows multiple projects with key columns (title, status, scene count, target words)
 
 **Capture**

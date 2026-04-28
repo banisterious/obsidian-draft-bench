@@ -7,7 +7,6 @@ import { stampSceneEssentials } from './essentials';
 import {
 	ensureSceneTemplateFile,
 	isoDate,
-	resolveSceneTemplate,
 	substituteTokens,
 	type TemplateContext,
 } from './templates';
@@ -65,6 +64,15 @@ export interface CreateSceneOptions {
 	 * with the project's basename.
 	 */
 	location?: string;
+
+	/**
+	 * Optional explicit template file to use for this scene's body,
+	 * picked by the writer in the new-scene modal. Falls back to
+	 * the configured default (per `settings.sceneTemplatePath`) when
+	 * absent. Bypasses the auto-seed flow — the file is assumed to
+	 * exist (it was discovered by `discoverTemplates`).
+	 */
+	templateFile?: TFile;
 }
 
 export interface ResolvedScenePaths {
@@ -241,7 +249,13 @@ export async function createScene(
 		previousSceneTitle: previousSceneTitleAt(app, projectId, order),
 	};
 
-	const file = await renderSceneBody(app, settings, context, filePath);
+	const file = await renderSceneBody(
+		app,
+		settings,
+		context,
+		filePath,
+		options.templateFile
+	);
 
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Pre-set scene-specific fields so stampSceneEssentials' setIfMissing
@@ -297,10 +311,17 @@ async function renderSceneBody(
 	app: App,
 	settings: DraftBenchSettings,
 	context: TemplateContext,
-	filePath: string
+	filePath: string,
+	explicitTemplateFile?: TFile
 ): Promise<TFile> {
+	// When the writer picked a named template via the modal, use it
+	// directly. Otherwise fall back to the seed-on-first-use flow that
+	// resolves `settings.sceneTemplatePath` (or the default well-known
+	// file) and creates it if absent.
+	const templateFile =
+		explicitTemplateFile ?? (await ensureSceneTemplateFile(app, settings));
+
 	if (isTemplaterEnabled(app)) {
-		const templateFile = await ensureSceneTemplateFile(app, settings);
 		const emptyFile = await app.vault.create(filePath, '');
 		const processed = await renderTemplateThroughTemplater(
 			app,
@@ -320,7 +341,10 @@ async function renderSceneBody(
 		return emptyFile;
 	}
 
-	const body = await resolveSceneTemplate(app, settings, context);
+	// Plain (non-Templater) flow: read + substitute. When the explicit
+	// template was provided, this is the named-template path; otherwise
+	// the resolved default seeded above.
+	const body = substituteTokens(await app.vault.read(templateFile), context);
 	return app.vault.create(filePath, body);
 }
 

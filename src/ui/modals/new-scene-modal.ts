@@ -4,6 +4,10 @@ import type { DraftBenchSettings } from '../../model/settings';
 import { createScene } from '../../core/scenes';
 import { findProjects, type ProjectNote } from '../../core/discovery';
 import type { DraftBenchLinker } from '../../core/linker';
+import {
+	discoverTemplates,
+	type TemplateInfo,
+} from '../../core/templates';
 
 /**
  * "New scene in project" form modal.
@@ -15,7 +19,9 @@ import type { DraftBenchLinker } from '../../core/linker';
  */
 export class NewSceneModal extends Modal {
 	private projects: ProjectNote[];
+	private templates: TemplateInfo[];
 	private selectedProjectId = '';
+	private selectedTemplatePath = '';
 	private titleInput = '';
 	private orderInput = '';
 	private status: DbenchStatus;
@@ -30,6 +36,14 @@ export class NewSceneModal extends Modal {
 		this.projects = findProjects(app);
 		if (this.projects.length > 0) {
 			this.selectedProjectId = this.projects[0].frontmatter['dbench-id'];
+		}
+		this.templates = discoverTemplates(app, settings, 'scene');
+		// Default-select the well-known seed template (first by sort
+		// order: discoverTemplates puts isDefault first). When no
+		// templates are discovered the picker is hidden — createScene's
+		// fallback path seeds the well-known file on demand.
+		if (this.templates.length > 0) {
+			this.selectedTemplatePath = this.templates[0].file.path;
 		}
 		this.status = settings.statusVocabulary[0];
 	}
@@ -65,6 +79,32 @@ export class NewSceneModal extends Modal {
 					this.selectedProjectId = value;
 				});
 			});
+
+		// Template picker — only shown when the writer has more than one
+		// template available. With zero or one, picking is a no-op and
+		// the dropdown adds visual noise. The default option is the
+		// well-known seed file, which createScene's fallback flow uses
+		// when no explicit templateFile is passed.
+		if (this.templates.length >= 2) {
+			new Setting(contentEl)
+				.setName('Template')
+				.setDesc(
+					'Body template applied to the new scene. The default seeds the built-in template; custom templates need `dbench-template-type: scene` in their frontmatter to appear here.'
+				)
+				.addDropdown((dropdown) => {
+					for (const tpl of this.templates) {
+						const label = tpl.isDefault
+							? `${tpl.name} (default)`
+							: tpl.name;
+						dropdown.addOption(tpl.file.path, label);
+					}
+					dropdown
+						.setValue(this.selectedTemplatePath)
+						.onChange((value) => {
+							this.selectedTemplatePath = value;
+						});
+				});
+		}
 
 		new Setting(contentEl)
 			.setName('Title')
@@ -138,12 +178,20 @@ export class NewSceneModal extends Modal {
 				throw new Error('Order must be a number.');
 			}
 
+			// Translate the picked path back into the TFile from the
+			// modal's discovered list. Falls back to undefined when no
+			// templates exist (createScene seeds the default).
+			const templateFile = this.templates.find(
+				(t) => t.file.path === this.selectedTemplatePath
+			)?.file;
+
 			const file = await this.linker.withSuspended(() =>
 				createScene(this.app, this.settings, {
 					project,
 					title: this.titleInput,
 					order,
 					status: this.status,
+					templateFile,
 				})
 			);
 

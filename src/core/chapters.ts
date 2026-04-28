@@ -7,7 +7,6 @@ import { stampChapterEssentials } from './essentials';
 import {
 	ensureChapterTemplateFile,
 	isoDate,
-	resolveChapterTemplate,
 	substituteChapterTokens,
 	type ChapterTemplateContext,
 } from './templates';
@@ -58,6 +57,15 @@ export interface CreateChapterOptions {
 	 * with the project's basename.
 	 */
 	location?: string;
+
+	/**
+	 * Optional explicit template file to use for this chapter's body,
+	 * picked by the writer in the new-chapter modal. Falls back to
+	 * the configured default (per `settings.chapterTemplatePath`)
+	 * when absent. Bypasses the auto-seed flow — the file is assumed
+	 * to exist (it was discovered by `discoverTemplates`).
+	 */
+	templateFile?: TFile;
 }
 
 export interface ResolvedChapterPaths {
@@ -196,7 +204,13 @@ export async function createChapter(
 		previousChapterTitle: previousChapterTitleAt(app, projectId, order),
 	};
 
-	const file = await renderChapterBody(app, settings, context, filePath);
+	const file = await renderChapterBody(
+		app,
+		settings,
+		context,
+		filePath,
+		options.templateFile
+	);
 
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Pre-set chapter-specific fields so stampChapterEssentials'
@@ -251,10 +265,17 @@ async function renderChapterBody(
 	app: App,
 	settings: DraftBenchSettings,
 	context: ChapterTemplateContext,
-	filePath: string
+	filePath: string,
+	explicitTemplateFile?: TFile
 ): Promise<TFile> {
+	// When the writer picked a named template via the modal, use it
+	// directly. Otherwise fall back to the seed-on-first-use flow that
+	// resolves `settings.chapterTemplatePath` (or the default
+	// well-known file) and creates it if absent.
+	const templateFile =
+		explicitTemplateFile ?? (await ensureChapterTemplateFile(app, settings));
+
 	if (isTemplaterEnabled(app)) {
-		const templateFile = await ensureChapterTemplateFile(app, settings);
 		const emptyFile = await app.vault.create(filePath, '');
 		const processed = await renderTemplateThroughTemplater(
 			app,
@@ -277,7 +298,10 @@ async function renderChapterBody(
 		return emptyFile;
 	}
 
-	const body = await resolveChapterTemplate(app, settings, context);
+	const body = substituteChapterTokens(
+		await app.vault.read(templateFile),
+		context
+	);
 	return app.vault.create(filePath, body);
 }
 

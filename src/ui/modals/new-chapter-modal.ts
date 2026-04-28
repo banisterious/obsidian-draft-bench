@@ -97,12 +97,14 @@ export class NewChapterModal extends Modal {
 				});
 			});
 
-		// Template picker — only shown when the writer has more than one
-		// template available. With zero or one, picking is a no-op and
-		// the dropdown adds visual noise. The default option is the
-		// well-known seed file, which createChapter's fallback flow uses
-		// when no explicit templateFile is passed.
-		if (this.templates.length >= 2) {
+		// Template picker — shown when the writer has authored at least
+		// one custom template (anything beyond the default seed). With
+		// only the default discovered, the picker would add chrome
+		// without offering a choice. With at least one custom, the
+		// picker confirms discovery and offers the choice — even when
+		// the default seed hasn't been created yet (first-chapter-in-vault
+		// case).
+		if (this.templates.some((t) => !t.isDefault)) {
 			new Setting(contentEl)
 				.setName('Template')
 				.setDesc(

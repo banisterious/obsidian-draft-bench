@@ -47,6 +47,8 @@ A project's top-level children are *either* all chapters *or* all direct scenes 
 | `dbench-status` | string | Workflow status per default vocabulary. |
 | `dbench-chapter` | wikilink (optional) | Parent chapter, on scenes-in-chapters only. Absent / empty on direct scenes in chapter-less projects. |
 | `dbench-chapter-id` | string (optional) | Stable-ID companion to `dbench-chapter`. |
+| `dbench-target-words` | number (optional) | Per-scene authoring target; surfaces as a per-scene progress bar in the Manuscript view. |
+| `dbench-subtitle` | string (optional) | Short second-line text under the scene title in the Manuscript view. Useful for POV markers, time stamps, setting cues, or descriptors that disambiguate similarly-titled scenes. |
 | `dbench-drafts` | array of wikilinks | Reverse array of prior scene draft snapshots. |
 | `dbench-draft-ids` | array of strings | Stable-ID companions for `dbench-drafts`. |
 

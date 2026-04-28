@@ -55,6 +55,7 @@ Every note managed by Draft Bench carries a set of frontmatter properties that i
 | `dbench-status` | string (optional) | project, scene, chapter | Workflow status (e.g., `idea`, `draft`, `revision`, `final`). |
 | `dbench-target-words` | positive integer (optional) | project, scene, chapter | Authoring target used by the Manuscript view's progress bars. Writer-set via the Properties panel or template frontmatter; not stamped at creation. |
 | `dbench-synopsis` | string (optional) | chapter | Short index-card summary surfaced in the Manuscript view's chapter card. Writer-set via the Properties panel; not stamped at creation. |
+| `dbench-subtitle` | string (optional) | scene | Short second-line text shown under the scene title in the Manuscript view. POV markers, time stamps, setting cues, descriptors. Writer-set via the Properties panel; not stamped at creation. |
 | `dbench-<target-type>` | wikilink (optional) | notes that reference a typed parent | Typed forward relationship pointer (e.g., `dbench-scene` on a draft). See § Typed Relationships. |
 | `dbench-<target-type>-id` | string (optional) | same as above | Stable-ID companion to the typed forward pointer. |
 

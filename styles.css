@@ -727,7 +727,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-VIEW.CSS  (788 lines, 20.76 KB)
+   MANUSCRIPT-VIEW.CSS  (815 lines, 21.58 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1377,6 +1377,33 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	text-align: right;
 }
 
+/* Optional `dbench-subtitle` second-line text under the scene title.
+   The row only switches to 3-row layout when the writer set a subtitle;
+   absent rows keep the default 2-row grid (no extra vertical space). */
+.dbench-manuscript-view__scene-row--has-subtitle {
+	grid-template-rows: auto auto auto;
+}
+
+.dbench-manuscript-view__scene-row--has-subtitle .dbench-manuscript-view__scene-order {
+	grid-row: 1 / 4;
+}
+
+.dbench-manuscript-view__scene-row--has-subtitle .dbench-manuscript-view__status-chip,
+.dbench-manuscript-view__scene-row--has-subtitle .dbench-manuscript-view__scene-drafts {
+	grid-row: 3;
+}
+
+.dbench-manuscript-view__scene-subtitle {
+	grid-column: 2 / 4;
+	grid-row: 2;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+	font-style: italic;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 /*
  * Chapter cards (chapter-aware projects). Each card is a collapsible
  * section with a header row (chevron + order + title + status +
@@ -1652,7 +1679,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 9
-   Total:      1574 lines, 42.04 KB
+   Total:      1601 lines, 42.85 KB
    - variables.css: 87 lines, 2.99 KB
    - style-settings.css: 133 lines, 4.65 KB
    - base.css: 40 lines, 0.75 KB
@@ -1660,7 +1687,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - manuscript-builder.css: 137 lines, 3.35 KB
    - welcome-modal.css: 94 lines, 2.19 KB
    - reorder-modal.css: 103 lines, 2.31 KB
-   - manuscript-view.css: 788 lines, 20.76 KB
+   - manuscript-view.css: 815 lines, 21.58 KB
    - settings-tab.css: 119 lines, 2.66 KB
 */
 

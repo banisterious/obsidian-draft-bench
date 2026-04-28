@@ -42,6 +42,19 @@ export function renderSceneRow(
 	});
 	attachWikilinkOpenAffordances(titleEl, (spec) => onOpen(scene, spec));
 
+	// Optional subtitle (`dbench-subtitle`) shown as muted text below
+	// the title. The modifier class flips the row to a 3-row grid;
+	// rows without a subtitle keep the original 2-row layout so they
+	// don't reserve vertical space.
+	const subtitle = readSubtitle(scene);
+	if (subtitle !== '') {
+		item.addClass('dbench-manuscript-view__scene-row--has-subtitle');
+		item.createSpan({
+			cls: 'dbench-manuscript-view__scene-subtitle',
+			text: subtitle,
+		});
+	}
+
 	renderStatusChip(item, scene.frontmatter['dbench-status']);
 
 	const wordEl = item.createDiv({
@@ -73,6 +86,18 @@ export function renderSceneRow(
 			if (!wordEl.isConnected) return;
 			wordEl.setText('-');
 		});
+}
+
+/**
+ * Read the optional `dbench-subtitle` value off a scene's frontmatter,
+ * trimming whitespace. Returns `''` when absent, blank, or non-string
+ * (defensive — frontmatter values arrive as `unknown` per Obsidian's
+ * cache shape).
+ */
+function readSubtitle(scene: SceneNote): string {
+	const fm = scene.frontmatter as unknown as Record<string, unknown>;
+	const raw = fm['dbench-subtitle'];
+	return typeof raw === 'string' ? raw.trim() : '';
 }
 
 /**

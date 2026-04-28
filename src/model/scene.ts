@@ -42,6 +42,14 @@ export interface SceneFrontmatter {
 	 */
 	'dbench-target-words'?: number;
 	/**
+	 * Optional one-line subtitle, surfaced under the scene title in the
+	 * Manuscript view's scene row. Useful for POV markers, time stamps,
+	 * setting cues, or short descriptors that disambiguate similarly-
+	 * titled scenes. Writer-set via the Properties panel; not stamped
+	 * at creation.
+	 */
+	'dbench-subtitle'?: string;
+	/**
 	 * Optional section-break title shown before this scene at compile
 	 * time (D-06 rule extended). Absence means no break; presence
 	 * triggers the break (preset-level

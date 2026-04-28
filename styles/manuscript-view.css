@@ -645,6 +645,33 @@
 	text-align: right;
 }
 
+/* Optional `dbench-subtitle` second-line text under the scene title.
+   The row only switches to 3-row layout when the writer set a subtitle;
+   absent rows keep the default 2-row grid (no extra vertical space). */
+.dbench-manuscript-view__scene-row--has-subtitle {
+	grid-template-rows: auto auto auto;
+}
+
+.dbench-manuscript-view__scene-row--has-subtitle .dbench-manuscript-view__scene-order {
+	grid-row: 1 / 4;
+}
+
+.dbench-manuscript-view__scene-row--has-subtitle .dbench-manuscript-view__status-chip,
+.dbench-manuscript-view__scene-row--has-subtitle .dbench-manuscript-view__scene-drafts {
+	grid-row: 3;
+}
+
+.dbench-manuscript-view__scene-subtitle {
+	grid-column: 2 / 4;
+	grid-row: 2;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+	font-style: italic;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 /*
  * Chapter cards (chapter-aware projects). Each card is a collapsible
  * section with a header row (chevron + order + title + status +

@@ -14,8 +14,8 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: var(--dbench-spacing-lg);
-	padding: var(--dbench-spacing-md);
+	gap: var(--dbench-spacing-xl);
+	padding: var(--dbench-spacing-lg) var(--dbench-spacing-md);
 	max-width: 440px;
 	margin: 0 auto;
 }
@@ -56,9 +56,9 @@
 .dbench-welcome-modal__pitch {
 	display: flex;
 	flex-direction: column;
-	gap: var(--dbench-spacing-sm);
+	gap: var(--dbench-spacing-md);
 	color: var(--text-normal);
-	line-height: 1.5;
+	line-height: 1.55;
 	text-align: center;
 }
 
@@ -69,7 +69,7 @@
 .dbench-welcome-modal__actions {
 	display: flex;
 	flex-direction: column;
-	gap: var(--dbench-spacing-xs);
+	gap: var(--dbench-spacing-sm);
 	width: 100%;
 }
 

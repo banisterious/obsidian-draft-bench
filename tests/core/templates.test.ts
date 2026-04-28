@@ -5,9 +5,12 @@ import {
 	BUILTIN_SCENE_TEMPLATE,
 	CHAPTER_TEMPLATE_FILENAME,
 	SCENE_TEMPLATE_FILENAME,
+	discoverTemplates,
 	isoDate,
 	loadChapterTemplateBody,
 	loadSceneTemplateBody,
+	renderChapterTemplateFile,
+	renderSceneTemplateFile,
 	resolveChapterTemplate,
 	resolveChapterTemplatePath,
 	resolveSceneTemplate,
@@ -424,5 +427,186 @@ describe('resolveChapterTemplate', () => {
 			makeChapterContext()
 		);
 		expect(rendered).toBe(BUILTIN_CHAPTER_TEMPLATE);
+	});
+});
+
+describe('discoverTemplates', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+	});
+
+	async function createTemplate(
+		path: string,
+		fm: Record<string, unknown>,
+		body = ''
+	): Promise<TFile> {
+		const folder = path.slice(0, path.lastIndexOf('/'));
+		if (folder !== '' && app.vault.getAbstractFileByPath(folder) === null) {
+			await app.vault.createFolder(folder);
+		}
+		const file = await app.vault.create(path, body);
+		await app.fileManager.processFrontMatter(file, (front) => {
+			Object.assign(front, fm);
+		});
+		return file;
+	}
+
+	it('returns empty list when templates folder is unset', () => {
+		const empty = { ...settings, templatesFolder: '' };
+		expect(discoverTemplates(app, empty, 'scene')).toEqual([]);
+	});
+
+	it('always includes the well-known scene-template.md as default', async () => {
+		await createTemplate(
+			`Draft Bench/Templates/${SCENE_TEMPLATE_FILENAME}`,
+			{}
+		);
+		const result = discoverTemplates(app, settings, 'scene');
+		expect(result).toHaveLength(1);
+		expect(result[0].name).toBe('scene-template');
+		expect(result[0].isDefault).toBe(true);
+	});
+
+	it('includes named scene templates with type frontmatter', async () => {
+		await createTemplate(`Draft Bench/Templates/pov-anna.md`, {
+			'dbench-template-type': 'scene',
+			'dbench-template-name': 'POV — Anna',
+		});
+		await createTemplate(`Draft Bench/Templates/pov-marcus.md`, {
+			'dbench-template-type': 'scene',
+		});
+
+		const result = discoverTemplates(app, settings, 'scene');
+		expect(result).toHaveLength(2);
+		expect(result.map((t) => t.name).sort()).toEqual([
+			'POV — Anna',
+			'pov-marcus',
+		]);
+	});
+
+	it('filters out templates of the wrong type', async () => {
+		await createTemplate(`Draft Bench/Templates/scene-pov.md`, {
+			'dbench-template-type': 'scene',
+		});
+		await createTemplate(`Draft Bench/Templates/chapter-arc.md`, {
+			'dbench-template-type': 'chapter',
+		});
+
+		const sceneTemplates = discoverTemplates(app, settings, 'scene');
+		const chapterTemplates = discoverTemplates(app, settings, 'chapter');
+
+		expect(sceneTemplates.map((t) => t.file.basename)).toEqual([
+			'scene-pov',
+		]);
+		expect(chapterTemplates.map((t) => t.file.basename)).toEqual([
+			'chapter-arc',
+		]);
+	});
+
+	it('excludes files without the type frontmatter (non-DB templates)', async () => {
+		// Simulating a Templater plugin template in the same folder.
+		await createTemplate(`Draft Bench/Templates/random.md`, {
+			'tags': ['templater'],
+		});
+		const result = discoverTemplates(app, settings, 'scene');
+		expect(result).toEqual([]);
+	});
+
+	it('sorts default first, then alphabetical', async () => {
+		await createTemplate(
+			`Draft Bench/Templates/${SCENE_TEMPLATE_FILENAME}`,
+			{}
+		);
+		await createTemplate(`Draft Bench/Templates/zebra.md`, {
+			'dbench-template-type': 'scene',
+		});
+		await createTemplate(`Draft Bench/Templates/alpha.md`, {
+			'dbench-template-type': 'scene',
+		});
+
+		const result = discoverTemplates(app, settings, 'scene');
+		expect(result.map((t) => t.name)).toEqual([
+			'scene-template',
+			'alpha',
+			'zebra',
+		]);
+	});
+
+	it('reads the optional description', async () => {
+		await createTemplate(`Draft Bench/Templates/with-desc.md`, {
+			'dbench-template-type': 'scene',
+			'dbench-template-name': 'POV',
+			'dbench-template-description': 'Single-POV scene with cue lines',
+		});
+		const result = discoverTemplates(app, settings, 'scene');
+		expect(result[0].description).toBe('Single-POV scene with cue lines');
+	});
+
+	it('honors a custom templatesFolder setting', async () => {
+		const customSettings = {
+			...settings,
+			templatesFolder: 'Writing/Templates/',
+		};
+		await createTemplate(`Writing/Templates/custom.md`, {
+			'dbench-template-type': 'chapter',
+		});
+		// File in the default folder should not appear.
+		await createTemplate(
+			`Draft Bench/Templates/${CHAPTER_TEMPLATE_FILENAME}`,
+			{}
+		);
+
+		const result = discoverTemplates(app, customSettings, 'chapter');
+		expect(result.map((t) => t.file.basename)).toEqual(['custom']);
+	});
+});
+
+describe('renderSceneTemplateFile', () => {
+	it('reads the file body and substitutes scene tokens', async () => {
+		const app = new App();
+		const folder = 'Draft Bench/Templates';
+		await app.vault.createFolder(folder);
+		const file = await app.vault.create(
+			`${folder}/named.md`,
+			'# {{scene_title}}\n\nProject: {{project_title}}'
+		);
+
+		const rendered = await renderSceneTemplateFile(app, file, {
+			project: '[[My Novel]]',
+			projectTitle: 'My Novel',
+			sceneTitle: 'Opening',
+			sceneOrder: 1,
+			date: '2026-04-28',
+			previousSceneTitle: '',
+		});
+
+		expect(rendered).toBe('# Opening\n\nProject: My Novel');
+	});
+});
+
+describe('renderChapterTemplateFile', () => {
+	it('reads the file body and substitutes chapter tokens', async () => {
+		const app = new App();
+		const folder = 'Draft Bench/Templates';
+		await app.vault.createFolder(folder);
+		const file = await app.vault.create(
+			`${folder}/named-chapter.md`,
+			'# {{chapter_title}} ({{chapter_order}})'
+		);
+
+		const rendered = await renderChapterTemplateFile(app, file, {
+			project: '[[My Novel]]',
+			projectTitle: 'My Novel',
+			chapterTitle: 'The Crossing',
+			chapterOrder: 1,
+			date: '2026-04-28',
+			previousChapterTitle: '',
+		});
+
+		expect(rendered).toBe('# The Crossing (1)');
 	});
 });

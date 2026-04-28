@@ -38,6 +38,22 @@ export const SCENE_TEMPLATE_FILENAME = 'scene-template.md';
 export const CHAPTER_TEMPLATE_FILENAME = 'chapter-template.md';
 
 /**
+ * One discovered template available for use at scene or chapter
+ * creation. Returned by `discoverTemplates`; surfaced in the creation
+ * modal's template picker.
+ */
+export interface TemplateInfo {
+	/** The actual template note file. */
+	file: TFile;
+	/** Display name shown in the picker. From `dbench-template-name` if set; otherwise the file basename. */
+	name: string;
+	/** Optional one-line hint shown in the picker. From `dbench-template-description`. */
+	description: string;
+	/** True for the well-known seed file (`scene-template.md` / `chapter-template.md`); these always appear as the default option. */
+	isDefault: boolean;
+}
+
+/**
  * Context for plugin-token substitution on scene templates.
  *
  * - `project`: wikilink form, e.g. `[[My Novel]]`.
@@ -293,6 +309,111 @@ export async function resolveChapterTemplate(
 	context: ChapterTemplateContext
 ): Promise<string> {
 	const body = await loadChapterTemplateBody(app, settings);
+	return substituteChapterTokens(body, context);
+}
+
+/**
+ * Discover all named templates of `type` available under
+ * `settings.templatesFolder`. Templates are markdown files with
+ * `dbench-template-type: scene | chapter` frontmatter. The
+ * well-known seed files (`scene-template.md` / `chapter-template.md`)
+ * are always included as the type's default — they don't need the
+ * frontmatter discriminator since their filename is the contract.
+ *
+ * `dbench-template-name` (string) overrides the display name; falls
+ * back to the file's basename. `dbench-template-description` (string)
+ * provides an optional picker hint.
+ *
+ * Returns an empty list when the templates folder is unset or empty.
+ * The default template (when present) sorts first; remaining
+ * templates sort alphabetically by display name. Templater plugin
+ * templates and any other non-DB markdown in the folder are filtered
+ * out by the strict frontmatter check.
+ */
+export function discoverTemplates(
+	app: App,
+	settings: DraftBenchSettings,
+	type: 'scene' | 'chapter'
+): TemplateInfo[] {
+	const folder = settings.templatesFolder.replace(/^\/+|\/+$/g, '');
+	if (folder === '') return [];
+
+	const wellKnownFilename =
+		type === 'scene' ? SCENE_TEMPLATE_FILENAME : CHAPTER_TEMPLATE_FILENAME;
+	const folderPrefix = `${folder}/`;
+
+	const out: TemplateInfo[] = [];
+	for (const file of app.vault.getMarkdownFiles()) {
+		if (!file.path.startsWith(folderPrefix)) continue;
+
+		const fm = (app.metadataCache.getFileCache(file)?.frontmatter ?? {}) as Record<
+			string,
+			unknown
+		>;
+		const fmType = fm['dbench-template-type'];
+		const filename = file.path.slice(file.path.lastIndexOf('/') + 1);
+		const isWellKnown = filename === wellKnownFilename;
+
+		// Strict filter: the file must either be the well-known seed
+		// for this type, or carry an explicit `dbench-template-type`
+		// matching the requested type. This keeps Templater templates
+		// (which lack the discriminator) out of the picker.
+		if (!isWellKnown && fmType !== type) continue;
+
+		const rawName = fm['dbench-template-name'];
+		const name =
+			typeof rawName === 'string' && rawName.trim() !== ''
+				? rawName.trim()
+				: file.basename;
+
+		const rawDesc = fm['dbench-template-description'];
+		const description = typeof rawDesc === 'string' ? rawDesc.trim() : '';
+
+		out.push({
+			file,
+			name,
+			description,
+			isDefault: isWellKnown,
+		});
+	}
+
+	return out.sort((a, b) => {
+		if (a.isDefault && !b.isDefault) return -1;
+		if (!a.isDefault && b.isDefault) return 1;
+		return a.name.localeCompare(b.name);
+	});
+}
+
+/**
+ * Render an explicit template file with token substitution, using the
+ * scene-token vocabulary. Companion to `resolveSceneTemplate` for
+ * named-template paths: the latter resolves a folder + override
+ * convention; this one accepts a TFile directly so the caller
+ * (typically a creation modal that picked a template via
+ * `discoverTemplates`) doesn't re-resolve.
+ *
+ * Returns the substituted body. Templater pass-through is applied by
+ * the caller's renderXxxBody helper; this function is the plain-flow
+ * primitive.
+ */
+export async function renderSceneTemplateFile(
+	app: App,
+	file: TFile,
+	context: TemplateContext
+): Promise<string> {
+	const body = await app.vault.read(file);
+	return substituteTokens(body, context);
+}
+
+/**
+ * Chapter-template counterpart to `renderSceneTemplateFile`.
+ */
+export async function renderChapterTemplateFile(
+	app: App,
+	file: TFile,
+	context: ChapterTemplateContext
+): Promise<string> {
+	const body = await app.vault.read(file);
 	return substituteChapterTokens(body, context);
 }
 

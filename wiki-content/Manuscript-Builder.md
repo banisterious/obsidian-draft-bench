@@ -24,10 +24,10 @@ Title, subtitle, author, and date format. Used by output renderers (PDF / ODT / 
 
 ### Inclusion
 
-Which scenes to include. V1 uses an "auto" scene source: every scene in the project, in `dbench-order`. Filters:
+Which scenes to include. V1 uses an "auto" scene source: every scene in the project, in `dbench-order`. Chapter-aware projects walk two-level — chapters in `dbench-order`, then each chapter's scenes in their within-chapter `dbench-order`. Filters:
 
 - **Statuses**: include only scenes whose `dbench-status` is in this list. Empty = all statuses.
-- **Excludes**: explicit list of scene basenames or `[[wikilinks]]` to skip.
+- **Excludes**: explicit list of scene **or chapter** basenames / `[[wikilinks]]` to skip. Excluding a chapter drops the chapter heading, the chapter body's `## Draft` intro, and every child scene from the output (the dropped scenes still count toward the "filtered out N scenes" notice).
 
 ### Output
 
@@ -39,7 +39,15 @@ Vault Markdown lands at `<project folder>/Compiled/<preset name>.md` so subseque
 
 ### Content handling
 
-Per-preset overrides for the five content-handling rules that have meaningful per-output trade-offs (heading scope, frontmatter, wikilinks, embeds, dinkuses). The other compile-time rules (footnote renumbering, callout stripping, etc.) are always-on.
+Per-preset overrides for the five content-handling rules that have meaningful per-output trade-offs (**heading scope**, frontmatter, wikilinks, embeds, dinkuses). The other compile-time rules (footnote renumbering, callout stripping, etc.) are always-on.
+
+**Heading scope** has three values:
+
+- **`scope: full`** — emits each scene's full body (planning sections plus `## Draft`). Scene title becomes an H1 above each body.
+- **`scope: draft`** — emits only the `## Draft` content from each scene. Planning sections are stripped. Scene titles become H1s. Default for chapter-less projects.
+- **`scope: chapter`** — chapter-aware compile. Emits one `# <chapter title>` per chapter, then the chapter body's `## Draft` content (chapter-introductory prose) when non-empty, then concatenated scene `## Draft` bodies with scene titles omitted. Produces continuous prose under each chapter heading — the typical novel-compile shape. Default for chapter-aware projects.
+
+The default is auto-selected when the preset is created based on the project's shape; you can override later via the Compile tab. Existing presets are never silently changed when a project gains chapters.
 
 ### Last compile
 
@@ -61,8 +69,10 @@ The same compile flow is reachable from:
 The Manuscript view is the dockable companion to the Manuscript Builder. It opens in the right sidebar by default and shows:
 
 - The active project + a picker for switching projects.
-- An ordered scene list (sorted by `dbench-order`) with status chips and per-scene word counts.
-- A status breakdown for the project.
+- A **Project summary** section: status, identifier, total word count, hero progress bar (when `dbench-target-words` is set), per-status word/scene-and-chapter breakdown.
+- A **Manuscript list** section. The body shape depends on whether the active project has chapters:
+  - **Chapter-less projects** show a flat ordered scene list (sorted by `dbench-order`) with status chips, per-scene word counts, and draft counts.
+  - **Chapter-aware projects** show stacked **chapter cards**. Each card has a clickable header (chevron + order capsule + chapter title link + status chip + chapter word-count rollup + a "New draft of this chapter" icon button on the right) and a body listing the chapter's scenes via the same scene-row primitive used by the flat list. Cards are individually collapsible — collapse state persists per chapter across reloads. Click the chapter title to open the chapter note; click anywhere else on the header to toggle.
 - A toolbar with **New scene**, **New draft**, **Reorder scenes**, and a primary **Compile** button.
 
 Open it via the ribbon icon, the **Draft Bench: Show manuscript view** palette command, or by right-clicking a project note.

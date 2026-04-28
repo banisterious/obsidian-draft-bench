@@ -1,6 +1,6 @@
 # Getting Started
 
-Draft Bench is an Obsidian plugin for writers. It manages projects, scenes, and versioned drafts via frontmatter properties — so your writing stays in plain markdown files that remain yours.
+Draft Bench is an Obsidian plugin for writers. It manages projects, chapters (optional), scenes, and versioned drafts via frontmatter properties — so your writing stays in plain markdown files that remain yours.
 
 ---
 
@@ -52,34 +52,40 @@ Open the command palette and run **Draft Bench: Create project** (also available
 
 The plugin creates the project folder (or single note) and stamps the frontmatter properties. Open the project note to see them, or begin writing.
 
-### 2. Add a scene (folder projects)
+### 2. Add a chapter (optional, novel-shape projects)
 
-In the **Manuscript view** (right sidebar), click **New scene** in the toolbar. Or run **Draft Bench: New scene** from the command palette. Enter a title, position in order, and initial status. The plugin creates a scene note with the default [scene template](Templates) applied — planning sections above a blank draft area.
+If you're working on a novel and want chapter structure, run **Draft Bench: New chapter in project** from the command palette (or right-click the project note and pick **New chapter in project** under Draft Bench). Enter a title and confirm. The plugin creates a chapter note with the default [chapter template](Templates) applied.
+
+Chapters are optional. Short-story collections, novellas without chapter divisions, and any project where you don't want chapter-level structure can stay chapter-less — scenes attach directly to the project. The decision isn't permanent: see [Projects, Chapters, and Scenes § Converting between shapes](Projects-And-Scenes#converting-between-shapes).
+
+### 3. Add a scene (folder projects)
+
+In the **Manuscript view** (right sidebar), click **New scene** in the toolbar. Or run **Draft Bench: New scene** from the command palette. Enter a title, position in order, and initial status. In a chapter-aware project, you'll also pick the parent chapter. The plugin creates a scene note with the default [scene template](Templates) applied — planning sections above a blank draft area.
 
 Write your first draft in the body of the scene note.
 
-### 3. Take a draft snapshot
+### 4. Take a draft snapshot
 
-When you want to capture the current state of a scene before revising, run **New draft of this scene** from the command palette, the Manuscript view's toolbar, or the scene's right-click menu. Draft Bench:
+When you want to capture the current state of a scene before revising, run **New draft of this scene** from the command palette, the Manuscript view's toolbar, or the scene's right-click menu. For chapter-aware projects, **New draft of this chapter** snapshots the entire chapter (body plus all child scenes concatenated with boundary markers). Draft Bench:
 
-1. Snapshots the scene's current body into `Drafts/<Scene> - Draft N (YYYYMMDD).md` with `dbench-type: draft` frontmatter.
-2. Carries the prose forward in the scene note so you can keep revising.
+1. Snapshots the source content into `Drafts/<Source> - Draft N (YYYYMMDD).md` with `dbench-type: draft` frontmatter.
+2. Carries the prose forward in the source note(s) so you can keep revising.
 3. Auto-numbers the draft — you never number manually.
 
 Prior drafts remain real markdown files, openable in split panes for side-by-side comparison. See [Drafts and Versioning](Drafts-And-Versioning) for the full model.
 
-### 4. Work in the Manuscript view
+### 5. Work in the Manuscript view
 
 The **Manuscript view** is Draft Bench's daily-writing surface — a dockable pane that opens in the right sidebar by default. It shows:
 
 - The active project with a project picker for switching between them.
-- An ordered scene list (sorted by `dbench-order`) with status chips and per-scene word counts.
-- A status breakdown for the project (idea / draft / revision / final by default).
+- A project summary section: status, total word count, hero progress bar (when `dbench-target-words` is set), per-status word/scene breakdown.
+- A manuscript list — flat scene list for chapter-less projects, or stacked collapsible chapter cards (with nested scene rows + per-card word-count rollup + "New draft" button) for chapter-aware projects.
 - A toolbar with **New scene**, **New draft**, **Reorder scenes**, and a primary **Compile** button.
 
 Open it via the ribbon icon, the **Draft Bench: Show manuscript view** palette command, or by right-clicking a project note.
 
-### 5. Compile your manuscript
+### 6. Compile your manuscript
 
 When you're ready to share your work, click **Compile** in the Manuscript view toolbar (or run **Draft Bench: Build manuscript** from the palette) to open the [Manuscript Builder](Manuscript-Builder) — a focused modal for editing compile presets and running the compile. Output formats: Markdown (vault or disk), ODT, and PDF.
 

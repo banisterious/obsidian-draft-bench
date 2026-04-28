@@ -7,18 +7,23 @@ Draft Bench adds several actions to Obsidian's right-click menu. They cover crea
 ## Creation actions
 
 - **Create Draft Bench project** (on a folder): opens the new-project modal.
+- **New chapter in project** (inside a chapter-aware project, or a project that has no children yet): opens the new-chapter modal. Refused on chapter-less projects that have direct scenes — move those scenes into chapters first.
 - **New scene in project** (inside a project folder): opens the new-scene modal.
 - **New draft of this scene** (on a scene note): snapshots current prose and carries it forward.
-- **Set status** (on a project or scene): quick status change.
-- **Reorder scenes** (anywhere inside a project): opens the reorder modal.
+- **New draft of this chapter** (on a chapter note): snapshots the chapter body plus all child scenes concatenated with boundary markers; see [Drafts and Versioning § Chapter drafts](Drafts-And-Versioning#chapter-drafts).
+- **Move to chapter** (on a scene whose project has chapters): opens a chapter picker; reassigns the scene's `dbench-chapter` parent. Single-file scope in V1.
+- **Set status** (on a project, chapter, or scene): quick status change.
+- **Reorder scenes** / **Reorder chapters** (anywhere inside a project): opens the appropriate reorder modal.
 
 ## Retrofit actions for existing notes
 
 If you have notes you created before installing Draft Bench — existing short stories, drafts, project overviews — you can bring them under plugin management without recreating them.
 
-### Set as project / scene / draft
+### Set as project / chapter / scene / draft
 
-For notes that don't yet have a `dbench-type` property, **Set as...** stamps the appropriate essentials in one step. The note becomes a typed project, scene, or draft — with a `dbench-id`, the right type, and empty placeholder wikilinks where needed.
+For notes that don't yet have a `dbench-type` property, **Set as...** stamps the appropriate essentials in one step. The note becomes a typed project, chapter, scene, or draft — with a `dbench-id`, the right type, and empty placeholder wikilinks where needed.
+
+**Set as chapter** is refused on a chapter-less project that has direct scenes (the no-mixed-children rule from [Projects, Chapters, and Scenes](Projects-And-Scenes)). Move those scenes into chapters first via the **Move to chapter** action.
 
 ### Complete essential properties
 

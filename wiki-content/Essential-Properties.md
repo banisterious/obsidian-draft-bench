@@ -8,7 +8,7 @@ Draft Bench manages notes via frontmatter properties prefixed with `dbench-`. Th
 
 | Property | Type | Description |
 |---|---|---|
-| `dbench-type` | string | Note role: `project`, `scene`, `draft` (V1). Future: `chapter`, `character`, etc. |
+| `dbench-type` | string | Note role: `project`, `chapter`, `scene`, `draft` (V1). Future: `character`, `beat`, etc. |
 | `dbench-id` | string | Stable identifier, format `abc-123-def-456`. Stamped at creation; never changes. |
 | `dbench-project` | wikilink | The project this note belongs to. |
 | `dbench-project-id` | string | Stable-ID companion to `dbench-project`. |
@@ -19,25 +19,48 @@ Draft Bench manages notes via frontmatter properties prefixed with `dbench-`. Th
 |---|---|---|
 | `dbench-project-shape` | string | `folder` or `single`. |
 | `dbench-status` | string | `idea`, `draft`, `revision`, `final` (default workflow). |
-| `dbench-scenes` | array of wikilinks | Reverse array of scene notes, maintained by the plugin's linker. |
+| `dbench-scenes` | array of wikilinks | Reverse array of direct scene notes (chapter-less projects), maintained by the linker. |
 | `dbench-scene-ids` | array of strings | Stable-ID companions for `dbench-scenes`. |
+| `dbench-chapters` | array of wikilinks | Reverse array of chapter notes (chapter-aware projects), maintained by the linker. |
+| `dbench-chapter-ids` | array of strings | Stable-ID companions for `dbench-chapters`. |
 
-## Scene (`dbench-type: scene`)
+A project's top-level children are *either* all chapters *or* all direct scenes — never both. See [Projects, Chapters, and Scenes](Projects-And-Scenes).
+
+## Chapter (`dbench-type: chapter`)
 
 | Property | Type | Description |
 |---|---|---|
 | `dbench-order` | number | Sort position within the project. |
 | `dbench-status` | string | Workflow status per default vocabulary. |
-| `dbench-drafts` | array of wikilinks | Reverse array of prior draft snapshots. |
+| `dbench-target-words` | number (optional) | Per-chapter authoring target, surfaces as a chapter-card progress bar. |
+| `dbench-synopsis` | string (optional) | Short summary surfaced as a chapter-card subline. |
+| `dbench-scenes` | array of wikilinks | Reverse array of scenes in this chapter, maintained by the linker. |
+| `dbench-scene-ids` | array of strings | Stable-ID companions for `dbench-scenes`. |
+| `dbench-drafts` | array of wikilinks | Reverse array of chapter-level draft snapshots. |
+| `dbench-draft-ids` | array of strings | Stable-ID companions for `dbench-drafts`. |
+
+## Scene (`dbench-type: scene`)
+
+| Property | Type | Description |
+|---|---|---|
+| `dbench-order` | number | Sort position within the scene's immediate parent (the project for chapter-less, the chapter for chapter-aware). |
+| `dbench-status` | string | Workflow status per default vocabulary. |
+| `dbench-chapter` | wikilink (optional) | Parent chapter, on scenes-in-chapters only. Absent / empty on direct scenes in chapter-less projects. |
+| `dbench-chapter-id` | string (optional) | Stable-ID companion to `dbench-chapter`. |
+| `dbench-drafts` | array of wikilinks | Reverse array of prior scene draft snapshots. |
 | `dbench-draft-ids` | array of strings | Stable-ID companions for `dbench-drafts`. |
 
 ## Draft (`dbench-type: draft`)
 
 | Property | Type | Description |
 |---|---|---|
-| `dbench-scene` | wikilink | The parent scene (in folder projects). Empty for drafts of single-scene projects. |
+| `dbench-scene` | wikilink | The parent scene (for scene-level drafts). Empty for chapter or single-scene-project drafts. |
 | `dbench-scene-id` | string | Stable-ID companion to `dbench-scene`. |
-| `dbench-draft-number` | number | Sequential draft number; plugin-managed. |
+| `dbench-chapter` | wikilink | The parent chapter (for chapter-level drafts). Empty for scene or single-scene-project drafts. |
+| `dbench-chapter-id` | string | Stable-ID companion to `dbench-chapter`. |
+| `dbench-draft-number` | number | Sequential draft number per parent; plugin-managed. |
+
+A draft's target type is implicit: scene drafts carry `dbench-scene`, chapter drafts carry `dbench-chapter`, single-scene-project drafts carry only the project ref. See [Drafts and Versioning](Drafts-And-Versioning).
 
 ---
 

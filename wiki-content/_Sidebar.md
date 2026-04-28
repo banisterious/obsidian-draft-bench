@@ -7,7 +7,7 @@
 - [Manuscript Builder](Manuscript-Builder)
 
 ### Core Workflow
-- [Projects and Scenes](Projects-And-Scenes)
+- [Projects, Chapters, and Scenes](Projects-And-Scenes)
 - [Drafts and Versioning](Drafts-And-Versioning)
 - [Templates](Templates)
 - [Context Menu Actions](Context-Menu-Actions)

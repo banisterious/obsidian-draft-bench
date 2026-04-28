@@ -14,15 +14,17 @@ Draft Bench's settings are organized into groups in Obsidian's **Settings -> Dra
 Default locations where the plugin creates new notes. All support the `{project}` token.
 
 - **`projectsFolder`**: default: `Draft Bench/{project}/`.
-- **`scenesFolder`**: default: inside each project folder (`{project}/`).
-- **`draftsFolder`**: default: `Drafts/` inside each project. Three placement options: inside each project, per-scene subfolder, or vault-wide.
+- **`chaptersFolder`**: default: alongside the project note (empty string). Chapter notes are created at `<project folder>/{chaptersFolder}/<title>.md`.
+- **`scenesFolder`**: default: alongside the project note (empty string). Scene notes are created at `<project folder>/{scenesFolder}/<title>.md`.
+- **`draftsFolder`**: default: `Drafts/` inside each project. Three placement options: inside each project, per-scene/chapter subfolder, or vault-wide.
 
 These settings are **creation defaults only**. Moving notes later never breaks the plugin's ability to find them — discovery is frontmatter-based.
 
 ## Templates
 
-- **Templates folder**: path to the folder containing scene templates.
-- **Default scene template**: which template is applied at scene creation (Phase 2+ for multiple templates).
+- **Templates folder**: path to the folder containing scene and chapter templates. Default: `Draft Bench/Templates/`.
+- **Scene template**: optional override path to a custom scene template file. Default: `<Templates folder>/scene-template.md` (auto-seeded on first scene creation).
+- **Chapter template**: optional override path to a custom chapter template file. Default: `<Templates folder>/chapter-template.md` (auto-seeded on first chapter creation).
 
 ## Relationship Integrity
 

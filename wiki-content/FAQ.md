@@ -21,6 +21,27 @@ If you want a focused tool for organizing scenes, snapshotting drafts, and compi
 
 The two coexist fine: namespaces don't collide, and a vault can run both. Choose by which scope feels right for your workflow.
 
+## Do I have to use chapters?
+
+No. Chapters are optional. Short-story collections, novellas without chapter divisions, and any project you'd rather keep flat can stay chapter-less — scenes attach directly to the project as in earlier Draft Bench builds. Choose the shape that matches the work.
+
+## Can I add chapters to a project I already started without them?
+
+Yes, but the conversion is manual. The plugin enforces a no-mixed-children rule (a project's top-level children are *either* all chapters *or* all direct scenes, never both), so you'll need to:
+
+1. Create the chapter notes you want (**New chapter in project** is refused until step 2 below; you can stage them in a different folder first, or create the project's first chapter only after step 2).
+2. Move every direct scene into a chapter using **Move to chapter** (right-click a scene in a chapter-aware project), or by editing each scene's `dbench-chapter` and `dbench-chapter-id` properties manually.
+
+Going the other direction (flattening a chapter-aware project) is the same in reverse: remove `dbench-chapter` from each scene, then delete the empty chapter notes. The integrity service (**Repair project links**) flags any mismatches along the way.
+
+See [Projects, Chapters, and Scenes § Converting between shapes](Projects-And-Scenes#converting-between-shapes).
+
+## What's the difference between a scene draft and a chapter draft?
+
+A **scene draft** snapshots one scene's body. A **chapter draft** snapshots the chapter body plus *every child scene's body*, concatenated in order with HTML-comment scene boundaries. Use a scene draft before a major revision to one scene; use a chapter draft before a structural pass that touches multiple scenes (or when you want the planning sections of every file in the chapter preserved together).
+
+Both share the same `Drafts/` folder; their frontmatter parent ref disambiguates them. See [Drafts and Versioning](Drafts-And-Versioning).
+
 ## Does it work on mobile?
 
 V1 is desktop-only. Mobile support is under post-V1 evaluation — the primary UX (Manuscript view, Manuscript Builder, reorder modal, Style Settings integration) was designed for a desktop form factor.

@@ -1,6 +1,6 @@
 # Templates
 
-Draft Bench applies a template when you create a new scene or chapter. V1 ships with a single built-in template per type. User-defined multi-template support (multiple named scene templates, picker at scene creation) arrives in Phase 2.
+Draft Bench applies a template when you create a new scene or chapter. V1 ships with a single built-in template per type, plus a multi-template system: writers can author additional named templates and pick from them at creation time.
 
 ---
 
@@ -60,15 +60,50 @@ Templates support `{{token}}` placeholders that get substituted at creation time
 
 Unknown tokens pass through unchanged so other tools (like Templater, below) can handle them.
 
-## User-defined templates (Phase 2+)
+## Named templates (custom)
 
-Phase 2 adds:
+Beyond the built-in defaults, you can author any number of additional templates and pick from them at scene or chapter creation.
 
-- A **templates folder** where you can author multiple named templates.
-- A **template selection** step at scene creation.
-- **Per-project default template** settings.
+### Authoring a named template
 
-Templates will support frontmatter scaffolding, body text with structural prompts, and display-name/description metadata.
+Create a markdown file in the templates folder (default: `Draft Bench/Templates/`) with frontmatter that declares its type:
+
+```markdown
+---
+dbench-template-type: scene
+dbench-template-name: POV — Anna
+dbench-template-description: Single-POV scene with cue lines
+---
+
+## Source passages
+
+## Beat outline
+
+## POV cues
+
+## Draft
+```
+
+Required frontmatter:
+
+- `dbench-template-type` — `scene` or `chapter`. Determines which creation modal lists this template.
+
+Optional frontmatter:
+
+- `dbench-template-name` — display name shown in the picker. Falls back to the file basename when absent.
+- `dbench-template-description` — short hint shown alongside the name in the picker.
+
+Plugin tokens (above) work in named templates the same way they work in the defaults.
+
+### Picking a template at creation
+
+When at least one custom template is discovered, the **New scene in project** and **New chapter in project** modals show a Template dropdown above the title field. The default seed (`scene-template.md` / `chapter-template.md`) sorts first as the labeled "(default)" option; custom templates follow in alphabetical order by display name.
+
+Vaults with only the default templates don't show the picker — there's no choice to make.
+
+### Where to put template files
+
+The templates folder is configured in **Settings → Community plugins → Draft Bench → Templates folder** (default: `Draft Bench/Templates/`). All `.md` files in this folder are scanned for templates. Files without `dbench-template-type` frontmatter are skipped — keeping Templater plugin templates and unrelated markdown out of the picker.
 
 ## Templater integration
 

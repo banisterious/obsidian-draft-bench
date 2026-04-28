@@ -598,15 +598,27 @@ The four section headings are deliberate, matching the UC-01 short-story-from-so
 
 Frontmatter is stamped by the plugin (not by the template itself). The template file lives at a configurable path in the vault; writers can edit it directly to change defaults. Writers who don't plan before drafting can delete the headings in the template file, or use a leaner template from the Phase 2 multi-template system.
 
-### User-defined templates (Phase 2+)
+### Named templates (V1)
 
-Phase 2 adds the ability to create, name, and manage multiple templates. Template selection happens at scene creation. A template includes:
+Beyond the built-in seed templates, V1 ships a multi-template system: writers can author additional named templates and pick from them at scene or chapter creation.
 
-- Frontmatter scaffolding (pre-filled properties appropriate to the note type).
-- Body text (structural prompts, placeholder headings, or blank).
-- A display name and optional description.
+A named template is a markdown file in `settings.templatesFolder` (default `Draft Bench/Templates/`) with frontmatter declaring its type:
 
-Templates are stored as markdown files in a configurable templates folder within the vault.
+```yaml
+---
+dbench-template-type: scene | chapter   # required — which creation modal lists this template
+dbench-template-name: <display name>     # optional — falls back to file basename
+dbench-template-description: <hint>      # optional — short hint shown in the picker
+---
+```
+
+Discovery is performed on modal open via `discoverTemplates(app, settings, type)`. The function scans `templatesFolder` for markdown files and returns those that either match the well-known seed filename (`scene-template.md` / `chapter-template.md`, included regardless of frontmatter for backward compat) or carry an explicit `dbench-template-type` matching the requested type. Files without the discriminator are skipped, keeping Templater plugin templates and unrelated markdown out of the picker.
+
+Templates support the same plugin-token vocabulary as the seed templates. Templater pass-through applies (when installed). Per-template Templater scripts are run with the new scene/chapter file as the `tp.file.*` context, then plugin-token substitution runs on the result.
+
+The new-scene and new-chapter modals show a **Template** dropdown above the title field whenever any non-default template is discovered. The default seed sorts first (labeled `(default)`); custom templates follow alphabetically by display name. Vaults with only the default templates don't show the picker — there's no choice to make. The picked template is passed to `createScene` / `createChapter` as `options.templateFile`; absent, the seed-on-first-use flow runs.
+
+Per-project default template (a project-frontmatter pointer that pre-selects a template in the picker for that project) is post-V1.
 
 ### Templater Integration
 
@@ -904,7 +916,7 @@ The specific page inventory for each tree will emerge as features land. This sec
 - Minimal Style Settings integration (scene font, line height, max-width, paper tint, text color, draft archival cue).
 
 ### Phase 2: Templates and Polish
-- User-defined scene template management (multiple named templates, selectable at scene creation).
+- User-defined template management for scenes and chapters: multiple named templates discovered from the templates folder, selectable via a picker at scene/chapter creation. See § Scene Templates → Named templates.
 - Status workflow (set/change via context menu and the Manuscript view; resolve status-vocabulary open question).
 - Word counts (per-scene, per-project, displayed in the Manuscript view). Optional `dbench-target-words` surfaces progress bars on the project summary and per-scene rows.
 - Bases starter views (template `.base` files for manuscript table, status queue, corkboard).

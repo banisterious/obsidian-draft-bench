@@ -22,9 +22,9 @@ These settings are **creation defaults only**. Moving notes later never breaks t
 
 ## Templates
 
-- **Templates folder**: path to the folder containing scene and chapter templates. Default: `Draft Bench/Templates/`.
-- **Scene template**: optional override path to a custom scene template file. Default: `<Templates folder>/scene-template.md` (auto-seeded on first scene creation).
-- **Chapter template**: optional override path to a custom chapter template file. Default: `<Templates folder>/chapter-template.md` (auto-seeded on first chapter creation).
+- **Templates folder**: path to the folder containing scene and chapter templates. Default: `Draft Bench/Templates/`. Any markdown file in this folder with `dbench-template-type: scene | chapter` frontmatter is auto-discovered and surfaces in the new-scene / new-chapter modal's template picker. See [Templates § Named templates](Templates#named-templates-custom).
+- **Scene template**: optional override path to a custom scene template file. Default: `<Templates folder>/scene-template.md` (auto-seeded on first scene creation). This is the *fallback default* — the template applied when the modal's picker isn't shown or the writer leaves the default selected.
+- **Chapter template**: optional override path to a custom chapter template file. Default: `<Templates folder>/chapter-template.md` (auto-seeded on first chapter creation). Same fallback-default semantic as the scene template setting.
 
 ## Relationship Integrity
 

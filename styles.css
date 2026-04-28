@@ -727,7 +727,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-VIEW.CSS  (769 lines, 20.38 KB)
+   MANUSCRIPT-VIEW.CSS  (788 lines, 20.76 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1486,10 +1486,29 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-manuscript-view__chapter-body {
 	padding: 0 var(--dbench-spacing-md) var(--dbench-spacing-sm);
 	border-top: 1px solid var(--background-modifier-border);
+	max-height: 2000px;
+	opacity: 1;
+	overflow: hidden;
+	transition:
+		max-height 220ms ease,
+		opacity 160ms ease,
+		padding-top 220ms ease,
+		padding-bottom 220ms ease,
+		border-top-color 220ms ease;
 }
 
 .dbench-manuscript-view__chapter-body--collapsed {
-	display: none;
+	max-height: 0;
+	opacity: 0;
+	padding-top: 0;
+	padding-bottom: 0;
+	border-top-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.dbench-manuscript-view__chapter-body {
+		transition: none;
+	}
 }
 
 /* Scene rows nested inside a chapter card sit flush with the card's
@@ -1633,7 +1652,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 9
-   Total:      1555 lines, 41.66 KB
+   Total:      1574 lines, 42.04 KB
    - variables.css: 87 lines, 2.99 KB
    - style-settings.css: 133 lines, 4.65 KB
    - base.css: 40 lines, 0.75 KB
@@ -1641,7 +1660,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - manuscript-builder.css: 137 lines, 3.35 KB
    - welcome-modal.css: 94 lines, 2.19 KB
    - reorder-modal.css: 103 lines, 2.31 KB
-   - manuscript-view.css: 769 lines, 20.38 KB
+   - manuscript-view.css: 788 lines, 20.76 KB
    - settings-tab.css: 119 lines, 2.66 KB
 */
 

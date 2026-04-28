@@ -52,10 +52,10 @@ export class WelcomeModal extends Modal {
 
 		const pitch = contentEl.createDiv({ cls: 'dbench-welcome-modal__pitch' });
 		pitch.createEl('p', {
-			text: 'Draft Bench manages projects, scenes, and versioned drafts as plain Markdown notes.',
+			text: 'Draft Bench manages projects, scenes, and versioned drafts as plain Markdown notes, with optional chapter structure for novel-shape projects.',
 		});
 		pitch.createEl('p', {
-			text: "Compile your manuscript to MD, ODT, or PDF when you're ready to share it.",
+			text: "Compile your manuscript when you're ready to share. Markdown writes back into the vault; other formats export through a save dialog.",
 		});
 
 		const actions = contentEl.createDiv({ cls: 'dbench-welcome-modal__actions' });

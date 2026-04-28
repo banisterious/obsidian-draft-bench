@@ -754,10 +754,29 @@
 .dbench-manuscript-view__chapter-body {
 	padding: 0 var(--dbench-spacing-md) var(--dbench-spacing-sm);
 	border-top: 1px solid var(--background-modifier-border);
+	max-height: 2000px;
+	opacity: 1;
+	overflow: hidden;
+	transition:
+		max-height 220ms ease,
+		opacity 160ms ease,
+		padding-top 220ms ease,
+		padding-bottom 220ms ease,
+		border-top-color 220ms ease;
 }
 
 .dbench-manuscript-view__chapter-body--collapsed {
-	display: none;
+	max-height: 0;
+	opacity: 0;
+	padding-top: 0;
+	padding-bottom: 0;
+	border-top-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.dbench-manuscript-view__chapter-body {
+		transition: none;
+	}
 }
 
 /* Scene rows nested inside a chapter card sit flush with the card's

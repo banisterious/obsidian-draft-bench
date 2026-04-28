@@ -1,6 +1,7 @@
 import type { App } from 'obsidian';
 import type { SceneNote } from '../../../core/discovery';
 import type { WordCountCache } from '../../../core/word-count-cache';
+import type { OpenSpec } from './open-affordances';
 import { renderSceneRow } from './scene-row';
 
 /**
@@ -16,7 +17,7 @@ export function renderManuscriptListBody(
 	scenes: SceneNote[],
 	app: App,
 	wordCountCache: WordCountCache,
-	onOpenScene: (scene: SceneNote) => void
+	onOpenScene: (scene: SceneNote, spec: OpenSpec) => void
 ): void {
 	body.empty();
 

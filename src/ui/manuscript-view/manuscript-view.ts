@@ -446,8 +446,10 @@ export class ManuscriptView extends ItemView {
 			scenes,
 			this.plugin.app,
 			this.plugin.wordCounts,
-			(scene) => {
-				void this.plugin.app.workspace.getLeaf(false).openFile(scene.file);
+			(scene, spec) => {
+				void this.plugin.app.workspace
+					.getLeaf(spec ?? false)
+					.openFile(scene.file);
 			}
 		);
 	}
@@ -480,13 +482,15 @@ export class ManuscriptView extends ItemView {
 			this.plugin.wordCounts,
 			this.plugin,
 			this.plugin.linker,
-			(chapter) => {
+			(chapter, spec) => {
 				void this.plugin.app.workspace
-					.getLeaf(false)
+					.getLeaf(spec ?? false)
 					.openFile(chapter.file);
 			},
-			(scene) => {
-				void this.plugin.app.workspace.getLeaf(false).openFile(scene.file);
+			(scene, spec) => {
+				void this.plugin.app.workspace
+					.getLeaf(spec ?? false)
+					.openFile(scene.file);
 			}
 		);
 	}

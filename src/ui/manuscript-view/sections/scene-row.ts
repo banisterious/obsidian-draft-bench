@@ -1,6 +1,10 @@
 import type { SceneNote } from '../../../core/discovery';
 import { formatProgress, readTargetWords } from '../../../core/targets';
 import type { WordCountCache } from '../../../core/word-count-cache';
+import {
+	attachWikilinkOpenAffordances,
+	type OpenSpec,
+} from './open-affordances';
 
 /**
  * Reusable scene-row primitive shared by the flat manuscript list
@@ -14,7 +18,7 @@ export function renderSceneRow(
 	parent: HTMLElement,
 	scene: SceneNote,
 	wordCountCache: WordCountCache,
-	onOpen: (scene: SceneNote) => void
+	onOpen: (scene: SceneNote, spec: OpenSpec) => void
 ): void {
 	const item = parent.createEl('li', {
 		cls: 'dbench-manuscript-view__scene-row',
@@ -27,16 +31,16 @@ export function renderSceneRow(
 
 	// `internal-link` inherits Obsidian's wikilink color + hover
 	// styling theme-correctly; the dbench-* class supplies layout
-	// only (grid placement + reset of underline default).
+	// only (grid placement + reset of underline default). The wikilink
+	// affordances helper wires up plain click + modifier-click +
+	// middle-click + right-click context menu to match Obsidian's
+	// standard wikilink behavior.
 	const titleEl = item.createEl('a', {
 		cls: 'internal-link dbench-manuscript-view__scene-title',
 		text: scene.file.basename,
 		href: '#',
 	});
-	titleEl.addEventListener('click', (evt) => {
-		evt.preventDefault();
-		onOpen(scene);
-	});
+	attachWikilinkOpenAffordances(titleEl, (spec) => onOpen(scene, spec));
 
 	renderStatusChip(item, scene.frontmatter['dbench-status']);
 

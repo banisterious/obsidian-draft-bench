@@ -11,6 +11,10 @@ import { readTargetWords } from '../../../core/targets';
 import type { WordCountCache } from '../../../core/word-count-cache';
 import { NewChapterDraftModal } from '../../modals/new-chapter-draft-modal';
 import {
+	attachWikilinkOpenAffordances,
+	type OpenSpec,
+} from './open-affordances';
+import {
 	renderSceneRow,
 	renderStatusChip,
 	renderWordsAndProgress,
@@ -38,8 +42,8 @@ export function renderChapterListBody(
 	wordCountCache: WordCountCache,
 	plugin: DraftBenchPlugin,
 	linker: DraftBenchLinker,
-	onOpenChapter: (chapter: ChapterNote) => void,
-	onOpenScene: (scene: SceneNote) => void
+	onOpenChapter: (chapter: ChapterNote, spec: OpenSpec) => void,
+	onOpenScene: (scene: SceneNote, spec: OpenSpec) => void
 ): void {
 	body.empty();
 
@@ -79,8 +83,8 @@ function renderChapterCard(
 	wordCountCache: WordCountCache,
 	plugin: DraftBenchPlugin,
 	linker: DraftBenchLinker,
-	onOpenChapter: (chapter: ChapterNote) => void,
-	onOpenScene: (scene: SceneNote) => void
+	onOpenChapter: (chapter: ChapterNote, spec: OpenSpec) => void,
+	onOpenScene: (scene: SceneNote, spec: OpenSpec) => void
 ): void {
 	const id = chapter.frontmatter['dbench-id'];
 	// Map semantic: stored value is `true` when the writer has explicitly
@@ -121,13 +125,11 @@ function renderChapterCard(
 		text: chapter.file.basename,
 		href: '#',
 	});
-	titleEl.addEventListener('click', (evt) => {
-		evt.preventDefault();
-		// Stop the click from bubbling to the header's toggle handler —
-		// opening the chapter note shouldn't also flip the collapse state.
-		evt.stopPropagation();
-		onOpenChapter(chapter);
-	});
+	// Wikilink-style affordances (plain click + modifier-click + middle-click
+	// + right-click context menu). The helper stops propagation on all three
+	// so the header's collapse-toggle and the browser's native context menu
+	// don't fire alongside the open.
+	attachWikilinkOpenAffordances(titleEl, (spec) => onOpenChapter(chapter, spec));
 
 	renderStatusChip(header, chapter.frontmatter['dbench-status']);
 

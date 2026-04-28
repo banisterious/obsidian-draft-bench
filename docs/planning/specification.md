@@ -411,6 +411,8 @@ Invoked via:
 
 **Cross-surface state.** Both surfaces share a single plugin-level `selectedProjectId` so selecting a project in one is reflected in the other. The Manuscript view additionally persists its selection via plugin settings so reloads restore the previous project.
 
+**Active-note-sync.** When a writer opens any plugin-managed note (project, chapter, scene, or draft) belonging to a project different from the current selection, the plugin auto-switches the selection to that note's project. The Manuscript view, modal, and any other selection-aware surface react accordingly. Keeps the leaf in sync with the file the writer is actively working on as they navigate around the vault. Untyped notes and notes with empty `dbench-project-id` don't trigger a switch; selection of an already-selected project is a no-op.
+
 **Settings.** Plugin configuration lives in Obsidian's native Settings panel (Options -> Community plugins -> Draft Bench), not in either surface. A future Dashboard / Control Center could include a launcher tile that jumps to the native settings tab via `app.setting.open()` + `openTabById('draft-bench')`; no settings UI is duplicated.
 
 For further reading:

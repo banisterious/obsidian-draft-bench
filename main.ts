@@ -58,6 +58,40 @@ export default class DraftBenchPlugin extends Plugin {
 		registerCommands(this, () => this.settings, this.linker);
 		registerContextMenu(this, this.linker);
 
+		// Active-note-sync: when a writer opens a Draft Bench-managed
+		// note (project / chapter / scene / draft) belonging to a
+		// project different from the current selection, switch the
+		// leaf's selection to that project. Keeps the Manuscript view
+		// in sync with the file the writer is actually working on as
+		// they navigate around the vault. Cheap: reads the
+		// already-cached frontmatter; early-returns on non-DB notes.
+		this.registerEvent(
+			this.app.workspace.on('file-open', (file) => {
+				if (!file) return;
+				const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+				if (!fm) return;
+				const type = fm['dbench-type'];
+				if (
+					type !== 'project' &&
+					type !== 'chapter' &&
+					type !== 'scene' &&
+					type !== 'draft'
+				) {
+					return;
+				}
+				// For project notes, the project ID is the note's own
+				// id. For other types, the parent project ID lives in
+				// `dbench-project-id`.
+				const projectId =
+					type === 'project'
+						? fm['dbench-id']
+						: fm['dbench-project-id'];
+				if (typeof projectId !== 'string' || projectId === '') return;
+				if (this.selection.get() === projectId) return;
+				this.selection.set(projectId);
+			})
+		);
+
 		this.addRibbonIcon('scroll-text', 'Open Draft Bench', () => {
 			void activateManuscriptView(this.app);
 		});

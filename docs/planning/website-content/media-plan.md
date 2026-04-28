@@ -37,21 +37,314 @@ Examples (when capture work begins):
 - `dbench-create-project-modal.png`
 - `dbench-drafts-folder-standard.png`
 
-## Tier 1 candidates (deferred to V1 launch)
+## Tier 1 captures (action plans)
 
-When V1 ships and the surface is stable, the first capture session targets these — likely 3-5 motion loops + a handful of static screenshots. Don't capture earlier; pre-V1 UI is still moving.
+Five motion loops, captured ahead of V1 launch. Each block below is a self-contained action plan: setup checklist, click choreography, capture frame, post-process steps, output destinations. Work through one block per capture session; check items off as you go.
 
-- **Project creation flow** — modal, generated folder structure, first scene seeded.
-- **Manuscript Builder in action** — chapter cards collapsing, scene reorder, word-count rollups updating live.
-- **Scene-to-draft snapshot** — context menu -> "New draft from scene" -> draft created and linked.
-- **Compile flow end-to-end** — preset selection, run, output file opens.
-- **Integrity service repair** — broken link surfaced, batch repair UI.
+**Recommended capture order** (by setup difficulty):
 
-Static screenshots (lower priority for V1, populate as a second pass):
+1. Manuscript view in action — easiest, dev-vault as-is
+2. Scene-to-draft snapshot — same vault state, small choreography
+3. Compile flow — needs The Salt Road's compile preset, which the seed already includes
+4. New project flow — needs an empty vault state, captured before any project exists
+5. Integrity repair — needs a deliberately-broken state, captured last so the rest of the vault stays clean
 
-- Compile preset note in Properties panel (showing the content-handling rules).
-- Bases starter view for projects.
-- Style Settings panel showing Draft Bench's exposed variables.
+**Tooling assumed**: ShareX for screen capture, Paint.NET / ScreenToGif / kdenlive for post. ffmpeg encode to webm per [§ Format and size targets](#format-and-size-targets).
+
+---
+
+### Capture: `dbench-manuscript-view.webm`
+
+**Type**: motion loop · **Target duration**: 20-30s · **Embed**: features page, "Write" section
+
+**Setup checklist**
+
+- [ ] Theme: Obsidian default (light)
+- [ ] Accent color: `#5b8cd6` (matches brand idea-status blue) or theme default; lock before recording
+- [ ] Vault: `dev-vault`, fresh reload (Ctrl+R)
+- [ ] Layout: Manuscript view docked right sidebar; file explorer hidden; main pane shows a chapter file or empty
+- [ ] Selected project: **The Salt Road**
+- [ ] All chapter cards collapsed except Ch01 (so the open-state is visible at start)
+
+**Action sequence**
+
+- [ ] (0-3s) Static rest: leaf at rest, Ch01 expanded showing Departure / First night / Sighting the river
+- [ ] (3-7s) Click Ch02 header → smooth expand animation reveals scene rows
+- [ ] (7-12s) Cmd-click "Climb begins" title → opens in a new tab to the right
+- [ ] (12-17s) Right-click "First night" → context menu shows "Open in new tab / split / window"; close menu without picking
+- [ ] (17-22s) Drag-handle reorder a scene within Ch01 (drag "Sighting the river" above "First night"); release → order capsules update
+- [ ] (22-30s) In the side pane, type a sentence into the open scene's `## Draft` section → chapter-1 word-count rollup ticks live in the leaf
+
+**Capture frame**: full Obsidian window minus title bar; 1920×1080 source
+
+**Post-process**
+
+- [ ] Trim raw to clean start (after any ShareX countdown) and clean end (after the word-count rollup updates settle)
+- [ ] Strip audio
+- [ ] Encode: `ffmpeg -i raw.mp4 -c:v libvpx-vp9 -crf 32 -an -b:v 0 dbench-manuscript-view.webm`
+- [ ] Verify size ≤ 5MB; if larger, bump CRF to 34 and re-encode
+
+**Outputs**
+
+- [ ] Raw saved at `docs/images/raw/dbench-manuscript-view.mp4` (gitignored)
+- [ ] Optimized webm copied to website repo `static/img/dbench-manuscript-view.webm`
+- [ ] Embedded on draftbench.io features page per § Embed pattern
+
+---
+
+### Capture: `dbench-new-draft.webm`
+
+**Type**: motion loop · **Target duration**: 12-18s · **Embed**: features page, "Versioned drafts" section
+
+**Setup checklist**
+
+- [ ] Same theme + accent settings as the Manuscript view capture (lock once, reuse)
+- [ ] Vault: `dev-vault`
+- [ ] Layout: scene file open in main pane; Manuscript view in sidebar; file explorer hidden
+- [ ] Active scene: **Departure** (under Ch01, has prose body + frontmatter visible)
+- [ ] Pre-condition: scene currently has no prior drafts (or only one, so the Notice reads `Created Draft 2 of Departure`)
+
+**Action sequence**
+
+- [ ] (0-2s) Static: Departure open, scrolled to show some prose
+- [ ] (2-5s) Right-click in editor (or click scene title in Manuscript view) → context menu opens
+- [ ] (5-7s) Hover "Draft Bench" submenu → "New draft of this scene" highlighted
+- [ ] (7-9s) Click "New draft of this scene" → preview modal opens showing draft number and target path
+- [ ] (9-11s) Click "Create draft" → modal closes, Notice appears top-right `✓ Created Draft 1 of Departure`
+- [ ] (11-15s) New draft note auto-opens in the active leaf; pause to show frontmatter (`dbench-type: draft`, `dbench-scene: [[Departure]]`, `dbench-draft-number: 1`)
+- [ ] (15-18s) Pan back to Manuscript view → Departure row's draft count badge updated to `1 draft`
+
+**Capture frame**: full Obsidian window; consider zooming in on the Properties panel during the frontmatter pause
+
+**Post-process**
+
+- [ ] Trim
+- [ ] Strip audio
+- [ ] Encode: same ffmpeg command, output `dbench-new-draft.webm`
+- [ ] Verify size ≤ 4MB (shorter loop)
+
+**Outputs**
+
+- [ ] Raw at `docs/images/raw/dbench-new-draft.mp4`
+- [ ] Optimized in website repo `static/img/dbench-new-draft.webm`
+
+**Cleanup after capture**: delete the just-created draft file from the dev-vault to restore the seed state for re-takes.
+
+---
+
+### Capture: `dbench-compile-flow.webm`
+
+**Type**: motion loop · **Target duration**: 25-35s · **Embed**: features page, "Compile" section
+
+**Setup checklist**
+
+- [ ] Theme + accent locked
+- [ ] Vault: `dev-vault`
+- [ ] Selected project: **The Salt Road**
+- [ ] At least one compile preset exists for The Salt Road (the seed includes "Workshop"); format is `md` and destination is `vault` for the cleanest visual flow (no OS save dialog)
+- [ ] Layout: Manuscript view in sidebar, main pane on a chapter file
+
+**Action sequence**
+
+- [ ] (0-3s) Static: Manuscript view with The Salt Road selected, Compile button visible
+- [ ] (3-7s) Click "Compile" CTA → Manuscript Builder modal opens
+- [ ] (7-13s) Show preset header dropdown with "Workshop" selected; scroll past Inclusion + Output + Content handling sections so each is briefly visible
+- [ ] (13-15s) Click "Run compile" button at top of modal
+- [ ] (15-18s) Modal closes; Notice appears `✓ Compiled to <path>`
+- [ ] (18-25s) Compiled markdown file auto-opens in the active leaf showing chapter headings and concatenated scene bodies
+- [ ] (25-35s) Pan/scroll through the compiled output to demonstrate continuity
+
+**Capture frame**: full Obsidian window
+
+**Post-process**
+
+- [ ] Trim
+- [ ] Strip audio
+- [ ] Encode: same ffmpeg command, output `dbench-compile-flow.webm`
+- [ ] Verify size ≤ 5MB
+
+**Outputs**
+
+- [ ] Raw at `docs/images/raw/dbench-compile-flow.mp4`
+- [ ] Optimized in website repo `static/img/dbench-compile-flow.webm`
+
+**Cleanup**: delete the generated `<project>/Compiled/Workshop.md` so subsequent re-takes start clean.
+
+---
+
+### Capture: `dbench-create-project.webm`
+
+**Type**: motion loop · **Target duration**: 18-25s · **Embed**: homepage hero (or Getting Started section)
+
+**Setup checklist**
+
+- [ ] Theme + accent locked
+- [ ] Vault: a **fresh empty capture vault** (do NOT use dev-vault — needs no existing projects). Easiest: copy a clean Obsidian vault to `~/capture-vault`, enable Draft Bench from Community plugins, no projects created yet
+- [ ] Layout: file explorer visible (so the writer can see the folder structure get created)
+- [ ] Welcome modal already dismissed (capture this flow separately if you want to show onboarding)
+
+**Action sequence**
+
+- [ ] (0-3s) Static: empty Obsidian, file explorer empty or near-empty
+- [ ] (3-6s) Open command palette (Ctrl+P) → type "Draft Bench: Create" → "Draft Bench: Create project" highlighted
+- [ ] (6-8s) Press Enter → new-project modal opens
+- [ ] (8-13s) Type project title `The Lighthouse`, choose Folder shape, leave default location, click Create
+- [ ] (13-16s) Modal closes; Notice `✓ Created project The Lighthouse`
+- [ ] (16-20s) Manuscript view auto-reveals on the right; file explorer shows the new `Draft Bench/The Lighthouse/` folder with project note + scene placeholder
+- [ ] (20-25s) Project note opens in main pane showing stamped frontmatter (`dbench-type: project`, `dbench-id`, `dbench-status: idea`)
+
+**Capture frame**: full Obsidian window with file explorer visible on the left
+
+**Post-process**
+
+- [ ] Trim
+- [ ] Strip audio
+- [ ] Encode: same ffmpeg command, output `dbench-create-project.webm`
+- [ ] Verify size ≤ 5MB
+
+**Outputs**
+
+- [ ] Raw at `docs/images/raw/dbench-create-project.mp4`
+- [ ] Optimized in website repo `static/img/dbench-create-project.webm`
+
+**Cleanup**: capture vault stays around for re-takes; reset by deleting `Draft Bench/The Lighthouse/` between takes.
+
+---
+
+### Capture: `dbench-repair-integrity.webm`
+
+**Type**: motion loop · **Target duration**: 18-25s · **Embed**: features page, "Integrity" section
+
+**Setup checklist**
+
+- [ ] Theme + accent locked
+- [ ] Vault: `dev-vault`, with a **deliberate manual break** introduced just before recording (see "Break the link" below)
+- [ ] Layout: file explorer visible; main pane on the broken scene file
+- [ ] Selected project in Manuscript view: **The Salt Road**
+
+**Break the link** (do this once, immediately before capture):
+
+- [ ] Open `Draft Bench/The Salt Road/Ch01 - The crossing/Departure.md`
+- [ ] In Properties panel, change `dbench-chapter-id` to a garbage value like `chp-xxx-xxx-xxx` (preserving the wikilink); save
+- [ ] Confirm Manuscript view shows Departure missing from Ch01's card body (or in the wrong place)
+
+**Action sequence**
+
+- [ ] (0-3s) Static: Manuscript view shows broken state (Departure missing or visually orphaned); file explorer shows the file is still there
+- [ ] (3-6s) Open command palette → type "Repair" → "Draft Bench: Repair project links" highlighted
+- [ ] (6-8s) Press Enter → repair modal opens with project picker
+- [ ] (8-12s) Pick "The Salt Road" → modal scans, lists detected issues (e.g., `STALE_CHAPTER_ID_ON_SCENE`)
+- [ ] (12-16s) Click "Apply repairs" → Notice `✓ Repaired N issues`
+- [ ] (16-22s) Modal closes; Manuscript view updates → Departure reappears under Ch01's card
+- [ ] (22-25s) Static end: clean state restored
+
+**Capture frame**: full Obsidian window with file explorer + main pane + Manuscript view all visible
+
+**Post-process**
+
+- [ ] Trim
+- [ ] Strip audio
+- [ ] Encode: same ffmpeg command, output `dbench-repair-integrity.webm`
+- [ ] Verify size ≤ 4MB
+
+**Outputs**
+
+- [ ] Raw at `docs/images/raw/dbench-repair-integrity.mp4`
+- [ ] Optimized in website repo `static/img/dbench-repair-integrity.webm`
+
+**Cleanup after capture**: revert the Departure scene's `dbench-chapter-id` to `chp-slt-tst-001` (the original value) so the dev-vault returns to seed state.
+
+---
+
+## Tier 2 captures (static screenshots)
+
+Three stills, lower priority than the motion loops. Capture as a second pass; useful for documentation pages and reference content.
+
+---
+
+### Capture: `dbench-compile-preset-properties.png`
+
+**Type**: still · **Embed**: wiki Manuscript-Builder.md or Compile section of features page
+
+**Setup checklist**
+
+- [ ] Theme + accent locked
+- [ ] Vault: `dev-vault`
+- [ ] Open: a compile-preset note (`Draft Bench/The Salt Road/Compile presets/Workshop.md` or similar)
+- [ ] Properties panel visible in the right pane (toggle if needed)
+- [ ] Show the full set of `dbench-compile-*` properties (heading scope, frontmatter handling, wikilinks, embeds, dinkuses, last-compile fields)
+
+**Capture**
+
+- [ ] Frame: main pane + Properties panel, file explorer hidden
+- [ ] Resolution: 1920×1080 source; can crop to relevant area in Paint.NET
+
+**Post-process**
+
+- [ ] Crop to relevant content (drop unrelated chrome)
+- [ ] Optimize: PNG, ≤ 500KB. If over, run through pngcrush / oxipng
+
+**Outputs**
+
+- [ ] Raw at `docs/images/raw/dbench-compile-preset-properties.png` (full-res, tracked)
+- [ ] Optimized in website repo `static/img/dbench-compile-preset-properties.png`
+
+---
+
+### Capture: `dbench-bases-projects.png`
+
+**Type**: still · **Embed**: features page, "Bases-native discovery" section; possibly homepage
+
+**Setup checklist**
+
+- [ ] Theme + accent locked
+- [ ] Vault: `dev-vault`
+- [ ] Pre-condition: Bases starter views installed (run `Draft Bench: Install Bases starter views` if not yet done)
+- [ ] Open: `Draft Bench/Bases/projects.base` (or wherever the projects view lives)
+- [ ] View shows multiple projects with key columns (title, status, scene count, target words)
+
+**Capture**
+
+- [ ] Frame: main pane only (Bases view full-width); sidebars hidden
+- [ ] Resolution: 1920×1080 source
+
+**Post-process**
+
+- [ ] Crop to remove tab strip if it's not informative
+- [ ] Optimize: PNG, ≤ 500KB
+
+**Outputs**
+
+- [ ] Raw at `docs/images/raw/dbench-bases-projects.png`
+- [ ] Optimized in website repo `static/img/dbench-bases-projects.png`
+
+---
+
+### Capture: `dbench-style-settings.png`
+
+**Type**: still · **Embed**: wiki Settings-And-Configuration.md or features page footer
+
+**Setup checklist**
+
+- [ ] Theme + accent locked
+- [ ] Vault: `dev-vault`
+- [ ] Pre-condition: Style Settings community plugin installed and enabled
+- [ ] Open: Settings → Style Settings → Draft Bench section expanded showing all exposed variables (scene typography, draft archival cue, etc.)
+
+**Capture**
+
+- [ ] Frame: Settings modal only, cropped to the Draft Bench section
+- [ ] Resolution: 1920×1080 source
+
+**Post-process**
+
+- [ ] Crop to the Draft Bench section + a sliver of context above (showing it's nested under Style Settings)
+- [ ] Optimize: PNG, ≤ 400KB (mostly UI chrome, compresses well)
+
+**Outputs**
+
+- [ ] Raw at `docs/images/raw/dbench-style-settings.png`
+- [ ] Optimized in website repo `static/img/dbench-style-settings.png`
 
 ## Format and size targets
 

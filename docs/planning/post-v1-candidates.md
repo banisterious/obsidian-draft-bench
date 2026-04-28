@@ -13,6 +13,17 @@
 
 ---
 
+## Shipped (no longer candidates)
+
+The following appeared as candidates and have since landed in main during the pre-V1 polish round (2026-04-28):
+
+- **Scene subtitle field** (`8780951`) — optional `dbench-subtitle` property on scenes, rendered as muted second-line text in Manuscript view scene rows. Active on a per-scene opt-in basis; rows without the field keep the original two-row layout.
+- **Manuscript view title links honor Obsidian's open-in-tab affordances** (`64e9091`) — chapter card titles and scene row titles support cmd/ctrl-click for new tab, +shift for split, +alt for new window, middle-click for new tab, right-click for context menu. Implemented via a shared `attachWikilinkOpenAffordances` helper in `src/ui/manuscript-view/sections/open-affordances.ts`.
+- **Multi-template support** (`ae7e0f0`, `0b5f9d0`, `9a07f5d`) — discovery + picker for named templates beyond the default seed. Originally deferred as "Phase 2+ multi-template management" in spec § Scene Templates; promoted and shipped during the pre-capture polish round.
+- **Active-note-sync for the Manuscript view** (`945965f`) — was tracked in [post-v1-forward-compat-audit.md § Item 3](post-v1-forward-compat-audit.md), not here. Listed for completeness because it shipped in the same polish round.
+
+---
+
 ## Strong candidates (ranked)
 
 ### 1. Scrivener `.scriv` import
@@ -71,16 +82,6 @@
 
 ---
 
-### Scene subtitle field
-
-**Scope.** Optional `dbench-scene-subtitle` field on scene frontmatter. Renders as a smaller secondary line under the scene title in the Manuscript view (chapter-card scene rows + flat scene rows). Writers use it for POV character, locale, time-of-day tags, or whatever annotation helps them navigate.
-
-**Rationale.** Tiny feature, useful for some writers, no implementation cost beyond a frontmatter field + one CSS class + ~10 lines of TS. Asked for by name in StoryLine's release notes.
-
-**Effort.** A few hours.
-
----
-
 ### Scene archive
 
 **Scope.** A "Archive scene" right-click action that moves a scene to an `Archive/` folder (configurable) and removes it from the Manuscript view's scene list. Restoration via "Show archive" toggle that surfaces archived scenes for selective unarchiving.
@@ -90,24 +91,6 @@
 **Effort.** Half a day. Mostly UI plumbing; the data model is just a folder move plus an optional `dbench-archived: true` flag for retrofit-detected archives.
 
 **Note.** Could be implemented as a setting on `dbench-status` (e.g., "treat status `archived` as hidden from Manuscript view") rather than a folder move. Worth thinking through before committing.
-
----
-
-### Manuscript view title links honor Obsidian's open-in-tab affordances
-
-**Scope.** Title links in the Manuscript view (chapter cards' chapter titles, scene rows' scene titles) currently always open in the active leaf. Extend them to honor Obsidian's standard wikilink affordances: Ctrl/Cmd-click and middle-click open in a new tab; right-click opens a context menu with "Open in new tab," "Open to the right," "Open in new window" (the same actions Obsidian shows for native wikilinks).
-
-**Rationale.** Writers expect title links to behave like native wikilinks. The current "always open in active leaf" behavior is a paper cut — surfaced during the chapter-card walkthrough (Step 7 testing, 2026-04-26): a writer comparing scenes side-by-side has to manually drag the just-opened tab into a split, every time. Native-affordance support adds zero clutter (right-click is hidden until needed) and removes a real friction point during revision passes.
-
-**Effort.** Small. Two implementation pieces:
-- Click handler upgrade: detect `evt.ctrlKey || evt.metaKey` (or `evt.button === 1` for middle-click) before calling `getLeaf(false)`; pass the new-tab flag through to `workspace.openLinkText` or `workspace.getLeaf(true)`.
-- Context menu: hook `contextmenu` on the title link, build an Obsidian `Menu` with the standard four actions, attach to the click event.
-
-Probably ~50 LOC across `scene-row.ts` and `chapter-card-section.ts`. Could land as pre-V1 polish if a small Phase 4 / pre-BRAT pass picks it up.
-
-**Dependencies.** None.
-
-**Note.** Likely belongs to "polish" rather than post-V1 if the cost is genuinely small. Tracked here so it doesn't get lost in conversation; promote to a Phase 4 polish step or pre-BRAT hardening when there's bandwidth.
 
 ---
 

@@ -69,16 +69,18 @@ Optional: open a tracking PR / commit that captures the findings inline in this 
 
 ### Item 3: Active-note-sync heuristic for the Manuscript leaf
 
+**Status: ✅ Shipped 2026-04-28 during pre-V1 polish (commit `945965f`).** Promoted ahead of the audit when the polish round picked it up — captures showing cross-project navigation benefit visibly from the auto-switch, and writers reach for it naturally enough that the current explicit-only behavior reads as a missing feature rather than a design choice. See spec § Manuscript view → Active-note-sync.
+
+The original deferred-state context is preserved below for posterity.
+
 **Context.** D-07 shipped with explicit project selection: writers use the picker in the Manuscript leaf header to choose which project they're viewing. The deferred heuristic would auto-switch when a writer opens a scene belonging to a different project than the current selection. Not blocking, but noted in D-07 as "revisit after writers live with explicit-only selection."
 
-**Evaluation criteria.**
+**Evaluation criteria** _(retained for the audit's other items; this one closed before the audit fired)_:
 
 - Does the maintainer manually change projects frequently? Check `.session-restore.md` and commit messages for notes like "had to change projects to see X" or "selection got out of sync."
 - Does the current behavior produce any visible confusion when opening a scene from Quick Switcher / search / file explorer? Test: open a scene note from a different project while the leaf is docked. Does the leaf still show the wrong project's scene list? Is that momentarily confusing?
 - Are writers using multiple projects concurrently? If the maintainer and early testers are still on one project each, the heuristic is a solution to a non-problem.
 - Related: has the "selection got lost on reload" class of bug resurfaced? Those were addressed in the D-07 post-ship bug-fix stack (commits `89efbea`, `fa1701e` in particular); a recurrence would be a higher priority than auto-switch.
-
-**Findings.** _Fill in during audit._
 
 ---
 
@@ -109,8 +111,8 @@ _Fill in after finishing each item's Findings._
 
 ### Active-note-sync heuristic
 
-- **Decision:** _Promote / Keep deferred / Needs more data_
-- **Reason:**
+- **Decision:** ✅ **Promote — shipped** during pre-V1 polish (2026-04-28, commit `945965f`).
+- **Reason:** Promoted ahead of the audit when the pre-capture polish round picked it up. Closing this item early; the audit's other entries (lazy-loading pdfmake, Data Quality surface) remain open.
 
 ---
 

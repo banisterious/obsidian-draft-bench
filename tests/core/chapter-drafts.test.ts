@@ -484,4 +484,83 @@ describe('createChapterDraft', () => {
 			'Draft Bench/Novel/Chapter 1 - Drafts/Chapter 1 - Draft 1 (20260427).md'
 		);
 	});
+
+	it('does not include scene-level drafts in the snapshot', async () => {
+		// Defensive: if findScenesInChapter ever leaked draft results, the
+		// chapter snapshot would silently include them. This guards against
+		// that regression.
+		await createScene(app, settings, {
+			project,
+			chapter,
+			title: 'Departure',
+		});
+
+		const refreshedChapter = findChaptersInProject(
+			app,
+			project.frontmatter['dbench-id']
+		)[0];
+		const departure = app.vault.getAbstractFileByPath(
+			'Draft Bench/Novel/Departure.md'
+		) as TFile;
+		await setBody(app, refreshedChapter.file, 'Chapter body.');
+		await setBody(app, departure, 'Scene body.');
+
+		// Take a scene-level draft of Departure first.
+		const { createDraft } = await import('../../src/core/drafts');
+		const departureScene = {
+			file: departure,
+			frontmatter: app.metadataCache.getFileCache(departure)
+				?.frontmatter as never,
+		};
+		await createDraft(app, settings, {
+			scene: departureScene,
+			date: FIXED_DATE,
+		});
+
+		// Now snapshot the chapter; the scene draft should not appear.
+		const draft = await createChapterDraft(app, settings, {
+			chapter: findChaptersInProject(
+				app,
+				project.frontmatter['dbench-id']
+			)[0],
+			date: new Date(2026, 3, 28), // 2026-04-28, distinct day so filename doesn't collide
+		});
+
+		const content = await app.vault.read(draft);
+		const body = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
+		expect(body).toBe(
+			'Chapter body.\n\n<!-- scene: Departure -->\n\nScene body.\n'
+		);
+		// No `<!-- scene: Departure - Draft 1` should leak in.
+		expect(body).not.toContain('Draft 1');
+	});
+
+	it('strips frontmatter from chapters carrying optional fields', async () => {
+		// Richer chapter frontmatter (target-words, synopsis) must still
+		// strip cleanly. Catches regex regressions if the frontmatter
+		// matcher tightens unexpectedly.
+		await app.fileManager.processFrontMatter(chapter.file, (fm) => {
+			fm['dbench-target-words'] = 5000;
+			fm['dbench-synopsis'] = 'A chapter about beginnings.';
+		});
+		await setBody(
+			app,
+			chapter.file,
+			'Body content after the rich frontmatter.\n'
+		);
+
+		const draft = await createChapterDraft(app, settings, {
+			chapter: findChaptersInProject(
+				app,
+				project.frontmatter['dbench-id']
+			)[0],
+			date: FIXED_DATE,
+		});
+
+		const content = await app.vault.read(draft);
+		const body = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
+		expect(body).toBe('Body content after the rich frontmatter.\n');
+		expect(body).not.toContain('dbench-target-words');
+		expect(body).not.toContain('dbench-synopsis');
+	});
 });

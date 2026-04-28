@@ -78,6 +78,12 @@ docs/planning/website-content/handoff-prompt.md
 # Local dev / test vault with dummy projects (recreate per docs/developer/dev-vault.md)
 dev-vault/
 
+# Raw motion-capture sources (large files; only optimized versions ship to the website repo)
+docs/images/raw/*.webm
+docs/images/raw/*.mp4
+docs/images/raw/*.mov
+docs/images/raw/*.mkv
+
 # Release packages
 draft-bench-v*.zip
 

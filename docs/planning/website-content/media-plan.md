@@ -55,7 +55,7 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 
 ### Capture: `dbench-manuscript-view.webm`
 
-**Type**: motion loop · **Target duration**: 20-30s · **Embed**: features page, "Write" section
+**Type**: motion loop · **Target duration**: 25-32s · **Embed**: features page, "Write" section
 
 **Setup checklist**
 
@@ -70,10 +70,14 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 
 - [ ] (0-3s) Static rest: leaf at rest, Ch01 expanded showing Departure / First night / Sighting the river
 - [ ] (3-7s) Click Ch02 header → smooth expand animation reveals scene rows
-- [ ] (7-12s) Cmd-click "Climb begins" title → opens in a new tab to the right
-- [ ] (12-17s) Right-click "First night" → context menu shows "Open in new tab / split / window"; close menu without picking
-- [ ] (17-22s) Drag-handle reorder a scene within Ch01 (drag "Sighting the river" above "First night"); release → order capsules update
-- [ ] (22-30s) In the side pane, type a sentence into the open scene's `## Draft` section → chapter-1 word-count rollup ticks live in the leaf
+- [ ] (7-11s) Cmd-click "Climb begins" title → opens in a new tab to the right
+- [ ] (11-22s) Open the Reorder scenes modal (palette `Draft Bench: Reorder scenes`, or the toolbar's Reorder button, scoped to Ch01) → grab the drag handle on "Sighting the river" and drag it above "First night" → drop → click "Apply order" → modal closes → Ch01's card body shows the new order with updated capsule numbers
+- [ ] (22-32s) In the side pane (the Cmd-clicked "Climb begins" scene), type a sentence into the `## Draft` section → Ch02's word-count rollup ticks live in the leaf
+
+**Notes for the capture**
+
+- Reordering happens in a dedicated modal, not inline drag on the leaf. The modal is the canonical reorder UX (matches spec § Reordering).
+- Cleanup after capture: open the Reorder scenes modal again and drag "Sighting the river" back below "First night" to restore the seed order, OR revert via git status on the affected scene `dbench-order` values.
 
 **Capture frame**: full Obsidian window minus title bar; 1920×1080 source
 

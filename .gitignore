@@ -78,6 +78,10 @@ docs/planning/website-content/handoff-prompt.md
 # Local dev / test vault with dummy projects (recreate per docs/developer/dev-vault.md)
 dev-vault/
 
+# Local empty vault used for capture sessions that need a clean
+# starting state (e.g., dbench-create-project.webm)
+capture-vault/
+
 # Raw motion-capture sources (large files; only optimized versions ship to the website repo)
 docs/images/raw/*.webm
 docs/images/raw/*.mp4

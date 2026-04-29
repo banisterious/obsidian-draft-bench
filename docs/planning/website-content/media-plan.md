@@ -278,23 +278,23 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 
 - [x] Theme + accent locked
 - [x] Vault: `dev-vault`
-- [ ] Open: a compile-preset note (`Draft Bench/The Salt Road/Compile Presets/Workshop.md`)
-- [ ] Properties panel visible in the right pane (toggle if needed)
-- [ ] Show the full set of `dbench-compile-*` properties (heading scope, frontmatter handling, wikilinks, embeds, dinkuses, last-compile fields)
+- [x] Open: a compile-preset note (`Draft Bench/The Salt Road/Compile Presets/Workshop.md`)
+- [x] Properties panel visible in the right pane (toggle if needed)
+- [x] Show the full set of `dbench-compile-*` properties (heading scope, frontmatter handling, wikilinks, embeds, dinkuses, last-compile fields)
 
 **Capture**
 
-- [ ] Frame: main pane + Properties panel, file explorer hidden
-- [ ] Resolution: 1920×1080 source; can crop to relevant area in Paint.NET
+- [x] Frame: main pane + Properties panel, file explorer hidden
+- [x] Resolution: 1920×1080 source; can crop to relevant area in Paint.NET
 
 **Post-process**
 
-- [ ] Crop to relevant content (drop unrelated chrome)
+- [x] Crop to relevant content (drop unrelated chrome)
 - [ ] Optimize: PNG, ≤ 500KB. If over, run through pngcrush / oxipng
 
 **Outputs**
 
-- [ ] Raw at `docs/images/raw/dbench-compile-preset-properties.png` (full-res, tracked)
+- [x] Raw at `docs/images/raw/dbench-compile-preset-properties.png` (full-res, tracked)
 - [ ] Optimized in website repo `static/img/dbench-compile-preset-properties.png`
 
 ---
@@ -305,25 +305,25 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 
 **Setup checklist**
 
-- [ ] Theme + accent locked
-- [ ] Vault: `dev-vault`
-- [ ] Pre-condition: Bases starter views installed (run palette command **`Draft Bench: Install starter Bases views`** once; generates files at `Draft Bench/Bases/`)
-- [ ] Open: `Draft Bench/Bases/projects.base` (the projects starter view)
-- [ ] View shows multiple projects with key columns (title, status, scene count, target words)
+- [x] Theme + accent locked
+- [x] Vault: `dev-vault`
+- [x] Pre-condition: Bases starter views installed (run palette command **`Draft Bench: Install starter Bases views`** once; generates files at `Draft Bench/Bases/`)
+- [x] Open: `Draft Bench/Bases/projects.base` (the projects starter view)
+- [x] View shows multiple projects with key columns (title, status, scene count, target words)
 
 **Capture**
 
-- [ ] Frame: main pane only (Bases view full-width); sidebars hidden
-- [ ] Resolution: 1920×1080 source
+- [x] Frame: main pane only (Bases view full-width); sidebars hidden
+- [x] Resolution: 1920×1080 source
 
 **Post-process**
 
-- [ ] Crop to remove tab strip if it's not informative
-- [ ] Optimize: PNG, ≤ 500KB
+- [x] Crop to remove tab strip if it's not informative
+- [x] Optimize: PNG, ≤ 500KB
 
 **Outputs**
 
-- [ ] Raw at `docs/images/raw/dbench-bases-projects.png`
+- [x] Raw at `docs/images/raw/dbench-bases-projects.png`
 - [ ] Optimized in website repo `static/img/dbench-bases-projects.png`
 
 ---
@@ -334,24 +334,24 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 
 **Setup checklist**
 
-- [ ] Theme + accent locked
-- [ ] Vault: `dev-vault`
-- [ ] Pre-condition: Style Settings community plugin installed and enabled
-- [ ] Open: Settings → Style Settings → Draft Bench section expanded showing all exposed variables (scene typography, draft archival cue, etc.)
+- [x] Theme + accent locked
+- [x] Vault: `dev-vault`
+- [x] Pre-condition: Style Settings community plugin installed and enabled
+- [x] Open: Settings → Style Settings → Draft Bench section expanded showing all exposed variables (scene typography, draft archival cue, etc.)
 
 **Capture**
 
-- [ ] Frame: Settings modal only, cropped to the Draft Bench section
-- [ ] Resolution: 1920×1080 source
+- [x] Frame: Settings modal only, cropped to the Draft Bench section
+- [x] Resolution: 1920×1080 source
 
 **Post-process**
 
-- [ ] Crop to the Draft Bench section + a sliver of context above (showing it's nested under Style Settings)
-- [ ] Optimize: PNG, ≤ 400KB (mostly UI chrome, compresses well)
+- [x] Crop to the Draft Bench section + a sliver of context above (showing it's nested under Style Settings)
+- [x] Optimize: PNG, ≤ 400KB (mostly UI chrome, compresses well)
 
 **Outputs**
 
-- [ ] Raw at `docs/images/raw/dbench-style-settings.png`
+- [x] Raw at `docs/images/raw/dbench-style-settings.png`
 - [ ] Optimized in website repo `static/img/dbench-style-settings.png`
 
 ## Format and size targets

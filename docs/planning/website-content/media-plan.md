@@ -182,33 +182,33 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 
 **Setup checklist**
 
-- [ ] Theme + accent locked
-- [ ] Vault: a **fresh empty capture vault** (do NOT use dev-vault — needs no existing projects). Easiest: copy a clean Obsidian vault to `~/capture-vault`, enable Draft Bench from Community plugins, no projects created yet
-- [ ] Layout: file explorer visible (so the writer can see the folder structure get created)
-- [ ] Welcome modal already dismissed (capture this flow separately if you want to show onboarding)
+- [x] Theme + accent locked
+- [x] Vault: a **fresh empty capture vault** (do NOT use dev-vault — needs no existing projects). Easiest: copy a clean Obsidian vault to `~/capture-vault`, enable Draft Bench from Community plugins, no projects created yet
+- [x] Layout: file explorer visible (so the writer can see the folder structure get created)
+- [x] Welcome modal already dismissed (capture this flow separately if you want to show onboarding)
 
 **Action sequence**
 
-- [ ] (0-3s) Static: empty Obsidian, file explorer empty or near-empty
-- [ ] (3-6s) Open command palette (Ctrl+P) → type "Draft Bench: Create" → "Draft Bench: Create project" highlighted
-- [ ] (6-8s) Press Enter → new-project modal opens
-- [ ] (8-13s) Type project title `The Lighthouse`, choose Folder shape, leave default location, click Create
-- [ ] (13-16s) Modal closes; Notice `✓ Created project The Lighthouse`
-- [ ] (16-20s) Manuscript view auto-reveals on the right; file explorer shows the new `Draft Bench/The Lighthouse/` folder with project note + scene placeholder
-- [ ] (20-25s) Project note opens in main pane showing stamped frontmatter (`dbench-type: project`, `dbench-id`, `dbench-status: idea`)
+- [x] (0-3s) Static: empty Obsidian, file explorer empty or near-empty
+- [x] (3-6s) Open command palette (Ctrl+P) → type "Draft Bench: Create" → "Draft Bench: Create project" highlighted
+- [x] (6-8s) Press Enter → new-project modal opens
+- [x] (8-13s) Type project title `The Lighthouse`, choose Folder shape, leave default location, click Create
+- [x] (13-16s) Modal closes; Notice `✓ Created project The Lighthouse`
+- [x] (16-20s) Manuscript view auto-reveals on the right; file explorer shows the new `Draft Bench/The Lighthouse/` folder with project note + scene placeholder
+- [x] (20-25s) Project note opens in main pane showing stamped frontmatter (`dbench-type: project`, `dbench-id`, `dbench-status: idea`)
 
 **Capture frame**: full Obsidian window with file explorer visible on the left
 
 **Post-process**
 
-- [ ] Trim
-- [ ] Strip audio
-- [ ] Encode: same ffmpeg command, output `dbench-create-project.webm`
-- [ ] Verify size ≤ 5MB
+- [x] Trim
+- [x] Strip audio
+- [x] Encode: same ffmpeg command, output `dbench-create-project.webm`
+- [x] Verify size ≤ 5MB
 
 **Outputs**
 
-- [ ] Raw at `docs/images/raw/dbench-create-project.mp4`
+- [x] Raw at `docs/images/raw/dbench-create-project.webm`
 - [ ] Optimized in website repo `static/img/dbench-create-project.webm`
 
 **Cleanup**: capture vault stays around for re-takes; reset by deleting `Draft Bench/The Lighthouse/` between takes.

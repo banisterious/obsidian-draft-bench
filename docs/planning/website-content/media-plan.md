@@ -91,8 +91,8 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 **Outputs**
 
 - [x] Raw saved at `docs/images/raw/dbench-manuscript-view.mp4` (gitignored)
-- [ ] Optimized webm copied to website repo `static/img/dbench-manuscript-view.webm`
-- [ ] Embedded on draftbench.io features page per § Embed pattern
+- [x] Optimized webm copied to website repo `static/img/dbench-manuscript-view.webm`
+- [x] Embedded on draftbench.io features page per § Embed pattern
 
 ---
 
@@ -130,7 +130,7 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 **Outputs**
 
 - [x] Raw at `docs/images/raw/dbench-new-draft.webm`
-- [ ] Optimized in website repo `static/img/dbench-new-draft.webm`
+- [x] Optimized in website repo `static/img/dbench-new-draft.webm`
 
 **Cleanup after capture**: delete the just-created draft file from the dev-vault to restore the seed state for re-takes.
 
@@ -170,7 +170,7 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 **Outputs**
 
 - [x] Raw at `docs/images/raw/dbench-compile-flow.mp4`
-- [ ] Optimized in website repo `static/img/dbench-compile-flow.webm`
+- [x] Optimized in website repo `static/img/dbench-compile-flow.webm`
 
 **Cleanup**: delete the generated `<project>/Compiled/Workshop.md` so subsequent re-takes start clean.
 

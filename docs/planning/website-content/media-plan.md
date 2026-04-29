@@ -221,43 +221,43 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 
 **Setup checklist**
 
-- [ ] Theme + accent locked
-- [ ] Vault: `dev-vault`, with a **deliberate manual break** introduced just before recording (see "Break the link" below)
-- [ ] Layout: file explorer visible; main pane on the broken scene file
-- [ ] Selected project in Manuscript view: **The Salt Road**
+- [x] Theme + accent locked
+- [x] Vault: `dev-vault`, with a **deliberate manual break** introduced just before recording (see "Break the link" below)
+- [x] Layout: file explorer visible; main pane on the broken scene file
+- [x] Selected project in Manuscript view: **The Salt Road**
 
 **Break the link** (do this once, immediately before capture):
 
 The break has to be on the *parent's* reverse-array side, not the child's forward ref. Auto-repair adds missing entries back to a parent's reverse array (using the child's still-valid forward ref as authority); it deliberately does *not* overwrite a child's bad ID against an authoritative-looking wikilink (that's "wikilink/id conflict" territory which the repair service flags but won't auto-resolve). So the demo-appropriate break removes Departure from Ch01's reverse arrays, leaving Departure's own frontmatter intact.
 
-- [ ] Open `Draft Bench/The Salt Road/Ch01 - The crossing.md` (the chapter file, not the Departure scene)
-- [ ] In Properties panel, edit `dbench-scenes`: delete the `[[Departure]]` entry from the array (leave the other scene entries in place)
-- [ ] Edit `dbench-scene-ids`: delete the corresponding scene ID for Departure (the one that pairs with the entry you removed above; check Departure's frontmatter for the exact `dbench-id` value)
-- [ ] Save
-- [ ] Confirm Manuscript view: Ch01's card body now shows two scenes instead of three (Departure is missing)
+- [x] Open `Draft Bench/The Salt Road/Ch01 - The crossing.md` (the chapter file, not the Departure scene)
+- [x] In Properties panel, edit `dbench-scenes`: delete the `[[Departure]]` entry from the array (leave the other scene entries in place)
+- [x] Edit `dbench-scene-ids`: delete the corresponding scene ID for Departure (the one that pairs with the entry you removed above; check Departure's frontmatter for the exact `dbench-id` value)
+- [x] Save
+- [x] Confirm Manuscript view: Ch01's card body now shows two scenes instead of three (Departure is missing)
 
 **Action sequence**
 
-- [ ] (0-3s) Static: Manuscript view shows broken state (Departure missing or visually orphaned); file explorer shows the file is still there
-- [ ] (3-6s) Open command palette → type "Repair" → "Draft Bench: Repair project links" highlighted
-- [ ] (6-8s) Press Enter → repair modal opens with project picker
-- [ ] (8-12s) Pick "The Salt Road" → modal scans, lists the detected issue as `SCENE_MISSING_IN_CHAPTER` (Departure declares Ch01 but is missing from Ch01's `dbench-scenes`)
-- [ ] (12-16s) Click "Apply repairs" → Notice `✓ Repaired N issues`
-- [ ] (16-22s) Modal closes; Manuscript view updates → Departure reappears under Ch01's card body
-- [ ] (22-25s) Static end: clean state restored
+- [x] (0-3s) Static: Manuscript view shows broken state (Departure missing or visually orphaned); file explorer shows the file is still there
+- [x] (3-6s) Open command palette → type "Repair" → "Draft Bench: Repair project links" highlighted
+- [x] (6-8s) Press Enter → repair modal opens with project picker
+- [x] (8-12s) Pick "The Salt Road" → modal scans, lists the detected issue as `SCENE_MISSING_IN_CHAPTER` (Departure declares Ch01 but is missing from Ch01's `dbench-scenes`)
+- [x] (12-16s) Click "Apply repairs" → Notice `✓ Repaired N issues`
+- [x] (16-22s) Modal closes; Manuscript view updates → Departure reappears under Ch01's card body
+- [x] (22-25s) Static end: clean state restored
 
 **Capture frame**: full Obsidian window with file explorer + main pane + Manuscript view all visible
 
 **Post-process**
 
-- [ ] Trim
-- [ ] Strip audio
-- [ ] Encode: same ffmpeg command, output `dbench-repair-integrity.webm`
-- [ ] Verify size ≤ 4MB
+- [x] Trim
+- [x] Strip audio
+- [x] Encode: same ffmpeg command, output `dbench-repair-integrity.webm`
+- [x] Verify size ≤ 4MB
 
 **Outputs**
 
-- [ ] Raw at `docs/images/raw/dbench-repair-integrity.mp4`
+- [x] Raw at `docs/images/raw/dbench-repair-integrity.mp4`
 - [ ] Optimized in website repo `static/img/dbench-repair-integrity.webm`
 
 **Cleanup after capture**: revert the Departure scene's `dbench-chapter-id` to `chp-slt-tst-001` (the original value) so the dev-vault returns to seed state.
@@ -276,8 +276,8 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 
 **Setup checklist**
 
-- [ ] Theme + accent locked
-- [ ] Vault: `dev-vault`
+- [x] Theme + accent locked
+- [x] Vault: `dev-vault`
 - [ ] Open: a compile-preset note (`Draft Bench/The Salt Road/Compile Presets/Workshop.md`)
 - [ ] Properties panel visible in the right pane (toggle if needed)
 - [ ] Show the full set of `dbench-compile-*` properties (heading scope, frontmatter handling, wikilinks, embeds, dinkuses, last-compile fields)

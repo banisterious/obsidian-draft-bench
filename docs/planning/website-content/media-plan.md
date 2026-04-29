@@ -209,7 +209,7 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 **Outputs**
 
 - [x] Raw at `docs/images/raw/dbench-create-project.webm`
-- [ ] Optimized in website repo `static/img/dbench-create-project.webm`
+- [x] Optimized in website repo `static/img/dbench-create-project.webm`
 
 **Cleanup**: capture vault stays around for re-takes; reset by deleting `Draft Bench/The Lighthouse/` between takes.
 
@@ -258,7 +258,7 @@ The break has to be on the *parent's* reverse-array side, not the child's forwar
 **Outputs**
 
 - [x] Raw at `docs/images/raw/dbench-repair-integrity.mp4`
-- [ ] Optimized in website repo `static/img/dbench-repair-integrity.webm`
+- [x] Optimized in website repo `static/img/dbench-repair-integrity.webm`
 
 **Cleanup after capture**: revert the Departure scene's `dbench-chapter-id` to `chp-slt-tst-001` (the original value) so the dev-vault returns to seed state.
 
@@ -290,12 +290,12 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 **Post-process**
 
 - [x] Crop to relevant content (drop unrelated chrome)
-- [ ] Optimize: PNG, ≤ 500KB. If over, run through pngcrush / oxipng
+- [x] Optimize: PNG, ≤ 500KB. If over, run through pngcrush / oxipng
 
 **Outputs**
 
 - [x] Raw at `docs/images/raw/dbench-compile-preset-properties.png` (full-res, tracked)
-- [ ] Optimized in website repo `static/img/dbench-compile-preset-properties.png`
+- [x] Optimized in website repo `static/img/dbench-compile-preset-properties.png`
 
 ---
 
@@ -324,7 +324,7 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 **Outputs**
 
 - [x] Raw at `docs/images/raw/dbench-bases-projects.png`
-- [ ] Optimized in website repo `static/img/dbench-bases-projects.png`
+- [x] Optimized in website repo `static/img/dbench-bases-projects.png`
 
 ---
 
@@ -352,7 +352,7 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 **Outputs**
 
 - [x] Raw at `docs/images/raw/dbench-style-settings.png`
-- [ ] Optimized in website repo `static/img/dbench-style-settings.png`
+- [x] Optimized in website repo `static/img/dbench-style-settings.png`
 
 ## Format and size targets
 

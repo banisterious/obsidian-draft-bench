@@ -228,18 +228,22 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 
 **Break the link** (do this once, immediately before capture):
 
-- [ ] Open `Draft Bench/The Salt Road/Ch01 - The crossing/Departure.md`
-- [ ] In Properties panel, change `dbench-chapter-id` to a garbage value like `chp-xxx-xxx-xxx` (preserving the wikilink); save
-- [ ] Confirm Manuscript view shows Departure missing from Ch01's card body (or in the wrong place)
+The break has to be on the *parent's* reverse-array side, not the child's forward ref. Auto-repair adds missing entries back to a parent's reverse array (using the child's still-valid forward ref as authority); it deliberately does *not* overwrite a child's bad ID against an authoritative-looking wikilink (that's "wikilink/id conflict" territory which the repair service flags but won't auto-resolve). So the demo-appropriate break removes Departure from Ch01's reverse arrays, leaving Departure's own frontmatter intact.
+
+- [ ] Open `Draft Bench/The Salt Road/Ch01 - The crossing.md` (the chapter file, not the Departure scene)
+- [ ] In Properties panel, edit `dbench-scenes`: delete the `[[Departure]]` entry from the array (leave the other scene entries in place)
+- [ ] Edit `dbench-scene-ids`: delete the corresponding scene ID for Departure (the one that pairs with the entry you removed above; check Departure's frontmatter for the exact `dbench-id` value)
+- [ ] Save
+- [ ] Confirm Manuscript view: Ch01's card body now shows two scenes instead of three (Departure is missing)
 
 **Action sequence**
 
 - [ ] (0-3s) Static: Manuscript view shows broken state (Departure missing or visually orphaned); file explorer shows the file is still there
 - [ ] (3-6s) Open command palette → type "Repair" → "Draft Bench: Repair project links" highlighted
 - [ ] (6-8s) Press Enter → repair modal opens with project picker
-- [ ] (8-12s) Pick "The Salt Road" → modal scans, lists detected issues (e.g., `STALE_CHAPTER_ID_ON_SCENE`)
+- [ ] (8-12s) Pick "The Salt Road" → modal scans, lists the detected issue as `SCENE_MISSING_IN_CHAPTER` (Departure declares Ch01 but is missing from Ch01's `dbench-scenes`)
 - [ ] (12-16s) Click "Apply repairs" → Notice `✓ Repaired N issues`
-- [ ] (16-22s) Modal closes; Manuscript view updates → Departure reappears under Ch01's card
+- [ ] (16-22s) Modal closes; Manuscript view updates → Departure reappears under Ch01's card body
 - [ ] (22-25s) Static end: clean state restored
 
 **Capture frame**: full Obsidian window with file explorer + main pane + Manuscript view all visible

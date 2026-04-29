@@ -102,34 +102,34 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 
 **Setup checklist**
 
-- [ ] Same theme + accent settings as the Manuscript view capture (lock once, reuse)
-- [ ] Vault: `dev-vault`
-- [ ] Layout: scene file open in main pane; Manuscript view in sidebar; file explorer hidden
-- [ ] Active scene: **Departure** (under Ch01, has prose body + frontmatter visible)
-- [ ] Pre-condition: scene currently has no prior drafts (or only one, so the Notice reads `Created Draft 2 of Departure`)
+- [x] Same theme + accent settings as the Manuscript view capture (lock once, reuse)
+- [x] Vault: `dev-vault`
+- [x] Layout: scene file open in main pane; Manuscript view in sidebar; file explorer hidden
+- [x] Active scene: **Departure** (under Ch01, has prose body + frontmatter visible)
+- [x] Pre-condition: scene currently has no prior drafts (or only one, so the Notice reads `Created Draft 2 of Departure`)
 
 **Action sequence**
 
-- [ ] (0-2s) Static: Departure open, scrolled to show some prose
-- [ ] (2-5s) Right-click in editor (or click scene title in Manuscript view) → context menu opens
-- [ ] (5-7s) Hover "Draft Bench" submenu → "New draft of this scene" highlighted
-- [ ] (7-9s) Click "New draft of this scene" → preview modal opens showing draft number and target path
-- [ ] (9-11s) Click "Create draft" → modal closes, Notice appears top-right `✓ Created Draft 1 of Departure`
-- [ ] (11-15s) New draft note auto-opens in the active leaf; pause to show frontmatter (`dbench-type: draft`, `dbench-scene: [[Departure]]`, `dbench-draft-number: 1`)
-- [ ] (15-18s) Pan back to Manuscript view → Departure row's draft count badge updated to `1 draft`
+- [x] (0-2s) Static: Departure open, scrolled to show some prose
+- [x] (2-5s) Right-click in editor (or click scene title in Manuscript view) → context menu opens
+- [x] (5-7s) Hover "Draft Bench" submenu → "New draft of this scene" highlighted
+- [x] (7-9s) Click "New draft of this scene" → preview modal opens showing draft number and target path
+- [x] (9-11s) Click "Create draft" → modal closes, Notice appears top-right `✓ Created Draft 1 of Departure`
+- [x] (11-15s) New draft note auto-opens in the active leaf; pause to show frontmatter (`dbench-type: draft`, `dbench-scene: [[Departure]]`, `dbench-draft-number: 1`)
+- [x] (15-18s) Pan back to Manuscript view → Departure row's draft count badge updated to `1 draft`
 
 **Capture frame**: full Obsidian window; consider zooming in on the Properties panel during the frontmatter pause
 
 **Post-process**
 
-- [ ] Trim
-- [ ] Strip audio
-- [ ] Encode: same ffmpeg command, output `dbench-new-draft.webm`
-- [ ] Verify size ≤ 4MB (shorter loop)
+- [x] Trim
+- [x] Strip audio
+- [x] Encode: same ffmpeg command, output `dbench-new-draft.webm`
+- [x] Verify size ≤ 4MB (shorter loop)
 
 **Outputs**
 
-- [ ] Raw at `docs/images/raw/dbench-new-draft.mp4`
+- [x] Raw at `docs/images/raw/dbench-new-draft.webm`
 - [ ] Optimized in website repo `static/img/dbench-new-draft.webm`
 
 **Cleanup after capture**: delete the just-created draft file from the dev-vault to restore the seed state for re-takes.

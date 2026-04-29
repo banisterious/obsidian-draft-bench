@@ -142,34 +142,34 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 
 **Setup checklist**
 
-- [ ] Theme + accent locked
-- [ ] Vault: `dev-vault`
-- [ ] Selected project: **The Salt Road**
-- [ ] At least one compile preset exists for The Salt Road (the seed includes "Workshop"); format is `md` and destination is `vault` for the cleanest visual flow (no OS save dialog)
-- [ ] Layout: Manuscript view in sidebar, main pane on a chapter file
+- [x] Theme + accent locked
+- [x] Vault: `dev-vault`
+- [x] Selected project: **The Salt Road**
+- [x] At least one compile preset exists for The Salt Road (the seed includes "Workshop"); format is `md` and destination is `vault` for the cleanest visual flow (no OS save dialog)
+- [x] Layout: Manuscript view in sidebar, main pane on a chapter file
 
 **Action sequence**
 
-- [ ] (0-3s) Static: Manuscript view with The Salt Road selected, Compile button visible
-- [ ] (3-7s) Click "Compile" CTA → Manuscript Builder modal opens
-- [ ] (7-13s) Show preset header dropdown with "Workshop" selected; scroll past Inclusion + Output + Content handling sections so each is briefly visible
-- [ ] (13-15s) Click "Run compile" button at top of modal
-- [ ] (15-18s) Modal closes; Notice appears `✓ Compiled to <path>`
-- [ ] (18-25s) Compiled markdown file auto-opens in the active leaf showing chapter headings and concatenated scene bodies
-- [ ] (25-35s) Pan/scroll through the compiled output to demonstrate continuity
+- [x] (0-3s) Static: Manuscript view with The Salt Road selected, Compile button visible
+- [x] (3-7s) Click "Compile" CTA → Manuscript Builder modal opens
+- [x] (7-13s) Show preset header dropdown with "Workshop" selected; scroll past Inclusion + Output + Content handling sections so each is briefly visible
+- [x] (13-15s) Click "Run compile" button at top of modal
+- [x] (15-18s) Modal closes; Notice appears `✓ Compiled to <path>`
+- [x] (18-25s) Compiled markdown file auto-opens in the active leaf showing chapter headings and concatenated scene bodies
+- [x] (25-35s) Pan/scroll through the compiled output to demonstrate continuity
 
 **Capture frame**: full Obsidian window
 
 **Post-process**
 
-- [ ] Trim
-- [ ] Strip audio
-- [ ] Encode: same ffmpeg command, output `dbench-compile-flow.webm`
-- [ ] Verify size ≤ 5MB
+- [x] Trim
+- [x] Strip audio
+- [x] Encode: same ffmpeg command, output `dbench-compile-flow.webm`
+- [x] Verify size ≤ 5MB
 
 **Outputs**
 
-- [ ] Raw at `docs/images/raw/dbench-compile-flow.mp4`
+- [x] Raw at `docs/images/raw/dbench-compile-flow.mp4`
 - [ ] Optimized in website repo `static/img/dbench-compile-flow.webm`
 
 **Cleanup**: delete the generated `<project>/Compiled/Workshop.md` so subsequent re-takes start clean.

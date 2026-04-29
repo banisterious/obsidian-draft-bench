@@ -59,20 +59,20 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 
 **Setup checklist**
 
-- [ ] Theme: Obsidian default (light)
-- [ ] Accent color: `#5b8cd6` (matches brand idea-status blue) or theme default; lock before recording
-- [ ] Vault: `dev-vault`, fresh reload (Ctrl+R)
-- [ ] Layout: Manuscript view docked right sidebar; file explorer hidden; main pane shows a chapter file or empty
-- [ ] Selected project: **The Salt Road**
-- [ ] All chapter cards collapsed except Ch01 (so the open-state is visible at start)
+- [x] Theme: Obsidian default (light)
+- [x] Accent color: `#5b8cd6` (matches brand idea-status blue) or theme default; lock before recording
+- [x] Vault: `dev-vault`, fresh reload (Ctrl+R)
+- [x] Layout: Manuscript view docked right sidebar; file explorer hidden; main pane shows a chapter file or empty
+- [x] Selected project: **The Salt Road**
+- [x] All chapter cards collapsed except Ch01 (so the open-state is visible at start)
 
 **Action sequence**
 
-- [ ] (0-3s) Static rest: leaf at rest, Ch01 expanded showing Departure / First night / Sighting the river
-- [ ] (3-7s) Click Ch02 header → smooth expand animation reveals scene rows
-- [ ] (7-11s) Cmd-click "Climb begins" title → opens in a new tab to the right
-- [ ] (11-22s) Open the Reorder scenes modal (palette `Draft Bench: Reorder scenes`, or the toolbar's Reorder button, scoped to Ch01) → grab the drag handle on "Sighting the river" and drag it above "First night" → drop → click "Apply order" → modal closes → Ch01's card body shows the new order with updated capsule numbers
-- [ ] (22-32s) In the side pane (the Cmd-clicked "Climb begins" scene), type a sentence into the `## Draft` section → Ch02's word-count rollup ticks live in the leaf
+- [x] (0-3s) Static rest: leaf at rest, Ch01 expanded showing Departure / First night / Sighting the river
+- [x] (3-7s) Click Ch02 header → smooth expand animation reveals scene rows
+- [x] (7-11s) Cmd-click "Climb begins" title → opens in a new tab to the right
+- [x] (11-22s) Open the Reorder scenes modal (palette `Draft Bench: Reorder scenes`, or the toolbar's Reorder button, scoped to Ch01) → grab the drag handle on "Sighting the river" and drag it above "First night" → drop → click "Apply order" → modal closes → Ch01's card body shows the new order with updated capsule numbers
+- [x] (22-32s) In the side pane (the Cmd-clicked "Climb begins" scene), type a sentence into the `## Draft` section → Ch02's word-count rollup ticks live in the leaf
 
 **Notes for the capture**
 
@@ -83,14 +83,14 @@ Five motion loops, captured ahead of V1 launch. Each block below is a self-conta
 
 **Post-process**
 
-- [ ] Trim raw to clean start (after any ShareX countdown) and clean end (after the word-count rollup updates settle)
-- [ ] Strip audio
-- [ ] Encode: `ffmpeg -i raw.mp4 -c:v libvpx-vp9 -crf 32 -an -b:v 0 dbench-manuscript-view.webm`
-- [ ] Verify size ≤ 5MB; if larger, bump CRF to 34 and re-encode
+- [x] Trim raw to clean start (after any ShareX countdown) and clean end (after the word-count rollup updates settle)
+- [x] Strip audio
+- [x] Encode: `ffmpeg -i raw.mp4 -c:v libvpx-vp9 -crf 32 -an -b:v 0 dbench-manuscript-view.webm`
+- [x] Verify size ≤ 5MB; if larger, bump CRF to 34 and re-encode
 
 **Outputs**
 
-- [ ] Raw saved at `docs/images/raw/dbench-manuscript-view.mp4` (gitignored)
+- [x] Raw saved at `docs/images/raw/dbench-manuscript-view.mp4` (gitignored)
 - [ ] Optimized webm copied to website repo `static/img/dbench-manuscript-view.webm`
 - [ ] Embedded on draftbench.io features page per § Embed pattern
 

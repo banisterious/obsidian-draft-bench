@@ -1,6 +1,6 @@
 # Frequently asked questions
 
-Common questions from writers evaluating Draft Bench. For deeper documentation, see the wiki (linked once V1 ships).
+Common questions from writers evaluating Draft Bench. For deeper documentation, see [the wiki](https://github.com/banisterious/obsidian-draft-bench/wiki).
 
 ## Getting started
 
@@ -16,7 +16,7 @@ If you're looking for a plotting tool with character databases, plot grids, and 
 
 ### When can I install it?
 
-Draft Bench is in active pre-V1 development. The source repository is private until V1 ships; public BRAT install lands with the V1 release. This site is the canonical place to track what's coming.
+Now. Draft Bench's first BRAT-public release (0.1.0) shipped on 2026-04-29. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin, then enabling Draft Bench in **Settings -> Community plugins**. Community-plugin directory submission follows after the 0.x phase stabilizes.
 
 ### Is it free?
 

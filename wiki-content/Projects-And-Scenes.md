@@ -112,6 +112,3 @@ This means you can:
 
 See the [specification § Project Structure on Disk](https://github.com/banisterious/obsidian-draft-bench/blob/main/docs/planning/specification.md) for the full discussion.
 
----
-
-*Detailed walkthroughs coming once V1 ships.*

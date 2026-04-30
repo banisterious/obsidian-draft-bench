@@ -55,6 +55,3 @@ Actions emit a summary notice:
 - Single file: "Set as scene" / "Already a scene" / "Failed to apply properties."
 - Multi-file or folder: "Set as scene: 5 updated, 3 already typed, 1 error."
 
----
-
-*More detail and examples coming once V1 ships.*

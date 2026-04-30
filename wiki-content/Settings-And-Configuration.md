@@ -7,7 +7,7 @@ Draft Bench's settings are organized into groups in Obsidian's **Settings -> Dra
 ## General
 
 - **Default project shape**: `folder` or `single`. Applied when creating new projects; can be overridden per-project in the creation modal.
-- **Default status vocabulary**: the set of status values (TBD pre-V1; likely a choice between hardcoded and user-configurable).
+- **Status vocabulary**: configurable list of workflow statuses (default: `idea`, `draft`, `revision`, `final`). Edit via Settings -> Statuses. The first entry is the default stamped onto new notes; renaming an in-use status migrates affected notes; removing an in-use status prompts a bulk-rename or remove-without-migrating choice.
 
 ## Folders
 
@@ -53,6 +53,3 @@ Without Style Settings, the CSS classes (`.dbench-scene`, `.dbench-draft`) are s
 
 Version information, link to the [specification](https://github.com/banisterious/obsidian-draft-bench/blob/main/docs/planning/specification.md), repair actions, debug info.
 
----
-
-*Per-setting documentation and screenshots coming once V1 ships.*

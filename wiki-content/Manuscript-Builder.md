@@ -98,6 +98,3 @@ Open it via the ribbon icon, the **Draft Bench: Show manuscript view** palette c
 
 Plugin configuration (folders, drafts placement, status vocabulary, scene template, Bases folder, bidirectional sync) lives in Obsidian's **Settings -> Community plugins -> Draft Bench**, not in the Manuscript Builder. See [Settings and Configuration](Settings-And-Configuration).
 
----
-
-*The earlier "Control Center" tabbed-modal hub was retired in favor of the focused Manuscript Builder + dockable Manuscript view. Detailed walkthroughs and screenshots will land once V1 ships.*

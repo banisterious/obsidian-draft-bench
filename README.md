@@ -23,7 +23,7 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
 - **Versioned per-scene drafts.** Each "new draft" command snapshots a scene's current prose into its own file, carries the working draft forward, and lets you keep revising. Every prior draft remains a real file, openable in split panes for side-by-side comparison.
 - **Flexible folder structure.** Scenes can live anywhere in your vault; the plugin identifies them by frontmatter, not folder location. Organize by status, POV, date, or any other scheme; nothing breaks.
 - **Obsidian Bases compatible.** Every property is Bases-queryable out of the box. Build manuscript tables, status queues, and corkboards without custom configuration.
-- **Compile without JavaScript.** A form-based Book Builder (Phase 3+) will support compile presets, scene selection, and multi-format export (Markdown, ODT, PDF, DOCX).
+- **Compile without JavaScript.** A form-based Book Builder supports compile presets, scene selection, and multi-format export (Markdown, ODT, PDF, DOCX).
 
 <p align="center">
   <img src="https://draftbench.io/img/dbench-bases-projects.png"
@@ -33,17 +33,15 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
 
 ## Install
 
-Once V1 is released:
-
-- **Community Plugins** (recommended): Settings -> Community plugins -> Browse -> "Draft Bench" -> Install -> Enable.
-- **BRAT** (beta testing): Install [BRAT](https://github.com/TfTHacker/obsidian42-brat), add `banisterious/obsidian-draft-bench` as a beta plugin.
+- **BRAT** (recommended for now): Install [BRAT](https://github.com/TfTHacker/obsidian42-brat), then add `banisterious/obsidian-draft-bench` as a beta plugin. Enable in **Settings -> Community plugins**.
+- **Community Plugins** (when approved): Settings -> Community plugins -> Browse -> "Draft Bench" -> Install -> Enable. Directory submission follows after the 0.x phase stabilizes.
 - **Manual**: Download `main.js`, `manifest.json`, `styles.css` from [GitHub Releases](https://github.com/banisterious/obsidian-draft-bench/releases) into `<vault>/.obsidian/plugins/draft-bench/`.
 
-See [Getting Started](https://github.com/banisterious/obsidian-draft-bench/wiki/Getting-Started) once the wiki is live.
+See [Getting Started](https://github.com/banisterious/obsidian-draft-bench/wiki/Getting-Started) for the first-project walkthrough.
 
 ## Documentation
 
-User documentation will live at the [GitHub Wiki](https://github.com/banisterious/obsidian-draft-bench/wiki) (coming soon). Developer and design documentation is in the repo:
+User documentation lives at the [GitHub Wiki](https://github.com/banisterious/obsidian-draft-bench/wiki). Developer and design documentation is in the repo:
 
 - [Specification](docs/planning/specification.md): plugin features and behavior.
 - [UI/UX Reference](docs/planning/ui-reference.md): component patterns adapted from Charted Roots.

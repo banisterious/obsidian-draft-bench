@@ -111,6 +111,3 @@ If the [Templater plugin](https://github.com/SilentVoid13/Templater) is installe
 
 If Templater isn't installed, templates use plugin-token substitution only.
 
----
-
-*Template file paths and authoring instructions coming once V1 ships.*

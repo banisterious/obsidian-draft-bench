@@ -26,9 +26,9 @@ For a longer comparison, see [How Draft Bench compares](comparison.md).
 
 ## Status
 
-Draft Bench is in active pre-V1 development. The plugin is not yet installable; the source repository is private until V1.
+Draft Bench's first BRAT-public release (0.1.0) shipped on 2026-04-29. Install it now via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin; community-plugin directory submission follows after the 0.x phase stabilizes.
 
-V1 ships:
+0.1.0 ships:
 
 - Project, chapter, scene, draft, and compile-preset note types
 - Manuscript Builder with chapter and scene cards, word-count rollups, status chips
@@ -38,4 +38,4 @@ V1 ships:
 - Bases-native starter views for projects, scenes, and drafts
 - Style Settings integration for opt-in theming
 
-Public BRAT release lands with V1. Until then, this site is the canonical place to follow what's coming.
+API and data shape may still adjust between minor versions during the 0.x phase; see [the versioning policy](https://github.com/banisterious/obsidian-draft-bench/blob/main/VERSIONING.md).

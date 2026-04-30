@@ -11,7 +11,7 @@ Draft Bench and Longform share core ideas — scene-based writing, project struc
 - **Per-scene versioned drafts as first-class files.** Every "new draft" creates a real markdown file you can open, link, tag, and query.
 - **Frontmatter-native data model.** Membership and relationships live in `dbench-*` properties. No index file, no parallel JSON store. Native Obsidian Bases compatibility.
 - **Flexible folder structure.** Scenes can live anywhere in your vault; the plugin identifies them by frontmatter, not folder location.
-- **Compile without JavaScript.** A form-based Book Builder (Phase 3+) will support compile presets, scene selection, and multi-format export.
+- **Compile without JavaScript.** A form-based Book Builder supports compile presets, scene selection, and multi-format export.
 
 ## How is Draft Bench different from StoryLine?
 

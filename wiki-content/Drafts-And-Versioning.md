@@ -109,6 +109,3 @@ Prior drafts are ordinary files. You can:
 
 If you already have draft files from a previous workflow, use **Set as draft** from the context menu. The plugin stamps the required frontmatter. See [Context Menu Actions](Context-Menu-Actions).
 
----
-
-*Walkthroughs and screenshots coming once V1 ships.*

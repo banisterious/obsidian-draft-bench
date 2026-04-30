@@ -6,7 +6,16 @@
 
 Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with added emphasis on per-scene draft history as first-class files, rich metadata via frontmatter, and a compile system that requires no JavaScript knowledge.
 
-> **Status:** Pre-release. Design is complete; V1 implementation is in progress. No public releases yet.
+<p align="center">
+  <video controls width="800"
+         src="https://draftbench.io/img/dbench-manuscript-view.webm"
+         aria-label="The Manuscript view in action: a chapter card expands smoothly, a scene title opens in a new tab via Cmd-click, scene order is updated via the Reorder Scenes modal, and word counts tick live as prose is added.">
+    Your browser doesn't support embedded video.
+    <a href="https://draftbench.io/img/dbench-manuscript-view.webm">Watch the loop on draftbench.io</a>.
+  </video>
+</p>
+
+> **Status:** 0.1.0 — first BRAT-public release. The full V1 feature set has shipped; API and data shape may still adjust between minor versions during the 0.x phase. See [VERSIONING.md](VERSIONING.md).
 
 ## What it is
 
@@ -15,6 +24,12 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
 - **Flexible folder structure.** Scenes can live anywhere in your vault; the plugin identifies them by frontmatter, not folder location. Organize by status, POV, date, or any other scheme; nothing breaks.
 - **Obsidian Bases compatible.** Every property is Bases-queryable out of the box. Build manuscript tables, status queues, and corkboards without custom configuration.
 - **Compile without JavaScript.** A form-based Book Builder (Phase 3+) will support compile presets, scene selection, and multi-format export (Markdown, ODT, PDF, DOCX).
+
+<p align="center">
+  <img src="https://draftbench.io/img/dbench-bases-projects.png"
+       alt="A starter Bases view in Draft Bench showing the projects table — title, status, scene count, target word count, and progress bar columns — populated with three example projects."
+       width="800">
+</p>
 
 ## Install
 

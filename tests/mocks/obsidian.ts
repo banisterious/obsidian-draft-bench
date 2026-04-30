@@ -333,6 +333,204 @@ export class Notice {
 	}
 }
 
+// Component / View / ItemView stubs. Real Obsidian instantiates these
+// into DOM surfaces; tests only need the constructors so that
+// `class X extends ItemView {}` doesn't blow up at module-load time.
+// None of the unit tests invoke `.open()` / `.onOpen()` paths.
+export class Component {
+	load(): void {}
+	unload(): void {}
+	onload(): void {}
+	onunload(): void {}
+	addChild<T extends Component>(child: T): T {
+		return child;
+	}
+	removeChild<T extends Component>(child: T): T {
+		return child;
+	}
+	register(_cb: () => void): void {}
+	registerEvent(_eventRef: EventRef): void {}
+	registerDomEvent(): void {}
+	registerInterval(_id: number): void {}
+}
+
+export class View extends Component {
+	app: App;
+	containerEl = {} as HTMLElement;
+	icon = '';
+	navigation = false;
+
+	constructor(_leaf: unknown) {
+		super();
+		this.app = {} as App;
+	}
+
+	getViewType(): string {
+		return '';
+	}
+	getDisplayText(): string {
+		return '';
+	}
+	getIcon(): string {
+		return this.icon;
+	}
+	onOpen(): Promise<void> {
+		return Promise.resolve();
+	}
+	onClose(): Promise<void> {
+		return Promise.resolve();
+	}
+}
+
+export class ItemView extends View {
+	contentEl = {} as HTMLElement;
+}
+
+// Modal hierarchy stubs. Real Obsidian instantiates these into DOM
+// surfaces; tests only need the constructors so that `class X extends
+// Modal {}` doesn't blow up at module-load time. None of the unit
+// tests invoke modal `.open()` paths, so the bodies stay no-op.
+export class Modal {
+	app: App;
+	contentEl = {} as HTMLElement;
+	titleEl = {} as HTMLElement;
+	containerEl = {} as HTMLElement;
+	modalEl = {} as HTMLElement;
+
+	constructor(app: App) {
+		this.app = app;
+	}
+
+	open(): void {}
+	close(): void {}
+	onOpen(): void {}
+	onClose(): void {}
+}
+
+export class SuggestModal<T> extends Modal {
+	getSuggestions(_query: string): T[] | Promise<T[]> {
+		return [];
+	}
+	renderSuggestion(_item: T, _el: HTMLElement): void {}
+	onChooseSuggestion(_item: T, _evt: MouseEvent | KeyboardEvent): void {}
+}
+
+export interface FuzzyMatch<T> {
+	item: T;
+	match: { score: number; matches: number[][] };
+}
+
+export class FuzzySuggestModal<T> extends SuggestModal<FuzzyMatch<T>> {
+	getItems(): T[] {
+		return [];
+	}
+	getItemText(_item: T): string {
+		return '';
+	}
+	onChooseItem(_item: T, _evt: MouseEvent | KeyboardEvent): void {}
+}
+
+export class AbstractInputSuggest<T> {
+	constructor(_app: App, _inputEl: HTMLInputElement) {}
+	protected getSuggestions(_query: string): T[] | Promise<T[]> {
+		return [];
+	}
+	renderSuggestion(_value: T, _el: HTMLElement): void {}
+	selectSuggestion(_value: T): void {}
+}
+
+/**
+ * Mock for Obsidian's `MenuItem`. Methods are chainable and capture
+ * the configured state on the instance for test inspection. `setSubmenu`
+ * lazily constructs a child `Menu` that tests can drill into via
+ * `_findItem(...).submenu` or via the parent menu's helpers.
+ */
+export class MenuItem {
+	title = '';
+	icon = '';
+	section = '';
+	submenu: Menu | null = null;
+	clickHandler: (() => void | Promise<void>) | null = null;
+
+	setTitle(title: string): this {
+		this.title = title;
+		return this;
+	}
+
+	setIcon(icon: string): this {
+		this.icon = icon;
+		return this;
+	}
+
+	setSection(section: string): this {
+		this.section = section;
+		return this;
+	}
+
+	setSubmenu(): Menu {
+		this.submenu = new Menu();
+		return this.submenu;
+	}
+
+	onClick(handler: () => void | Promise<void>): this {
+		this.clickHandler = handler;
+		return this;
+	}
+}
+
+/**
+ * Mock for Obsidian's `Menu`. Captures items + separators in insertion
+ * order; tests assert on the captured state via `_items()` and
+ * convenience finders (`_findItem`, `_findSubmenu`).
+ */
+export class Menu {
+	private entries: Array<MenuItem | { separator: true }> = [];
+
+	addItem(callback: (item: MenuItem) => void): this {
+		const item = new MenuItem();
+		callback(item);
+		this.entries.push(item);
+		return this;
+	}
+
+	addSeparator(): this {
+		this.entries.push({ separator: true });
+		return this;
+	}
+
+	/** Test helper: return all real items (excluding separators) in order. */
+	_items(): MenuItem[] {
+		return this.entries.filter(
+			(e): e is MenuItem => !('separator' in e)
+		);
+	}
+
+	/** Test helper: full entry list including separators. */
+	_entries(): Array<MenuItem | { separator: true }> {
+		return [...this.entries];
+	}
+
+	/** Test helper: find an item by exact title. */
+	_findItem(title: string): MenuItem | null {
+		return this._items().find((i) => i.title === title) ?? null;
+	}
+
+	/** Test helper: get the submenu Menu attached to a titled item. */
+	_findSubmenu(title: string): Menu | null {
+		return this._findItem(title)?.submenu ?? null;
+	}
+}
+
+/**
+ * Mock for Obsidian's `Platform`. Mutable so tests can flip `isMobile`
+ * to exercise the mobile-flat fallback branch. Reset in `beforeEach`
+ * to avoid cross-test bleed.
+ */
+export const Platform = {
+	isDesktop: true,
+	isMobile: false,
+};
+
 /**
  * Minimal `app.plugins` stub. Tests that need to emulate an installed
  * plugin call `_register(id, instance)`; everything else returns null.

@@ -23,14 +23,15 @@ import { MoveToChapterModal } from '../ui/modals/move-to-chapter-modal';
 import { NewChapterDraftModal } from '../ui/modals/new-chapter-draft-modal';
 import { RepairProjectModal } from '../ui/modals/repair-project-modal';
 import {
-	addPresetMenuItems,
-	addProjectCompileItem,
-	addSceneOrDraftCompileItem,
+	presetItemSpecs,
+	projectCompileItemSpecs,
+	sceneOrDraftCompileItemSpecs,
 } from './compile-items';
 import {
-	addRetrofitMenuItem,
 	noticeForSingleFile,
+	populateMenuSurface,
 	runBatch,
+	type MenuItemSpec,
 } from './shared';
 
 /**
@@ -42,7 +43,12 @@ import {
  * - Fully-stamped markdown: no retrofit items.
  * - Folder: always show all five retrofit items (batch). Each action
  *   skips non-applicable files and aggregates results into a summary
- *   notice.
+ *   notice. (Folder-scope smarter behavior tracked in #3.)
+ *
+ * Per #5, all items appear under a `Draft Bench` submenu on desktop
+ * and a `Draft Bench:`-prefixed flat list on mobile. The branch is
+ * handled by `populateMenuSurface`; this module just builds the spec
+ * list.
  */
 export function buildFileMenuItems(
 	plugin: DraftBenchPlugin,
@@ -51,218 +57,277 @@ export function buildFileMenuItems(
 	target: TAbstractFile
 ): void {
 	if (target instanceof TFolder) {
-		buildFolderItems(plugin, menu, target);
+		const specs = buildFolderItemSpecs(plugin, target);
+		populateMenuSurface(menu, specs);
 		return;
 	}
 	if (target instanceof TFile && target.extension === 'md') {
-		buildSingleFileItems(plugin, linker, menu, target);
+		const specs = buildSingleFileItemSpecs(plugin, linker, target);
+		populateMenuSurface(menu, specs);
 	}
 }
 
-function buildSingleFileItems(
+/**
+ * Build the spec list for a single markdown file, respecting smart
+ * visibility. Exported so `editor-menu.ts` can reuse the same logic
+ * (editor-menu always operates on the active file, so the action set
+ * matches single-file file-menu).
+ */
+export function buildSingleFileItemSpecs(
 	plugin: DraftBenchPlugin,
 	linker: DraftBenchLinker,
-	menu: Menu,
 	file: TFile
-): void {
+): MenuItemSpec[] {
 	const app = plugin.app;
 	const type = readDbenchType(app, file);
+	const specs: MenuItemSpec[] = [];
 
 	if (type === 'project') {
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		if (isProjectFrontmatter(fm)) {
-			addRetrofitMenuItem(
-				menu,
-				'Show manuscript view',
-				'scroll-text',
-				() => {
-					plugin.selection.set(fm['dbench-id']);
-					void activateManuscriptView(app);
+			specs.push(
+				{
+					title: 'Show manuscript view',
+					icon: 'scroll-text',
+					onClick: () => {
+						plugin.selection.set(fm['dbench-id']);
+						void activateManuscriptView(app);
+					},
+				},
+				{
+					title: 'Build manuscript',
+					icon: 'book-up',
+					onClick: () => {
+						// Set selection first so the Manuscript Builder lands
+						// on this project's presets when it opens.
+						plugin.selection.set(fm['dbench-id']);
+						new ManuscriptBuilderModal(app, plugin, linker).open();
+					},
+				},
+				{
+					title: 'Repair project links',
+					icon: 'wrench',
+					onClick: () => {
+						new RepairProjectModal(app, linker, {
+							file,
+							frontmatter: fm,
+						}).open();
+					},
 				}
 			);
-			addRetrofitMenuItem(
-				menu,
-				'Build manuscript',
-				'book-up',
-				() => {
-					// Set selection first so the Manuscript Builder lands
-					// on this project's presets when it opens.
-					plugin.selection.set(fm['dbench-id']);
-					new ManuscriptBuilderModal(app, plugin, linker).open();
-				}
-			);
-			addRetrofitMenuItem(
-				menu,
-				'Repair project links',
-				'wrench',
-				() => {
-					new RepairProjectModal(app, linker, {
-						file,
-						frontmatter: fm,
-					}).open();
-				}
-			);
-			addProjectCompileItem(plugin, linker, menu, file);
+			specs.push(...projectCompileItemSpecs(plugin, linker, file));
 		}
 	}
 
 	if (type === 'compile-preset') {
-		addPresetMenuItems(plugin, linker, menu, file);
+		specs.push(...presetItemSpecs(plugin, linker, file));
 	}
 
 	if (type === 'scene' || type === 'draft') {
-		addSceneOrDraftCompileItem(plugin, menu, file);
+		specs.push(...sceneOrDraftCompileItemSpecs(plugin, file));
 	}
 
 	if (type === 'scene') {
-		addMoveToChapterMenuItem(plugin, menu, file);
+		specs.push(...moveToChapterItemSpecs(plugin, file));
 	}
 
 	if (type === 'chapter') {
-		addNewChapterDraftMenuItem(plugin, linker, menu, file);
+		specs.push(...newChapterDraftItemSpecs(plugin, linker, file));
 	}
 
 	if (type === null) {
-		addRetrofitMenuItem(menu, 'Set as project', 'folder', async () => {
-			const result = await setAsProject(app, plugin.settings, file);
-			noticeForSingleFile(result, {
-				success: 'Set as project',
-				failureVerb: 'set as project',
-			});
-		});
-		addRetrofitMenuItem(menu, 'Set as chapter', 'book-marked', async () => {
-			const result = await setAsChapter(app, plugin.settings, file);
-			noticeForSingleFile(result, {
-				success: 'Set as chapter',
-				failureVerb: 'set as chapter',
-			});
-		});
-		addRetrofitMenuItem(menu, 'Set as scene', 'align-left', async () => {
-			const result = await setAsScene(app, plugin.settings, file);
-			noticeForSingleFile(result, {
-				success: 'Set as scene',
-				failureVerb: 'set as scene',
-			});
-		});
-		addRetrofitMenuItem(menu, 'Set as draft', 'file-text', async () => {
-			const result = await setAsDraft(app, plugin.settings, file);
-			noticeForSingleFile(result, {
-				success: 'Set as draft',
-				failureVerb: 'set as draft',
-			});
-		});
-		return;
+		specs.push(
+			{
+				title: 'Set as project',
+				icon: 'folder',
+				onClick: async () => {
+					const result = await setAsProject(app, plugin.settings, file);
+					noticeForSingleFile(result, {
+						success: 'Set as project',
+						failureVerb: 'set as project',
+					});
+				},
+			},
+			{
+				title: 'Set as chapter',
+				icon: 'book-marked',
+				onClick: async () => {
+					const result = await setAsChapter(app, plugin.settings, file);
+					noticeForSingleFile(result, {
+						success: 'Set as chapter',
+						failureVerb: 'set as chapter',
+					});
+				},
+			},
+			{
+				title: 'Set as scene',
+				icon: 'align-left',
+				onClick: async () => {
+					const result = await setAsScene(app, plugin.settings, file);
+					noticeForSingleFile(result, {
+						success: 'Set as scene',
+						failureVerb: 'set as scene',
+					});
+				},
+			},
+			{
+				title: 'Set as draft',
+				icon: 'file-text',
+				onClick: async () => {
+					const result = await setAsDraft(app, plugin.settings, file);
+					noticeForSingleFile(result, {
+						success: 'Set as draft',
+						failureVerb: 'set as draft',
+					});
+				},
+			}
+		);
+		// Untyped exits here; no Complete / Add id (those apply to
+		// already-typed notes that are missing pieces).
+		return specs;
 	}
 
 	if (hasMissingEssentials(app, file)) {
-		addRetrofitMenuItem(
-			menu,
-			'Complete essential properties',
-			'check-circle',
-			async () => {
+		specs.push({
+			title: 'Complete essential properties',
+			icon: 'check-circle',
+			onClick: async () => {
 				const result = await completeEssentials(app, plugin.settings, file);
 				noticeForSingleFile(result, {
 					success: 'Completed essential properties',
 					failureVerb: 'complete essential properties',
 				});
-			}
-		);
+			},
+		});
 	}
 
 	if (hasMissingId(app, file)) {
-		addRetrofitMenuItem(menu, 'Add identifier', 'hash', async () => {
-			const result = await addDbenchId(app, plugin.settings, file);
-			noticeForSingleFile(result, {
-				success: 'Added identifier',
-				failureVerb: 'add identifier',
-			});
+		specs.push({
+			title: 'Add identifier',
+			icon: 'hash',
+			onClick: async () => {
+				const result = await addDbenchId(app, plugin.settings, file);
+				noticeForSingleFile(result, {
+					success: 'Added identifier',
+					failureVerb: 'add identifier',
+				});
+			},
 		});
 	}
+
+	return specs;
 }
 
-function buildFolderItems(
+function buildFolderItemSpecs(
 	plugin: DraftBenchPlugin,
-	menu: Menu,
 	folder: TFolder
-): void {
+): MenuItemSpec[] {
 	const app = plugin.app;
 	const files = collectMarkdownFiles(app, folder);
-	if (files.length === 0) return;
-
+	if (files.length === 0) return [];
 	const { settings } = plugin;
-	addRetrofitMenuItem(menu, 'Set as project', 'folder', () =>
-		runBatch(app, settings, files, setAsProject, { action: 'Set as project' })
-	);
-	addRetrofitMenuItem(menu, 'Set as chapter', 'book-marked', () =>
-		runBatch(app, settings, files, setAsChapter, { action: 'Set as chapter' })
-	);
-	addRetrofitMenuItem(menu, 'Set as scene', 'align-left', () =>
-		runBatch(app, settings, files, setAsScene, { action: 'Set as scene' })
-	);
-	addRetrofitMenuItem(menu, 'Set as draft', 'file-text', () =>
-		runBatch(app, settings, files, setAsDraft, { action: 'Set as draft' })
-	);
-	addRetrofitMenuItem(
-		menu,
-		'Complete essential properties',
-		'check-circle',
-		() =>
-			runBatch(app, settings, files, completeEssentials, {
-				action: 'Complete essential properties',
-			})
-	);
-	addRetrofitMenuItem(menu, 'Add identifier', 'hash', () =>
-		runBatch(app, settings, files, addDbenchId, { action: 'Add identifier' })
-	);
+	return [
+		{
+			title: 'Set as project',
+			icon: 'folder',
+			onClick: () =>
+				runBatch(app, settings, files, setAsProject, {
+					action: 'Set as project',
+				}),
+		},
+		{
+			title: 'Set as chapter',
+			icon: 'book-marked',
+			onClick: () =>
+				runBatch(app, settings, files, setAsChapter, {
+					action: 'Set as chapter',
+				}),
+		},
+		{
+			title: 'Set as scene',
+			icon: 'align-left',
+			onClick: () =>
+				runBatch(app, settings, files, setAsScene, {
+					action: 'Set as scene',
+				}),
+		},
+		{
+			title: 'Set as draft',
+			icon: 'file-text',
+			onClick: () =>
+				runBatch(app, settings, files, setAsDraft, {
+					action: 'Set as draft',
+				}),
+		},
+		{
+			title: 'Complete essential properties',
+			icon: 'check-circle',
+			onClick: () =>
+				runBatch(app, settings, files, completeEssentials, {
+					action: 'Complete essential properties',
+				}),
+		},
+		{
+			title: 'Add identifier',
+			icon: 'hash',
+			onClick: () =>
+				runBatch(app, settings, files, addDbenchId, {
+					action: 'Add identifier',
+				}),
+		},
+	];
 }
 
 /**
- * Add "Move to chapter" for a scene whose project has at least one
- * chapter. Hidden when the scene's project is chapter-less (no
- * chapter to move to) or when the project link can't be resolved.
- *
- * Single-file scope per chapter-type Q2 deferral; multi-select bulk
- * moves are post-V1.
+ * "Move to chapter" for a scene whose project has at least one chapter.
+ * Hidden when the scene's project is chapter-less or when the project
+ * link can't be resolved. Single-file scope per chapter-type Q2 deferral.
  */
-function addMoveToChapterMenuItem(
+function moveToChapterItemSpecs(
 	plugin: DraftBenchPlugin,
-	menu: Menu,
 	file: TFile
-): void {
+): MenuItemSpec[] {
 	const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
-	if (!isSceneFrontmatter(fm)) return;
+	if (!isSceneFrontmatter(fm)) return [];
 	const projectId = fm['dbench-project-id'];
-	if (typeof projectId !== 'string' || projectId === '') return;
-
+	if (typeof projectId !== 'string' || projectId === '') return [];
 	const chapters = findChaptersInProject(plugin.app, projectId);
-	if (chapters.length === 0) return;
-
-	addRetrofitMenuItem(menu, 'Move to chapter', 'arrow-right-from-line', () => {
-		new MoveToChapterModal(plugin.app, { file, frontmatter: fm }).open();
-	});
+	if (chapters.length === 0) return [];
+	return [
+		{
+			title: 'Move to chapter',
+			icon: 'arrow-right-from-line',
+			onClick: () => {
+				new MoveToChapterModal(plugin.app, { file, frontmatter: fm }).open();
+			},
+		},
+	];
 }
 
 /**
- * Add "New draft of this chapter" on chapter notes. Snapshots the
- * chapter body plus child scenes via `NewChapterDraftModal` per
- * chapter-type Step 10. Hidden when frontmatter doesn't shape as a
- * chapter (defensive).
+ * "New draft of this chapter" on chapter notes. Snapshots the chapter
+ * body plus child scenes via `NewChapterDraftModal` per chapter-type
+ * Step 10. Hidden when frontmatter doesn't shape as a chapter.
  */
-function addNewChapterDraftMenuItem(
+function newChapterDraftItemSpecs(
 	plugin: DraftBenchPlugin,
 	linker: DraftBenchLinker,
-	menu: Menu,
 	file: TFile
-): void {
+): MenuItemSpec[] {
 	const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
-	if (!isChapterFrontmatter(fm)) return;
-
-	addRetrofitMenuItem(menu, 'New draft of this chapter', 'file-stack', () => {
-		new NewChapterDraftModal(
-			plugin.app,
-			plugin.settings,
-			linker,
-			{ file, frontmatter: fm }
-		).open();
-	});
+	if (!isChapterFrontmatter(fm)) return [];
+	return [
+		{
+			title: 'New draft of this chapter',
+			icon: 'file-stack',
+			onClick: () => {
+				new NewChapterDraftModal(
+					plugin.app,
+					plugin.settings,
+					linker,
+					{ file, frontmatter: fm }
+				).open();
+			},
+		},
+	];
 }

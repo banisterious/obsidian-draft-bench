@@ -1,4 +1,4 @@
-import type { Menu, TFile } from 'obsidian';
+import type { TFile } from 'obsidian';
 import type DraftBenchPlugin from '../../main';
 import {
 	compileAndNotify,
@@ -9,87 +9,98 @@ import {
 import type { DraftBenchLinker } from '../core/linker';
 import { isCompilePresetFrontmatter } from '../model/compile-preset';
 import { NewCompilePresetModal } from '../ui/modals/new-compile-preset-modal';
-import { addRetrofitMenuItem } from './shared';
+import type { MenuItemSpec } from './shared';
 
 /**
- * Compile-specific file-menu items, kept separate from
- * `file-menu.ts` so the dispatcher there stays readable. Each of
- * these helpers adds zero, one, or two items to the menu based on
- * the file type and its frontmatter state.
+ * Compile-specific menu specs, kept separate from `file-menu.ts` so the
+ * dispatcher there stays readable. Each helper returns zero, one, or
+ * two `MenuItemSpec` entries based on the file type and its frontmatter
+ * state. Callers (file-menu / editor-menu) merge these with retrofit
+ * specs and hand the combined list to `populateMenuSurface`.
  *
  * Parallel to the palette commands in `src/commands/run-compile.ts`,
  * `duplicate-compile-preset.ts`, `create-compile-preset.ts`, and
  * `compile-current-project.ts`. Shared execution logic lives in
- * `src/core/compile/operations.ts`; this module is purely menu
- * plumbing.
+ * `src/core/compile/operations.ts`; this module is purely menu plumbing.
  */
 
 /**
- * Run compile + Duplicate compile preset items for a compile-preset
- * note. Both entries act directly on `file` without any intermediate
- * picker — the preset is already the target.
+ * Run-compile + Duplicate-compile-preset entries for a compile-preset
+ * note. Both act directly on `file` without an intermediate picker —
+ * the preset is already the target.
  */
-export function addPresetMenuItems(
+export function presetItemSpecs(
 	plugin: DraftBenchPlugin,
 	linker: DraftBenchLinker,
-	menu: Menu,
 	file: TFile
-): void {
+): MenuItemSpec[] {
 	const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
-	if (!isCompilePresetFrontmatter(fm)) return;
+	if (!isCompilePresetFrontmatter(fm)) return [];
 	const preset = { file, frontmatter: fm };
-
-	addRetrofitMenuItem(menu, 'Run compile', 'play', () => {
-		void compileAndNotify(plugin.app, preset);
-	});
-	addRetrofitMenuItem(menu, 'Duplicate compile preset', 'copy', () => {
-		void duplicateAndOpen(plugin, linker, preset);
-	});
+	return [
+		{
+			title: 'Run compile',
+			icon: 'play',
+			onClick: () => {
+				void compileAndNotify(plugin.app, preset);
+			},
+		},
+		{
+			title: 'Duplicate compile preset',
+			icon: 'copy',
+			onClick: () => {
+				void duplicateAndOpen(plugin, linker, preset);
+			},
+		},
+	];
 }
 
 /**
- * Create compile preset item for a project note. Opens the existing
+ * Create-compile-preset entry for a project note. Opens
  * `NewCompilePresetModal` pre-scoped to this project so the writer
- * just supplies a name + format.
+ * supplies a name + format.
  */
-export function addProjectCompileItem(
+export function projectCompileItemSpecs(
 	plugin: DraftBenchPlugin,
 	linker: DraftBenchLinker,
-	menu: Menu,
 	file: TFile
-): void {
+): MenuItemSpec[] {
 	const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
-	if (!fm) return;
+	if (!fm) return [];
 	const project = resolveProjectForActive(plugin.app, file, fm);
-	if (!project) return;
-
-	addRetrofitMenuItem(menu, 'Create compile preset', 'file-plus-2', () => {
-		new NewCompilePresetModal(plugin.app, linker, project).open();
-	});
+	if (!project) return [];
+	return [
+		{
+			title: 'Create compile preset',
+			icon: 'file-plus-2',
+			onClick: () => {
+				new NewCompilePresetModal(plugin.app, linker, project).open();
+			},
+		},
+	];
 }
 
 /**
- * Compile current project item for a scene or draft. Skips silently
- * when the note's `dbench-project-id` doesn't resolve (integrity
- * service's job to flag that; the menu just shows nothing in the
- * meantime rather than surfacing a disabled affordance).
+ * Compile-current-project entry for a scene or draft. Skips silently
+ * when the note's `dbench-project-id` doesn't resolve (the integrity
+ * service flags that; the menu just shows nothing rather than a
+ * disabled affordance).
  */
-export function addSceneOrDraftCompileItem(
+export function sceneOrDraftCompileItemSpecs(
 	plugin: DraftBenchPlugin,
-	menu: Menu,
 	file: TFile
-): void {
+): MenuItemSpec[] {
 	const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
-	if (!fm) return;
+	if (!fm) return [];
 	const project = resolveProjectForActive(plugin.app, file, fm);
-	if (!project) return;
-
-	addRetrofitMenuItem(
-		menu,
-		'Compile current project',
-		'book-open-check',
-		() => {
-			void pickPresetAndCompile(plugin, project);
-		}
-	);
+	if (!project) return [];
+	return [
+		{
+			title: 'Compile current project',
+			icon: 'book-open-check',
+			onClick: () => {
+				void pickPresetAndCompile(plugin, project);
+			},
+		},
+	];
 }

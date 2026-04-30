@@ -11,7 +11,11 @@ import {
 	setAsProject,
 	setAsScene,
 } from '../core/retrofit';
-import { addRetrofitMenuItem, runBatch } from './shared';
+import {
+	populateMenuSurface,
+	runBatch,
+	type MenuItemSpec,
+} from './shared';
 
 /**
  * Populate the `files-menu` event's menu for a multi-file selection.
@@ -24,56 +28,93 @@ import { addRetrofitMenuItem, runBatch } from './shared';
  *
  * Non-markdown files in the selection are ignored. Items that would
  * have no applicable targets across the whole selection are omitted.
+ *
+ * Per #5, items appear under a `Draft Bench` submenu on desktop and a
+ * `Draft Bench:`-prefixed flat list on mobile.
  */
 export function buildFilesMenuItems(
 	plugin: DraftBenchPlugin,
 	menu: Menu,
 	targets: TAbstractFile[]
 ): void {
+	const specs = buildFilesMenuItemSpecs(plugin, targets);
+	populateMenuSurface(menu, specs);
+}
+
+function buildFilesMenuItemSpecs(
+	plugin: DraftBenchPlugin,
+	targets: TAbstractFile[]
+): MenuItemSpec[] {
 	const { app, settings } = plugin;
 	const files = targets.filter(
 		(f): f is TFile => f instanceof TFile && f.extension === 'md'
 	);
-	if (files.length === 0) return;
+	if (files.length === 0) return [];
 
 	const anyUntyped = files.some((f) => readDbenchType(app, f) === null);
 	const anyIncomplete = files.some((f) => hasMissingEssentials(app, f));
 	const anyMissingId = files.some((f) => hasMissingId(app, f));
 
+	const specs: MenuItemSpec[] = [];
+
 	if (anyUntyped) {
-		addRetrofitMenuItem(menu, 'Set as project', 'folder', () =>
-			runBatch(app, settings, files, setAsProject, {
-				action: 'Set as project',
-			})
-		);
-		addRetrofitMenuItem(menu, 'Set as chapter', 'book-marked', () =>
-			runBatch(app, settings, files, setAsChapter, {
-				action: 'Set as chapter',
-			})
-		);
-		addRetrofitMenuItem(menu, 'Set as scene', 'align-left', () =>
-			runBatch(app, settings, files, setAsScene, { action: 'Set as scene' })
-		);
-		addRetrofitMenuItem(menu, 'Set as draft', 'file-text', () =>
-			runBatch(app, settings, files, setAsDraft, { action: 'Set as draft' })
+		specs.push(
+			{
+				title: 'Set as project',
+				icon: 'folder',
+				onClick: () =>
+					runBatch(app, settings, files, setAsProject, {
+						action: 'Set as project',
+					}),
+			},
+			{
+				title: 'Set as chapter',
+				icon: 'book-marked',
+				onClick: () =>
+					runBatch(app, settings, files, setAsChapter, {
+						action: 'Set as chapter',
+					}),
+			},
+			{
+				title: 'Set as scene',
+				icon: 'align-left',
+				onClick: () =>
+					runBatch(app, settings, files, setAsScene, {
+						action: 'Set as scene',
+					}),
+			},
+			{
+				title: 'Set as draft',
+				icon: 'file-text',
+				onClick: () =>
+					runBatch(app, settings, files, setAsDraft, {
+						action: 'Set as draft',
+					}),
+			}
 		);
 	}
 
 	if (anyIncomplete) {
-		addRetrofitMenuItem(
-			menu,
-			'Complete essential properties',
-			'check-circle',
-			() =>
+		specs.push({
+			title: 'Complete essential properties',
+			icon: 'check-circle',
+			onClick: () =>
 				runBatch(app, settings, files, completeEssentials, {
 					action: 'Complete essential properties',
-				})
-		);
+				}),
+		});
 	}
 
 	if (anyMissingId) {
-		addRetrofitMenuItem(menu, 'Add identifier', 'hash', () =>
-			runBatch(app, settings, files, addDbenchId, { action: 'Add identifier' })
-		);
+		specs.push({
+			title: 'Add identifier',
+			icon: 'hash',
+			onClick: () =>
+				runBatch(app, settings, files, addDbenchId, {
+					action: 'Add identifier',
+				}),
+		});
 	}
+
+	return specs;
 }

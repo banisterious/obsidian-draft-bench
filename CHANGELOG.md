@@ -6,9 +6,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- All Draft Bench context-menu actions now appear under a single `Draft Bench` submenu (icon `scroll-text`) instead of cluttering the top level of Obsidian's right-click menu. On mobile (where Obsidian doesn't yet support submenus), items appear as a flat list with `Draft Bench:` prefixes. Smart visibility carries through unchanged: the submenu only appears when at least one action would change something. Refs #5.
+
+### Added
+
+- `editor-menu` registration: right-clicking inside an open editor now surfaces the same Draft Bench actions as the file-explorer right-click, scoped to the active note. Refs #5.
+
 ### Fixed
 
-- Linker now resolves wikilink-only relationship edits made via the Properties panel. Previously, setting a relationship wikilink (e.g., `dbench-scene: [[Some Scene]]` on a retrofitted draft) without also stamping the ID companion (`dbench-scene-id`) was silently ignored: the linker keys reconciliation off the ID companion, and a wikilink-only edit produced an empty ID, which the reconciler treated as no parent declared. The linker now resolves the wikilink against the candidate-parent pool, backfills the companion via `processFrontMatter`, then proceeds with normal reverse-array reconciliation. Affects all relationships where retrofit leaves a wikilink-empty placeholder: draft -> scene, draft -> chapter, scene -> chapter, scene -> project, chapter -> project. Closes #4.
+- Linker now resolves wikilink-only relationship edits made via the Properties panel. Previously, setting a relationship wikilink (e.g., `dbench-scene: [[Some Scene]]` on a retrofitted draft) without also stamping the ID companion (`dbench-scene-id`) was silently ignored: the linker keys reconciliation off the ID companion, and a wikilink-only edit produced an empty ID, which the reconciler treated as no parent declared. The linker now resolves the wikilink against the candidate-parent pool, backfills the companion via `processFrontMatter`, then proceeds with normal reverse-array reconciliation. Affects all relationships where retrofit leaves a wikilink-empty placeholder: draft -> scene, draft -> chapter, scene -> chapter, scene -> project, chapter -> project. Refs #4.
 
 ## [0.1.0] - 2026-04-29
 

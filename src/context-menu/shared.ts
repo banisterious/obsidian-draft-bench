@@ -1,10 +1,37 @@
-import { Notice, type App, type Menu, type TFile } from 'obsidian';
+import { Notice, Platform, type App, type Menu, type TFile } from 'obsidian';
 import type { DraftBenchSettings } from '../model/settings';
 import {
 	applyToFiles,
 	type BatchResult,
 	type RetrofitResult,
 } from '../core/retrofit';
+
+/**
+ * `MenuItem.setSubmenu()` exists in production Obsidian (used widely by
+ * community plugins) but isn't in the public typings yet. Augment the
+ * module so the desktop submenu branch in `populateMenuSurface` typechecks.
+ * Drop this when Obsidian's typings expose it.
+ */
+declare module 'obsidian' {
+	interface MenuItem {
+		setSubmenu(): Menu;
+	}
+}
+
+/**
+ * Brand label for the Draft Bench submenu (desktop) and the prefix
+ * applied to flat-mode item titles on mobile (e.g.,
+ * `Draft Bench: Set as project`). Centralized so a future rename or
+ * locale change touches one constant.
+ */
+export const DRAFT_BENCH_MENU_LABEL = 'Draft Bench';
+
+/**
+ * Lucide icon for the submenu entry. Matches the plugin's ribbon
+ * (`scroll-text` per `main.ts`) and the Manuscript view's icon, so the
+ * submenu reads as a continuation of the same brand surface.
+ */
+export const DRAFT_BENCH_MENU_ICON = 'scroll-text';
 
 /**
  * Shared context-menu helpers.
@@ -105,4 +132,64 @@ export function addRetrofitMenuItem(
 			.setSection('action')
 			.onClick(() => void onClick());
 	});
+}
+
+/**
+ * One Draft Bench context-menu action expressed as data, decoupled
+ * from where it lands in the menu (top-level submenu on desktop,
+ * top-level flat list with `Draft Bench:` prefix on mobile). The
+ * file-menu / files-menu / editor-menu builders return arrays of
+ * these and let `populateMenuSurface` choose the rendering branch.
+ */
+export interface MenuItemSpec {
+	/** Action title without any namespace prefix (e.g., `Set as project`). */
+	title: string;
+	/** Lucide icon name. */
+	icon: string;
+	/** Click handler; may be async. */
+	onClick: () => void | Promise<void>;
+}
+
+/**
+ * Render a list of Draft Bench menu specs onto Obsidian's right-click
+ * `menu`, branching on `Platform.isDesktop && !Platform.isMobile`:
+ *
+ * - **Desktop** — adds a separator, then a single `Draft Bench` item
+ *   whose `setSubmenu()` holds the specs as sub-items with their plain
+ *   titles. Collapses the plugin's contribution to one top-level entry.
+ * - **Mobile** — adds a separator, then each spec as a top-level item
+ *   with title `Draft Bench: <title>`. Obsidian's mobile menu doesn't
+ *   support submenus yet (per the
+ *   [context-menu reference](../../docs/planning/context-menu-reference.md)),
+ *   so the prefix preserves namespace-distinguishability.
+ *
+ * `specs.length === 0` is a no-op: no separator, no submenu, no flat
+ * items. Smart visibility (D-05) lives in the spec builders, not here;
+ * this function is purely render layer.
+ */
+export function populateMenuSurface(menu: Menu, specs: MenuItemSpec[]): void {
+	if (specs.length === 0) return;
+	const useSubmenu = Platform.isDesktop && !Platform.isMobile;
+	menu.addSeparator();
+	if (useSubmenu) {
+		menu.addItem((item) => {
+			const submenu = item
+				.setTitle(DRAFT_BENCH_MENU_LABEL)
+				.setIcon(DRAFT_BENCH_MENU_ICON)
+				.setSection('action')
+				.setSubmenu();
+			for (const spec of specs) {
+				addRetrofitMenuItem(submenu, spec.title, spec.icon, spec.onClick);
+			}
+		});
+	} else {
+		for (const spec of specs) {
+			addRetrofitMenuItem(
+				menu,
+				`${DRAFT_BENCH_MENU_LABEL}: ${spec.title}`,
+				spec.icon,
+				spec.onClick
+			);
+		}
+	}
 }

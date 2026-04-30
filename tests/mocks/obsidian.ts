@@ -46,6 +46,21 @@ export class TFolder {
 export interface CachedMetadata {
 	frontmatter?: Record<string, unknown>;
 	frontmatterPosition?: { start: unknown; end: unknown };
+	frontmatterLinks?: FrontmatterLinkCache[];
+}
+
+/**
+ * Mirrors Obsidian's `FrontmatterLinkCache`. Populated for each
+ * resolved wikilink reference in a file's frontmatter. `key` is the
+ * frontmatter property name; `link` is the link target (basename or
+ * path, possibly with subpath like `#section` or `^block`); `original`
+ * is the raw text. Tests seed this via `MetadataCache._setFrontmatterLinks`.
+ */
+export interface FrontmatterLinkCache {
+	key: string;
+	link: string;
+	original?: string;
+	displayText?: string;
 }
 
 /**
@@ -227,7 +242,19 @@ export class MetadataCache {
 
 	// Test helper: seed metadata for a file.
 	_setFrontmatter(file: TFile, frontmatter: Record<string, unknown>): void {
-		this.cache.set(file.path, { frontmatter });
+		const existing = this.cache.get(file.path);
+		this.cache.set(file.path, { ...existing, frontmatter });
+	}
+
+	// Test helper: seed Obsidian's resolved frontmatter-link cache for a
+	// file. Use this when a test needs to exercise the linker's
+	// `frontmatterLinks`-first resolution path (issue #6) — e.g., when
+	// the underlying YAML stored a wikilink as YAML flow notation
+	// (`dbench-scene: [[Foo]]` parses as a nested array but Obsidian
+	// still resolves it via `frontmatterLinks`).
+	_setFrontmatterLinks(file: TFile, links: FrontmatterLinkCache[]): void {
+		const existing = this.cache.get(file.path) ?? {};
+		this.cache.set(file.path, { ...existing, frontmatterLinks: links });
 	}
 
 	// Internal: used by Vault._rename to re-key a cache entry.

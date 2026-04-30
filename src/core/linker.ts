@@ -219,21 +219,29 @@ export class DraftBenchLinker {
 			? readString(childFm[config.childParentIdField])
 			: '';
 
-		// Wikilink-only retrofit backfill (issue #4). When a writer
-		// manually sets a relationship wikilink in the Properties panel
-		// (e.g., dbench-scene: [[Some Scene]]) without copying the
-		// parent's id into the companion (dbench-scene-id), the linker
-		// resolves the wikilink against the candidate-parent pool, finds
-		// the matching candidate by basename, and writes the companion
-		// field via processFrontMatter. The reconciliation in this pass
-		// then proceeds with the resolved id, so the parent's reverse
-		// arrays update on the same event. Without this, the relationship
-		// silently fails to register and the writer would have to
-		// hand-copy the parent's dbench-id into the companion field for
-		// every retrofitted draft / scene / chapter.
+		// Wikilink-only retrofit backfill (issues #4 and #6). When a
+		// writer manually sets a relationship wikilink in the Properties
+		// panel (e.g., dbench-scene: [[Some Scene]]) without copying the
+		// parent's id into the companion (dbench-scene-id), resolve the
+		// link, find the matching candidate parent, and write the
+		// companion via processFrontMatter. Reconciliation in this pass
+		// then proceeds with the resolved id so the parent's reverse
+		// arrays update on the same event.
+		//
+		// Resolution prefers Obsidian's `frontmatterLinks` cache: it
+		// authoritatively resolves the link regardless of how the YAML
+		// stored the value. The Properties panel saves wikilinks
+		// unquoted (`dbench-scene: [[Foo]]`), which YAML parses as a
+		// nested array — `parseWikilinkBasename` would miss that on its
+		// own. `frontmatterLinks` covers the case (#6); the raw-value
+		// parser stays as a defense-in-depth fallback for cases where
+		// the link cache isn't populated (older Obsidian, certain edge
+		// formats).
 		if (applies && declaredParentId === '') {
-			const wikilinkBasename = parseWikilinkBasename(
-				childFm[config.childParentWikilinkField]
+			const wikilinkBasename = this.resolveParentBasename(
+				childFile,
+				childFm,
+				config.childParentWikilinkField
 			);
 			if (wikilinkBasename !== '') {
 				const matched = config
@@ -289,6 +297,40 @@ export class DraftBenchLinker {
 				);
 			}
 		}
+	}
+
+	/**
+	 * Resolve the basename of the wikilink target stored at the given
+	 * frontmatter field on `childFile`. Used by the wikilink-only
+	 * retrofit backfill (#4 / #6) when the ID companion is empty.
+	 *
+	 * Two-tier resolution:
+	 *
+	 * 1. **`frontmatterLinks` cache** (authoritative). Obsidian
+	 *    populates this for every resolved wikilink reference in a
+	 *    file's frontmatter, regardless of YAML encoding (string,
+	 *    flow-notation, alias). The entry's `link` field is the link
+	 *    target, possibly with subpath; basename it.
+	 *
+	 * 2. **Raw frontmatter value** (fallback). Direct parse via
+	 *    `parseWikilinkBasename`, which handles the quoted-string and
+	 *    flow-notation forms. Useful when `frontmatterLinks` isn't
+	 *    populated (older Obsidian builds, certain edge cases).
+	 *
+	 * Returns `''` when neither path yields a basename.
+	 */
+	private resolveParentBasename(
+		childFile: TFile,
+		childFm: Record<string, unknown>,
+		fieldName: string
+	): string {
+		const cache = this.app.metadataCache.getFileCache(childFile);
+		const fmLink = cache?.frontmatterLinks?.find((l) => l.key === fieldName);
+		if (fmLink?.link) {
+			const basename = basenameFromLinkpath(fmLink.link);
+			if (basename !== '') return basename;
+		}
+		return parseWikilinkBasename(childFm[fieldName]);
 	}
 
 	private async ensureChildInReverse(
@@ -599,28 +641,15 @@ function basenameFromPath(filePath: string): string {
 }
 
 /**
- * Parse the target basename from a wikilink frontmatter value, stripping
- * any path prefix, alias (`|Display`), and heading (`#Section`) or block
- * (`^block`) reference. Returns `''` when the value isn't a recognizable
- * wikilink string. Used by the wikilink-only retrofit backfill (issue #4).
- *
- * Handles:
- * - `[[Basename]]`
- * - `[[Path/To/Basename]]`
- * - `[[Basename|Display Text]]`
- * - `[[Basename#Heading]]`
- * - `[[Basename^block]]`
- * - Combinations like `[[Path/Basename#Heading|Display]]`
- *
- * Does NOT handle multi-target wikilinks (frontmatter wikilink fields are
- * single-target by Draft Bench convention; arrays use the reverse-array
- * fields, not parent-pointer fields).
+ * Strip a Markdown linkpath down to the bare basename. Removes any path
+ * prefix (`Path/To/Foo`), alias (`Foo|Display`), heading reference
+ * (`Foo#Heading`), and block reference (`Foo^block`). Used by both the
+ * `frontmatterLinks` resolution path (where Obsidian's cache exposes
+ * the link as a string like `Path/Foo#Heading`) and the raw frontmatter
+ * fallback parser. Issue #4 / #6.
  */
-function parseWikilinkBasename(value: unknown): string {
-	if (typeof value !== 'string') return '';
-	const m = value.match(/^\[\[([^\]]+)\]\]$/);
-	if (!m) return '';
-	let target = m[1];
+function basenameFromLinkpath(linkpath: string): string {
+	let target = linkpath;
 	const pipeIdx = target.indexOf('|');
 	if (pipeIdx >= 0) target = target.slice(0, pipeIdx);
 	const hashIdx = target.indexOf('#');
@@ -630,4 +659,49 @@ function parseWikilinkBasename(value: unknown): string {
 	const slashIdx = target.lastIndexOf('/');
 	if (slashIdx >= 0) target = target.slice(slashIdx + 1);
 	return target.trim();
+}
+
+/**
+ * Parse the target basename from a raw frontmatter value, used as a
+ * fallback when Obsidian's `frontmatterLinks` cache doesn't expose the
+ * link (issue #6). Returns `''` when the value isn't a recognizable
+ * wikilink shape.
+ *
+ * Handles two on-disk forms:
+ *
+ * 1. **Quoted-string form** (`dbench-scene: "[[Basename]]"` in YAML):
+ *    `frontmatter[key]` is the literal string `'[[Basename]]'`. Supports
+ *    aliases, headings, block refs, and path prefixes inside the brackets.
+ *
+ * 2. **Flow-notation form** (`dbench-scene: [[Basename]]` without quotes):
+ *    YAML parses this as a nested array `[["Basename"]]` (an array of one
+ *    array of one string). Obsidian's Properties panel writes wikilinks
+ *    in this unquoted form by default, which is what surfaced #6. The
+ *    nested-array fallback covers writers who edit YAML in this shape
+ *    when the `frontmatterLinks` cache happens to be missing.
+ *
+ * Does NOT handle multi-target wikilinks. Frontmatter wikilink fields
+ * are single-target by Draft Bench convention; arrays use reverse-array
+ * fields, not parent-pointer fields.
+ */
+function parseWikilinkBasename(value: unknown): string {
+	// Quoted-string form: `dbench-scene: "[[Basename]]"`
+	if (typeof value === 'string') {
+		const m = value.match(/^\[\[([^\]]+)\]\]$/);
+		if (!m) return '';
+		return basenameFromLinkpath(m[1]);
+	}
+	// Flow-notation form: `dbench-scene: [[Basename]]` parses as a
+	// nested single-element array (Array(1) of Array(1) of string).
+	if (Array.isArray(value) && value.length === 1) {
+		const inner = value[0];
+		if (
+			Array.isArray(inner) &&
+			inner.length === 1 &&
+			typeof inner[0] === 'string'
+		) {
+			return basenameFromLinkpath(inner[0]);
+		}
+	}
+	return '';
 }

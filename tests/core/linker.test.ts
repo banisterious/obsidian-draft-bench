@@ -2421,3 +2421,323 @@ describe('DraftBenchLinker — wikilink-only retrofit backfill', () => {
 		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
 	});
 });
+
+/**
+ * Wikilink-only retrofit: frontmatterLinks resolution + nested-array
+ * fallback (issue #6).
+ *
+ * The original #4 fix parsed `frontmatter[key]` directly, which works
+ * when YAML stores the wikilink as a quoted string but misses the more
+ * common Properties-panel-edited form `dbench-scene: [[Foo]]` (no
+ * quotes). YAML parses that as a nested array. Obsidian still resolves
+ * the wikilink via its `frontmatterLinks` cache, so the linker prefers
+ * that cache as the authoritative resolver. The raw-value fallback now
+ * also handles the nested-array form for cases where `frontmatterLinks`
+ * isn't populated.
+ */
+describe('DraftBenchLinker — wikilink-only retrofit (frontmatterLinks + nested-array, #6)', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedFolderProject(
+		path: string,
+		id: string,
+		title: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'project',
+			'dbench-id': id,
+			'dbench-project': `[[${title}]]`,
+			'dbench-project-id': id,
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+		});
+		return file;
+	}
+
+	async function seedScene(
+		path: string,
+		id: string,
+		parentTitle: string,
+		parentId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'scene',
+			'dbench-id': id,
+			'dbench-project': `[[${parentTitle}]]`,
+			'dbench-project-id': parentId,
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	it('backfills via frontmatterLinks when YAML stores the wikilink as a nested array', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		const scene = await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const draft = await app.vault.create(
+			'Novel/Drafts/Opening - Draft 1.md',
+			''
+		);
+		// YAML flow-notation form (`dbench-scene: [[Opening]]` without
+		// quotes) parses as a nested single-element array — the exact
+		// shape the Properties panel produces and the bug from #6.
+		app.metadataCache._setFrontmatter(draft, {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-scene': [['Opening']],
+			'dbench-scene-id': '',
+			'dbench-draft-number': 1,
+		});
+		// Obsidian's resolver populates `frontmatterLinks` regardless of
+		// YAML encoding; seed it the way the live cache would have.
+		app.metadataCache._setFrontmatterLinks(draft, [
+			{
+				key: 'dbench-scene',
+				link: 'Opening',
+				original: '[[Opening]]',
+			},
+		]);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+
+		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(sceneFm?.['dbench-drafts']).toEqual(['[[Opening - Draft 1]]']);
+		expect(sceneFm?.['dbench-draft-ids']).toEqual(['drf-001-tst-001']);
+	});
+
+	it('falls back to nested-array parsing when frontmatterLinks is missing', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		const scene = await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const draft = await app.vault.create(
+			'Novel/Drafts/Opening - Draft 1.md',
+			''
+		);
+		// Nested-array form WITHOUT seeding frontmatterLinks: simulates
+		// older Obsidian or edge cases where the link cache isn't
+		// populated. The fallback parser should still resolve it.
+		app.metadataCache._setFrontmatter(draft, {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-scene': [['Opening']],
+			'dbench-scene-id': '',
+			'dbench-draft-number': 1,
+		});
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+
+		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(sceneFm?.['dbench-drafts']).toEqual(['[[Opening - Draft 1]]']);
+	});
+
+	it('frontmatterLinks resolution wins when both cache and raw value are present (handles aliases)', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		const scene = await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const draft = await app.vault.create(
+			'Novel/Drafts/Opening - Draft 1.md',
+			''
+		);
+		// Raw value is unparseable (free-form string Obsidian would
+		// reject), but frontmatterLinks has the resolved link. The
+		// linker should still backfill via the cache.
+		app.metadataCache._setFrontmatter(draft, {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-scene': 'Opening|Display Alias',
+			'dbench-scene-id': '',
+			'dbench-draft-number': 1,
+		});
+		app.metadataCache._setFrontmatterLinks(draft, [
+			{
+				key: 'dbench-scene',
+				link: 'Opening',
+				original: '[[Opening|Display Alias]]',
+				displayText: 'Display Alias',
+			},
+		]);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+
+		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(sceneFm?.['dbench-drafts']).toEqual(['[[Opening - Draft 1]]']);
+	});
+
+	it('handles frontmatterLinks with path-prefixed link target', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		const scene = await seedScene(
+			'Novel/Scenes/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const draft = await app.vault.create(
+			'Novel/Drafts/Opening - Draft 1.md',
+			''
+		);
+		app.metadataCache._setFrontmatter(draft, {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-scene': '',
+			'dbench-scene-id': '',
+			'dbench-draft-number': 1,
+		});
+		app.metadataCache._setFrontmatterLinks(draft, [
+			{
+				key: 'dbench-scene',
+				link: 'Novel/Scenes/Opening',
+				original: '[[Novel/Scenes/Opening]]',
+			},
+		]);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(sceneFm?.['dbench-drafts']).toEqual(['[[Opening - Draft 1]]']);
+	});
+
+	it('handles frontmatterLinks with subpath (heading reference)', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		const scene = await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const draft = await app.vault.create(
+			'Novel/Drafts/Opening - Draft 1.md',
+			''
+		);
+		app.metadataCache._setFrontmatter(draft, {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-scene': '',
+			'dbench-scene-id': '',
+			'dbench-draft-number': 1,
+		});
+		app.metadataCache._setFrontmatterLinks(draft, [
+			{
+				key: 'dbench-scene',
+				link: 'Opening#First Section',
+				original: '[[Opening#First Section]]',
+			},
+		]);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+	});
+
+	it('skips backfill when frontmatterLinks targets a non-candidate (wrong type)', async () => {
+		// Project + scene + a chapter the user mistyped into dbench-scene.
+		const project = await seedFolderProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const draft = await app.vault.create(
+			'Novel/Drafts/Opening - Draft 1.md',
+			''
+		);
+		app.metadataCache._setFrontmatter(draft, {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-scene': '',
+			'dbench-scene-id': '',
+			'dbench-draft-number': 1,
+		});
+		// frontmatterLinks points at the project (wrong type for a
+		// dbench-scene field). The linker resolves the basename but
+		// finds no matching candidate in the scene-parent pool, so it
+		// skips the backfill.
+		app.metadataCache._setFrontmatterLinks(draft, [
+			{
+				key: 'dbench-scene',
+				link: 'Novel',
+				original: '[[Novel]]',
+			},
+		]);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('');
+
+		const projectFm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(projectFm?.['dbench-scenes']).toEqual([]);
+	});
+});

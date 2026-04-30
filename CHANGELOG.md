@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-04-30
+
+Follow-up to the wikilink-only retrofit fix from 0.1.1.
+
+### Fixed
+
+- Linker now consults Obsidian's `frontmatterLinks` cache when backfilling the ID companion on a wikilink-only relationship edit. The 0.1.1 fix parsed the raw frontmatter value, which works when YAML stores the wikilink as a quoted string (`dbench-scene: "[[Some Scene]]"`) but missed the more common form Obsidian's Properties panel writes (`dbench-scene: [[Some Scene]]` without quotes). YAML parses the unquoted form as a nested array, which the parser didn't recognize. The linker now reads `frontmatterLinks` (Obsidian's resolved-link cache, populated regardless of YAML encoding) as the primary resolution path; the raw-value parser stays as a fallback and now handles the nested-array form too. Refs #6.
+
+### Notes
+
+- Tests: 935 unit + integration tests, all green at release.
+- Bundle size and platform support: unchanged from 0.1.1.
+
 ## [0.1.1] - 2026-04-30
 
 First incremental release after the 0.1.0 launch. Surfaced from real-vault migration testing on a writer's existing four-project Fiction folder.

@@ -4,6 +4,19 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.1.2: 2026-04-30 — wikilink-only retrofit fix (frontmatterLinks)
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.1.2)
+
+Follow-up to the wikilink-only retrofit fix from 0.1.1. The 0.1.1 fix parsed the raw frontmatter value, which works for YAML-quoted wikilinks (`dbench-scene: "[[Some Scene]]"`) but missed the unquoted form Obsidian's Properties panel writes by default (`dbench-scene: [[Some Scene]]`). YAML parses the unquoted form as a nested array, which the parser didn't recognize.
+
+Highlights:
+
+- The linker now consults Obsidian's `frontmatterLinks` cache when backfilling the ID companion. That cache holds the resolved link target regardless of how the YAML stored the value, so the backfill works for both quoted and unquoted forms. Refs #6.
+- The raw-value parser stays as a defense-in-depth fallback and now also handles the nested-array form for cases where `frontmatterLinks` isn't populated.
+
+935 unit + integration tests, all green. Desktop-only.
+
 ## 0.1.1: 2026-04-30 — context-menu refactor + retrofit fixes
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.1.1)

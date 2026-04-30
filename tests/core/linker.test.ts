@@ -1971,3 +1971,453 @@ describe('DraftBenchLinker — chapter<->draft sync', () => {
 		expect(scFm?.['dbench-draft-ids']).toEqual([]);
 	});
 });
+
+/**
+ * Wikilink-only retrofit backfill (issue #4).
+ *
+ * Covers the scenario where a writer manually sets a relationship wikilink
+ * in the Properties panel — e.g., `dbench-scene: [[Some Scene]]` on a
+ * retrofitted draft — without also copying the parent's id into the
+ * companion field (`dbench-scene-id`). Pre-fix, the linker silently did
+ * nothing because reconciliation keys off the id companion. The fix
+ * resolves the wikilink against the candidate-parent pool, backfills the
+ * companion via processFrontMatter, then proceeds with normal reverse-
+ * array reconciliation.
+ */
+describe('DraftBenchLinker — wikilink-only retrofit backfill', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedFolderProject(
+		path: string,
+		id: string,
+		title: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'project',
+			'dbench-id': id,
+			'dbench-project': `[[${title}]]`,
+			'dbench-project-id': id,
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+			'dbench-chapters': [],
+			'dbench-chapter-ids': [],
+		});
+		return file;
+	}
+
+	async function seedScene(
+		path: string,
+		id: string,
+		parentTitle: string,
+		parentId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'scene',
+			'dbench-id': id,
+			'dbench-project': `[[${parentTitle}]]`,
+			'dbench-project-id': parentId,
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	/**
+	 * Seed a draft with the project ref (auto-inferred during retrofit)
+	 * and a writer-typed `dbench-scene` wikilink, but with the
+	 * `dbench-scene-id` companion left empty. This is the exact post-
+	 * Set-as-draft + manual-Properties-edit state that triggered #4.
+	 */
+	async function seedRetrofitDraft(
+		path: string,
+		id: string,
+		sceneWikilink: string,
+		projectTitle: string,
+		projectId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'draft',
+			'dbench-id': id,
+			'dbench-project': `[[${projectTitle}]]`,
+			'dbench-project-id': projectId,
+			'dbench-scene': sceneWikilink,
+			'dbench-scene-id': '',
+			'dbench-draft-number': 1,
+		});
+		return file;
+	}
+
+	it('backfills dbench-scene-id when only dbench-scene wikilink is set on a draft', async () => {
+		const project = await seedFolderProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const scene = await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		const draft = await seedRetrofitDraft(
+			'Novel/Drafts/Opening - Draft 1.md',
+			'drf-001-tst-001',
+			'[[Opening]]',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		expect(
+			app.metadataCache.getFileCache(draft)?.frontmatter?.['dbench-scene-id']
+		).toBe('');
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		// Companion was backfilled on the draft.
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+
+		// Reverse arrays were updated on the scene.
+		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(sceneFm?.['dbench-drafts']).toEqual(['[[Opening - Draft 1]]']);
+		expect(sceneFm?.['dbench-draft-ids']).toEqual(['drf-001-tst-001']);
+
+		// Project's reverse arrays untouched (folder-shape projects don't
+		// hold drafts in their reverse arrays; only scenes do).
+		const projectFm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(projectFm?.['dbench-scenes']).toEqual([]);
+	});
+
+	it('skips backfill when both wikilink and companion are empty', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		const draft = await seedRetrofitDraft(
+			'Novel/Drafts/Opening - Draft 1.md',
+			'drf-001-tst-001',
+			'',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('');
+		expect(draftFm?.['dbench-scene']).toBe('');
+	});
+
+	it('skips backfill when wikilink does not resolve to any candidate parent', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		const draft = await seedRetrofitDraft(
+			'Novel/Drafts/Opening - Draft 1.md',
+			'drf-001-tst-001',
+			'[[NonexistentScene]]',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('');
+	});
+
+	it('skips backfill when resolved candidate has empty dbench-id', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		// Seed a scene with empty dbench-id (corrupt or partially-typed).
+		const orphanScene = await app.vault.create('Novel/Orphan.md', '');
+		app.metadataCache._setFrontmatter(orphanScene, {
+			'dbench-type': 'scene',
+			'dbench-id': '',
+			'dbench-project': `[[Novel]]`,
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		const draft = await seedRetrofitDraft(
+			'Novel/Drafts/Orphan - Draft 1.md',
+			'drf-001-tst-001',
+			'[[Orphan]]',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('');
+	});
+
+	it('handles [[Path/Basename]] path-prefixed wikilink format', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		const scene = await seedScene(
+			'Novel/Scenes/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		const draft = await seedRetrofitDraft(
+			'Novel/Drafts/Opening - Draft 1.md',
+			'drf-001-tst-001',
+			'[[Novel/Scenes/Opening]]',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+
+		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(sceneFm?.['dbench-drafts']).toEqual(['[[Opening - Draft 1]]']);
+	});
+
+	it('handles [[Basename|Display]] aliased wikilink format', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		const scene = await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		const draft = await seedRetrofitDraft(
+			'Novel/Drafts/Opening - Draft 1.md',
+			'drf-001-tst-001',
+			'[[Opening|The First Scene]]',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+
+		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(sceneFm?.['dbench-drafts']).toEqual(['[[Opening - Draft 1]]']);
+	});
+
+	it('handles [[Basename#Heading]] heading-reference wikilink format', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		const scene = await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		const draft = await seedRetrofitDraft(
+			'Novel/Drafts/Opening - Draft 1.md',
+			'drf-001-tst-001',
+			'[[Opening#First Section]]',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+	});
+
+	it('backfills scene to project (folder shape) wikilink', async () => {
+		const project = await seedFolderProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		// Seed a scene with project wikilink set but project-id companion empty.
+		const scene = await app.vault.create('Novel/Opening.md', '');
+		app.metadataCache._setFrontmatter(scene, {
+			'dbench-type': 'scene',
+			'dbench-id': 'sc1-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': '',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+
+		app.metadataCache._fire('changed', scene);
+		await flush();
+
+		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(sceneFm?.['dbench-project-id']).toBe('prj-001-tst-001');
+
+		const projectFm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(projectFm?.['dbench-scenes']).toEqual(['[[Opening]]']);
+		expect(projectFm?.['dbench-scene-ids']).toEqual(['sc1-001-tst-001']);
+	});
+
+	it('skips scene to project backfill when scene is in a chapter (appliesToChild=false)', async () => {
+		const project = await seedFolderProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const chapter = await app.vault.create('Novel/Ch01.md', '');
+		app.metadataCache._setFrontmatter(chapter, {
+			'dbench-type': 'chapter',
+			'dbench-id': 'chp-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+
+		// Scene-in-chapter: project wikilink set but companion empty,
+		// AND chapter-id is also set (the appliesToChild gate fires).
+		const scene = await app.vault.create('Novel/Opening.md', '');
+		app.metadataCache._setFrontmatter(scene, {
+			'dbench-type': 'scene',
+			'dbench-id': 'sc1-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': '',
+			'dbench-chapter': '[[Ch01]]',
+			'dbench-chapter-id': 'chp-001-tst-001',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+
+		app.metadataCache._fire('changed', scene);
+		await flush();
+
+		const sceneFm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		// scene→project backfill skipped: appliesToChild gates it out.
+		expect(sceneFm?.['dbench-project-id']).toBe('');
+		// Project's reverse arrays stay empty (scene-in-chapter doesn't
+		// belong in the project's direct scenes).
+		const projectFm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(projectFm?.['dbench-scenes']).toEqual([]);
+		// Chapter's reverse arrays correctly hold the scene.
+		const chapterFm = app.metadataCache.getFileCache(chapter)?.frontmatter;
+		expect(chapterFm?.['dbench-scenes']).toEqual(['[[Opening]]']);
+		expect(chapterFm?.['dbench-scene-ids']).toEqual(['sc1-001-tst-001']);
+	});
+
+	it('backfills chapter to project wikilink', async () => {
+		const project = await seedFolderProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const chapter = await app.vault.create('Novel/Ch01.md', '');
+		app.metadataCache._setFrontmatter(chapter, {
+			'dbench-type': 'chapter',
+			'dbench-id': 'chp-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': '',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+
+		app.metadataCache._fire('changed', chapter);
+		await flush();
+
+		const chapterFm = app.metadataCache.getFileCache(chapter)?.frontmatter;
+		expect(chapterFm?.['dbench-project-id']).toBe('prj-001-tst-001');
+
+		const projectFm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(projectFm?.['dbench-chapters']).toEqual(['[[Ch01]]']);
+		expect(projectFm?.['dbench-chapter-ids']).toEqual(['chp-001-tst-001']);
+	});
+
+	it('does not interfere when companion is already set (no double-write)', async () => {
+		const project = await seedFolderProject(
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel'
+		);
+		const scene = await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+		// Pre-stamp the project's reverse arrays so they're already in sync.
+		app.metadataCache._setFrontmatter(project, {
+			...(app.metadataCache.getFileCache(project)?.frontmatter ?? {}),
+			'dbench-scenes': ['[[Opening]]'],
+			'dbench-scene-ids': ['sc1-001-tst-001'],
+		});
+
+		// Seed a draft with BOTH wikilink AND companion correctly set
+		// (created via createDraft, not via wikilink-only retrofit).
+		const draft = await app.vault.create(
+			'Novel/Drafts/Opening - Draft 1.md',
+			''
+		);
+		app.metadataCache._setFrontmatter(draft, {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-tst-001',
+			'dbench-project': `[[Novel]]`,
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-scene': '[[Opening]]',
+			'dbench-scene-id': 'sc1-001-tst-001',
+			'dbench-draft-number': 1,
+		});
+		app.metadataCache._setFrontmatter(scene, {
+			...(app.metadataCache.getFileCache(scene)?.frontmatter ?? {}),
+			'dbench-drafts': ['[[Opening - Draft 1]]'],
+			'dbench-draft-ids': ['drf-001-tst-001'],
+		});
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		// Companion stays the same (never overwritten by backfill).
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+	});
+});

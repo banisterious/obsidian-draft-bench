@@ -215,9 +215,45 @@ export class DraftBenchLinker {
 		// the project's reverse arrays list direct children only, so the
 		// scene must not appear there.
 		const applies = config.appliesToChild?.(childFm) ?? true;
-		const declaredParentId = applies
+		let declaredParentId = applies
 			? readString(childFm[config.childParentIdField])
 			: '';
+
+		// Wikilink-only retrofit backfill (issue #4). When a writer
+		// manually sets a relationship wikilink in the Properties panel
+		// (e.g., dbench-scene: [[Some Scene]]) without copying the
+		// parent's id into the companion (dbench-scene-id), the linker
+		// resolves the wikilink against the candidate-parent pool, finds
+		// the matching candidate by basename, and writes the companion
+		// field via processFrontMatter. The reconciliation in this pass
+		// then proceeds with the resolved id, so the parent's reverse
+		// arrays update on the same event. Without this, the relationship
+		// silently fails to register and the writer would have to
+		// hand-copy the parent's dbench-id into the companion field for
+		// every retrofitted draft / scene / chapter.
+		if (applies && declaredParentId === '') {
+			const wikilinkBasename = parseWikilinkBasename(
+				childFm[config.childParentWikilinkField]
+			);
+			if (wikilinkBasename !== '') {
+				const matched = config
+					.candidateParents(this.app)
+					.find((c) => c.file.basename === wikilinkBasename);
+				if (matched) {
+					const matchedId = readString(matched.frontmatter['dbench-id']);
+					if (matchedId !== '') {
+						await this.app.fileManager.processFrontMatter(
+							childFile,
+							(fm) => {
+								fm[config.childParentIdField] = matchedId;
+							}
+						);
+						declaredParentId = matchedId;
+					}
+				}
+			}
+		}
+
 		const childWikilink = `[[${childFile.basename}]]`;
 
 		for (const candidate of config.candidateParents(this.app)) {
@@ -369,6 +405,14 @@ export class DraftBenchLinker {
 interface RelationshipConfig {
 	/** Field on the child holding the parent's stable id, e.g., `dbench-project-id`. */
 	childParentIdField: string;
+	/**
+	 * Field on the child holding the parent's wikilink, e.g., `dbench-project`.
+	 * Used by the wikilink-only retrofit backfill: when the writer manually
+	 * sets the wikilink in the Properties panel without copying the parent's
+	 * id into the companion, the linker resolves the wikilink against the
+	 * candidate-parent pool and writes the companion field. See issue #4.
+	 */
+	childParentWikilinkField: string;
 	/** Reverse-array field on the parent holding wikilinks, e.g., `dbench-scenes`. */
 	parentWikilinkField: string;
 	/** Reverse-array field on the parent holding stable ids, e.g., `dbench-scene-ids`. */
@@ -425,6 +469,7 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 	chapter: [
 		{
 			childParentIdField: 'dbench-project-id',
+			childParentWikilinkField: 'dbench-project',
 			parentWikilinkField: 'dbench-chapters',
 			parentIdField: 'dbench-chapter-ids',
 			candidateParents: (app) =>
@@ -437,6 +482,7 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 	scene: [
 		{
 			childParentIdField: 'dbench-project-id',
+			childParentWikilinkField: 'dbench-project',
 			parentWikilinkField: 'dbench-scenes',
 			parentIdField: 'dbench-scene-ids',
 			candidateParents: (app) =>
@@ -448,6 +494,7 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 		},
 		{
 			childParentIdField: 'dbench-chapter-id',
+			childParentWikilinkField: 'dbench-chapter',
 			parentWikilinkField: 'dbench-scenes',
 			parentIdField: 'dbench-scene-ids',
 			candidateParents: (app) =>
@@ -460,6 +507,7 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 	draft: [
 		{
 			childParentIdField: 'dbench-scene-id',
+			childParentWikilinkField: 'dbench-scene',
 			parentWikilinkField: 'dbench-drafts',
 			parentIdField: 'dbench-draft-ids',
 			candidateParents: (app) =>
@@ -470,6 +518,7 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 		},
 		{
 			childParentIdField: 'dbench-chapter-id',
+			childParentWikilinkField: 'dbench-chapter',
 			parentWikilinkField: 'dbench-drafts',
 			parentIdField: 'dbench-draft-ids',
 			candidateParents: (app) =>
@@ -480,6 +529,7 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 		},
 		{
 			childParentIdField: 'dbench-project-id',
+			childParentWikilinkField: 'dbench-project',
 			parentWikilinkField: 'dbench-drafts',
 			parentIdField: 'dbench-draft-ids',
 			candidateParents: (app) =>
@@ -499,6 +549,7 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 	'compile-preset': [
 		{
 			childParentIdField: 'dbench-project-id',
+			childParentWikilinkField: 'dbench-project',
 			parentWikilinkField: 'dbench-compile-presets',
 			parentIdField: 'dbench-compile-preset-ids',
 			candidateParents: (app) =>
@@ -545,4 +596,38 @@ function basenameFromPath(filePath: string): string {
 	const tail = slash >= 0 ? filePath.slice(slash + 1) : filePath;
 	const dot = tail.lastIndexOf('.');
 	return dot > 0 ? tail.slice(0, dot) : tail;
+}
+
+/**
+ * Parse the target basename from a wikilink frontmatter value, stripping
+ * any path prefix, alias (`|Display`), and heading (`#Section`) or block
+ * (`^block`) reference. Returns `''` when the value isn't a recognizable
+ * wikilink string. Used by the wikilink-only retrofit backfill (issue #4).
+ *
+ * Handles:
+ * - `[[Basename]]`
+ * - `[[Path/To/Basename]]`
+ * - `[[Basename|Display Text]]`
+ * - `[[Basename#Heading]]`
+ * - `[[Basename^block]]`
+ * - Combinations like `[[Path/Basename#Heading|Display]]`
+ *
+ * Does NOT handle multi-target wikilinks (frontmatter wikilink fields are
+ * single-target by Draft Bench convention; arrays use the reverse-array
+ * fields, not parent-pointer fields).
+ */
+function parseWikilinkBasename(value: unknown): string {
+	if (typeof value !== 'string') return '';
+	const m = value.match(/^\[\[([^\]]+)\]\]$/);
+	if (!m) return '';
+	let target = m[1];
+	const pipeIdx = target.indexOf('|');
+	if (pipeIdx >= 0) target = target.slice(0, pipeIdx);
+	const hashIdx = target.indexOf('#');
+	if (hashIdx >= 0) target = target.slice(0, hashIdx);
+	const caretIdx = target.indexOf('^');
+	if (caretIdx >= 0) target = target.slice(0, caretIdx);
+	const slashIdx = target.lastIndexOf('/');
+	if (slashIdx >= 0) target = target.slice(slashIdx + 1);
+	return target.trim();
 }

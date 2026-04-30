@@ -41,6 +41,12 @@ If the [Style Settings plugin](https://github.com/mgmeyers/obsidian-style-settin
 - **Scene leaf**: font family, font size, line height, max width, background, text color.
 - **Draft leaf (archival cue)**: background, text color, left border. Defaults to a visually distinct appearance signaling "this is an archived snapshot, not the live scene."
 
+<p align="center">
+  <img src="https://draftbench.io/img/dbench-style-settings.png"
+       alt="The Style Settings panel in Obsidian, showing the Draft Bench section expanded with sliders and color pickers for scene-leaf typography (font family, size, line height, max width) and draft-leaf archival cue (border, background, text color)."
+       width="800">
+</p>
+
 Without Style Settings, the CSS classes (`.dbench-scene`, `.dbench-draft`) are still applied; you can style them via your theme or a CSS snippet.
 
 ## About

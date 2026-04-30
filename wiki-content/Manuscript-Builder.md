@@ -49,11 +49,28 @@ Per-preset overrides for the five content-handling rules that have meaningful pe
 
 The default is auto-selected when the preset is created based on the project's shape; you can override later via the Compile tab. Existing presets are never silently changed when a project gains chapters.
 
+A compile preset is itself a note in the vault. Its content-handling rules live in the note's frontmatter, editable from the Properties panel as well as from the Manuscript Builder modal:
+
+<p align="center">
+  <img src="https://draftbench.io/img/dbench-compile-preset-properties.png"
+       alt="A Draft Bench compile preset note open in Obsidian's Properties panel, showing the dbench-compile-* fields for output format, heading scope, frontmatter handling, embeds, dinkuses, and other content-handling rules."
+       width="800">
+</p>
+
 ### Last compile
 
 Read-only display of when the preset last compiled, where the output landed, and how many scenes have changed since (computed from per-scene content hashes).
 
 ## Run compile
+
+<p align="center">
+  <video controls width="800"
+         src="https://draftbench.io/img/dbench-compile-flow.webm"
+         aria-label="The compile flow: clicking Compile in the Manuscript view opens the Manuscript Builder modal, the Run compile action runs the preset, and the resulting markdown manuscript opens in the vault.">
+    Your browser doesn't support embedded video.
+    <a href="https://draftbench.io/img/dbench-compile-flow.webm">Watch the loop on draftbench.io</a>.
+  </video>
+</p>
 
 The **Run compile** button at the top of the modal runs the active preset end to end: walks scenes in order, applies content-handling rules, renders the chosen format, writes the output. A success notice surfaces the output path; if any embeds were stripped from the output (images, audio, video, base files, note embeds), a second notice line summarizes counts by category.
 

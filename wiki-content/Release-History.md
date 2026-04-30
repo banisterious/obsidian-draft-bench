@@ -4,7 +4,30 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.1.1: 2026-04-30 — context-menu refactor + retrofit fixes
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.1.1)
+
+First incremental release after the 0.1.0 launch. Surfaced from real-vault migration testing on a writer's existing four-project Fiction folder.
+
+Highlights:
+
+- **Draft Bench submenu for context-menu actions**: all plugin entries now live under a single `Draft Bench` submenu in Obsidian's right-click menu (icon `scroll-text`), instead of cluttering the top level. Mobile fallback ships as a flat `Draft Bench:`-prefixed list since Obsidian doesn't support submenus on mobile yet. Refs #5.
+- **Editor-menu support**: right-clicking inside an open editor now surfaces the same actions as right-clicking the file in the explorer. Refs #5.
+- **Wikilink-only relationship edits now work**: setting a relationship wikilink (e.g., `dbench-scene: [[Some Scene]]` on a retrofitted draft) via the Properties panel previously required also hand-copying the parent's `dbench-id` into the companion field. The linker now resolves the wikilink against the candidate-parent pool and backfills the companion automatically, then proceeds with normal reverse-array reconciliation. Affects all relationship retrofits. Refs #4.
+- **Folder-scope `Set as project` is folder-note-aware**: previously, right-clicking a project folder and picking `Set as project` would batch-stamp every markdown file inside (including scene siblings) as a project. The action now only appears when the folder contains an untyped markdown file matching the folder's name (case-insensitive), and stamps only that file. Other folder-scope retrofits keep their batch behavior. Refs #3.
+
+929 unit + integration tests, all green. Desktop-only.
+
 ## 0.1.0: 2026-04-29 — first BRAT-public release
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.1.0)
+
+<p align="center">
+  <img src="https://draftbench.io/img/dbench-bases-projects.png"
+       alt="A Draft Bench Bases view listing projects with their type, status, target word count, and other dbench- frontmatter columns."
+       width="800">
+</p>
 
 Ships the full V1 feature set per the [specification](https://github.com/banisterious/obsidian-draft-bench/blob/main/docs/planning/specification.md). API and data shape may still adjust between minor versions during the 0.x phase; see [VERSIONING.md](https://github.com/banisterious/obsidian-draft-bench/blob/main/VERSIONING.md).
 
@@ -17,7 +40,7 @@ Highlights:
 - Drafts: scene drafts, chapter drafts (concatenated body + scenes with boundary markers), single-scene-project drafts.
 - Templates: built-in scene + chapter templates, plugin-token substitution, Templater pass-through, multi-template discovery via `dbench-template-type` frontmatter.
 - Linker + integrity service with batch repair via the `Repair project links` command.
-- Retrofit: `Set as project / chapter / scene / draft`, complete-essential-properties, add-identifier — all with folder-based inference.
+- Retrofit actions (`Set as project / chapter / scene / draft`, complete essential properties, add identifier) with folder-based inference.
 - Bases starter views, Style Settings integration, configurable status vocabulary.
 - Onboarding: welcome modal, example-project generator, first-project auto-reveal.
 

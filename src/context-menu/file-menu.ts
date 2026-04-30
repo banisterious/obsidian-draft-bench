@@ -226,15 +226,32 @@ function buildFolderItemSpecs(
 	const files = collectMarkdownFiles(app, folder);
 	if (files.length === 0) return [];
 	const { settings } = plugin;
-	return [
-		{
+	const specs: MenuItemSpec[] = [];
+
+	// Smart `Set as project` at folder scope (#3): when the folder
+	// follows the conventional folder-note pattern (a markdown file
+	// matching the folder's name), target only that file rather than
+	// blanket-stamping every markdown child as a project. Hidden when
+	// no folder-note exists or when the folder-note is already typed
+	// (idempotent skip would just produce a "no change" notice). Other
+	// folder-scope retrofits keep their batch behavior since their
+	// semantics naturally apply across all markdown children.
+	const folderNote = findFolderNote(folder);
+	if (folderNote && readDbenchType(app, folderNote) === null) {
+		specs.push({
 			title: 'Set as project',
 			icon: 'folder',
-			onClick: () =>
-				runBatch(app, settings, files, setAsProject, {
-					action: 'Set as project',
-				}),
-		},
+			onClick: async () => {
+				const result = await setAsProject(app, settings, folderNote);
+				noticeForSingleFile(result, {
+					success: 'Set as project',
+					failureVerb: 'set as project',
+				});
+			},
+		});
+	}
+
+	specs.push(
 		{
 			title: 'Set as chapter',
 			icon: 'book-marked',
@@ -274,8 +291,35 @@ function buildFolderItemSpecs(
 				runBatch(app, settings, files, addDbenchId, {
 					action: 'Add identifier',
 				}),
-		},
-	];
+		}
+	);
+	return specs;
+}
+
+/**
+ * Detect the folder-note convention (`<Folder>/<Folder>.md`,
+ * case-insensitive). Returns the matching direct-child markdown file
+ * if one exists, or `null` otherwise. Folder-scope `Set as project`
+ * uses this to target a single file rather than blanket-stamping the
+ * whole folder.
+ *
+ * Walks `folder.children` (direct children only) rather than the
+ * recursive `collectMarkdownFiles` result so a sub-folder with a same-
+ * named file (e.g., `Novel/Drafts/Novel.md`) doesn't accidentally
+ * match.
+ */
+function findFolderNote(folder: TFolder): TFile | null {
+	const target = folder.name.toLowerCase();
+	for (const child of folder.children) {
+		if (
+			child instanceof TFile &&
+			child.extension === 'md' &&
+			child.basename.toLowerCase() === target
+		) {
+			return child;
+		}
+	}
+	return null;
 }
 
 /**

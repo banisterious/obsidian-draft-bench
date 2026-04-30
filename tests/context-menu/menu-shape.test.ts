@@ -347,6 +347,161 @@ describe('buildEditorMenuItems — editor surface', () => {
 	});
 });
 
+describe('buildFileMenuItems — folder-scope smart Set as project (#3)', () => {
+	let app: App;
+	let plugin: TestPlugin;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		Platform.isDesktop = true;
+		Platform.isMobile = false;
+		app = new App();
+		plugin = makeTestPlugin(app);
+		linker = new DraftBenchLinker(app, () => plugin.settings);
+	});
+
+	it('shows Set as project targeting the folder-note only (case-insensitive match)', async () => {
+		const folderNote = await app.vault.create('Novel/Novel.md', '');
+		const scene1 = await app.vault.create('Novel/Scene 1.md', '');
+		const scene2 = await app.vault.create('Novel/Scene 2.md', '');
+		const folder = new TFolder({
+			path: 'Novel',
+			name: 'Novel',
+			children: [folderNote, scene1, scene2],
+		});
+
+		const menu = new Menu();
+		buildFileMenuItems(plugin, linker, menu, folder);
+
+		const submenu = menu._findSubmenu('Draft Bench');
+		expect(submenu).not.toBeNull();
+		const titles = submenu?._items().map((i) => i.title) ?? [];
+		expect(titles).toContain('Set as project');
+
+		// Click Set as project; only the folder-note should get retrofitted.
+		const setProjectItem = submenu?._findItem('Set as project');
+		await setProjectItem?.clickHandler?.();
+
+		const folderNoteFm = app.metadataCache.getFileCache(folderNote)?.frontmatter;
+		const scene1Fm = app.metadataCache.getFileCache(scene1)?.frontmatter;
+		const scene2Fm = app.metadataCache.getFileCache(scene2)?.frontmatter;
+
+		expect(folderNoteFm?.['dbench-type']).toBe('project');
+		expect(scene1Fm?.['dbench-type']).toBeUndefined();
+		expect(scene2Fm?.['dbench-type']).toBeUndefined();
+	});
+
+	it('matches folder-note case-insensitively', async () => {
+		const folderNote = await app.vault.create('NOVEL/novel.md', '');
+		const folder = new TFolder({
+			path: 'NOVEL',
+			name: 'NOVEL',
+			children: [folderNote],
+		});
+
+		const menu = new Menu();
+		buildFileMenuItems(plugin, linker, menu, folder);
+
+		const submenu = menu._findSubmenu('Draft Bench');
+		const titles = submenu?._items().map((i) => i.title) ?? [];
+		expect(titles).toContain('Set as project');
+	});
+
+	it('hides Set as project when no folder-note exists', async () => {
+		const scene1 = await app.vault.create('Novel/Scene 1.md', '');
+		const scene2 = await app.vault.create('Novel/Scene 2.md', '');
+		const folder = new TFolder({
+			path: 'Novel',
+			name: 'Novel',
+			children: [scene1, scene2],
+		});
+
+		const menu = new Menu();
+		buildFileMenuItems(plugin, linker, menu, folder);
+
+		const submenu = menu._findSubmenu('Draft Bench');
+		const titles = submenu?._items().map((i) => i.title) ?? [];
+		expect(titles).not.toContain('Set as project');
+		// Other folder-scope retrofits still appear.
+		expect(titles).toContain('Set as scene');
+		expect(titles).toContain('Set as draft');
+	});
+
+	it('hides Set as project when the folder-note is already typed', async () => {
+		const folderNote = await app.vault.create('Novel/Novel.md', '');
+		app.metadataCache._setFrontmatter(folderNote, {
+			'dbench-type': 'project',
+			'dbench-id': 'prj-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+		});
+		const folder = new TFolder({
+			path: 'Novel',
+			name: 'Novel',
+			children: [folderNote],
+		});
+
+		const menu = new Menu();
+		buildFileMenuItems(plugin, linker, menu, folder);
+
+		const submenu = menu._findSubmenu('Draft Bench');
+		const titles = submenu?._items().map((i) => i.title) ?? [];
+		expect(titles).not.toContain('Set as project');
+	});
+
+	it('does not match a same-named file in a subfolder (Novel/Drafts/Novel.md)', async () => {
+		const draftsNovel = await app.vault.create('Novel/Drafts/Novel.md', '');
+		const draftsFolder = new TFolder({
+			path: 'Novel/Drafts',
+			name: 'Drafts',
+			children: [draftsNovel],
+		});
+		const scene1 = await app.vault.create('Novel/Scene 1.md', '');
+		const folder = new TFolder({
+			path: 'Novel',
+			name: 'Novel',
+			children: [scene1, draftsFolder], // No direct-child Novel.md.
+		});
+
+		const menu = new Menu();
+		buildFileMenuItems(plugin, linker, menu, folder);
+
+		const submenu = menu._findSubmenu('Draft Bench');
+		const titles = submenu?._items().map((i) => i.title) ?? [];
+		// folder-note check examines direct children only; Drafts/Novel.md
+		// must not satisfy the match for `Novel/`.
+		expect(titles).not.toContain('Set as project');
+	});
+
+	it('keeps batch behavior for Set as scene / draft / etc.', async () => {
+		const folderNote = await app.vault.create('Novel/Novel.md', '');
+		const scene1 = await app.vault.create('Novel/Scene 1.md', '');
+		const folder = new TFolder({
+			path: 'Novel',
+			name: 'Novel',
+			children: [folderNote, scene1],
+		});
+
+		const menu = new Menu();
+		buildFileMenuItems(plugin, linker, menu, folder);
+
+		const submenu = menu._findSubmenu('Draft Bench');
+		const titles = submenu?._items().map((i) => i.title) ?? [];
+		expect(titles).toEqual([
+			'Set as project',
+			'Set as chapter',
+			'Set as scene',
+			'Set as draft',
+			'Complete essential properties',
+			'Add identifier',
+		]);
+	});
+});
+
 // ---------- helpers ----------
 
 interface TestPlugin {

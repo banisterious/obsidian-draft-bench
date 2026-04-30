@@ -254,6 +254,13 @@ export class DraftBenchLinker {
 							childFile,
 							(fm) => {
 								fm[config.childParentIdField] = matchedId;
+								// Re-canonicalize the wikilink field so the
+								// serializer writes a clean quoted string,
+								// not block-style nested-array YAML (#7).
+								fm[config.childParentWikilinkField] =
+									canonicalizeWikilinkValue(
+										fm[config.childParentWikilinkField]
+									);
 							}
 						);
 						declaredParentId = matchedId;
@@ -638,6 +645,41 @@ function basenameFromPath(filePath: string): string {
 	const tail = slash >= 0 ? filePath.slice(slash + 1) : filePath;
 	const dot = tail.lastIndexOf('.');
 	return dot > 0 ? tail.slice(0, dot) : tail;
+}
+
+/**
+ * Re-canonicalize a frontmatter wikilink value so Obsidian's serializer
+ * writes it as a clean quoted string (`"[[Basename]]"`) rather than the
+ * block-style nested-array form Obsidian's link-aware parser produces
+ * during processFrontMatter round-trips. Issue #7.
+ *
+ * Behavior:
+ * - **String** (already canonical, or user-typed): returned unchanged.
+ *   processFrontMatter round-trips strings stably.
+ * - **Nested single-element array** `[["..."]]`: unwraps the inner
+ *   string and re-wraps as `"[[X]]"`. Preserves whatever's in the inner
+ *   string verbatim, including alias (`Foo|Display`), heading
+ *   (`Foo#Heading`), or block (`Foo^Block`) suffixes.
+ * - **Anything else**: returned unchanged. Defensive; never corrupts
+ *   data we don't recognize.
+ *
+ * Idempotent. Applied inside DB processFrontMatter callbacks that touch
+ * a relationship wikilink field, so subsequent linker writes don't
+ * progressively reshape the YAML.
+ */
+function canonicalizeWikilinkValue(value: unknown): unknown {
+	if (typeof value === 'string') return value;
+	if (Array.isArray(value) && value.length === 1) {
+		const inner = value[0];
+		if (
+			Array.isArray(inner) &&
+			inner.length === 1 &&
+			typeof inner[0] === 'string'
+		) {
+			return `[[${inner[0]}]]`;
+		}
+	}
+	return value;
 }
 
 /**

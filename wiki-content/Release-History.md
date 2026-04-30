@@ -4,6 +4,14 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.1.3: 2026-04-30 — YAML-shape polish for wikilink fields
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.1.3)
+
+Single-fix patch. After the linker backfilled an ID companion for a wikilink-only relationship edit (per 0.1.1 / 0.1.2), the on-disk YAML for the wikilink field ended up in block-style nested-array form (`dbench-scene:\n  - - Some Scene`) rather than the canonical quoted-string form (`dbench-scene: "[[Some Scene]]"`). Same data, ugly rendering. The linker now re-canonicalizes the wikilink field in the same callback that writes the companion. Refs #7.
+
+938 unit + integration tests, all green. Desktop-only.
+
 ## 0.1.2: 2026-04-30 — wikilink-only retrofit fix (frontmatterLinks)
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.1.2)

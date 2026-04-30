@@ -2741,3 +2741,184 @@ describe('DraftBenchLinker — wikilink-only retrofit (frontmatterLinks + nested
 		expect(projectFm?.['dbench-scenes']).toEqual([]);
 	});
 });
+
+/**
+ * Wikilink-field canonicalization on backfill (issue #7).
+ *
+ * Obsidian's `processFrontMatter` round-trips frontmatter through its
+ * link-aware parser + serializer, which reshapes wikilink-shaped strings
+ * into nested-array block-list YAML (`dbench-scene:\n  - - Redheaded`)
+ * even when the callback never touched the field. The linker now
+ * defensively re-canonicalizes the wikilink field to a clean quoted
+ * string in the same callback that backfills the ID companion.
+ */
+describe('DraftBenchLinker — wikilink canonicalization on backfill (#7)', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedFolderProject(
+		path: string,
+		id: string,
+		title: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'project',
+			'dbench-id': id,
+			'dbench-project': `[[${title}]]`,
+			'dbench-project-id': id,
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+		});
+		return file;
+	}
+
+	async function seedScene(
+		path: string,
+		id: string,
+		parentTitle: string,
+		parentId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'scene',
+			'dbench-id': id,
+			'dbench-project': `[[${parentTitle}]]`,
+			'dbench-project-id': parentId,
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	it('canonicalizes nested-array dbench-scene to a clean wikilink string', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const draft = await app.vault.create(
+			'Novel/Drafts/Opening - Draft 1.md',
+			''
+		);
+		// Nested-array form (the post-Obsidian-Properties-panel-edit
+		// shape that triggered #7).
+		app.metadataCache._setFrontmatter(draft, {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-scene': [['Opening']],
+			'dbench-scene-id': '',
+			'dbench-draft-number': 1,
+		});
+		app.metadataCache._setFrontmatterLinks(draft, [
+			{
+				key: 'dbench-scene',
+				link: 'Opening',
+				original: '[[Opening]]',
+			},
+		]);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		// Companion was backfilled.
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+		// Wikilink was canonicalized to a clean string form.
+		expect(draftFm?.['dbench-scene']).toBe('[[Opening]]');
+	});
+
+	it('preserves alias / subpath content when canonicalizing nested-array form', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const draft = await app.vault.create(
+			'Novel/Drafts/Opening - Draft 1.md',
+			''
+		);
+		// Nested array carrying an alias-bearing inner string. The
+		// canonicalizer should preserve it verbatim, not strip the alias.
+		app.metadataCache._setFrontmatter(draft, {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-scene': [['Opening|First Scene']],
+			'dbench-scene-id': '',
+			'dbench-draft-number': 1,
+		});
+		app.metadataCache._setFrontmatterLinks(draft, [
+			{
+				key: 'dbench-scene',
+				link: 'Opening',
+				original: '[[Opening|First Scene]]',
+				displayText: 'First Scene',
+			},
+		]);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene']).toBe('[[Opening|First Scene]]');
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+	});
+
+	it('leaves an already-canonical string unchanged (idempotent)', async () => {
+		await seedFolderProject('Novel/Novel.md', 'prj-001-tst-001', 'Novel');
+		await seedScene(
+			'Novel/Opening.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001'
+		);
+
+		const draft = await app.vault.create(
+			'Novel/Drafts/Opening - Draft 1.md',
+			''
+		);
+		// Already-clean string. Canonicalizer should leave it alone.
+		app.metadataCache._setFrontmatter(draft, {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-scene': '[[Opening]]',
+			'dbench-scene-id': '',
+			'dbench-draft-number': 1,
+		});
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const draftFm = app.metadataCache.getFileCache(draft)?.frontmatter;
+		expect(draftFm?.['dbench-scene']).toBe('[[Opening]]');
+		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+	});
+});

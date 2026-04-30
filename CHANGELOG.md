@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-04-30
+
+YAML-shape polish for wikilink relationship fields after the linker writes.
+
+### Fixed
+
+- After the linker backfilled an ID companion (per #4 / #6), the on-disk YAML for the relationship wikilink field ended up in nested-array block-list form (`dbench-scene:\n  - - Some Scene`) rather than the canonical quoted-string form (`dbench-scene: "[[Some Scene]]"`). The reshape originated with Obsidian's `processFrontMatter` round-trip — the metadata cache exposes wikilinks as nested arrays for link-aware purposes, and the serializer writes them back in block-style YAML. Same data, ugly rendering, inconsistent with the quoted-string form `processFrontMatter`-driven retrofits produce. The linker now defensively re-canonicalizes the wikilink field in the same callback that writes the ID companion: nested-array shapes get rewritten as `"[[Basename]]"` strings, preserving any alias / heading / block-ref content verbatim. Idempotent. Refs #7.
+
+### Notes
+
+- Tests: 938 unit + integration tests, all green at release.
+- Bundle size and platform support: unchanged from 0.1.2.
+
 ## [0.1.2] - 2026-04-30
 
 Follow-up to the wikilink-only retrofit fix from 0.1.1.

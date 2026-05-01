@@ -191,6 +191,63 @@ describe('buildFileMenuItems — single file smart visibility', () => {
 		expect(menu._entries()).toHaveLength(0);
 	});
 
+	it('shows "New draft of this scene" on a typed scene note (#9)', async () => {
+		// Project required so the inferred-project lookup in
+		// `addMoveToChapterMenuItem` doesn't blow up when traversing.
+		const project = await app.vault.create('Novel/Novel.md', '');
+		app.metadataCache._setFrontmatter(project, {
+			'dbench-type': 'project',
+			'dbench-id': 'prj-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+			'dbench-chapters': [],
+			'dbench-chapter-ids': [],
+		});
+		const scene = await app.vault.create('Novel/Opening.md', '');
+		app.metadataCache._setFrontmatter(scene, {
+			'dbench-type': 'scene',
+			'dbench-id': 'sc1-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+
+		const menu = new Menu();
+		buildFileMenuItems(plugin, linker, menu, scene);
+
+		const submenu = menu._findSubmenu('Draft Bench');
+		const titles = submenu?._items().map((i) => i.title) ?? [];
+		expect(titles).toContain('New draft of this scene');
+	});
+
+	it('hides "New draft of this scene" on non-scene file types (#9)', async () => {
+		const project = await app.vault.create('Novel/Novel.md', '');
+		app.metadataCache._setFrontmatter(project, {
+			'dbench-type': 'project',
+			'dbench-id': 'prj-001-tst-001',
+			'dbench-project': '[[Novel]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+		});
+
+		const menu = new Menu();
+		buildFileMenuItems(plugin, linker, menu, project);
+
+		const submenu = menu._findSubmenu('Draft Bench');
+		const titles = submenu?._items().map((i) => i.title) ?? [];
+		expect(titles).not.toContain('New draft of this scene');
+	});
+
 	it('emits no items for an empty folder (no markdown children)', async () => {
 		const folder = new TFolder({
 			path: 'Empty',

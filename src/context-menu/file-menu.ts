@@ -21,6 +21,7 @@ import { ManuscriptBuilderModal } from '../ui/manuscript-builder/manuscript-buil
 import { activateManuscriptView } from '../ui/manuscript-view/activate';
 import { MoveToChapterModal } from '../ui/modals/move-to-chapter-modal';
 import { NewChapterDraftModal } from '../ui/modals/new-chapter-draft-modal';
+import { NewDraftModal } from '../ui/modals/new-draft-modal';
 import { RepairProjectModal } from '../ui/modals/repair-project-modal';
 import {
 	presetItemSpecs,
@@ -128,6 +129,7 @@ export function buildSingleFileItemSpecs(
 	}
 
 	if (type === 'scene') {
+		specs.push(...newSceneDraftItemSpecs(plugin, linker, file));
 		specs.push(...moveToChapterItemSpecs(plugin, file));
 	}
 
@@ -343,6 +345,34 @@ function moveToChapterItemSpecs(
 			icon: 'arrow-right-from-line',
 			onClick: () => {
 				new MoveToChapterModal(plugin.app, { file, frontmatter: fm }).open();
+			},
+		},
+	];
+}
+
+/**
+ * "New draft of this scene" on scene notes. Mirrors the chapter-side
+ * affordance via `NewDraftModal` (the same modal the
+ * `Draft Bench: New draft of this scene` palette command uses).
+ * Hidden when frontmatter doesn't shape as a scene (defensive).
+ * Closes #9.
+ */
+function newSceneDraftItemSpecs(
+	plugin: DraftBenchPlugin,
+	linker: DraftBenchLinker,
+	file: TFile
+): MenuItemSpec[] {
+	const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+	if (!isSceneFrontmatter(fm)) return [];
+	return [
+		{
+			title: 'New draft of this scene',
+			icon: 'file-stack',
+			onClick: () => {
+				new NewDraftModal(plugin.app, plugin.settings, linker, {
+					file,
+					frontmatter: fm,
+				}).open();
 			},
 		},
 	];

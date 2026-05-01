@@ -4,6 +4,17 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.1.4: 2026-04-30 — property-type registration + scene context-menu parity
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.1.4)
+
+Two fixes:
+
+- **Property-type registration**: tells Obsidian's `metadataTypeManager` to treat `dbench-*` relationship fields and their ID companions as text / multitext. The principled root-cause fix for the 0.1.1 → 0.1.3 wikilink-reshape chain — Properties panel now writes wikilinks as quoted strings from the start, and `processFrontMatter` round-trips them stably. Defense-in-depth: the 0.1.3 canonicalization in the linker stays as a safety net. Refs #8.
+- **Scene context-menu parity**: right-clicking a scene file now surfaces a `New draft of this scene` entry in the `Draft Bench` submenu, matching the existing `New draft of this chapter` affordance on chapter notes. Refs #9.
+
+947 unit + integration tests, all green. Desktop-only.
+
 ## 0.1.3: 2026-04-30 — YAML-shape polish for wikilink fields
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.1.3)

@@ -578,11 +578,36 @@ export class Plugins {
 	}
 }
 
+/**
+ * Mock for Obsidian's `MetadataTypeManager`. Captures property-type
+ * registrations so tests can assert which fields were typed and as
+ * what. Tracks insertion order so callers can verify call sequences
+ * if they care.
+ */
+export class MetadataTypeManager {
+	private types = new Map<string, string>();
+
+	setType(name: string, type: string): void {
+		this.types.set(name, type);
+	}
+
+	/** Test helper: read back the registered type for a property. */
+	_getType(name: string): string | undefined {
+		return this.types.get(name);
+	}
+
+	/** Test helper: full registry as a record. */
+	_allTypes(): Record<string, string> {
+		return Object.fromEntries(this.types);
+	}
+}
+
 export class App {
 	vault: Vault;
 	metadataCache: MetadataCache;
 	fileManager: FileManager;
 	plugins: Plugins;
+	metadataTypeManager: MetadataTypeManager;
 
 	constructor() {
 		this.vault = new Vault();
@@ -590,6 +615,7 @@ export class App {
 		this.fileManager = new FileManager(this.vault, this.metadataCache);
 		this.vault._attachMetadataCache(this.metadataCache);
 		this.plugins = new Plugins();
+		this.metadataTypeManager = new MetadataTypeManager();
 	}
 }
 

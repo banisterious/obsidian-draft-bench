@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS, type DraftBenchSettings } from './src/model/settings'
 import { registerCommands } from './src/commands/register';
 import { registerContextMenu } from './src/context-menu/register';
 import { DraftBenchLinker } from './src/core/linker';
+import { registerPropertyTypes } from './src/core/property-types';
 import { ProjectSelection } from './src/core/selection';
 import { WordCountCache } from './src/core/word-count-cache';
 import { DraftBenchSettingTab } from './src/settings/settings-tab';
@@ -106,6 +107,7 @@ export default class DraftBenchPlugin extends Plugin {
 		// our `<style>` tag is definitely in the DOM.
 		this.app.workspace.onLayoutReady(() => {
 			this.nudgeStyleSettingsParse();
+			registerPropertyTypes(this.app);
 			this.maybeShowWelcomeModal();
 		});
 	}

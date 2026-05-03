@@ -85,6 +85,22 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
+			.setName('Sub-scenes folder')
+			.setDesc(
+				'Relative to the project folder. Default {scene}/ nests sub-scenes under their parent scene; supports {project} and {scene} tokens. Set to empty for flat-at-project-root (writer applies <Scene> - <Sub-scene> filename prefix manually).'
+			)
+			.addText((text) => {
+				text
+					.setPlaceholder('{scene}/')
+					.setValue(settings.subScenesFolder)
+					.onChange(async (value) => {
+						settings.subScenesFolder = value;
+						await this.plugin.saveSettings();
+					});
+				new FolderSuggest(this.app, text.inputEl);
+			});
+
+		new Setting(containerEl)
 			.setName('Templates folder')
 			.setDesc(
 				'Where scene templates live. The built-in default template is created here on first project creation if absent.'
@@ -173,6 +189,22 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 					.setValue(settings.chapterTemplatePath)
 					.onChange(async (value) => {
 						settings.chapterTemplatePath = value;
+						await this.plugin.saveSettings();
+					});
+				new FileSuggest(this.app, text.inputEl);
+			});
+
+		new Setting(containerEl)
+			.setName('Sub-scene template')
+			.setDesc(
+				'Markdown file used for new sub-scenes. Leave empty to use sub-scene-template.md inside the templates folder; set to override with any markdown file in the vault. Plugin tokens like {{sub_scene_title}}, {{scene_title}}, and {{project_title}} are substituted at creation time.'
+			)
+			.addText((text) => {
+				text
+					.setPlaceholder('Draft Bench/Templates/sub-scene-template.md')
+					.setValue(settings.subSceneTemplatePath)
+					.onChange(async (value) => {
+						settings.subSceneTemplatePath = value;
 						await this.plugin.saveSettings();
 					});
 				new FileSuggest(this.app, text.inputEl);

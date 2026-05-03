@@ -185,6 +185,20 @@ export interface DraftBenchSettings {
 	 * eager seeding, since chapters may not exist yet.
 	 */
 	chapterCollapseState: Record<string, boolean>;
+
+	/**
+	 * Per-scene expanded/collapsed state for the Manuscript view's
+	 * scene cards (hierarchical scenes only — scenes with sub-scenes
+	 * render as collapsible cards mirroring the chapter-card pattern,
+	 * per [sub-scene-type.md § 6](../../docs/planning/sub-scene-type.md)).
+	 * Keyed by the scene's `dbench-id`. Missing entries default to
+	 * expanded.
+	 *
+	 * Same persistence rationale as `chapterCollapseState`: route through
+	 * `saveSettings()` so late-session toggles survive reload. Empty `{}`
+	 * on first install.
+	 */
+	sceneCollapseState: Record<string, boolean>;
 }
 
 /**
@@ -210,4 +224,5 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	welcomeShown: false,
 	lastSelectedProjectId: null,
 	chapterCollapseState: {},
+	sceneCollapseState: {},
 };

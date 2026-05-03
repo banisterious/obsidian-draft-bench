@@ -4,6 +4,18 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.2.2: 2026-05-04 — sub-scene retrofit nested-layout fix
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.2.2)
+
+Second hot patch of the day, surfaced while smoke-testing 0.2.1 against an existing sub-scene-shaped folder. `Set as sub-scene` retrofit was inferring the parent scene only for the flat layout; the § 10 nested layout (the post-#11/#12 default) silently fell through to empty placeholders, producing half-stamped notes that needed manual frontmatter editing.
+
+### Fixed
+
+- **Nested-layout parent inference** ([#21](https://github.com/banisterious/obsidian-draft-bench/issues/21)). `inferSceneForSubScene` now does a two-stage match: looks for a scene file at `${parentFolder}.md` first (the nested convention; the scene shares basename with the folder holding its sub-scenes), then falls back to the same-folder match for flat layouts. Resolves correctly under chapter-aware projects too. The retrofit now stamps the full `dbench-scene` / `dbench-scene-id` / `dbench-project` / `dbench-project-id` set + the next `dbench-order` automatically when the writer right-clicks an untyped file in a sub-scene-shaped folder.
+
+1096 unit + integration tests, all green. Desktop-only.
+
 ## 0.2.1: 2026-05-04 — integrity-repair data-loss hot patch
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.2.1)

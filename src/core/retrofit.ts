@@ -671,12 +671,21 @@ export function inferProjectForScene(
 }
 
 /**
- * Infer the parent scene for a sub-scene from its immediate parent
- * folder. Looks for exactly one scene note in that folder, matching
- * the conventional `<project>/<scene>/<sub-scene>.md` layout per
- * [sub-scene-type.md § 10](../../docs/planning/sub-scene-type.md).
- * Returns null when zero or multiple scene notes share the folder —
- * the caller falls back to empty placeholders.
+ * Infer the parent scene for a sub-scene from its on-disk position.
+ * Two-stage match (#21):
+ *
+ * 1. **Nested § 10 layout** (the default post-#11/#12). Sub-scene at
+ *    `<parent>/<scene>/<sub-scene>.md`; the scene file lives at
+ *    `<parent>/<scene>.md`, sharing its basename with the folder
+ *    that holds the sub-scenes. Look up `${folder}.md` directly.
+ * 2. **Flat fallback.** Sub-scene and scene file share a folder
+ *    (typical when `subScenesFolder = ''` opts out of nesting).
+ *    Match exactly one scene whose parent folder equals the sub-
+ *    scene's parent folder.
+ *
+ * Returns null when neither stage produces a unique match — the
+ * caller falls back to empty placeholders that the writer fills in
+ * via the Properties panel.
  *
  * Per D-04, discovery is frontmatter-based, not folder-based; this
  * helper runs at *creation time* (retrofit) as a convenience for the
@@ -688,10 +697,17 @@ export function inferSceneForSubScene(
 	file: TFile
 ): SceneNote | null {
 	const folder = parentPath(file.path);
-	const scenes = findScenes(app).filter(
+	if (folder === '') return null;
+
+	const nestedMatch = findScenes(app).find(
+		(s) => s.file.path === `${folder}.md`
+	);
+	if (nestedMatch) return nestedMatch;
+
+	const flatMatches = findScenes(app).filter(
 		(s) => parentPath(s.file.path) === folder
 	);
-	return scenes.length === 1 ? scenes[0] : null;
+	return flatMatches.length === 1 ? flatMatches[0] : null;
 }
 
 /**

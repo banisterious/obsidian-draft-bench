@@ -294,9 +294,9 @@ describe('setAsSubScene', () => {
 		expect(result.reason).toMatch(/already a scene/i);
 	});
 
-	it('infers parent scene + project + order when the sub-scene sits in a scene-named folder', async () => {
+	it('infers parent scene + project + order from the § 10 nested layout (#21)', async () => {
 		const app = new App();
-		// Project at root
+		// Project at root.
 		await seedFile(app, 'Drift/Drift.md', {
 			'dbench-type': 'project',
 			'dbench-id': 'prj-001-tst-001',
@@ -307,7 +307,9 @@ describe('setAsSubScene', () => {
 			'dbench-scenes': [],
 			'dbench-scene-ids': [],
 		});
-		// Parent scene file lives in the project folder.
+		// Parent scene at <project>/<scene>.md, sibling of the folder
+		// holding its sub-scenes. This is the post-#11/#12 default for
+		// chapter-less projects.
 		await seedFile(app, 'Drift/The auction.md', {
 			'dbench-type': 'scene',
 			'dbench-id': 'sc1-001-tst-001',
@@ -318,7 +320,7 @@ describe('setAsSubScene', () => {
 			'dbench-drafts': [],
 			'dbench-draft-ids': [],
 		});
-		// Existing sub-scene at order 1 → next should be 2.
+		// Existing sub-scene at order 1 -> next should be 2.
 		await seedFile(app, 'Drift/The auction/Existing.md', {
 			'dbench-type': 'sub-scene',
 			'dbench-id': 'sub-existing-001',
@@ -329,35 +331,67 @@ describe('setAsSubScene', () => {
 			'dbench-drafts': [],
 			'dbench-draft-ids': [],
 		});
-		// New untyped sub-scene candidate sitting next to the parent scene
-		// — wait: inference looks for ONE scene in the immediate parent
-		// folder. Place the candidate inside the scene's nested folder.
+		// New untyped sub-scene candidate inside the scene's folder.
+		// Inference's first stage looks for a scene file at
+		// `${parentFolder}.md` (i.e., `Drift/The auction.md`) — match.
 		const file = await seedFile(app, 'Drift/The auction/Lot 47.md');
-		// Seed a scene IN that nested folder so the inference matches.
-		// (In the real flow, the parent scene's folder typically contains
-		// only sub-scenes, but inference is folder-based — for the helper
-		// to find a scene parent, the scene file itself or a copy needs
-		// to be in the same folder. Adjust by moving the parent scene
-		// into the subfolder for this test.)
-		// Note: inferSceneForSubScene looks at the file's IMMEDIATE
-		// parent folder for a unique scene note. Re-seed Lot 47 next to
-		// its scene parent so the inference resolves.
-		// For folder layout matching the planning doc § 10 default
-		// `{scene}/`, a sub-scene at `Project/Scene/Sub.md` doesn't
-		// have a scene sibling — its scene parent is at
-		// `Project/Scene.md`, one level UP. The inference helper as
-		// implemented reads the immediate parent folder only. This test
-		// documents the limitation: the inference falls back to empty
-		// placeholders for the default nested layout.
+
 		const result = await setAsSubScene(app, settings, file);
 		expect(result.outcome).toBe('updated');
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		expect(fm?.['dbench-type']).toBe('sub-scene');
-		// No scene parent inferred (the scene lives one folder UP);
-		// writer fills in via the Properties panel or via the
-		// "New sub-scene in scene" command.
-		expect(fm?.['dbench-scene']).toBe('');
-		expect(fm?.['dbench-scene-id']).toBe('');
+		expect(fm?.['dbench-scene']).toBe('[[The auction]]');
+		expect(fm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+		expect(fm?.['dbench-project']).toBe('[[Drift]]');
+		expect(fm?.['dbench-project-id']).toBe('prj-001-tst-001');
+		expect(fm?.['dbench-order']).toBe(2);
+	});
+
+	it('infers parent scene under chapter-aware nested layout (#21)', async () => {
+		const app = new App();
+		// Chapter-aware project: scene lives at <project>/<chapter>/<scene>.md
+		// post-#11. Sub-scene at <project>/<chapter>/<scene>/<sub-scene>.md
+		// per #12. Inference's first stage matches `${parentFolder}.md`.
+		await seedFile(app, 'Drift/Drift.md', {
+			'dbench-type': 'project',
+			'dbench-id': 'prj-001-tst-001',
+			'dbench-project': '[[Drift]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'idea',
+			'dbench-chapters': [],
+			'dbench-chapter-ids': [],
+		});
+		await seedFile(app, 'Drift/Ch01/Ch01.md', {
+			'dbench-type': 'chapter',
+			'dbench-id': 'chp-001-tst-001',
+			'dbench-project': '[[Drift]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+		});
+		await seedFile(app, 'Drift/Ch01/The auction.md', {
+			'dbench-type': 'scene',
+			'dbench-id': 'sc1-001-tst-001',
+			'dbench-project': '[[Drift]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-chapter': '[[Ch01]]',
+			'dbench-chapter-id': 'chp-001-tst-001',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		const file = await seedFile(app, 'Drift/Ch01/The auction/Lot 47.md');
+
+		const result = await setAsSubScene(app, settings, file);
+		expect(result.outcome).toBe('updated');
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		expect(fm?.['dbench-scene']).toBe('[[The auction]]');
+		expect(fm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
+		expect(fm?.['dbench-project']).toBe('[[Drift]]');
+		expect(fm?.['dbench-project-id']).toBe('prj-001-tst-001');
+		expect(fm?.['dbench-order']).toBe(1);
 	});
 
 	it('infers parent scene when the sub-scene shares a folder with the scene file', async () => {

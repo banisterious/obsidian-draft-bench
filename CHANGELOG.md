@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-05-04
+
+Second hot patch of the day, this time for a sub-scene retrofit gap surfaced while smoke-testing 0.2.1.
+
+### Fixed
+
+- `Set as sub-scene` retrofit now infers the parent scene under the § 10 default nested layout (`<project>/<scene>/<sub-scene>.md`), not just the flat layout. The previous `inferSceneForSubScene` looked for a unique scene whose immediate parent folder equaled the sub-scene's parent folder — that only matched the flat layout (sub-scene + scene file in the same folder) and silently fell back to empty placeholders for the nested default. Writers retrofitting an existing sub-scene-shaped folder ended up with half-stamped notes that needed manual frontmatter editing for `dbench-scene` / `dbench-scene-id` / `dbench-project` / `dbench-project-id`. Fix: two-stage inference — check for a scene file at `${parentFolder}.md` first (the nested convention; the scene shares basename with the folder holding its sub-scenes), fall back to the same-folder match for flat layouts. Works under chapter-aware projects too (`<project>/<chapter>/<scene>/<sub-scene>.md` resolves the scene at `<project>/<chapter>/<scene>.md`). + 1 regression test for the chapter-aware case; the existing flat-layout test continues to pass via the fallback path. Refs #21.
+
 ## [0.2.1] - 2026-05-04
 
 Hot patch for a data-loss regression introduced in 0.2.0's integrity-service work.

@@ -312,13 +312,33 @@ Once design is ratified, implementation in this order:
 9. **Modals + commands.** `NewSubSceneModal` (title placeholder `Sub-scene <next-order>`, mirroring `NewChapterModal`); `Draft Bench: New sub-scene in scene` palette command; retrofit "Set as sub-scene" action (surfaces a one-time notice when run on a child of a scene with existing whole-scene drafts, per § 4); "Move to scene" available as both single (context menu on a sub-scene note) and bulk (retrofit modal) actions, mirroring chapter-type's "Move to chapter"; context-menu entry on sub-scene notes for "Run compile scoped to sub-scene's parent project".
 10. **Sub-scene-level drafts** (per § 4). New [src/core/sub-scene-drafts.ts](../../src/core/sub-scene-drafts.ts) parallel to `src/core/drafts.ts`: `createSubSceneDraft`, `resolveSubSceneDraftPaths`. Linker `RelationshipConfig` entry for sub-scene↔draft. Scene-draft snapshot mechanic extended to concatenate sub-scene bodies when sub-scenes present. New palette command `Draft Bench: New draft of this sub-scene`, context-menu entry.
 11. **Reorder modal genericization** (per § 8). Refactor `ReorderScenesModal` + `ReorderChaptersModal` into `ReorderChildrenModal`. New `Draft Bench: Reorder sub-scenes in scene` palette command.
-12. **Bidirectional sync hooks.** All sub-scene-modifying operations run inside `linker.withSuspended(...)`.
+12. **Bidirectional sync hooks.** All sub-scene-modifying operations run inside `linker.withSuspended(...)` *where appropriate*. Audit completed 2026-05-02 — see § Bidirectional sync hooks audit below.
 13. **Tests.** Each new module gets unit + integration coverage. Estimate: +200-300 tests over current 947.
 14. **Dev-vault validation.** Walkthrough scenarios for sub-scene creation, scene-to-sub-scene assignment, reordering, status rollup, compile output, sub-scene-draft snapshots. Add to `dev-vault/00 Compile walkthrough.md` (or new walkthrough doc).
 15. **Spec rewrites.** Specification.md updates per § Note Types, § Project Structure on Disk, § Manuscript view, § Book Builder, § Bidirectional linking, § Development Phases (sub-scene moves to V1 / pre-1.0).
 16. **Wiki content.** New page or extended Manuscript-Builder.md / Drafts-And-Versioning.md sections explaining the sub-scene shape and sub-scene-draft snapshots. Getting-Started.md updates.
 
 Realistic estimate: 4-6 weeks of focused work for code + tests; 1 week for spec + wiki. **Total ~5-7 weeks** (same envelope as chapter-type).
+
+---
+
+## Bidirectional sync hooks audit (Step 12)
+
+Audit completed 2026-05-02. Each sub-scene-modifying operation was checked against the spec's "suspended states" rule: any plugin-driven flow that performs **multiple** writes (primary file + reverse-array updates) must wrap in `linker.withSuspended(...)` so intermediate states don't trigger the linker. Single-write operations are deliberately *not* wrapped — they rely on the linker reacting after the write to reconcile parent reverse arrays (mirrors the established `setAsX` and `moveXToY` retrofit pattern).
+
+| Operation | Wrapped? | Wrap site | Rationale |
+|---|---|---|---|
+| `createSubScene` | ✅ | [src/ui/modals/new-sub-scene-modal.ts:158](../../src/ui/modals/new-sub-scene-modal.ts#L158) | Multi-write: creates the sub-scene file, stamps fm, writes reverse arrays on parent scene |
+| `createSubSceneDraft` | ✅ | [src/ui/modals/new-sub-scene-draft-modal.ts:87](../../src/ui/modals/new-sub-scene-draft-modal.ts#L87) | Multi-write: creates draft file, stamps fm, writes reverse arrays on parent sub-scene |
+| `createDraft` (scene-draft, extended in Step 10 to concatenate sub-scene bodies) | ✅ | [src/ui/modals/new-draft-modal.ts:74](../../src/ui/modals/new-draft-modal.ts#L74) | Step 10 extension only changed body assembly (read-only on sub-scenes); existing wrap still covers the multi-write to draft file + parent scene's reverse arrays |
+| `reorderSubScenes` | ✅ | [src/ui/modals/reorder-children-modal.ts:335](../../src/ui/modals/reorder-children-modal.ts#L335) | Multi-write: rewrites `dbench-order` on every changed sub-scene in the parent scene |
+| `moveSubSceneToScene` | ❌ (intentional) | n/a | Single-write: rewrites `dbench-scene` + `dbench-scene-id` on the sub-scene only. Linker reacts and reconciles old-scene + new-scene reverse arrays. Mirrors `moveSceneToChapter`. |
+| `setAsSubScene` (retrofit) | ❌ (intentional) | n/a | Single-write: stamps sub-scene essentials + parent refs. Linker reacts to populate parent scene's reverse array. Mirrors `setAsScene` / `setAsChapter`. |
+| Sub-scene-folder auto-rename on parent-scene rename | n/a (linker-internal) | [src/core/linker.ts:484](../../src/core/linker.ts#L484) | Runs *inside* the linker's `vault.on('rename')` handler, which is gated by `this.suspended > 0` at registration ([linker.ts:95](../../src/core/linker.ts#L95)). Caller-driven scene renames inside `withSuspended` correctly skip the auto-rename. The folder rename's child file rename events re-enter the handler but bail at `oldBasename === file.basename` ([linker.ts:422](../../src/core/linker.ts#L422)) since basename is preserved across folder rename. |
+
+**Findings:** No bugs. All multi-write operations are wrapped at the modal/command boundary; all single-write operations correctly delegate to the linker. The "where appropriate" qualifier on Step 12 reflects that wrapping is a multi-write hazard, not a universal requirement — wrapping a single-write operation would actually defeat the linker's reconciliation, so the *absence* of a wrap on `moveSubSceneToScene` and `setAsSubScene` is load-bearing.
+
+**Batch retrofit (`runBatch` in [src/context-menu/shared.ts:109](../../src/context-menu/shared.ts#L109)):** does *not* wrap the iteration in `withSuspended`. Each `setAsSubScene` call triggers an independent linker reconciliation. This is consistent with `setAsScene` / `setAsChapter` batch behavior and is a deliberate choice — interrupted batches still produce consistent state because each file is settled before the next starts. Wrapping the whole batch would be a perf optimization (one reconciliation pass at the end vs. N), not a correctness fix; out of scope for sub-scene type.
 
 ---
 

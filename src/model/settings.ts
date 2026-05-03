@@ -51,6 +51,18 @@ export interface DraftBenchSettings {
 	chaptersFolder: string;
 
 	/**
+	 * Default folder template for new sub-scenes, **relative to the
+	 * project's folder**. Supports `{project}` and `{scene}` tokens
+	 * (the latter expanded to the parent scene's basename). Default
+	 * `'{project}/{scene}/'` nests sub-scenes under their parent scene
+	 * (per [sub-scene-type.md § 10](../../docs/planning/sub-scene-type.md));
+	 * set to `''` for flat-at-project-root, where the writer is expected
+	 * to apply a `<Scene> - <Sub-scene>` filename prefix manually for
+	 * clustering.
+	 */
+	subScenesFolder: string;
+
+	/**
 	 * Where the drafts folder lives. See `DraftsFolderPlacement`.
 	 */
 	draftsFolderPlacement: DraftsFolderPlacement;
@@ -86,6 +98,16 @@ export interface DraftBenchSettings {
 	 * [chapter-type.md § 1](../../docs/planning/chapter-type.md).
 	 */
 	chapterTemplatePath: string;
+
+	/**
+	 * Override path for the sub-scene template file. When empty (default),
+	 * the plugin uses `<templatesFolder>/sub-scene-template.md`. Mirrors
+	 * `sceneTemplatePath`'s shape; the seeded built-in body matches the
+	 * scene template (planning sections + `## Draft`) per
+	 * [sub-scene-type.md § 2](../../docs/planning/sub-scene-type.md)
+	 * implications.
+	 */
+	subSceneTemplatePath: string;
 
 	/**
 	 * Folder where generated starter Bases (`.base` files) are written.
@@ -168,11 +190,13 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	projectsFolder: 'Draft Bench/{project}/',
 	scenesFolder: '',
 	chaptersFolder: '',
+	subScenesFolder: '{project}/{scene}/',
 	draftsFolderPlacement: 'project-local',
 	draftsFolderName: 'Drafts',
 	templatesFolder: 'Draft Bench/Templates/',
 	sceneTemplatePath: '',
 	chapterTemplatePath: '',
+	subSceneTemplatePath: '',
 	basesFolder: 'Draft Bench/Bases',
 	statusVocabulary: [...DEFAULT_STATUS_VOCABULARY],
 	enableBidirectionalSync: true,

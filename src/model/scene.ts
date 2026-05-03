@@ -35,6 +35,16 @@ export interface SceneFrontmatter {
 	'dbench-drafts': string[];
 	'dbench-draft-ids': DbenchId[];
 	/**
+	 * Reverse-array of sub-scene wikilinks for hierarchical scenes (per
+	 * [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md)).
+	 * Maintained by the linker when `createSubScene` runs against this
+	 * scene. Optional because flat scenes (no sub-scenes) never gain
+	 * the field; existing scenes from before sub-scene-type ratification
+	 * also lack it until they sprout their first sub-scene.
+	 */
+	'dbench-sub-scenes'?: string[];
+	'dbench-sub-scene-ids'?: DbenchId[];
+	/**
 	 * Opt-in authoring target for this scene's word count. Writers set
 	 * this via the Properties panel or in a template's frontmatter; not
 	 * stamped at creation. The Manuscript-tab per-scene progress bar

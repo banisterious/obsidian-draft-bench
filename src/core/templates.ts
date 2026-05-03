@@ -34,8 +34,31 @@ export const BUILTIN_CHAPTER_TEMPLATE = `## Source passages
 
 `;
 
+/**
+ * V1 built-in sub-scene template body. Mirrors the scene template's
+ * four-section planning-plus-`## Draft` shape (per
+ * [sub-scene-type.md § 2](../../docs/planning/sub-scene-type.md)
+ * implications and the resolved open question on template content), but
+ * uses `## Outline` rather than `## Beat outline`: at scene level, beats
+ * commonly become sub-scenes themselves, so "Beat outline" maps to real
+ * planning; at sub-scene level, beats are not first-class (per § 9: units
+ * smaller than sub-scenes go in the body as headings), so a generic
+ * `## Outline` heading avoids the recursive "outline beats inside the
+ * sub-scene that IS a beat" feel. Writers can rename or restructure.
+ */
+export const BUILTIN_SUB_SCENE_TEMPLATE = `## Source passages
+
+## Outline
+
+## Open questions
+
+## Draft
+
+`;
+
 export const SCENE_TEMPLATE_FILENAME = 'scene-template.md';
 export const CHAPTER_TEMPLATE_FILENAME = 'chapter-template.md';
+export const SUB_SCENE_TEMPLATE_FILENAME = 'sub-scene-template.md';
 
 /**
  * One discovered template available for use at scene or chapter
@@ -87,6 +110,24 @@ export interface ChapterTemplateContext {
 	chapterOrder: number;
 	date: string;
 	previousChapterTitle: string;
+}
+
+/**
+ * Context for plugin-token substitution on sub-scene templates. Carries
+ * both the project context (matching `TemplateContext`) and the parent
+ * scene context (`scene` wikilink + `sceneTitle` plain), plus the
+ * sub-scene-specific tokens (`subSceneTitle`, `subSceneOrder`,
+ * `previousSubSceneTitle`).
+ */
+export interface SubSceneTemplateContext {
+	project: string;
+	projectTitle: string;
+	scene: string;
+	sceneTitle: string;
+	subSceneTitle: string;
+	subSceneOrder: number;
+	date: string;
+	previousSubSceneTitle: string;
 }
 
 const TOKEN_PATTERN = /\{\{([a-z_]+)\}\}/g;
@@ -144,6 +185,28 @@ export function substituteChapterTokens(
 		chapter_order: String(context.chapterOrder),
 		date: context.date,
 		previous_chapter_title: context.previousChapterTitle,
+	});
+}
+
+/**
+ * Pure token substitution over a sub-scene-template body. Recognized
+ * tokens (see `SubSceneTemplateContext`) are replaced with the
+ * corresponding context value; unknown `{{token}}` sequences are left
+ * untouched.
+ */
+export function substituteSubSceneTokens(
+	body: string,
+	context: SubSceneTemplateContext
+): string {
+	return substituteFromMap(body, {
+		project: context.project,
+		project_title: context.projectTitle,
+		scene: context.scene,
+		scene_title: context.sceneTitle,
+		sub_scene_title: context.subSceneTitle,
+		sub_scene_order: String(context.subSceneOrder),
+		date: context.date,
+		previous_sub_scene_title: context.previousSubSceneTitle,
 	});
 }
 
@@ -310,6 +373,61 @@ export async function resolveChapterTemplate(
 ): Promise<string> {
 	const body = await loadChapterTemplateBody(app, settings);
 	return substituteChapterTokens(body, context);
+}
+
+/**
+ * Resolve the sub-scene-template file path. Uses `subSceneTemplatePath`
+ * when set (trimmed), otherwise falls back to
+ * `<templatesFolder>/sub-scene-template.md`.
+ */
+export function resolveSubSceneTemplatePath(
+	settings: DraftBenchSettings
+): string {
+	return resolveTemplatePathHelper(
+		settings.subSceneTemplatePath,
+		settings.templatesFolder,
+		SUB_SCENE_TEMPLATE_FILENAME
+	);
+}
+
+/**
+ * Resolve the sub-scene-template TFile, seeding the file with
+ * `BUILTIN_SUB_SCENE_TEMPLATE` on the path from
+ * `resolveSubSceneTemplatePath` if it doesn't exist.
+ */
+export async function ensureSubSceneTemplateFile(
+	app: App,
+	settings: DraftBenchSettings
+): Promise<TFile> {
+	return ensureTemplateFile(
+		app,
+		resolveSubSceneTemplatePath(settings),
+		BUILTIN_SUB_SCENE_TEMPLATE
+	);
+}
+
+/**
+ * Load the sub-scene-template body from disk, seeding the file with
+ * `BUILTIN_SUB_SCENE_TEMPLATE` if it doesn't exist.
+ */
+export async function loadSubSceneTemplateBody(
+	app: App,
+	settings: DraftBenchSettings
+): Promise<string> {
+	const file = await ensureSubSceneTemplateFile(app, settings);
+	return app.vault.read(file);
+}
+
+/**
+ * Load the sub-scene template and apply `context` substitution.
+ */
+export async function resolveSubSceneTemplate(
+	app: App,
+	settings: DraftBenchSettings,
+	context: SubSceneTemplateContext
+): Promise<string> {
+	const body = await loadSubSceneTemplateBody(app, settings);
+	return substituteSubSceneTokens(body, context);
 }
 
 /**

@@ -16,6 +16,10 @@ The plugin stays narrow on purpose. Plot grids, character databases, beat-sheet 
 - **Bases-native discovery.** Starter `.base` views for projects, scenes, and drafts. Filter, group, and surface your manuscript with the same Bases setup you use for everything else in your vault.
 - **Theme-respectful styling.** Class hooks and minimum defaults, opt-in via Style Settings. The plugin doesn't impose chrome on writers who customize their vault's appearance.
 
+## See it in action
+
+Short motion captures of the Manuscript Builder, scene-to-draft snapshots, the compile flow, project creation, and integrity repair live on the [features page](/features/). Each one is a real working vault, not a mockup.
+
 ## Where it sits
 
 Draft Bench is one of several Obsidian writing plugins. The closest spiritual ancestor is [Longform](https://github.com/kevboh/longform); the plugin's `Drafts/` and compile concepts owe a real debt to Longform's prior art. The closest contemporary is [StoryLine](https://github.com/PixeroJan/obsidian-storyline), a much broader Scrivener-in-Obsidian that handles plotting, characters, locations, timelines, and analytics in addition to the manuscript.

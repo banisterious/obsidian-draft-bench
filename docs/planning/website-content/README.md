@@ -18,9 +18,14 @@ These are the drafts currently informing the site:
 | [media-plan.md](media-plan.md) | Asset inventory + capture-session log. Tier 1 motion loops + Tier 2 stills captured. | Live |
 | `handoff-prompt.md` *(gitignored)* | Standalone prompt to paste into a website-repo session for each port. Local-only; regenerate per handoff. | Live |
 
+## Source-truth gaps
+
+Pages live on the site without a source-of-truth draft in this repo. Backfill is pending; until then, edits to these pages happen directly in the Hugo repo (deviating from the two-repo split):
+
+- `features-page.md` — features page is live on the site (top nav, weight 5), authored directly in the Hugo repo. Backfill so future edits round-trip through this repo per [website-strategy-reference.md § 1](../website-strategy-reference.md). Until then, the homepage's "See it in action" section is the only source-truth-controlled link into the features page.
+
 ## Deferred
 
-- `features-page.md` — full track-based features grouping. Deferred while the V1.x feature surface stabilizes through the 0.x release line.
 - `changelog-page.md` — cluster-spotlight format. Could be drafted now that 0.1.x and 0.2.x have natural narrative shape; deferred pending decision on whether to maintain it separately from the wiki Release-History page.
 - Track pages (`novelists.md`, `short-fiction.md`, `longform-migrants.md`) — driven by BRAT-tester feedback as the audience clarifies.
 - Tier 3 motion captures — track-page hero shots; deferred until track pages exist.

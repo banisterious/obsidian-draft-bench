@@ -3,6 +3,7 @@ import type { DbenchId } from '../model/types';
 import { isProjectFrontmatter, type ProjectFrontmatter } from '../model/project';
 import { isChapterFrontmatter, type ChapterFrontmatter } from '../model/chapter';
 import { isSceneFrontmatter, type SceneFrontmatter } from '../model/scene';
+import { isSubSceneFrontmatter, type SubSceneFrontmatter } from '../model/sub-scene';
 import { isDraftFrontmatter, type DraftFrontmatter } from '../model/draft';
 import {
 	isCompilePresetFrontmatter,
@@ -42,6 +43,12 @@ export interface ChapterNote {
 export interface SceneNote {
 	file: TFile;
 	frontmatter: SceneFrontmatter;
+}
+
+/** A discovered sub-scene note paired with its parsed frontmatter. */
+export interface SubSceneNote {
+	file: TFile;
+	frontmatter: SubSceneFrontmatter;
 }
 
 /** A discovered draft note paired with its parsed frontmatter. */
@@ -92,6 +99,20 @@ export function findScenes(app: App): SceneNote[] {
 	for (const file of app.vault.getMarkdownFiles()) {
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		if (isSceneFrontmatter(fm)) {
+			out.push({ file, frontmatter: fm });
+		}
+	}
+	return out;
+}
+
+/**
+ * Find every sub-scene note in the vault.
+ */
+export function findSubScenes(app: App): SubSceneNote[] {
+	const out: SubSceneNote[] = [];
+	for (const file of app.vault.getMarkdownFiles()) {
+		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+		if (isSubSceneFrontmatter(fm)) {
 			out.push({ file, frontmatter: fm });
 		}
 	}
@@ -175,6 +196,44 @@ export function findScenesInChapter(app: App, chapterId: DbenchId): SceneNote[] 
 		const fm = scene.frontmatter as unknown as Record<string, unknown>;
 		return fm['dbench-chapter-id'] === chapterId;
 	});
+}
+
+/**
+ * Find sub-scenes whose `dbench-project-id` matches the given project ID.
+ *
+ * Match is on the stable ID companion (rename-safe), not the wikilink.
+ * Sub-scenes with empty `dbench-project-id` (orphan sub-scenes that
+ * haven't been attached to a project yet) are excluded.
+ *
+ * Returns the flat list of all sub-scenes across all hierarchical scenes
+ * in the project. Use `findSubScenesInScene` when you want the sub-scenes
+ * of one specific parent scene.
+ */
+export function findSubScenesInProject(
+	app: App,
+	projectId: DbenchId
+): SubSceneNote[] {
+	if (projectId === '') return [];
+	return findSubScenes(app).filter(
+		(subScene) => subScene.frontmatter['dbench-project-id'] === projectId
+	);
+}
+
+/**
+ * Find sub-scenes whose `dbench-scene-id` matches the given scene ID.
+ *
+ * Match is on the stable ID companion (rename-safe), not the wikilink.
+ * Sub-scenes with empty `dbench-scene-id` (orphan sub-scenes that haven't
+ * been attached to a parent scene yet) are excluded.
+ */
+export function findSubScenesInScene(
+	app: App,
+	sceneId: DbenchId
+): SubSceneNote[] {
+	if (sceneId === '') return [];
+	return findSubScenes(app).filter(
+		(subScene) => subScene.frontmatter['dbench-scene-id'] === sceneId
+	);
 }
 
 /**

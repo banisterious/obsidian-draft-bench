@@ -12,6 +12,9 @@ import {
 	findScenes,
 	findScenesInChapter,
 	findScenesInProject,
+	findSubScenes,
+	findSubScenesInProject,
+	findSubScenesInScene,
 } from '../../src/core/discovery';
 
 /**
@@ -325,6 +328,207 @@ describe('findScenesInChapter', () => {
 			'dbench-chapter-id': '',
 		});
 		expect(findScenesInChapter(app, '')).toEqual([]);
+	});
+});
+
+describe('findSubScenes', () => {
+	let app: App;
+
+	beforeEach(() => {
+		app = new App();
+	});
+
+	it('returns empty array on empty vault', () => {
+		expect(findSubScenes(app)).toEqual([]);
+	});
+
+	it('returns sub-scene notes only', () => {
+		seed(app, 'Project.md', {
+			'dbench-type': 'project',
+			'dbench-id': 'proj-001-aaa-001',
+		});
+		seed(app, 'The auction.md', {
+			'dbench-type': 'scene',
+			'dbench-id': 'scen-001-bbb-001',
+		});
+		const subSceneFile = seed(app, 'Lot 47.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-001-ccc-001',
+		});
+		seed(app, 'Lot 47 - Draft 1.md', {
+			'dbench-type': 'draft',
+			'dbench-id': 'draf-001-ddd-001',
+		});
+
+		const result = findSubScenes(app);
+		expect(result).toHaveLength(1);
+		expect(result[0].file).toBe(subSceneFile);
+	});
+
+	it('returns multiple sub-scenes in iteration order', () => {
+		seed(app, 'Lot 47.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-001-aaa-001',
+		});
+		seed(app, 'The bidding war.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-002-aaa-002',
+		});
+		seed(app, 'The walk-out.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-003-aaa-003',
+		});
+		expect(findSubScenes(app)).toHaveLength(3);
+	});
+});
+
+describe('findSubScenesInProject', () => {
+	let app: App;
+
+	beforeEach(() => {
+		app = new App();
+	});
+
+	it('returns only sub-scenes whose dbench-project-id matches', () => {
+		seed(app, 'Lot 47.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-001-aaa-001',
+			'dbench-project-id': 'proj-001-aaa-001',
+			'dbench-scene-id': 'scen-001-aaa-001',
+		});
+		seed(app, 'The bidding war.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-002-aaa-002',
+			'dbench-project-id': 'proj-001-aaa-001',
+			'dbench-scene-id': 'scen-001-aaa-001',
+		});
+		seed(app, 'Other sub-scene.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-003-bbb-003',
+			'dbench-project-id': 'proj-002-bbb-002',
+			'dbench-scene-id': 'scen-002-bbb-002',
+		});
+
+		const result = findSubScenesInProject(app, 'proj-001-aaa-001');
+		expect(result).toHaveLength(2);
+		expect(result.map((s) => s.file.path).sort()).toEqual([
+			'Lot 47.md',
+			'The bidding war.md',
+		]);
+	});
+
+	it('flattens across multiple parent scenes within the same project', () => {
+		// Sub-scenes belonging to two different parent scenes in the same
+		// project should both be returned by findSubScenesInProject.
+		seed(app, 'Lot 47.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-001-aaa-001',
+			'dbench-project-id': 'proj-001-aaa-001',
+			'dbench-scene-id': 'scen-auction-001',
+		});
+		seed(app, 'Hotel arrival.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-002-aaa-002',
+			'dbench-project-id': 'proj-001-aaa-001',
+			'dbench-scene-id': 'scen-reception-002',
+		});
+
+		const result = findSubScenesInProject(app, 'proj-001-aaa-001');
+		expect(result).toHaveLength(2);
+	});
+
+	it('excludes orphan sub-scenes (empty dbench-project-id)', () => {
+		seed(app, 'Orphan.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-001-aaa-001',
+			'dbench-project-id': '',
+			'dbench-scene-id': '',
+		});
+		expect(findSubScenesInProject(app, 'proj-001-aaa-001')).toEqual([]);
+	});
+
+	it('returns empty array for empty project ID', () => {
+		seed(app, 'Sub.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-001-aaa-001',
+			'dbench-project-id': '',
+		});
+		expect(findSubScenesInProject(app, '')).toEqual([]);
+	});
+});
+
+describe('findSubScenesInScene', () => {
+	let app: App;
+
+	beforeEach(() => {
+		app = new App();
+	});
+
+	it('returns only sub-scenes whose dbench-scene-id matches', () => {
+		seed(app, 'Lot 47.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-001-aaa-001',
+			'dbench-project-id': 'proj-001-aaa-001',
+			'dbench-scene-id': 'scen-auction-001',
+		});
+		seed(app, 'The bidding war.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-002-aaa-002',
+			'dbench-project-id': 'proj-001-aaa-001',
+			'dbench-scene-id': 'scen-auction-001',
+		});
+		seed(app, 'Hotel arrival.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-003-bbb-003',
+			'dbench-project-id': 'proj-001-aaa-001',
+			'dbench-scene-id': 'scen-reception-002',
+		});
+
+		const result = findSubScenesInScene(app, 'scen-auction-001');
+		expect(result).toHaveLength(2);
+		expect(result.map((s) => s.file.path).sort()).toEqual([
+			'Lot 47.md',
+			'The bidding war.md',
+		]);
+	});
+
+	it('excludes orphan sub-scenes (empty dbench-scene-id)', () => {
+		seed(app, 'Orphan.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-001-aaa-001',
+			'dbench-project-id': 'proj-001-aaa-001',
+			'dbench-scene-id': '',
+		});
+		expect(findSubScenesInScene(app, 'scen-001-aaa-001')).toEqual([]);
+	});
+
+	it('returns empty array for empty scene ID', () => {
+		seed(app, 'Sub.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-001-aaa-001',
+			'dbench-scene-id': '',
+		});
+		expect(findSubScenesInScene(app, '')).toEqual([]);
+	});
+
+	it('does not match scenes (only sub-scenes)', () => {
+		// A scene with the same dbench-scene-id as a sub-scene's parent ref
+		// should NOT be returned — sub-scenes only.
+		seed(app, 'A scene.md', {
+			'dbench-type': 'scene',
+			'dbench-id': 'scen-auction-001',
+			'dbench-project-id': 'proj-001-aaa-001',
+		});
+		seed(app, 'Lot 47.md', {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-001-aaa-001',
+			'dbench-project-id': 'proj-001-aaa-001',
+			'dbench-scene-id': 'scen-auction-001',
+		});
+
+		const result = findSubScenesInScene(app, 'scen-auction-001');
+		expect(result).toHaveLength(1);
+		expect(result[0].file.path).toBe('Lot 47.md');
 	});
 });
 

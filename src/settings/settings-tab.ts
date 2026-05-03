@@ -595,11 +595,43 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 
 		new Setting(container)
 			.setName('Repository')
-			.setDesc('github.com/banisterious/obsidian-draft-bench');
+			.setDesc(
+				makeLinkFragment(
+					'https://github.com/banisterious/obsidian-draft-bench'
+				)
+			);
+
+		new Setting(container)
+			.setName('Wiki')
+			.setDesc(
+				makeLinkFragment(
+					'https://github.com/banisterious/obsidian-draft-bench/wiki'
+				)
+			);
+
+		new Setting(container)
+			.setName('Website')
+			.setDesc(makeLinkFragment('https://draftbench.io'));
 	}
 
 	private restartLinker(): void {
 		this.plugin.linker.stop();
 		this.plugin.linker.start();
 	}
+}
+
+/**
+ * Build a `DocumentFragment` containing a single anchor for use as a
+ * `Setting.setDesc()` value. Display text is the URL with the protocol
+ * stripped so the row reads cleanly. Obsidian routes external `href`s
+ * to the user's default browser.
+ */
+function makeLinkFragment(url: string): DocumentFragment {
+	const fragment = document.createDocumentFragment();
+	fragment.createEl('a', {
+		href: url,
+		text: url.replace(/^https?:\/\//, ''),
+		attr: { target: '_blank', rel: 'noopener' },
+	});
+	return fragment;
 }

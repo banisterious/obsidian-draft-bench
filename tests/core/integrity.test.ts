@@ -1558,3 +1558,157 @@ describe('scanProject — scene<->sub-scene issues', () => {
 		expect(kinds(report.issues)).toContain('SUB_SCENE_MISSING_IN_SCENE');
 	});
 });
+
+describe('scanProject — sub-scene<->draft issues', () => {
+	async function seedSubSceneDraft(
+		app: App,
+		path: string,
+		id: string,
+		subSceneTitle: string,
+		subSceneId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'draft',
+			'dbench-id': id,
+			'dbench-sub-scene': `[[${subSceneTitle}]]`,
+			'dbench-sub-scene-id': subSceneId,
+			'dbench-draft-number': 1,
+		});
+		return file;
+	}
+
+	it('flags a sub-scene draft missing from the parent sub-scene reverse arrays', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[The auction]]'],
+			['sc1-001-tst-001']
+		);
+		await seedScene(
+			app,
+			'Drift/The auction.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[Lot 47]]'],
+			['sub-001-tst-001']
+		);
+		await seedSubScene(
+			app,
+			'Drift/The auction/Lot 47.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'The auction',
+			'sc1-001-tst-001'
+		);
+		// Draft exists, declares the sub-scene as parent, but the
+		// sub-scene's reverse arrays are empty → DRAFT_MISSING_IN_SUB_SCENE.
+		await seedSubSceneDraft(
+			app,
+			'Drift/Drafts/The auction - Lot 47 - Draft 1.md',
+			'drf-001-tst-001',
+			'Lot 47',
+			'sub-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Drift'));
+		const issueKinds = kinds(report.issues);
+		expect(issueKinds).toContain('DRAFT_MISSING_IN_SUB_SCENE');
+		const missing = report.issues.find(
+			(i) => i.kind === 'DRAFT_MISSING_IN_SUB_SCENE'
+		);
+		expect(missing?.autoRepairable).toBe(true);
+	});
+
+	it('flags a stale draft entry in the sub-scene reverse arrays', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[The auction]]'],
+			['sc1-001-tst-001']
+		);
+		await seedScene(
+			app,
+			'Drift/The auction.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[Lot 47]]'],
+			['sub-001-tst-001']
+		);
+		// Sub-scene's reverse arrays reference a draft that doesn't exist.
+		const subFile = await app.vault.create(
+			'Drift/The auction/Lot 47.md',
+			''
+		);
+		app.metadataCache._setFrontmatter(subFile, {
+			'dbench-type': 'sub-scene',
+			'dbench-id': 'sub-001-tst-001',
+			'dbench-project': '[[Drift]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-scene': '[[The auction]]',
+			'dbench-scene-id': 'sc1-001-tst-001',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': ['[[Ghost draft]]'],
+			'dbench-draft-ids': ['drf-ghost-tst-000'],
+		});
+
+		const report = scanProject(app, loadProject(app, 'Drift'));
+		const issueKinds = kinds(report.issues);
+		expect(issueKinds).toContain('STALE_DRAFT_IN_SUB_SCENE');
+	});
+
+	it('returns no sub-scene draft issues for clean sub-scenes with no drafts', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[The auction]]'],
+			['sc1-001-tst-001']
+		);
+		await seedScene(
+			app,
+			'Drift/The auction.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[Lot 47]]'],
+			['sub-001-tst-001']
+		);
+		await seedSubScene(
+			app,
+			'Drift/The auction/Lot 47.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'The auction',
+			'sc1-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Drift'));
+		const subSceneDraftKinds = kinds(report.issues).filter(
+			(k) =>
+				k === 'DRAFT_MISSING_IN_SUB_SCENE' ||
+				k === 'STALE_DRAFT_IN_SUB_SCENE' ||
+				k === 'SUB_SCENE_DRAFT_CONFLICT'
+		);
+		expect(subSceneDraftKinds).toEqual([]);
+	});
+});

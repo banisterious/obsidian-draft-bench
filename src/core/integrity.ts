@@ -5,6 +5,7 @@ import {
 	findDraftsOfChapter,
 	findDraftsOfProject,
 	findDraftsOfScene,
+	findDraftsOfSubScene,
 	findNoteById,
 	findScenesInChapter,
 	findScenesInProject,
@@ -64,11 +65,12 @@ import {
  * Sub-scene-aware scenes (per [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md))
  * carry `dbench-sub-scenes` / `dbench-sub-scene-ids` reverse arrays
  * pointing at their child sub-scenes. The `SUB_SCENE_*` codes mirror
- * the chapter↔scene shape one level deeper. Sub-scene-less scenes
- * never accumulate issues here because both the declared-children list
- * and the reverse arrays are empty/absent. Sub-scene-level draft
- * relationships are not yet integrity-scanned; their codes will land
- * with Step 10 alongside `createSubSceneDraft`.
+ * the chapter↔scene shape one level deeper. Sub-scene-level draft
+ * relationships are also scanned (`DRAFT_MISSING_IN_SUB_SCENE`,
+ * `STALE_DRAFT_IN_SUB_SCENE`, `SUB_SCENE_DRAFT_CONFLICT`), mirroring
+ * the chapter↔draft pass; sub-scene-less scenes never accumulate
+ * issues from either pass because the declared-children list and the
+ * reverse arrays are empty/absent.
  */
 export type IntegrityIssueKind =
 	| 'SCENE_MISSING_IN_PROJECT'
@@ -95,6 +97,9 @@ export type IntegrityIssueKind =
 	| 'SUB_SCENE_MISSING_IN_SCENE'
 	| 'STALE_SUB_SCENE_IN_SCENE'
 	| 'SCENE_SUB_SCENE_CONFLICT'
+	| 'DRAFT_MISSING_IN_SUB_SCENE'
+	| 'STALE_DRAFT_IN_SUB_SCENE'
+	| 'SUB_SCENE_DRAFT_CONFLICT'
 	| 'PROJECT_MIXED_CHILDREN';
 
 export interface IntegrityIssue {
@@ -312,6 +317,10 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 		// children. Sub-scene-less scenes contribute no issues here
 		// (declaredChildren is empty AND the reverse arrays are absent
 		// or empty, so scanRelationship returns no missing/stale entries).
+		const subScenes = findSubScenesInScene(
+			app,
+			scene.frontmatter['dbench-id']
+		);
 		issues.push(
 			...scanRelationship({
 				app,
@@ -325,10 +334,7 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 				parentId: scene.frontmatter['dbench-id'],
 				wikilinkField: 'dbench-sub-scenes',
 				idField: 'dbench-sub-scene-ids',
-				declaredChildren: findSubScenesInScene(
-					app,
-					scene.frontmatter['dbench-id']
-				).map(toGeneric),
+				declaredChildren: subScenes.map(toGeneric),
 				childDeclaresParent: (fm) =>
 					fm['dbench-scene-id'] === scene.frontmatter['dbench-id'],
 				childTypeLabel: 'Sub-scene',
@@ -339,6 +345,42 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 				},
 			})
 		);
+
+		// Sub-scene <-> draft. One relationship pass per sub-scene under
+		// this scene (sub-scene drafts attach to their sub-scene parent
+		// per [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md);
+		// the linker config landed in Step 4, the integrity pass lands
+		// here in Step 10 alongside createSubSceneDraft).
+		for (const subScene of subScenes) {
+			issues.push(
+				...scanRelationship({
+					app,
+					parent: {
+						file: subScene.file,
+						frontmatter: subScene.frontmatter as unknown as Record<
+							string,
+							unknown
+						>,
+					},
+					parentId: subScene.frontmatter['dbench-id'],
+					wikilinkField: 'dbench-drafts',
+					idField: 'dbench-draft-ids',
+					declaredChildren: findDraftsOfSubScene(
+						app,
+						subScene.frontmatter['dbench-id']
+					).map(toGeneric),
+					childDeclaresParent: (fm) =>
+						fm['dbench-sub-scene-id'] ===
+						subScene.frontmatter['dbench-id'],
+					childTypeLabel: 'Draft',
+					kinds: {
+						missing: 'DRAFT_MISSING_IN_SUB_SCENE',
+						stale: 'STALE_DRAFT_IN_SUB_SCENE',
+						conflict: 'SUB_SCENE_DRAFT_CONFLICT',
+					},
+				})
+			);
+		}
 	}
 
 	// Project <-> compile preset. Applies to both folder and

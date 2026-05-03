@@ -5,15 +5,22 @@ import type { DbenchId } from './types';
  *
  * Stamped by `stampDraftEssentials` at "new draft" time (or retrofit).
  *
- * Three target shapes exist (per [chapter-type.md § 4](../../docs/planning/chapter-type.md)):
+ * Four target shapes exist (per [chapter-type.md § 4](../../docs/planning/chapter-type.md)
+ * + [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md)):
  *
- * - **Scene draft** — snapshot of a single scene. `dbench-scene` +
- *   `dbench-scene-id` point to the parent scene; `dbench-chapter` /
- *   `dbench-chapter-id` are absent.
+ * - **Scene draft** — snapshot of a single scene's body. When the
+ *   scene has sub-scenes, the snapshot concatenates scene body +
+ *   sub-scene bodies with `<!-- sub-scene: <basename> -->` boundaries.
+ *   `dbench-scene` + `dbench-scene-id` point to the parent scene;
+ *   chapter / sub-scene refs are absent.
  * - **Chapter draft** — snapshot of a chapter (chapter body +
  *   concatenated scene bodies in `dbench-order`). `dbench-chapter` +
  *   `dbench-chapter-id` point to the parent chapter;
  *   `dbench-scene` / `dbench-scene-id` are absent.
+ * - **Sub-scene draft** — snapshot of a single sub-scene's body.
+ *   `dbench-sub-scene` + `dbench-sub-scene-id` point to the parent
+ *   sub-scene; `dbench-scene` / `dbench-scene-id` are absent
+ *   (the sub-scene's own scene ref is sufficient context).
  * - **Single-scene-project draft** — drafts of single-scene projects.
  *   `dbench-scene` and `dbench-scene-id` are empty; the draft's
  *   `dbench-project` identifies the parent.
@@ -37,6 +44,13 @@ export interface DraftFrontmatter {
 	 */
 	'dbench-chapter'?: string;
 	'dbench-chapter-id'?: DbenchId;
+	/**
+	 * Optional sub-scene parent — present for sub-scene-level drafts
+	 * only (per [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md)).
+	 * Absent for scene / chapter / single-scene-project drafts.
+	 */
+	'dbench-sub-scene'?: string;
+	'dbench-sub-scene-id'?: DbenchId;
 }
 
 /**

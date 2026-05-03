@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from 'obsidian';
 import {
+	buildSceneSnapshot,
 	createDraft,
 	nextDraftNumber,
 	resolveDraftFilename,
@@ -8,11 +9,15 @@ import {
 	resolveDraftPaths,
 } from '../../src/core/drafts';
 import { createScene } from '../../src/core/scenes';
+import { createSubScene } from '../../src/core/sub-scenes';
 import { createProject } from '../../src/core/projects';
 import {
 	findDraftsOfScene,
 	findProjects,
+	findScenes,
 	findScenesInProject,
+	findSubScenesInScene,
+	type ProjectNote,
 	type SceneNote,
 } from '../../src/core/discovery';
 import { isValidDbenchId } from '../../src/core/id';
@@ -320,3 +325,104 @@ function stripFrontmatterForTest(content: string): string {
 	const match = content.match(/^---\n[\s\S]*?\n---\n?([\s\S]*)$/);
 	return match ? match[1] : content;
 }
+
+describe('buildSceneSnapshot', () => {
+	it('returns the scene body alone when there are no sub-scenes', () => {
+		expect(buildSceneSnapshot('Scene prose.', [])).toBe('Scene prose.\n');
+	});
+
+	it('returns empty string for an empty scene with no sub-scenes', () => {
+		expect(buildSceneSnapshot('', [])).toBe('');
+		expect(buildSceneSnapshot('   \n\n', [])).toBe('');
+	});
+
+	it('joins scene body and one sub-scene with a comment marker', () => {
+		expect(
+			buildSceneSnapshot('Intro paragraph.', [
+				{ basename: 'Lot 47', body: 'Lot 47 prose.' },
+			])
+		).toBe('Intro paragraph.\n\n<!-- sub-scene: Lot 47 -->\n\nLot 47 prose.\n');
+	});
+
+	it('separates multiple sub-scenes with their own markers', () => {
+		expect(
+			buildSceneSnapshot('Intro.', [
+				{ basename: 'Lot 47', body: 'A body.' },
+				{ basename: 'Bidding war', body: 'B body.' },
+			])
+		).toBe(
+			'Intro.\n\n<!-- sub-scene: Lot 47 -->\n\nA body.\n\n<!-- sub-scene: Bidding war -->\n\nB body.\n'
+		);
+	});
+
+	it('omits leading blank for an empty scene body', () => {
+		expect(
+			buildSceneSnapshot('', [
+				{ basename: 'Only sub-scene', body: 'Just here.' },
+			])
+		).toBe('<!-- sub-scene: Only sub-scene -->\n\nJust here.\n');
+	});
+});
+
+describe('createDraft — scene with sub-scenes (snapshot concatenation)', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let project: ProjectNote;
+	let scene: SceneNote;
+
+	beforeEach(async () => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		await createProject(app, settings, { title: 'Drift', shape: 'folder' });
+		project = findProjects(app)[0];
+		await createScene(app, settings, { project, title: 'The auction' });
+		scene = findScenes(app).find((s) => s.file.basename === 'The auction')!;
+	});
+
+	async function setSceneBody(body: string): Promise<void> {
+		const content = await app.vault.read(scene.file);
+		const match = content.match(/^---\n[\s\S]*?\n---\n?/);
+		const fmBlock = match ? match[0] : '';
+		await app.vault.modify(scene.file, fmBlock + body);
+	}
+
+	async function setSubSceneBody(file: SceneNote['file'], body: string): Promise<void> {
+		const content = await app.vault.read(file);
+		const match = content.match(/^---\n[\s\S]*?\n---\n?/);
+		const fmBlock = match ? match[0] : '';
+		await app.vault.modify(file, fmBlock + body);
+	}
+
+	it('snapshot concatenates scene body + sub-scene bodies in dbench-order', async () => {
+		await createSubScene(app, settings, { project, scene, title: 'Lot 47' });
+		await createSubScene(app, settings, { project, scene, title: 'Bidding war' });
+		const subs = findSubScenesInScene(app, scene.frontmatter['dbench-id']);
+		const lot47 = subs.find((s) => s.file.basename === 'Lot 47')!;
+		const bidding = subs.find((s) => s.file.basename === 'Bidding war')!;
+
+		await setSceneBody('## Draft\nIntro paragraph.\n');
+		await setSubSceneBody(lot47.file, '## Draft\nLot 47 prose.\n');
+		await setSubSceneBody(bidding.file, '## Draft\nBidding war prose.\n');
+
+		const draft = await createDraft(app, settings, { scene, date: FIXED_DATE });
+		const body = stripFrontmatterForTest(await app.vault.read(draft));
+
+		expect(body).toContain('Intro paragraph.');
+		expect(body).toContain('<!-- sub-scene: Lot 47 -->');
+		expect(body).toContain('Lot 47 prose.');
+		expect(body).toContain('<!-- sub-scene: Bidding war -->');
+		expect(body).toContain('Bidding war prose.');
+		// Order: Lot 47 (order 1) before Bidding war (order 2).
+		expect(body.indexOf('Lot 47 prose.')).toBeLessThan(
+			body.indexOf('Bidding war prose.')
+		);
+	});
+
+	it('sub-scene-less scenes still snapshot just their own body (backward compat)', async () => {
+		await setSceneBody('## Draft\nFlat scene prose.\n');
+		const draft = await createDraft(app, settings, { scene, date: FIXED_DATE });
+		const body = stripFrontmatterForTest(await app.vault.read(draft));
+		expect(body).toContain('Flat scene prose.');
+		expect(body).not.toContain('<!-- sub-scene:');
+	});
+});

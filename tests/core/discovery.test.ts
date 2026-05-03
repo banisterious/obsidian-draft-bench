@@ -7,6 +7,7 @@ import {
 	findDraftsOfChapter,
 	findDraftsOfProject,
 	findDraftsOfScene,
+	findDraftsOfSubScene,
 	findNoteById,
 	findProjects,
 	findScenes,
@@ -567,6 +568,56 @@ describe('findDraftsOfScene', () => {
 			'dbench-scene-id': '',
 		});
 		expect(findDraftsOfScene(app, 'scen-001-bbb-001')).toEqual([]);
+	});
+});
+
+describe('findDraftsOfSubScene', () => {
+	let app: App;
+
+	beforeEach(() => {
+		app = new App();
+	});
+
+	it('returns drafts whose dbench-sub-scene-id matches', () => {
+		seed(app, 'Lot 47 - Draft 1.md', {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-aaa-001',
+			'dbench-sub-scene-id': 'sub-001-aaa-001',
+			'dbench-draft-number': 1,
+		});
+		seed(app, 'Lot 47 - Draft 2.md', {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-002-aaa-002',
+			'dbench-sub-scene-id': 'sub-001-aaa-001',
+			'dbench-draft-number': 2,
+		});
+		seed(app, 'Other sub-scene draft.md', {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-003-bbb-003',
+			'dbench-sub-scene-id': 'sub-002-bbb-002',
+			'dbench-draft-number': 1,
+		});
+
+		const result = findDraftsOfSubScene(app, 'sub-001-aaa-001');
+		expect(result).toHaveLength(2);
+	});
+
+	it('excludes scene drafts (drafts with dbench-scene-id, no dbench-sub-scene-id)', () => {
+		seed(app, 'Scene draft.md', {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-aaa-001',
+			'dbench-scene-id': 'scen-001-aaa-001',
+		});
+		expect(findDraftsOfSubScene(app, 'sub-001-aaa-001')).toEqual([]);
+	});
+
+	it('returns empty array for empty sub-scene ID', () => {
+		seed(app, 'Sub-scene draft.md', {
+			'dbench-type': 'draft',
+			'dbench-id': 'drf-001-aaa-001',
+			'dbench-sub-scene-id': '',
+		});
+		expect(findDraftsOfSubScene(app, '')).toEqual([]);
 	});
 });
 

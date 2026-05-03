@@ -250,6 +250,26 @@ export function findDraftsOfScene(app: App, sceneId: DbenchId): DraftNote[] {
 }
 
 /**
+ * Find sub-scene-level drafts whose `dbench-sub-scene-id` matches the
+ * given sub-scene ID. Symmetric partner of `findDraftsOfScene` /
+ * `findDraftsOfChapter` — sub-scene drafts carry `dbench-sub-scene` +
+ * `dbench-sub-scene-id` instead of the scene/chapter refs. Per
+ * [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md),
+ * disambiguation is implicit: which parent ref is present tells the
+ * draft target type.
+ */
+export function findDraftsOfSubScene(
+	app: App,
+	subSceneId: DbenchId
+): DraftNote[] {
+	if (subSceneId === '') return [];
+	return findDrafts(app).filter((draft) => {
+		const fm = draft.frontmatter as unknown as Record<string, unknown>;
+		return fm['dbench-sub-scene-id'] === subSceneId;
+	});
+}
+
+/**
  * Find chapter-level drafts whose `dbench-chapter-id` matches the given
  * chapter ID. Symmetric partner of `findDraftsOfScene` — chapter drafts
  * carry `dbench-chapter` + `dbench-chapter-id` instead of

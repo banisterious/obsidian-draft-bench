@@ -25,6 +25,7 @@ import { MoveToChapterModal } from '../ui/modals/move-to-chapter-modal';
 import { MoveToSceneModal } from '../ui/modals/move-to-scene-modal';
 import { NewChapterDraftModal } from '../ui/modals/new-chapter-draft-modal';
 import { NewDraftModal } from '../ui/modals/new-draft-modal';
+import { NewSubSceneDraftModal } from '../ui/modals/new-sub-scene-draft-modal';
 import { RepairProjectModal } from '../ui/modals/repair-project-modal';
 import {
 	presetItemSpecs,
@@ -137,6 +138,7 @@ export function buildSingleFileItemSpecs(
 	}
 
 	if (type === 'sub-scene') {
+		specs.push(...newSubSceneDraftItemSpecs(plugin, linker, file));
 		specs.push(...moveToSceneItemSpecs(plugin, file));
 	}
 
@@ -426,6 +428,35 @@ function newSceneDraftItemSpecs(
 					file,
 					frontmatter: fm,
 				}).open();
+			},
+		},
+	];
+}
+
+/**
+ * "New draft of this sub-scene" on sub-scene notes. Snapshots the
+ * sub-scene's body via `NewSubSceneDraftModal` per
+ * [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md).
+ * Hidden when frontmatter doesn't shape as a sub-scene (defensive).
+ */
+function newSubSceneDraftItemSpecs(
+	plugin: DraftBenchPlugin,
+	linker: DraftBenchLinker,
+	file: TFile
+): MenuItemSpec[] {
+	const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+	if (!isSubSceneFrontmatter(fm)) return [];
+	return [
+		{
+			title: 'New draft of this sub-scene',
+			icon: 'file-stack',
+			onClick: () => {
+				new NewSubSceneDraftModal(
+					plugin.app,
+					plugin.settings,
+					linker,
+					{ file, frontmatter: fm }
+				).open();
 			},
 		},
 	];

@@ -2,8 +2,13 @@ import type { App, TFile } from 'obsidian';
 import type { DbenchId } from '../model/types';
 import type { DraftBenchSettings } from '../model/settings';
 import type { SceneNote } from './discovery';
-import { findDraftsOfScene, findNoteById } from './discovery';
+import {
+	findDraftsOfScene,
+	findNoteById,
+	findSubScenesInScene,
+} from './discovery';
 import { stampDraftEssentials } from './essentials';
+import { sortSubScenesByOrder } from './sort-scenes';
 
 /**
  * Draft creation: snapshots a scene's current body into a new file in
@@ -139,20 +144,62 @@ export function resolveDraftPaths(
 }
 
 /**
+ * Build the scene-draft snapshot body when the scene has sub-scenes,
+ * per [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md):
+ * the scene's body (frontmatter stripped) followed by each sub-scene's
+ * body in `dbench-order`, separated by `<!-- sub-scene: <basename> -->`
+ * comment markers (parallel to chapter-draft scene boundaries from
+ * chapter-type § 4).
+ *
+ * Pulled out as a pure helper so tests can assert the exact format
+ * without filesystem side effects. Mirrors `buildChapterSnapshot` in
+ * chapter-drafts.ts one structural level deeper.
+ */
+export function buildSceneSnapshot(
+	sceneBody: string,
+	subScenes: Array<{ basename: string; body: string }>
+): string {
+	const trimmedScene = sceneBody.replace(/\s+$/, '');
+
+	if (subScenes.length === 0) {
+		return trimmedScene === '' ? '' : `${trimmedScene}\n`;
+	}
+
+	const subSceneBlocks = subScenes.map((subScene) => {
+		const trimmedSub = subScene.body.replace(/\s+$/, '');
+		return `${subSceneBoundary(subScene.basename)}\n\n${trimmedSub}`;
+	});
+
+	if (trimmedScene === '') {
+		return `${subSceneBlocks.join('\n\n')}\n`;
+	}
+
+	return `${trimmedScene}\n\n${subSceneBlocks.join('\n\n')}\n`;
+}
+
+function subSceneBoundary(basename: string): string {
+	return `<!-- sub-scene: ${basename} -->`;
+}
+
+/**
  * Snapshot a scene into a new draft file.
  *
  * Two-file write per spec § Relationship Integrity:
  *   1. Read the scene's current content, strip its frontmatter, and
- *      write the remaining body into a new draft file. Stamp draft
- *      essentials and pre-set forward references (`dbench-project`,
- *      `dbench-project-id`, `dbench-scene`, `dbench-scene-id`,
- *      `dbench-draft-number`) on the draft.
+ *      write the remaining body into a new draft file. When the scene
+ *      has sub-scenes (per [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md)),
+ *      concatenate scene body + each sub-scene body in `dbench-order`
+ *      with `<!-- sub-scene: <basename> -->` boundaries via
+ *      `buildSceneSnapshot`. Stamp draft essentials and pre-set forward
+ *      references (`dbench-project`, `dbench-project-id`, `dbench-scene`,
+ *      `dbench-scene-id`, `dbench-draft-number`) on the draft.
  *   2. Append the new draft to the scene's `dbench-drafts` and
  *      `dbench-draft-ids` reverse arrays.
  *
- * The scene note is not modified: its body is the new working draft.
- * Callers should run inside `linker.withSuspended(...)` so the
- * intermediate state doesn't trigger sync.
+ * The scene note (and any sub-scene notes) are not modified: their
+ * bodies remain the new working draft. Callers should run inside
+ * `linker.withSuspended(...)` so the intermediate state doesn't
+ * trigger sync.
  */
 export async function createDraft(
 	app: App,
@@ -177,7 +224,27 @@ export async function createDraft(
 	}
 
 	const sceneContent = await app.vault.read(scene.file);
-	const body = stripFrontmatter(sceneContent);
+	const sceneBody = stripFrontmatter(sceneContent);
+
+	// When the scene has sub-scenes, the snapshot concatenates scene
+	// body + child sub-scene bodies in dbench-order. Sub-scene-less
+	// scenes use the original single-body snapshot (byte-identical
+	// backward compat).
+	const subScenes = sortSubScenesByOrder(
+		findSubScenesInScene(app, scene.frontmatter['dbench-id'])
+	);
+	let body: string;
+	if (subScenes.length === 0) {
+		body = sceneBody;
+	} else {
+		const subSceneBodies = await Promise.all(
+			subScenes.map(async (subScene) => ({
+				basename: subScene.file.basename,
+				body: stripFrontmatter(await app.vault.read(subScene.file)),
+			}))
+		);
+		body = buildSceneSnapshot(sceneBody, subSceneBodies);
+	}
 
 	const file = await app.vault.create(filePath, body);
 

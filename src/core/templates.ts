@@ -433,10 +433,11 @@ export async function resolveSubSceneTemplate(
 /**
  * Discover all named templates of `type` available under
  * `settings.templatesFolder`. Templates are markdown files with
- * `dbench-template-type: scene | chapter` frontmatter. The
- * well-known seed files (`scene-template.md` / `chapter-template.md`)
- * are always included as the type's default — they don't need the
- * frontmatter discriminator since their filename is the contract.
+ * `dbench-template-type: scene | chapter | sub-scene` frontmatter. The
+ * well-known seed files (`scene-template.md` / `chapter-template.md` /
+ * `sub-scene-template.md`) are always included as the type's default —
+ * they don't need the frontmatter discriminator since their filename is
+ * the contract.
  *
  * `dbench-template-name` (string) overrides the display name; falls
  * back to the file's basename. `dbench-template-description` (string)
@@ -451,13 +452,17 @@ export async function resolveSubSceneTemplate(
 export function discoverTemplates(
 	app: App,
 	settings: DraftBenchSettings,
-	type: 'scene' | 'chapter'
+	type: 'scene' | 'chapter' | 'sub-scene'
 ): TemplateInfo[] {
 	const folder = settings.templatesFolder.replace(/^\/+|\/+$/g, '');
 	if (folder === '') return [];
 
 	const wellKnownFilename =
-		type === 'scene' ? SCENE_TEMPLATE_FILENAME : CHAPTER_TEMPLATE_FILENAME;
+		type === 'scene'
+			? SCENE_TEMPLATE_FILENAME
+			: type === 'chapter'
+				? CHAPTER_TEMPLATE_FILENAME
+				: SUB_SCENE_TEMPLATE_FILENAME;
 	const folderPrefix = `${folder}/`;
 
 	const out: TemplateInfo[] = [];

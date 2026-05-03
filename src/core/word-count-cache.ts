@@ -106,6 +106,16 @@ export class WordCountCache {
 	}
 
 	/**
+	 * Return the cached count for a sub-scene's body. Same semantics as
+	 * `countForScene`; separate method because `SubSceneNote` doesn't
+	 * structurally satisfy `SceneNote` (different `dbench-type`
+	 * discriminator on `frontmatter`).
+	 */
+	async countForSubScene(subScene: SubSceneNote): Promise<number> {
+		return this.countForFile(subScene.file);
+	}
+
+	/**
 	 * Aggregate word count for a chapter: chapter body's `## Draft`
 	 * plus the sum of child scenes' `## Draft` sections. Per § 5 of
 	 * chapter-type.md, this is the live-computed rollup that surfaces

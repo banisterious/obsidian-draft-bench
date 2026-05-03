@@ -12,9 +12,11 @@ import {
 	findChaptersInProject,
 	findProjects,
 	findScenesInProject,
+	findSubScenesInProject,
 	type ChapterNote,
 	type ProjectNote,
 	type SceneNote,
+	type SubSceneNote,
 } from '../../core/discovery';
 import { sortScenesByOrder } from '../../core/sort-scenes';
 import { appendBrandMark } from '../brand-mark';
@@ -195,15 +197,23 @@ export class ManuscriptView extends ItemView {
 		if (!project) return;
 
 		// Gate: the modified file is the project note itself, one of
-		// its scenes, or one of its chapters. Non-project vault noise
-		// is ignored.
+		// its scenes, one of its chapters, or one of its sub-scenes.
+		// Non-project vault noise is ignored.
 		const projectId = project.frontmatter['dbench-id'];
 		const scenes = findScenesInProject(this.plugin.app, projectId);
 		const chapters = findChaptersInProject(this.plugin.app, projectId);
+		const subScenes = findSubScenesInProject(this.plugin.app, projectId);
 		const isProjectNote = file.path === project.file.path;
 		const isProjectScene = scenes.some((s) => s.file.path === file.path);
 		const isProjectChapter = chapters.some((c) => c.file.path === file.path);
-		if (!isProjectNote && !isProjectScene && !isProjectChapter) return;
+		const isProjectSubScene = subScenes.some((s) => s.file.path === file.path);
+		if (
+			!isProjectNote &&
+			!isProjectScene &&
+			!isProjectChapter &&
+			!isProjectSubScene
+		)
+			return;
 
 		// Invalidate word-count cache for the touched file regardless;
 		// the re-render reads the fresh count.
@@ -270,12 +280,12 @@ export class ManuscriptView extends ItemView {
 		this.renderProjectSummarySection(content, project);
 
 		if (chapters.length > 0) {
-			this.renderManuscriptHierarchySection(content, chapters);
+			this.renderManuscriptHierarchySection(content, project, chapters);
 		} else {
 			const scenes = sortScenesByOrder(
 				findScenesInProject(this.plugin.app, projectId)
 			);
-			this.renderManuscriptListSection(content, scenes);
+			this.renderManuscriptListSection(content, project, scenes);
 		}
 
 		// Preserve scroll position after full re-render.
@@ -422,6 +432,7 @@ export class ManuscriptView extends ItemView {
 
 	private renderManuscriptListSection(
 		container: HTMLElement,
+		project: ProjectNote,
 		scenes: SceneNote[],
 	): void {
 		const expanded = this.readSectionState(SECTION_MANUSCRIPT_LIST, true);
@@ -443,19 +454,28 @@ export class ManuscriptView extends ItemView {
 		if (!body) return;
 		renderManuscriptListBody(
 			body,
+			project,
 			scenes,
 			this.plugin.app,
 			this.plugin.wordCounts,
+			this.plugin,
+			this.plugin.linker,
 			(scene, spec) => {
 				void this.plugin.app.workspace
 					.getLeaf(spec ?? false)
 					.openFile(scene.file);
+			},
+			(subScene, spec) => {
+				void this.plugin.app.workspace
+					.getLeaf(spec ?? false)
+					.openFile(subScene.file);
 			}
 		);
 	}
 
 	private renderManuscriptHierarchySection(
 		container: HTMLElement,
+		project: ProjectNote,
 		chapters: ChapterNote[]
 	): void {
 		const expanded = this.readSectionState(SECTION_MANUSCRIPT_LIST, true);
@@ -477,6 +497,7 @@ export class ManuscriptView extends ItemView {
 		if (!body) return;
 		renderChapterListBody(
 			body,
+			project,
 			chapters,
 			this.plugin.app,
 			this.plugin.wordCounts,
@@ -491,6 +512,11 @@ export class ManuscriptView extends ItemView {
 				void this.plugin.app.workspace
 					.getLeaf(spec ?? false)
 					.openFile(scene.file);
+			},
+			(subScene: SubSceneNote, spec) => {
+				void this.plugin.app.workspace
+					.getLeaf(spec ?? false)
+					.openFile(subScene.file);
 			}
 		);
 	}

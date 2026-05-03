@@ -812,3 +812,227 @@
 .dbench-manuscript-view__chapter-body .dbench-manuscript-view__scene-row:first-child {
 	border-top: none;
 }
+
+/*
+ * Scene cards (hierarchical scenes — those with sub-scenes). Visually
+ * mirror the chapter-card pattern one level deeper, per
+ * [sub-scene-type.md § 6](../../docs/planning/sub-scene-type.md):
+ * collapsible card with a header (chevron + order + title + status +
+ * scene-rollup word count + "New sub-scene" affordance) and a body
+ * holding sub-scene rows. Default styles closely mirror chapter-card;
+ * the BEM classes are distinct so themes can tune per level.
+ *
+ * Scene cards live in two contexts:
+ *   - Inside a chapter-card body (chapter-aware projects). Three-level
+ *     hierarchy: chapter card > scene card > sub-scene rows.
+ *   - At the top of the manuscript list (chapter-less projects with
+ *     mixed-shape scenes). Two-level hierarchy: scene card > sub-scene
+ *     rows, alongside flat scene rows for sub-scene-less scenes.
+ *
+ * Hierarchy:
+ *
+ *     dbench-manuscript-view__scene-card[--expanded]
+ *       dbench-manuscript-view__scene-card-header  (clickable toggle)
+ *         __scene-card-chevron / __scene-card-order /
+ *         __scene-card-title / __status-chip /
+ *         __scene-card-words / __scene-card-action
+ *       dbench-manuscript-view__scene-card-body[--collapsed]
+ *         dbench-manuscript-view__sub-scene-list
+ *           dbench-manuscript-view__sub-scene-row * N
+ */
+.dbench-manuscript-view__scene-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	background: var(--background-secondary);
+	overflow: hidden;
+}
+
+.dbench-manuscript-view__scene-card-header {
+	display: grid;
+	grid-template-columns: auto auto 1fr auto auto auto;
+	align-items: center;
+	gap: var(--dbench-spacing-sm);
+	padding: var(--dbench-spacing-sm) var(--dbench-spacing-md);
+	cursor: pointer;
+	transition: background-color 120ms ease;
+}
+
+.dbench-manuscript-view__scene-card-header:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.dbench-manuscript-view__scene-card-header:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+}
+
+.dbench-manuscript-view__scene-card-chevron {
+	display: grid;
+	place-items: center;
+	color: var(--text-muted);
+}
+
+.dbench-manuscript-view__scene-card-order {
+	display: grid;
+	place-items: center;
+	min-width: 26px;
+	height: 22px;
+	padding: 0 var(--dbench-spacing-xs);
+	background: var(--background-modifier-border);
+	border-radius: var(--dbench-radius-sm);
+	color: var(--text-muted);
+	font-size: var(--font-smallest);
+	font-variant-numeric: tabular-nums;
+	font-weight: var(--font-semibold);
+}
+
+.dbench-manuscript-view__scene-card-title {
+	font-weight: var(--font-semibold);
+	font-size: var(--font-ui-medium);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dbench-manuscript-view__scene-card-words {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+	min-width: 130px;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+.dbench-manuscript-view__scene-card-words--overage .dbench-manuscript-view__scene-progress-fill {
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--color-orange, #e0800c) 70%, transparent),
+		var(--color-orange, #e0800c)
+	);
+}
+
+.dbench-manuscript-view__scene-card-action {
+	flex: 0 0 auto;
+	padding: var(--size-2-1, 2px);
+	color: var(--text-muted);
+}
+
+.dbench-manuscript-view__scene-card-action:hover {
+	color: var(--text-normal);
+}
+
+.dbench-manuscript-view__scene-card-body {
+	padding: 0 var(--dbench-spacing-md) var(--dbench-spacing-sm);
+	border-top: 1px solid var(--background-modifier-border);
+	max-height: 2000px;
+	opacity: 1;
+	overflow: hidden;
+	transition:
+		max-height 220ms ease,
+		opacity 160ms ease,
+		padding-top 220ms ease,
+		padding-bottom 220ms ease,
+		border-top-color 220ms ease;
+}
+
+.dbench-manuscript-view__scene-card-body--collapsed {
+	max-height: 0;
+	opacity: 0;
+	padding-top: 0;
+	padding-bottom: 0;
+	border-top-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.dbench-manuscript-view__scene-card-body {
+		transition: none;
+	}
+}
+
+/*
+ * Sub-scene rows. Mirror scene-row layout one level deeper; sit inside
+ * a scene-card body. Slightly tighter than scene-rows for the deeper
+ * indentation level.
+ */
+.dbench-manuscript-view__sub-scene-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.dbench-manuscript-view__sub-scene-row {
+	display: grid;
+	grid-template-columns: auto 1fr auto auto auto;
+	align-items: center;
+	gap: var(--dbench-spacing-sm);
+	padding: var(--dbench-spacing-xs) 0;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.dbench-manuscript-view__sub-scene-row:first-child {
+	border-top: none;
+}
+
+.dbench-manuscript-view__sub-scene-row--has-subtitle {
+	grid-template-columns: auto 1fr auto auto auto;
+	grid-template-rows: auto auto;
+}
+
+.dbench-manuscript-view__sub-scene-order {
+	display: grid;
+	place-items: center;
+	min-width: 22px;
+	height: 18px;
+	padding: 0 var(--dbench-spacing-xs);
+	color: var(--text-muted);
+	font-size: var(--font-smallest);
+	font-variant-numeric: tabular-nums;
+}
+
+.dbench-manuscript-view__sub-scene-title {
+	font-size: var(--font-ui-small);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dbench-manuscript-view__sub-scene-subtitle {
+	grid-column: 2;
+	color: var(--text-muted);
+	font-size: var(--font-smallest);
+}
+
+.dbench-manuscript-view__sub-scene-words {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+	min-width: 110px;
+	color: var(--text-muted);
+	font-size: var(--font-smallest);
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+.dbench-manuscript-view__sub-scene-words--overage .dbench-manuscript-view__scene-progress-fill {
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--color-orange, #e0800c) 70%, transparent),
+		var(--color-orange, #e0800c)
+	);
+}
+
+.dbench-manuscript-view__sub-scene-drafts {
+	color: var(--text-muted);
+	font-size: var(--font-smallest);
+}
+
+/* Scene cards nested inside a chapter card lose the top-rule between
+ * sibling scene rows / cards in the same body since the scene-card's
+ * own border closes the visual frame. */
+.dbench-manuscript-view__chapter-body .dbench-manuscript-view__scene-card:first-child {
+	border-top: 1px solid var(--background-modifier-border);
+}

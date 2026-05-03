@@ -2,9 +2,14 @@ import { setIcon, type App } from 'obsidian';
 import type DraftBenchPlugin from '../../../../main';
 import type {
 	ChapterNote,
+	ProjectNote,
 	SceneNote,
+	SubSceneNote,
 } from '../../../core/discovery';
-import { findScenesInChapter } from '../../../core/discovery';
+import {
+	findScenesInChapter,
+	findSubScenesInScene,
+} from '../../../core/discovery';
 import type { DraftBenchLinker } from '../../../core/linker';
 import { sortScenesByOrder } from '../../../core/sort-scenes';
 import { readTargetWords } from '../../../core/targets';
@@ -14,6 +19,7 @@ import {
 	attachWikilinkOpenAffordances,
 	type OpenSpec,
 } from './open-affordances';
+import { renderSceneCard } from './scene-card-section';
 import {
 	renderSceneRow,
 	renderStatusChip,
@@ -37,13 +43,15 @@ import {
  */
 export function renderChapterListBody(
 	body: HTMLElement,
+	project: ProjectNote,
 	chapters: ChapterNote[],
 	app: App,
 	wordCountCache: WordCountCache,
 	plugin: DraftBenchPlugin,
 	linker: DraftBenchLinker,
 	onOpenChapter: (chapter: ChapterNote, spec: OpenSpec) => void,
-	onOpenScene: (scene: SceneNote, spec: OpenSpec) => void
+	onOpenScene: (scene: SceneNote, spec: OpenSpec) => void,
+	onOpenSubScene: (subScene: SubSceneNote, spec: OpenSpec) => void
 ): void {
 	body.empty();
 
@@ -65,26 +73,32 @@ export function renderChapterListBody(
 		);
 		renderChapterCard(
 			list,
+			project,
 			chapter,
 			scenes,
+			app,
 			wordCountCache,
 			plugin,
 			linker,
 			onOpenChapter,
-			onOpenScene
+			onOpenScene,
+			onOpenSubScene
 		);
 	}
 }
 
 function renderChapterCard(
 	parent: HTMLElement,
+	project: ProjectNote,
 	chapter: ChapterNote,
 	scenes: SceneNote[],
+	app: App,
 	wordCountCache: WordCountCache,
 	plugin: DraftBenchPlugin,
 	linker: DraftBenchLinker,
 	onOpenChapter: (chapter: ChapterNote, spec: OpenSpec) => void,
-	onOpenScene: (scene: SceneNote, spec: OpenSpec) => void
+	onOpenScene: (scene: SceneNote, spec: OpenSpec) => void,
+	onOpenSubScene: (subScene: SubSceneNote, spec: OpenSpec) => void
 ): void {
 	const id = chapter.frontmatter['dbench-id'];
 	// Map semantic: stored value is `true` when the writer has explicitly
@@ -176,7 +190,25 @@ function renderChapterCard(
 			cls: 'dbench-manuscript-view__scene-list',
 		});
 		for (const scene of scenes) {
-			renderSceneRow(sceneList, scene, wordCountCache, onOpenScene);
+			const subScenes = findSubScenesInScene(
+				app,
+				scene.frontmatter['dbench-id']
+			);
+			if (subScenes.length === 0) {
+				renderSceneRow(sceneList, scene, wordCountCache, onOpenScene);
+			} else {
+				renderSceneCard(
+					sceneList,
+					project,
+					scene,
+					subScenes,
+					wordCountCache,
+					plugin,
+					linker,
+					onOpenScene,
+					onOpenSubScene
+				);
+			}
 		}
 	}
 

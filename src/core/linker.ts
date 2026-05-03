@@ -7,6 +7,7 @@ import {
 	findScenes,
 	findSubScenes,
 } from './discovery';
+import { sortReverseArraysByOrder } from './reverse-array-order';
 
 /**
  * `DraftBenchLinker` — live bidirectional sync service.
@@ -360,8 +361,13 @@ export class DraftBenchLinker {
 			if (hasWikilink && hasId) return; // already in sync; no write
 			if (!hasWikilink) warr.push(childWikilink);
 			if (!hasId) iarr.push(childId);
-			fm[config.parentWikilinkField] = warr;
-			fm[config.parentIdField] = iarr;
+			// Sort by each child's `dbench-order` so live additions land
+			// in narrative order rather than arbitrary append order (#19).
+			// No-op when the new child's `dbench-order` is +Infinity / max
+			// (typical for newly-created children appending at the end).
+			const sorted = sortReverseArraysByOrder(this.app, warr, iarr);
+			fm[config.parentWikilinkField] = sorted.wikilinks;
+			fm[config.parentIdField] = sorted.ids;
 		});
 	}
 

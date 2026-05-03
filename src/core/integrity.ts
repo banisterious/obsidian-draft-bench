@@ -12,6 +12,7 @@ import {
 	findSubScenesInScene,
 	type ProjectNote,
 } from './discovery';
+import { sortReverseArraysByOrder } from './reverse-array-order';
 
 /**
  * `DraftBenchIntegrityService` — batch scan and repair for project
@@ -554,12 +555,18 @@ export async function applyRepairs(
 							cleanI.push(id);
 						}
 					}
+					// Sort by each child's `dbench-order` so reverse-array
+					// position mirrors narrative order (#19). Drafts and
+					// other unordered children no-op via the +Infinity
+					// fallback in the sort utility.
+					const sorted = sortReverseArraysByOrder(app, cleanW, cleanI);
 					if (
-						cleanW.length !== warr.length ||
-						cleanI.length !== iarr.length
+						sorted.wikilinks.length !== warr.length ||
+						sorted.ids.length !== iarr.length ||
+						sorted.changed
 					) {
-						fm[wField] = cleanW;
-						fm[iField] = cleanI;
+						fm[wField] = sorted.wikilinks;
+						fm[iField] = sorted.ids;
 					}
 				}
 			});

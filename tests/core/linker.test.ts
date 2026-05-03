@@ -3802,3 +3802,150 @@ describe('DraftBenchLinker — chapter-scenes-folder auto-rename on parent-chapt
 		expect(app.vault.getAbstractFileByPath('Drift/New chapter')).toBeNull();
 	});
 });
+
+describe('DraftBenchLinker — reverse arrays sorted by child dbench-order (#19)', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedProject(
+		path: string,
+		id: string,
+		title: string,
+		preReverseScenes: string[] = [],
+		preReverseSceneIds: string[] = []
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'project',
+			'dbench-id': id,
+			'dbench-project': `[[${title}]]`,
+			'dbench-project-id': id,
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-scenes': preReverseScenes,
+			'dbench-scene-ids': preReverseSceneIds,
+		});
+		return file;
+	}
+
+	async function seedScene(
+		path: string,
+		id: string,
+		projectId: string,
+		projectTitle: string,
+		order: number
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'scene',
+			'dbench-id': id,
+			'dbench-project': `[[${projectTitle}]]`,
+			'dbench-project-id': projectId,
+			'dbench-order': order,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	it('inserts new child in dbench-order position rather than appending', async () => {
+		// Project already has two scenes (orders 2 and 3) in its reverse
+		// arrays. A third scene (order 1) is added; ensureChildInReverse
+		// pushes then sorts, so the new scene ends up at the front.
+		const project = await seedProject(
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[Scene B]]', '[[Scene C]]'],
+			['sc1-002-tst-001', 'sc1-003-tst-001']
+		);
+		await seedScene(
+			'Drift/Scene B.md',
+			'sc1-002-tst-001',
+			'prj-001-tst-001',
+			'Drift',
+			2
+		);
+		await seedScene(
+			'Drift/Scene C.md',
+			'sc1-003-tst-001',
+			'prj-001-tst-001',
+			'Drift',
+			3
+		);
+		const sceneA = await seedScene(
+			'Drift/Scene A.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'Drift',
+			1
+		);
+
+		app.metadataCache._fire('changed', sceneA);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-scenes']).toEqual([
+			'[[Scene A]]',
+			'[[Scene B]]',
+			'[[Scene C]]',
+		]);
+		expect(fm?.['dbench-scene-ids']).toEqual([
+			'sc1-001-tst-001',
+			'sc1-002-tst-001',
+			'sc1-003-tst-001',
+		]);
+	});
+
+	it('preserves order on a no-op modify (already in sync, already sorted)', async () => {
+		// Regression guard: when reverse arrays are already sorted and
+		// in sync, a modify event must be a true no-op (no rewrite, no
+		// reordering). The early-return short-circuit catches it before
+		// the sort path.
+		const project = await seedProject(
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[Scene A]]', '[[Scene B]]'],
+			['sc1-001-tst-001', 'sc1-002-tst-001']
+		);
+		const sceneA = await seedScene(
+			'Drift/Scene A.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'Drift',
+			1
+		);
+		await seedScene(
+			'Drift/Scene B.md',
+			'sc1-002-tst-001',
+			'prj-001-tst-001',
+			'Drift',
+			2
+		);
+
+		app.metadataCache._fire('changed', sceneA);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(project)?.frontmatter;
+		expect(fm?.['dbench-scenes']).toEqual(['[[Scene A]]', '[[Scene B]]']);
+		expect(fm?.['dbench-scene-ids']).toEqual([
+			'sc1-001-tst-001',
+			'sc1-002-tst-001',
+		]);
+	});
+});
+

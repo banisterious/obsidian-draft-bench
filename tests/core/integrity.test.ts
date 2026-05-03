@@ -2035,6 +2035,85 @@ describe('integrity — pairing-preserving add-to-reverse (#14)', () => {
 		expect(conflicts).toEqual([]);
 	});
 
+	it('sorts reverse arrays by child dbench-order during repair (#19)', async () => {
+		// Parent's reverse arrays are out of dbench-order. Scan flags
+		// one MISSING entry; applyRepairs adds it AND the post-prune
+		// re-sorts to narrative order.
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[Departure]]'],
+			['sc1-001-tst-001']
+		);
+
+		const subScenes = [
+			{ title: 'A', id: 'ssc-001-tst-001', order: 1 },
+			{ title: 'B', id: 'ssc-002-tst-001', order: 2 },
+			{ title: 'C', id: 'ssc-003-tst-001', order: 3 },
+			{ title: 'D', id: 'ssc-004-tst-001', order: 4 },
+		];
+		for (const s of subScenes) {
+			const file = await app.vault.create(
+				`Drift/Departure/${s.title}.md`,
+				''
+			);
+			app.metadataCache._setFrontmatter(file, {
+				'dbench-type': 'sub-scene',
+				'dbench-id': s.id,
+				'dbench-project': '[[Drift]]',
+				'dbench-project-id': 'prj-001-tst-001',
+				'dbench-scene': '[[Departure]]',
+				'dbench-scene-id': 'sc1-001-tst-001',
+				'dbench-order': s.order,
+				'dbench-status': 'idea',
+				'dbench-drafts': [],
+				'dbench-draft-ids': [],
+			});
+		}
+
+		// Parent: 3 children present in WRONG order, 1 child (D) missing.
+		await seedScene(
+			app,
+			'Drift/Departure.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[C]]', '[[A]]', '[[B]]'],
+			['ssc-003-tst-001', 'ssc-001-tst-001', 'ssc-002-tst-001']
+		);
+
+		const project = loadProject(app, 'Drift');
+		const firstReport = scanProject(app, project);
+		expect(kinds(firstReport.issues)).toContain('SUB_SCENE_MISSING_IN_SCENE');
+
+		await applyRepairs(app, firstReport);
+
+		const sceneFile = app.vault.getAbstractFileByPath(
+			'Drift/Departure.md'
+		) as TFile;
+		const fm = app.metadataCache.getFileCache(sceneFile)?.frontmatter as
+			| Record<string, unknown>
+			| undefined;
+		// Expected: sorted by dbench-order, all 4 children present.
+		expect(fm?.['dbench-sub-scenes']).toEqual([
+			'[[A]]',
+			'[[B]]',
+			'[[C]]',
+			'[[D]]',
+		]);
+		expect(fm?.['dbench-sub-scene-ids']).toEqual([
+			'ssc-001-tst-001',
+			'ssc-002-tst-001',
+			'ssc-003-tst-001',
+			'ssc-004-tst-001',
+		]);
+	});
+
 	it('falls back to append when neither side has the value (true missing-child case)', async () => {
 		// Regression guard: the existing append-both behavior must hold
 		// for the case the original code already handled — a child

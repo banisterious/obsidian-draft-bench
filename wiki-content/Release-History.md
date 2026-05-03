@@ -4,6 +4,19 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.2.3: 2026-05-04 — defensive linker-sort fixes
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.2.3)
+
+Third hot patch of the day. Sequential `Set as sub-scene` retrofits surfaced a corruption pattern in a parent scene's reverse arrays — mispaired entries plus an orphan id that didn't match any note in the vault. Two defensive fixes against latent issues in the linker -> sort chain.
+
+### Fixed
+
+- **Sort no longer truncates length-asymmetric arrays** ([#22](https://github.com/banisterious/obsidian-draft-bench/issues/22)). `sortReverseArraysByOrder` used `Math.min` of the two array lengths and silently dropped tail entries when emitting the sorted output. Asymmetric arrays should never reach the sort under correct usage, but a corrupted sort output was strictly worse than the input. Now returns inputs unchanged when lengths diverge, surfacing the asymmetry for the integrity service to handle.
+- **Linker passes the just-added child's order directly to the sort** ([#22](https://github.com/banisterious/obsidian-draft-bench/issues/22)). `ensureChildInReverse` previously relied on `findNoteById` against the metadataCache for every child including the just-added one. In real Obsidian, the cache for a just-modified file can lag its `'changed'` event by a tick, returning null and demoting the entry to `+Infinity` in the sort. Each subsequent sequential retrofit shifted the demoted entry further back, eventually producing a fully-rotated reverse array. The linker now threads the child's `dbench-order` through to the sort via a new `knownOrders` map; the sort prefers caller-provided values and falls back to `findNoteById` only for entries not in the map.
+
+1102 unit + integration tests, all green. Desktop-only.
+
 ## 0.2.2: 2026-05-04 — sub-scene retrofit nested-layout fix
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.2.2)

@@ -284,10 +284,18 @@ export class DraftBenchLinker {
 				candidate.frontmatter['dbench-id'] === declaredParentId;
 
 			if (isDeclaredParent) {
+				// Pull the child's `dbench-order` from the cache the
+				// linker already has in hand and pass it to the sort
+				// directly (#22), sidestepping the cache-timing window
+				// in `findNoteById` for the just-modified file.
+				const rawOrder = childFm['dbench-order'];
+				const childOrder =
+					typeof rawOrder === 'number' ? rawOrder : undefined;
 				await this.ensureChildInReverse(
 					candidate.file,
 					childWikilink,
 					childId,
+					childOrder,
 					config
 				);
 			} else {
@@ -351,6 +359,7 @@ export class DraftBenchLinker {
 		parent: TFile,
 		childWikilink: string,
 		childId: string,
+		childOrder: number | undefined,
 		config: RelationshipConfig
 	): Promise<void> {
 		await this.app.fileManager.processFrontMatter(parent, (fm) => {
@@ -363,9 +372,20 @@ export class DraftBenchLinker {
 			if (!hasId) iarr.push(childId);
 			// Sort by each child's `dbench-order` so live additions land
 			// in narrative order rather than arbitrary append order (#19).
-			// No-op when the new child's `dbench-order` is +Infinity / max
-			// (typical for newly-created children appending at the end).
-			const sorted = sortReverseArraysByOrder(this.app, warr, iarr);
+			// Pass the just-added child's order directly to the sort
+			// (#22) so it doesn't depend on `findNoteById`'s view of the
+			// metadataCache, which can lag by a tick on the file that
+			// triggered the current `'changed'` event.
+			const knownOrders = new Map<string, number>();
+			if (typeof childOrder === 'number') {
+				knownOrders.set(childId, childOrder);
+			}
+			const sorted = sortReverseArraysByOrder(
+				this.app,
+				warr,
+				iarr,
+				knownOrders
+			);
 			fm[config.parentWikilinkField] = sorted.wikilinks;
 			fm[config.parentIdField] = sorted.ids;
 		});

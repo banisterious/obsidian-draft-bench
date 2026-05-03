@@ -6,6 +6,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-05-04
+
+Third hot patch of the day. Defensive fixes against latent issues in the linker -> sort chain that surfaced as mispaired reverse arrays during sequential sub-scene retrofits.
+
+### Fixed
+
+- **Sort no longer truncates length-asymmetric arrays.** `sortReverseArraysByOrder` previously walked `Math.min(wikilinks.length, ids.length)` indices and silently dropped any tail entries past the shorter array's length when re-emitting the sorted result. Asymmetric arrays should never reach the sort under correct usage, but a corrupted-state sort output was strictly worse than the input. The function now returns inputs unchanged with `changed: false` when lengths diverge, surfacing the asymmetry to the integrity-service post-prune for proper handling. Refs #22.
+- **Linker passes the just-added child's `dbench-order` directly to the sort.** `ensureChildInReverse` previously called `sortReverseArraysByOrder` with no overrides; the sort fell back to `findNoteById` for every child including the just-added one. In real Obsidian, the metadataCache for a just-modified file can lag the `'changed'` event by a tick, returning null from `findNoteById` and demoting the entry to `+Infinity` in the sort. Each subsequent sequential retrofit shifts the demoted entry further back, eventually producing a fully-rotated reverse array. Fix: thread the child's order from the linker's reconcile context (which already holds it via `childFm['dbench-order']`) into the sort via a new optional `knownOrders` map. The sort prefers the map; falls back to `findNoteById` for entries not in the map. Refs #22, #19.
+
+5 new focused unit tests for `sortReverseArraysByOrder` covering asymmetric-array guard, `knownOrders` overrides, idempotence, and the mystery-id fallback. + 1 integration test in the linker suite that retrofits 5 sub-scenes sequentially against a single parent and asserts correctly-paired reverse arrays.
+
 ## [0.2.2] - 2026-05-04
 
 Second hot patch of the day, this time for a sub-scene retrofit gap surfaced while smoke-testing 0.2.1.

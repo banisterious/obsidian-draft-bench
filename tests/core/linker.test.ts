@@ -3949,3 +3949,153 @@ describe('DraftBenchLinker — reverse arrays sorted by child dbench-order (#19)
 	});
 });
 
+describe('DraftBenchLinker — sequential sub-scene retrofit chain (#22)', () => {
+	// Reproduces the bug observed 2026-05-04 where retrofitting five
+	// untyped sub-scene candidates in sequence under one parent scene
+	// produced mispaired reverse arrays + an orphan id. Each sub-scene
+	// retrofit fires a metadataCache 'changed' event that the linker
+	// reconciles by writing to the parent scene; this test asserts the
+	// parent's reverse arrays are correctly paired and ordered after all
+	// five retrofits.
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedProject(
+		path: string,
+		id: string,
+		title: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'project',
+			'dbench-id': id,
+			'dbench-project': `[[${title}]]`,
+			'dbench-project-id': id,
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-scenes': [`[[Sc01 - The Bottom]]`],
+			'dbench-scene-ids': ['sc1-001-tst-001'],
+		});
+		return file;
+	}
+
+	async function seedScene(
+		path: string,
+		id: string,
+		projectId: string,
+		projectTitle: string,
+		order: number
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'scene',
+			'dbench-id': id,
+			'dbench-project': `[[${projectTitle}]]`,
+			'dbench-project-id': projectId,
+			'dbench-order': order,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	/**
+	 * Simulates `setAsSubScene` retrofit + linker propagation: stamps
+	 * the sub-scene's frontmatter (mimicking the post-#21 inference
+	 * result), then fires the metadataCache 'changed' event the linker
+	 * subscribes to.
+	 */
+	async function retrofitSubScene(
+		path: string,
+		id: string,
+		order: number,
+		projectId: string,
+		projectTitle: string,
+		sceneId: string,
+		sceneTitle: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'sub-scene',
+			'dbench-id': id,
+			'dbench-project': `[[${projectTitle}]]`,
+			'dbench-project-id': projectId,
+			'dbench-scene': `[[${sceneTitle}]]`,
+			'dbench-scene-id': sceneId,
+			'dbench-order': order,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		app.metadataCache._fire('changed', file);
+		await flush();
+		return file;
+	}
+
+	it('builds the parent scene reverse arrays correctly across 5 sequential retrofits', async () => {
+		await seedProject('Drift/Drift.md', 'prj-001-tst-001', 'Drift');
+		await seedScene(
+			'Drift/Sc01 - The Bottom.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'Drift',
+			1
+		);
+
+		// Retrofit 5 sub-scene candidates in 01->05 order.
+		const subScenes: Array<{ name: string; id: string; order: number }> = [
+			{ name: '01 - The Escape', id: 'ssc-001-tst-001', order: 1 },
+			{ name: '02 - The Club', id: 'ssc-002-tst-001', order: 2 },
+			{ name: '03 - The Booths', id: 'ssc-003-tst-001', order: 3 },
+			{ name: '04 - The Streets', id: 'ssc-004-tst-001', order: 4 },
+			{ name: '05 - The Apartment', id: 'ssc-005-tst-001', order: 5 },
+		];
+		for (const ss of subScenes) {
+			await retrofitSubScene(
+				`Drift/Sc01 - The Bottom/${ss.name}.md`,
+				ss.id,
+				ss.order,
+				'prj-001-tst-001',
+				'Drift',
+				'sc1-001-tst-001',
+				'Sc01 - The Bottom'
+			);
+		}
+
+		const sceneFile = app.vault.getAbstractFileByPath(
+			'Drift/Sc01 - The Bottom.md'
+		) as TFile;
+		const fm = app.metadataCache.getFileCache(sceneFile)?.frontmatter as
+			| Record<string, unknown>
+			| undefined;
+		expect(fm?.['dbench-sub-scenes']).toEqual([
+			'[[01 - The Escape]]',
+			'[[02 - The Club]]',
+			'[[03 - The Booths]]',
+			'[[04 - The Streets]]',
+			'[[05 - The Apartment]]',
+		]);
+		expect(fm?.['dbench-sub-scene-ids']).toEqual([
+			'ssc-001-tst-001',
+			'ssc-002-tst-001',
+			'ssc-003-tst-001',
+			'ssc-004-tst-001',
+			'ssc-005-tst-001',
+		]);
+	});
+});
+
+

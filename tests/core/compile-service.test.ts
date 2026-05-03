@@ -1690,3 +1690,349 @@ describe("CompileService.generate — chapter heading-scope ('chapter' mode, Ste
 		expect(result.markdown).toContain('[^2]: Scene note.');
 	});
 });
+
+describe('CompileService.generate — sub-scene descent (Step 8 / sub-scene-type § 7)', () => {
+	let app: App;
+	let service: CompileService;
+	const projectId = 'prj-001-tst-001';
+
+	beforeEach(() => {
+		app = new App();
+		service = new CompileService(app);
+	});
+
+	async function seedSubScene(
+		options: {
+			path: string;
+			id: string;
+			projectTitle: string;
+			projectId: string;
+			sceneId: string;
+			sceneTitle: string;
+			order: number;
+			body: string;
+			status?: DbenchStatus;
+		}
+	): Promise<TFile> {
+		const file = await app.vault.create(options.path, options.body);
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'sub-scene',
+			'dbench-id': options.id,
+			'dbench-project': `[[${options.projectTitle}]]`,
+			'dbench-project-id': options.projectId,
+			'dbench-scene': `[[${options.sceneTitle}]]`,
+			'dbench-scene-id': options.sceneId,
+			'dbench-order': options.order,
+			'dbench-status': options.status ?? 'draft',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	it('flat (draft) mode: hierarchical scene emits H1 + intro + sub-scene H2s', async () => {
+		await seedScene(app, {
+			path: 'Drift/The auction.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Drift',
+			order: 1,
+			body: '## Draft\nIntro paragraph.',
+		});
+		await seedSubScene({
+			path: 'Drift/The auction/Lot 47.md',
+			id: 'sub-001-tst-001',
+			projectTitle: 'Drift',
+			projectId,
+			sceneId: 'sca-001-tst-001',
+			sceneTitle: 'The auction',
+			order: 1,
+			body: '## Draft\nLot 47 prose.',
+		});
+		await seedSubScene({
+			path: 'Drift/The auction/Bidding war.md',
+			id: 'sub-002-tst-002',
+			projectTitle: 'Drift',
+			projectId,
+			sceneId: 'sca-001-tst-001',
+			sceneTitle: 'The auction',
+			order: 2,
+			body: '## Draft\nBidding war prose.',
+		});
+
+		const preset = makePreset({ projectId });
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe(
+			'# The auction\n\nIntro paragraph.\n\n## Lot 47\n\nLot 47 prose.\n\n## Bidding war\n\nBidding war prose.'
+		);
+	});
+
+	it('flat (draft) mode: hierarchical scene with empty intro emits scene H1 then sub-scenes directly', async () => {
+		await seedScene(app, {
+			path: 'Drift/The auction.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Drift',
+			order: 1,
+			body: '## Draft\n', // empty intro
+		});
+		await seedSubScene({
+			path: 'Drift/The auction/Lot 47.md',
+			id: 'sub-001-tst-001',
+			projectTitle: 'Drift',
+			projectId,
+			sceneId: 'sca-001-tst-001',
+			sceneTitle: 'The auction',
+			order: 1,
+			body: '## Draft\nLot 47 prose.',
+		});
+
+		const preset = makePreset({ projectId });
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe(
+			'# The auction\n\n## Lot 47\n\nLot 47 prose.'
+		);
+	});
+
+	it('flat mode: sub-scene-less scenes still render with H1 + body (mixed shape)', async () => {
+		// Hierarchical scene first
+		await seedScene(app, {
+			path: 'Drift/The auction.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Drift',
+			order: 1,
+			body: '## Draft\n',
+		});
+		await seedSubScene({
+			path: 'Drift/The auction/Lot 47.md',
+			id: 'sub-001-tst-001',
+			projectTitle: 'Drift',
+			projectId,
+			sceneId: 'sca-001-tst-001',
+			sceneTitle: 'The auction',
+			order: 1,
+			body: '## Draft\nLot 47.',
+		});
+		// Flat scene second
+		await seedScene(app, {
+			path: 'Drift/Reception.md',
+			id: 'sca-002-tst-002',
+			projectId,
+			projectTitle: 'Drift',
+			order: 2,
+			body: '## Draft\nReception prose.',
+		});
+
+		const preset = makePreset({ projectId });
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe(
+			'# The auction\n\n## Lot 47\n\nLot 47.\n\n# Reception\n\nReception prose.'
+		);
+	});
+
+	it('chapter mode: hierarchical scene emits H2 + intro + sub-scene H3s under chapter H1', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Ch1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/The auction.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 1,
+			body: '## Draft\nScene intro paragraph.',
+		});
+		await seedSubScene({
+			path: 'Novel/Ch1/The auction/Lot 47.md',
+			id: 'sub-001-tst-001',
+			projectTitle: 'Novel',
+			projectId,
+			sceneId: 'sca-001-tst-001',
+			sceneTitle: 'The auction',
+			order: 1,
+			body: '## Draft\nLot 47 prose.',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe(
+			'# Ch1\n\n## The auction\n\nScene intro paragraph.\n\n### Lot 47\n\nLot 47 prose.'
+		);
+	});
+
+	it('chapter mode: sub-scene-less scenes in chapter still suppress scene heading', async () => {
+		await seedChapter(app, {
+			path: 'Novel/Ch1.md',
+			id: 'ch1-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			order: 1,
+		});
+		// Hierarchical scene
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/Tall.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 1,
+			body: '## Draft\n',
+		});
+		await seedSubScene({
+			path: 'Novel/Ch1/Tall/Beat.md',
+			id: 'sub-001-tst-001',
+			projectTitle: 'Novel',
+			projectId,
+			sceneId: 'sca-001-tst-001',
+			sceneTitle: 'Tall',
+			order: 1,
+			body: '## Draft\nBeat prose.',
+		});
+		// Flat scene
+		await seedSceneInChapter(app, {
+			path: 'Novel/Ch1/Flat.md',
+			id: 'sca-002-tst-002',
+			projectId,
+			projectTitle: 'Novel',
+			chapterId: 'ch1-001-tst-001',
+			chapterTitle: 'Ch1',
+			order: 2,
+			body: '## Draft\nFlat scene prose.',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-heading-scope': 'chapter',
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toBe(
+			'# Ch1\n\n## Tall\n\n### Beat\n\nBeat prose.\n\nFlat scene prose.'
+		);
+		// Flat scene must NOT get its own heading.
+		expect(result.markdown).not.toContain('## Flat');
+		expect(result.markdown).not.toContain('# Flat');
+	});
+
+	it('sub-scenes in dbench-compile-scene-excludes are filtered out (basename match)', async () => {
+		await seedScene(app, {
+			path: 'Drift/The auction.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Drift',
+			order: 1,
+			body: '## Draft\n',
+		});
+		await seedSubScene({
+			path: 'Drift/The auction/Lot 47.md',
+			id: 'sub-001-tst-001',
+			projectTitle: 'Drift',
+			projectId,
+			sceneId: 'sca-001-tst-001',
+			sceneTitle: 'The auction',
+			order: 1,
+			body: '## Draft\nLot 47.',
+		});
+		await seedSubScene({
+			path: 'Drift/The auction/Bidding war.md',
+			id: 'sub-002-tst-002',
+			projectTitle: 'Drift',
+			projectId,
+			sceneId: 'sca-001-tst-001',
+			sceneTitle: 'The auction',
+			order: 2,
+			body: '## Draft\nBidding war.',
+		});
+
+		const preset = makePreset({
+			projectId,
+			'dbench-compile-scene-excludes': ['[[Lot 47]]'],
+		});
+		const result = await service.generate(preset);
+
+		expect(result.markdown).toContain('## Bidding war');
+		expect(result.markdown).not.toContain('## Lot 47');
+		expect(result.markdown).not.toContain('Lot 47.');
+	});
+
+	it('sub-scene reads contribute hashes to chapterHashes (change detection)', async () => {
+		await seedScene(app, {
+			path: 'Drift/The auction.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Drift',
+			order: 1,
+			body: '## Draft\n',
+		});
+		await seedSubScene({
+			path: 'Drift/The auction/Lot 47.md',
+			id: 'sub-001-tst-001',
+			projectTitle: 'Drift',
+			projectId,
+			sceneId: 'sca-001-tst-001',
+			sceneTitle: 'The auction',
+			order: 1,
+			body: '## Draft\nLot 47.',
+		});
+
+		const preset = makePreset({ projectId });
+		const result = await service.generate(preset);
+
+		// Sub-scene id appears in chapterHashes (the per-unit hash array
+		// the compile state writes back to dbench-last-chapter-hashes).
+		expect(result.chapterHashes.some((h) => h.startsWith('sub-001-tst-001:'))).toBe(true);
+	});
+
+	it('scenesCompiled counts sub-scenes (each as one unit)', async () => {
+		await seedScene(app, {
+			path: 'Drift/The auction.md',
+			id: 'sca-001-tst-001',
+			projectId,
+			projectTitle: 'Drift',
+			order: 1,
+			body: '## Draft\n',
+		});
+		await seedSubScene({
+			path: 'Drift/The auction/Lot 47.md',
+			id: 'sub-001-tst-001',
+			projectTitle: 'Drift',
+			projectId,
+			sceneId: 'sca-001-tst-001',
+			sceneTitle: 'The auction',
+			order: 1,
+			body: '## Draft\nA.',
+		});
+		await seedSubScene({
+			path: 'Drift/The auction/Bidding war.md',
+			id: 'sub-002-tst-002',
+			projectTitle: 'Drift',
+			projectId,
+			sceneId: 'sca-001-tst-001',
+			sceneTitle: 'The auction',
+			order: 2,
+			body: '## Draft\nB.',
+		});
+
+		const preset = makePreset({ projectId });
+		const result = await service.generate(preset);
+
+		// Two sub-scenes processed as units; the parent scene's intro
+		// (empty) doesn't increment the counter (mirrors processChapterIntro).
+		expect(result.scenesCompiled).toBe(2);
+	});
+});

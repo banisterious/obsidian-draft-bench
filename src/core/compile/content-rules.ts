@@ -31,6 +31,15 @@ export interface RuleContext {
 	 * unrecorded.
 	 */
 	stripAccumulator?: StripAccumulator;
+	/**
+	 * When true, applyContentRules skips the auto-prepended scene
+	 * heading. Used by walkers that emit headings explicitly: the
+	 * chapter walker for chapter-intro processing, the hierarchical-
+	 * scene walker for scene-intro (under an H1/H2 emitted by the
+	 * walker) and sub-scene processing (under an H2/H3 emitted by
+	 * the walker). Per [sub-scene-type.md § 7](../../../docs/planning/sub-scene-type.md).
+	 */
+	suppressHeading?: boolean;
 }
 
 /**
@@ -72,12 +81,13 @@ export function applyContentRules(rawContent: string, ctx: RuleContext): string 
 	// (suppressed in chapter heading-scope — buildSceneHeading returns
 	// '' there, and join skips empty parts so the body emerges naked
 	// for the chapter walker to compose with the chapter heading).
+	// `suppressHeading: true` skips the prepend entirely, used by
+	// walkers that emit explicit headings themselves (chapter intro,
+	// hierarchical-scene intro, sub-scenes under explicit H2/H3).
 	body = shiftH1sInBody(body);
-	const heading = buildSceneHeading(
-		ctx.sceneTitle,
-		ctx.compileIndex,
-		ctx.preset
-	);
+	const heading = ctx.suppressHeading
+		? ''
+		: buildSceneHeading(ctx.sceneTitle, ctx.compileIndex, ctx.preset);
 	body = [heading, body].filter((part) => part.length > 0).join('\n\n');
 
 	// Rules 10 + 11: line-level strip-by-filter / strip-by-regex.
@@ -214,6 +224,55 @@ export function buildSceneHeading(
 	if (numbering === 'numeric') return `# ${index}. ${title}`;
 	if (numbering === 'roman') return `# ${toRoman(index)}. ${title}`;
 	return `# ${title}`;
+}
+
+/**
+ * Build the scene heading emitted for HIERARCHICAL scenes (those with
+ * sub-scenes), per [sub-scene-type.md § 7](../../../docs/planning/sub-scene-type.md).
+ * Distinct from `buildSceneHeading` because hierarchical scenes need a
+ * heading even in chapter mode (so the structural break between scenes
+ * is visible above their sub-scene H3s):
+ *
+ * - Draft mode: `# Title` (mirrors flat scene H1; numbering applies via
+ *   `dbench-compile-chapter-numbering`).
+ * - Chapter mode: `## Title` (sits under the chapter's H1; no numbering
+ *   to avoid clashing with the chapter's numeric prefix).
+ *
+ * The walker calls this BEFORE emitting the scene's intro prose and
+ * the sub-scenes underneath.
+ */
+export function buildHierarchicalSceneHeading(
+	title: string,
+	index: number,
+	preset: CompilePresetFrontmatter
+): string {
+	const isChapterMode = preset['dbench-compile-heading-scope'] === 'chapter';
+	if (isChapterMode) return `## ${title}`;
+	const numbering = preset['dbench-compile-chapter-numbering'];
+	if (numbering === 'numeric') return `# ${index}. ${title}`;
+	if (numbering === 'roman') return `# ${toRoman(index)}. ${title}`;
+	return `# ${title}`;
+}
+
+/**
+ * Build the sub-scene heading per [sub-scene-type.md § 7](../../../docs/planning/sub-scene-type.md):
+ *
+ * - Draft mode: `## Title` (one level under the scene's H1).
+ * - Chapter mode: `### Title` (one level under the scene's H2, two
+ *   under the chapter's H1).
+ *
+ * Sub-scene headings are unnumbered in V1 — the existing
+ * `dbench-compile-chapter-numbering` field is reserved for top-level
+ * structural numbering (chapters in chapter mode, scenes in draft
+ * mode); extending it to sub-scenes would create three-deep numbering
+ * (`# 1. → ## 1.2. → ### 1.2.3.`) that V1 is not committing to.
+ */
+export function buildSubSceneHeading(
+	title: string,
+	preset: CompilePresetFrontmatter
+): string {
+	const isChapterMode = preset['dbench-compile-heading-scope'] === 'chapter';
+	return isChapterMode ? `### ${title}` : `## ${title}`;
 }
 
 /**

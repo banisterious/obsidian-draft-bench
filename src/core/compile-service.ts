@@ -1,6 +1,10 @@
 import type { App } from 'obsidian';
 import { buildChapterHeading } from './compile/chapter-rules';
-import { applyContentRules } from './compile/content-rules';
+import {
+	applyContentRules,
+	buildHierarchicalSceneHeading,
+	buildSubSceneHeading,
+} from './compile/content-rules';
 import { renumberFootnotes } from './compile/footnote-renumber';
 import { buildSectionBreak } from './compile/section-breaks';
 import { djb2, formatChapterHash } from './compile/hash';
@@ -13,11 +17,13 @@ import {
 	findChaptersInProject,
 	findScenesInChapter,
 	findScenesInProject,
+	findSubScenesInScene,
 	type ChapterNote,
 	type CompilePresetNote,
 	type SceneNote,
+	type SubSceneNote,
 } from './discovery';
-import { sortScenesByOrder } from './sort-scenes';
+import { sortScenesByOrder, sortSubScenesByOrder } from './sort-scenes';
 import type { DbenchId } from '../model/types';
 
 /**
@@ -96,16 +102,25 @@ interface SceneAccumulator {
  * format-agnostic intermediate is consumed by the output renderers (MD
  * / PDF / ODT) that land in P3.C.
  *
- * Two walk shapes (Step 8 of chapter-type):
+ * Two walk shapes:
  *
  * - **Flat** — chapter-less projects. Scenes sorted by `dbench-order`
- *   across the whole project, processed in order. Pre-Step-8 behavior;
- *   byte-identical to the previous single-loop implementation.
+ *   across the whole project, processed in order.
  * - **Chapter-aware** — projects with one or more chapters. Walks
  *   chapters in `dbench-order`, then scenes within each chapter in
- *   `dbench-order`. Per-scene processing is identical to flat; the
- *   chapter-segment emission rule (heading + intro before scenes)
- *   lands in a follow-up commit.
+ *   `dbench-order`.
+ *
+ * Both walkers descend into sub-scenes (per [sub-scene-type.md § 7](../../docs/planning/sub-scene-type.md))
+ * when a scene has children: the scene becomes a "scene-as-container"
+ * emitting its own heading + intro followed by sub-scene segments.
+ * Heading levels:
+ *
+ * - Chapter mode: chapter = H1, scene-as-container = H2, sub-scene = H3.
+ * - Draft mode: scene-as-container = H1, sub-scene = H2.
+ *
+ * Sub-scene-less scenes use the original behavior (chapter mode
+ * suppresses scene heading; draft mode emits H1 with optional
+ * numbering).
  *
  * Per-scene transformations (frontmatter, body scope, heading
  * prepending, inline transforms) run through
@@ -171,7 +186,23 @@ export class CompileService {
 		};
 
 		for (let i = 0; i < selected.length; i++) {
-			await this.processScene(selected[i], i + 1, preset, acc);
+			const scene = selected[i];
+			const subScenes = findSubScenesInScene(
+				this.app,
+				scene.frontmatter['dbench-id']
+			);
+			if (subScenes.length === 0) {
+				await this.processScene(scene, i + 1, preset, acc);
+			} else {
+				await this.processHierarchicalScene(
+					scene,
+					subScenes,
+					i + 1,
+					preset,
+					acc,
+					excludeSet
+				);
+			}
 		}
 
 		return {
@@ -291,13 +322,27 @@ export class CompileService {
 			}
 			for (let i = 0; i < plan.selected.length; i++) {
 				sceneIndex++;
-				await this.processScene(
-					plan.selected[i],
-					sceneIndex,
-					preset,
-					acc,
-					{ suppressSectionBreak: chapterMode && i === 0 }
+				const scene = plan.selected[i];
+				const subScenes = findSubScenesInScene(
+					this.app,
+					scene.frontmatter['dbench-id']
 				);
+				const suppressSectionBreak = chapterMode && i === 0;
+				if (subScenes.length === 0) {
+					await this.processScene(scene, sceneIndex, preset, acc, {
+						suppressSectionBreak,
+					});
+				} else {
+					await this.processHierarchicalScene(
+						scene,
+						subScenes,
+						sceneIndex,
+						preset,
+						acc,
+						excludeSet,
+						{ suppressSectionBreak }
+					);
+				}
 			}
 		}
 
@@ -313,11 +358,11 @@ export class CompileService {
 	}
 
 	private async processScene(
-		scene: SceneNote,
+		scene: SceneNote | SubSceneNote,
 		compileIndex: number,
 		preset: CompilePresetNote,
 		acc: SceneAccumulator,
-		options: { suppressSectionBreak?: boolean } = {}
+		options: { suppressSectionBreak?: boolean; suppressHeading?: boolean } = {}
 	): Promise<void> {
 		try {
 			const raw = await this.app.vault.read(scene.file);
@@ -329,11 +374,15 @@ export class CompileService {
 				sceneTitle: scene.file.basename,
 				compileIndex,
 				stripAccumulator: acc.stripAccumulator,
+				suppressHeading: options.suppressHeading,
 			});
 			const renumbered = renumberFootnotes(transformed, acc.footnoteOffset);
 			acc.footnoteOffset += renumbered.consumedCount;
 			if (!options.suppressSectionBreak) {
-				const sectionBreak = buildSectionBreak(scene, preset.frontmatter);
+				const sectionBreak = buildSectionBreak(
+					scene as SceneNote,
+					preset.frontmatter
+				);
 				if (sectionBreak) acc.bodies.push(sectionBreak);
 			}
 			acc.bodies.push(renumbered.content);
@@ -372,6 +421,7 @@ export class CompileService {
 				sceneTitle: chapter.file.basename,
 				compileIndex: 0,
 				stripAccumulator: acc.stripAccumulator,
+				suppressHeading: true,
 			});
 			const renumbered = renumberFootnotes(transformed, acc.footnoteOffset);
 			acc.footnoteOffset += renumbered.consumedCount;
@@ -380,6 +430,111 @@ export class CompileService {
 			const message = err instanceof Error ? err.message : String(err);
 			acc.errors.push({ scenePath: chapter.file.path, message });
 			return `<!-- Draft Bench: failed to read chapter "${chapter.file.basename}": ${message} -->`;
+		}
+	}
+
+	/**
+	 * Process the scene note's body for inclusion as scene-introductory
+	 * prose under its hierarchical-scene heading, per [sub-scene-type.md § 7](../../docs/planning/sub-scene-type.md).
+	 * Mirrors `processChapterIntro` one level deeper: runs the content
+	 * pipeline with the heading suppressed (the walker emits the H1/H2
+	 * scene heading explicitly above this body) and returns the trimmed
+	 * intro content. Empty when the scene's `## Draft` slice is empty —
+	 * the common case for hierarchical scenes whose body is just
+	 * planning sections.
+	 *
+	 * Per the chapter-intro precedent, scene-intro content does not
+	 * contribute to `chapterHashes`; only individually-processed scenes
+	 * and sub-scenes (via `processScene`) get hashed for the
+	 * "N changed since last compile" feature. The same gap exists for
+	 * chapter intros and is consistent V1 behavior.
+	 */
+	private async processSceneIntro(
+		scene: SceneNote,
+		preset: CompilePresetNote,
+		acc: SceneAccumulator
+	): Promise<string> {
+		try {
+			const raw = await this.app.vault.read(scene.file);
+			const transformed = applyContentRules(raw, {
+				preset: preset.frontmatter,
+				sceneTitle: scene.file.basename,
+				compileIndex: 0,
+				stripAccumulator: acc.stripAccumulator,
+				suppressHeading: true,
+			});
+			const renumbered = renumberFootnotes(transformed, acc.footnoteOffset);
+			acc.footnoteOffset += renumbered.consumedCount;
+			return renumbered.content.trim();
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			acc.errors.push({ scenePath: scene.file.path, message });
+			return `<!-- Draft Bench: failed to read scene "${scene.file.basename}": ${message} -->`;
+		}
+	}
+
+	/**
+	 * Hierarchical-scene segment emitter, per [sub-scene-type.md § 7](../../docs/planning/sub-scene-type.md).
+	 * Called by both walkers (flat + chapter-aware) when a scene has
+	 * sub-scenes. Emits in this order:
+	 *
+	 *   1. Optional section break (suppressed when `suppressSectionBreak`,
+	 *      e.g., first scene of a chapter where the chapter heading is
+	 *      already the structural break).
+	 *   2. Scene heading (H1 in draft mode, H2 in chapter mode), via
+	 *      `buildHierarchicalSceneHeading`. Distinct from the suppressed
+	 *      flat-scene heading in chapter mode — hierarchical scenes need
+	 *      a structural anchor above their sub-scenes.
+	 *   3. Scene-intro prose if non-empty (planning sections excluded;
+	 *      the scene's `## Draft` body is the intro).
+	 *   4. Each sub-scene in `dbench-order`: an explicit sub-scene heading
+	 *      (H2 in draft mode, H3 in chapter mode) followed by the
+	 *      sub-scene body via `processScene` with `suppressHeading: true`
+	 *      and `suppressSectionBreak: true` (sub-scene-level section
+	 *      breaks would double-mark the explicit heading).
+	 *
+	 * Sub-scenes filtered out by the preset's exclude list are skipped;
+	 * the status filter does NOT apply at the sub-scene level in V1
+	 * (sub-scenes are always included when their parent scene is — the
+	 * writer manages sub-scene inclusion via the exclude list if needed).
+	 */
+	private async processHierarchicalScene(
+		scene: SceneNote,
+		subScenes: SubSceneNote[],
+		sceneIndex: number,
+		preset: CompilePresetNote,
+		acc: SceneAccumulator,
+		excludeSet: Set<string>,
+		options: { suppressSectionBreak?: boolean } = {}
+	): Promise<void> {
+		if (!options.suppressSectionBreak) {
+			const sectionBreak = buildSectionBreak(scene, preset.frontmatter);
+			if (sectionBreak) acc.bodies.push(sectionBreak);
+		}
+		const sceneHeading = buildHierarchicalSceneHeading(
+			scene.file.basename,
+			sceneIndex,
+			preset.frontmatter
+		);
+		acc.bodies.push(sceneHeading);
+
+		const intro = await this.processSceneIntro(scene, preset, acc);
+		if (intro.length > 0) acc.bodies.push(intro);
+
+		const sortedSubScenes = sortSubScenesByOrder(subScenes).filter(
+			(s) => !excludeSet.has(s.file.basename)
+		);
+		for (let i = 0; i < sortedSubScenes.length; i++) {
+			const subScene = sortedSubScenes[i];
+			const subSceneHeading = buildSubSceneHeading(
+				subScene.file.basename,
+				preset.frontmatter
+			);
+			acc.bodies.push(subSceneHeading);
+			await this.processScene(subScene, sceneIndex, preset, acc, {
+				suppressHeading: true,
+				suppressSectionBreak: true,
+			});
 		}
 	}
 }

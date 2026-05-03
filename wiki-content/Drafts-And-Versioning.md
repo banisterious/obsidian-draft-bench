@@ -80,6 +80,56 @@ When to use which:
 
 ---
 
+## Sub-scene drafts
+
+When a scene has [sub-scenes](Projects-And-Scenes#sub-scenes), you have two granularity choices for capturing a revision moment:
+
+1. **Snapshot the whole scene** — `New draft of this scene` concatenates the scene's intro `## Draft` body with each sub-scene's `## Draft` body in `dbench-order`, preserving the boundary structure between units.
+2. **Snapshot one sub-scene** — `New draft of this sub-scene` snapshots only that sub-scene's body. The other sub-scenes and the parent scene's intro prose are unaffected.
+
+Both are valid; pick whichever matches the revision moment. If you're about to rewrite the relationship between three sub-scenes, take a whole-scene draft first. If you're polishing one sub-scene before moving on, take a sub-scene draft.
+
+### New draft of this sub-scene
+
+Use **New draft of this sub-scene** via:
+
+- The command palette (with a sub-scene note active).
+- A sub-scene note's right-click context menu.
+
+The plugin snapshots the sub-scene's current body into `Drafts/<Sub-scene> - Draft N (YYYYMMDD).md` with `dbench-type: draft`, `dbench-sub-scene: [[<Sub-scene>]]`, and `dbench-draft-number: N`. Same shape as a scene draft, one structural level deeper.
+
+### Whole-scene drafts of hierarchical scenes
+
+When `New draft of this scene` runs against a scene with sub-scenes, the snapshot body is a concatenation:
+
+```markdown
+Scene introductory prose...
+
+[[Loading the cart]] body...
+
+[[The road-blessing]] body...
+
+[[Rolling out]] body...
+```
+
+Each sub-scene's frontmatter is stripped. Planning sections (Source passages / Outline / Open questions) on the sub-scenes are preserved alongside the `## Draft` content — same as the chapter-draft approach. The original scene note and its sub-scenes are unchanged; you continue working in them.
+
+### Coexistence with existing whole-scene drafts
+
+If you set a child note as a sub-scene via **Set as sub-scene** and the parent scene already has whole-scene drafts from before the split, the retrofit surfaces a one-time notice:
+
+> "Wax And Iron" has 1 existing whole-scene draft. Future drafts of this scene can snapshot the whole scene or individual sub-scenes.
+
+The existing whole-scene drafts are not touched — they remain valid historical snapshots of the scene before it was split. New drafts (after the split) can go either route per the granularity choice above. Old drafts and new drafts coexist in the same `Drafts/` folder, distinguished by whether the draft carries `dbench-scene` or `dbench-sub-scene`.
+
+When to use which:
+
+- **Whole-scene draft** — preserve the entire scene state (intro + all sub-scenes) before a structural pass that might reorganize, merge, or split sub-scenes.
+- **Sub-scene draft** — preserve one sub-scene before polishing it in isolation.
+- **Both** — same logic as scene + chapter draft coexistence: each sub-scene maintains its own draft history alongside the scene's whole-scene history.
+
+---
+
 ## Single-scene project drafts
 
 For single-scene projects (flash fiction, poems), **New draft** snapshots the project note's body, like a scene draft but with the project as parent. The draft's frontmatter has `dbench-project` but no scene or chapter ref.

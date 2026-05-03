@@ -34,13 +34,21 @@ Yes, but the conversion is manual. The plugin enforces a no-mixed-children rule 
 
 Going the other direction (flattening a chapter-aware project) is the same in reverse: remove `dbench-chapter` from each scene, then delete the empty chapter notes. The integrity service (**Repair project links**) flags any mismatches along the way.
 
-See [Projects, Chapters, and Scenes § Converting between shapes](Projects-And-Scenes#converting-between-shapes).
+See [Projects, Chapters, Scenes, and Sub-scenes § Converting between shapes](Projects-And-Scenes#converting-between-shapes).
 
-## What's the difference between a scene draft and a chapter draft?
+## What's a sub-scene? Do I need them?
 
-A **scene draft** snapshots one scene's body. A **chapter draft** snapshots the chapter body plus *every child scene's body*, concatenated in order with HTML-comment scene boundaries. Use a scene draft before a major revision to one scene; use a chapter draft before a structural pass that touches multiple scenes (or when you want the planning sections of every file in the chapter preserved together).
+A **sub-scene** is a unit of prose smaller than a scene — useful when one scene has multiple distinct narrative units that you want to track independently (per-unit status, per-unit drafts, reorderable). A memoir scene with six vignettes; an act broken into beats; a montage of moments. Each sub-scene is its own note.
 
-Both share the same `Drafts/` folder; their frontmatter parent ref disambiguates them. See [Drafts and Versioning](Drafts-And-Versioning).
+Most scenes don't need them. Internal beats inside a flat scene live as headings in the body — that's the lighter-weight option and remains the default. Reach for sub-scenes only when the per-unit tracking is actually worth it. The choice is per-scene, not per-project: flat scenes coexist with hierarchical scenes inside the same chapter or project. See [Projects, Chapters, Scenes, and Sub-scenes § Sub-scenes](Projects-And-Scenes#sub-scenes).
+
+## What's the difference between a scene draft, a chapter draft, and a sub-scene draft?
+
+- **Scene draft** — snapshots one scene's body. For flat scenes, that's the whole scene. For [hierarchical scenes](Projects-And-Scenes#sub-scenes) (those with sub-scenes), it concatenates the scene's intro `## Draft` + each sub-scene's body in order.
+- **Chapter draft** — snapshots the chapter body plus every child scene's body, concatenated in order with HTML-comment scene boundaries. For a structural pass that touches multiple scenes.
+- **Sub-scene draft** — snapshots one sub-scene's body. For polishing one unit in isolation.
+
+All three share the same `Drafts/` folder; their frontmatter parent ref (`dbench-scene` / `dbench-chapter` / `dbench-sub-scene`) disambiguates them. See [Drafts and Versioning](Drafts-And-Versioning).
 
 ## Does it work on mobile?
 

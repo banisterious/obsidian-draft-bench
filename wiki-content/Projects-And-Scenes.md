@@ -1,6 +1,6 @@
-# Projects, Chapters, and Scenes
+# Projects, Chapters, Scenes, and Sub-scenes
 
-Projects are the top-level container for a writing work. Scenes are the units of manuscript content within them. **Chapters** are an optional grouping layer between projects and scenes — natural for novels, but never required.
+Projects are the top-level container for a writing work. Scenes are the units of manuscript content within them. **Chapters** are an optional grouping layer between projects and scenes — natural for novels, but never required. **Sub-scenes** are an optional layer below scenes — useful when a scene has internal beats that warrant their own status, drafts, or reordering. Both layers are opt-in; flat scenes inside chapter-less projects are still a first-class shape.
 
 ---
 
@@ -95,6 +95,73 @@ File and folder names are **never** renamed on reorder — only `dbench-order` c
 Right-click a scene in a chapter-aware project -> **Draft Bench** -> **Move to chapter**. A modal opens with a chapter picker; on confirm, the scene's `dbench-chapter` and `dbench-chapter-id` are updated and both the source and target chapters' reverse arrays sync via the linker.
 
 Single-file scope in V1 — bulk multi-select moves are post-V1.
+
+---
+
+## Sub-scenes
+
+Sub-scenes are an optional third structural level — units of prose smaller than a scene. Useful when a scene has internal beats you want to track separately: a memoir scene with multiple narrative units, an act broken into vignettes, a montage with distinct moments. Each sub-scene is its own note with its own status, draft history, and word count.
+
+Sub-scene-awareness is **per-scene, not per-project**. Any scene in any folder project (chapter-less or chapter-aware) can opt into sub-scenes; flat scenes coexist with hierarchical scenes inside the same chapter or project. There is no project shape called "sub-scene-aware" and no need to commit a whole project to the pattern.
+
+When a scene has sub-scenes, the scene's own `## Draft` becomes **introductory prose** — usually a one-line orientation. The sub-scenes carry the bulk of the manuscript content. Compile output reflects this: in chapter mode, hierarchical scenes get an `## H2` heading and their sub-scenes get `### H3`; in draft / full mode, the scene is `# H1` and sub-scenes are `## H2`.
+
+### When to reach for sub-scenes
+
+Reach for sub-scenes when one of these is true and you want it tracked:
+
+- A scene has multiple distinct narrative units that you want to **revise independently** (status per unit, drafts per unit).
+- You want to **reorder** beats within a scene without rewriting the prose to bridge.
+- A scene's internal structure is large enough that you want each unit to be its own file in your editor (open one, work on it, close it).
+
+If none of those apply, leave the scene flat. Beats inside a flat scene live as headings in the body — that's the lighter-weight option and remains the default.
+
+### Sub-scene body shape
+
+Sub-scene notes use the same template shape as scenes — planning sections plus a `## Draft` section — with one difference: the planning section is `## Outline` instead of `## Beat outline`. At sub-scene level, beats are body-level structure (headings inside `## Draft`), so a generic "Outline" avoids the recursive feel of "outline beats inside the sub-scene that *is* a beat."
+
+### Creating sub-scenes
+
+- Palette: **Draft Bench: New sub-scene in scene** (only available when the active note is a scene — the parent context is implicit).
+- Manuscript view: click the "New sub-scene" icon button on a hierarchical scene-card's header.
+
+### Sub-scene ordering
+
+Sub-scene order is within the parent scene, on the sub-scene note's `dbench-order` property. Reorder via the **Reorder sub-scenes in scene** modal, opened from:
+
+- The command palette: **Draft Bench: Reorder sub-scenes in scene**.
+- A right-click on the parent scene or any of its sub-scenes inside the **Draft Bench** submenu.
+
+### Moving a sub-scene between scenes
+
+Right-click a sub-scene -> **Draft Bench** -> **Move to scene**. A modal opens with a scene-picker scoped to the same project; on confirm, the sub-scene's `dbench-scene` and `dbench-scene-id` are updated and both the source and target scenes' reverse arrays sync via the linker.
+
+Single-file scope in V1 — bulk multi-select moves are post-V1.
+
+### Sub-scene folder layout
+
+By default, sub-scenes nest in a folder named after the parent scene (`subScenesFolder: '{scene}/'` setting). For a chapter-less project:
+
+```
+Things That Transpired/
+├── Things That Transpired.md
+├── Too Good To Pass Up.md       ← flat scene
+├── The Quiet Hour.md            ← hierarchical scene
+├── The Quiet Hour/              ← sub-scene folder
+│   ├── The last patron.md       ← sub-scene
+│   └── The phone call.md        ← sub-scene
+└── Wax And Iron.md              ← flat scene
+```
+
+If you rename a parent scene file (e.g., `The Quiet Hour.md` -> `The Quiet Hour (revised).md`), the sub-scene folder auto-renames to match. Rename-watcher gated on the `subScenesFolder` template containing `{scene}` — writers using flat or non-`{scene}` layouts opt out.
+
+For chapter-aware projects, sub-scenes currently land at the project folder level (`<projectFolder>/<sceneName>/`), one level above the chapter folder. A `{chapter}` token to nest them under the chapter folder is a planned pre-1.0 fix.
+
+### Retrofitting an existing note as a sub-scene
+
+Right-click a markdown note -> **Draft Bench** -> **Set as sub-scene**. The note gets `dbench-type: sub-scene` plus parent refs inferred from its folder location (when the immediate folder contains exactly one scene note). Otherwise the parent refs are stamped empty and you fill them in via the Properties panel or **Move to scene**.
+
+When the inferred parent scene already has whole-scene drafts, **Set as sub-scene** surfaces a one-time transition notice clarifying that future drafts can snapshot the whole scene or individual sub-scenes — see the [Drafts and Versioning § Sub-scene drafts](Drafts-And-Versioning) page for what that choice looks like in practice.
 
 ---
 

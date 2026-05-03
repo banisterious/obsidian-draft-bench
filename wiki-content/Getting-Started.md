@@ -73,9 +73,15 @@ In the **Manuscript view** (right sidebar), click **New scene** in the toolbar. 
 
 Write your first draft in the body of the scene note.
 
+### 3b. Add sub-scenes (optional, when a scene has internal beats)
+
+If a scene has multiple distinct narrative units that you want to track separately — a memoir scene with several vignettes, a montage broken into beats, an act compressed into moments — you can split it into **sub-scenes**. With the parent scene active, run **Draft Bench: New sub-scene in scene** from the command palette, or click the "New sub-scene" button on the scene's card in the Manuscript view.
+
+Sub-scenes are opt-in per scene; flat scenes coexist with hierarchical scenes inside the same project. Most scenes don't need them — internal beats inside a flat scene live as headings in the body, and that's the lighter-weight option. See [Projects, Chapters, Scenes, and Sub-scenes § Sub-scenes](Projects-And-Scenes#sub-scenes) for the full discussion of when to reach for sub-scenes vs. heading-level beats.
+
 ### 4. Take a draft snapshot
 
-When you want to capture the current state of a scene before revising, run **New draft of this scene** from the command palette, the Manuscript view's toolbar, or the scene's right-click menu. For chapter-aware projects, **New draft of this chapter** snapshots the entire chapter (body plus all child scenes concatenated with boundary markers). Draft Bench:
+When you want to capture the current state of a scene before revising, run **New draft of this scene** from the command palette, the Manuscript view's toolbar, or the scene's right-click menu. For chapter-aware projects, **New draft of this chapter** snapshots the entire chapter (body plus all child scenes concatenated with boundary markers); for hierarchical scenes, **New draft of this sub-scene** captures just one sub-scene, and **New draft of this scene** captures the whole scene including all its sub-scenes. Draft Bench:
 
 1. Snapshots the source content into `Drafts/<Source> - Draft N (YYYYMMDD).md` with `dbench-type: draft` frontmatter.
 2. Carries the prose forward in the source note(s) so you can keep revising.

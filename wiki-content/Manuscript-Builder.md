@@ -43,11 +43,11 @@ Per-preset overrides for the five content-handling rules that have meaningful pe
 
 **Heading scope** has three values:
 
-- **`scope: full`** — emits each scene's full body (planning sections plus `## Draft`). Scene title becomes an H1 above each body.
-- **`scope: draft`** — emits only the `## Draft` content from each scene. Planning sections are stripped. Scene titles become H1s. Default for chapter-less projects.
-- **`scope: chapter`** — chapter-aware compile. Emits one `# <chapter title>` per chapter, then the chapter body's `## Draft` content (chapter-introductory prose) when non-empty, then concatenated scene `## Draft` bodies with scene titles omitted. Produces continuous prose under each chapter heading — the typical novel-compile shape. Default for chapter-aware projects.
+- **`scope: full`** — emits each scene's full body (planning sections plus `## Draft`). Scene title becomes an H1 above each body. When a scene has [sub-scenes](Projects-And-Scenes#sub-scenes), each sub-scene title becomes an H2 below the scene's H1.
+- **`scope: draft`** — emits only the `## Draft` content from each scene. Planning sections are stripped. Scene titles become H1s; sub-scene titles (when present) become H2s. Default for chapter-less projects.
+- **`scope: chapter`** — chapter-aware compile. Emits one `# <chapter title>` per chapter, then the chapter body's `## Draft` content (chapter-introductory prose) when non-empty, then scene content. Flat scenes emit their `## Draft` body as continuous prose with the scene title omitted. **Hierarchical scenes** (with sub-scenes) emit `## <scene title>` (H2) followed by the scene's intro prose, followed by their sub-scenes as `### <sub-scene title>` (H3). Three-level cascade — chapter / scene / sub-scene = H1 / H2 / H3 — surfaces structure where it exists; flat scenes within the same chapter continue to render as continuous prose. Default for chapter-aware projects.
 
-The default is auto-selected when the preset is created based on the project's shape; you can override later via the Compile tab. Existing presets are never silently changed when a project gains chapters.
+The default is auto-selected when the preset is created based on the project's shape; you can override later via the Compile tab. Existing presets are never silently changed when a project gains chapters or scenes gain sub-scenes.
 
 A compile preset is itself a note in the vault. Its content-handling rules live in the note's frontmatter, editable from the Properties panel as well as from the Manuscript Builder modal:
 

@@ -4,13 +4,16 @@ import { WordCountCache } from '../../src/core/word-count-cache';
 import { createProject } from '../../src/core/projects';
 import { createChapter } from '../../src/core/chapters';
 import { createScene } from '../../src/core/scenes';
+import { createSubScene } from '../../src/core/sub-scenes';
 import {
 	findChaptersInProject,
 	findProjects,
 	findScenesInProject,
+	findSubScenesInScene,
 	type ChapterNote,
 	type ProjectNote,
 	type SceneNote,
+	type SubSceneNote,
 } from '../../src/core/discovery';
 import { DEFAULT_SETTINGS, type DraftBenchSettings } from '../../src/model/settings';
 
@@ -75,6 +78,31 @@ async function seedChapter(
 	).find((c) => c.file.basename === title);
 	if (!chapter) throw new Error(`seeded chapter ${title} not discoverable`);
 	return chapter;
+}
+
+async function seedSubScene(
+	app: App,
+	settings: DraftBenchSettings,
+	project: ProjectNote,
+	scene: SceneNote,
+	title: string,
+	bodyBelowDraft = 'Sub-scene body has six words.'
+): Promise<SubSceneNote> {
+	const file = await createSubScene(app, settings, { project, scene, title });
+	const fm = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
+	const fmBlock =
+		'---\n' +
+		Object.entries(fm)
+			.map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+			.join('\n') +
+		'\n---\n';
+	await app.vault.modify(file, `${fmBlock}## Draft\n\n${bodyBelowDraft}\n`);
+	file.stat.mtime = Date.now();
+	const subScene = findSubScenesInScene(app, scene.frontmatter['dbench-id']).find(
+		(s) => s.file.basename === title
+	);
+	if (!subScene) throw new Error(`seeded sub-scene ${title} not discoverable`);
+	return subScene;
 }
 
 describe('WordCountCache', () => {
@@ -157,6 +185,61 @@ describe('WordCountCache', () => {
 			// leave scene.file.stat.mtime as-is
 
 			expect(await cache.countForScene(scene)).toBe(2);
+		});
+	});
+
+	describe('countForSceneWithSubScenes', () => {
+		it('returns scene body count alone when no sub-scenes are passed', async () => {
+			const project = await seedProject(app, settings, 'P');
+			const scene = await seedScene(
+				app,
+				settings,
+				project,
+				'Lonely',
+				'one two three'
+			); // 3
+			expect(await cache.countForSceneWithSubScenes(scene, [])).toBe(3);
+		});
+
+		it('sums scene body + sub-scene bodies', async () => {
+			const project = await seedProject(app, settings, 'P');
+			const scene = await seedScene(
+				app,
+				settings,
+				project,
+				'The auction',
+				'intro words one two three four'
+			); // 6
+			const sub1 = await seedSubScene(
+				app,
+				settings,
+				project,
+				scene,
+				'Lot 47',
+				'lot prose one two three'
+			); // 5
+			const sub2 = await seedSubScene(
+				app,
+				settings,
+				project,
+				scene,
+				'Bidding war',
+				'bidding war four words here'
+			); // 5
+
+			expect(
+				await cache.countForSceneWithSubScenes(scene, [sub1, sub2])
+			).toBe(6 + 5 + 5);
+		});
+
+		it('memoizes across sub-scenes within one rollup', async () => {
+			const project = await seedProject(app, settings, 'P');
+			const scene = await seedScene(app, settings, project, 'S', 'a b');
+			const sub = await seedSubScene(app, settings, project, scene, 'Sub', 'x y z');
+
+			await cache.countForSceneWithSubScenes(scene, [sub]);
+			// Two file reads: scene + sub.
+			expect(cache.size).toBe(2);
 		});
 	});
 
@@ -393,6 +476,177 @@ describe('WordCountCache', () => {
 			expect(counts.scenesByStatus.revision).toBeUndefined();
 			expect(counts.chaptersByStatus.revision).toBe(1);
 			expect(counts.chaptersByStatus.idea).toBeUndefined();
+		});
+
+		it('subScenesByStatus stays empty for projects without sub-scenes', async () => {
+			const project = await seedProject(app, settings, 'Flat');
+			await seedScene(app, settings, project, 'A', 'one two three');
+
+			const counts = await cache.countForProject(project);
+			expect(counts.subScenesByStatus).toEqual({});
+		});
+
+		it('hierarchical scene: project total includes sub-scene bodies', async () => {
+			const project = await seedProject(app, settings, 'Drift');
+			const scene = await seedScene(
+				app,
+				settings,
+				project,
+				'The auction',
+				'intro words two three four five' // 6
+			);
+			await seedSubScene(
+				app,
+				settings,
+				project,
+				scene,
+				'Lot 47',
+				'lot one two three' // 4
+			);
+			await seedSubScene(
+				app,
+				settings,
+				project,
+				scene,
+				'Bidding war',
+				'bid one two three four' // 5
+			);
+
+			const refreshedProject = findProjects(app).find(
+				(p) => p.file.path === project.file.path
+			)!;
+			const counts = await cache.countForProject(refreshedProject);
+			// Scene body (6) + sub-scenes (4 + 5) = 15
+			expect(counts.total).toBe(15);
+		});
+
+		it('sub-scenes bucket by their own status, not the parent scene status', async () => {
+			const project = await seedProject(app, settings, 'Drift');
+			const scene = await seedScene(
+				app,
+				settings,
+				project,
+				'The auction',
+				'intro three four five' // 4
+			);
+			const sub1 = await seedSubScene(
+				app,
+				settings,
+				project,
+				scene,
+				'Lot 47',
+				'lot four five six' // 4
+			);
+			const sub2 = await seedSubScene(
+				app,
+				settings,
+				project,
+				scene,
+				'Bidding war',
+				'bid one two' // 3
+			);
+
+			// Flip sub-scene statuses so they bucket distinctly from the
+			// parent scene's default 'idea'.
+			await app.fileManager.processFrontMatter(sub1.file, (fm) => {
+				fm['dbench-status'] = 'final';
+			});
+			await app.fileManager.processFrontMatter(sub2.file, (fm) => {
+				fm['dbench-status'] = 'revision';
+			});
+
+			const refreshedProject = findProjects(app).find(
+				(p) => p.file.path === project.file.path
+			)!;
+			const counts = await cache.countForProject(refreshedProject);
+
+			// Words: scene (idea, 4) + sub1 (final, 4) + sub2 (revision, 3) = 11
+			expect(counts.total).toBe(11);
+			expect(counts.wordsByStatus.idea).toBe(4);
+			expect(counts.wordsByStatus.final).toBe(4);
+			expect(counts.wordsByStatus.revision).toBe(3);
+			// scenesByStatus tracks the parent scene only.
+			expect(counts.scenesByStatus.idea).toBe(1);
+			expect(counts.scenesByStatus.final).toBeUndefined();
+			// subScenesByStatus tracks sub-scenes by their own status.
+			expect(counts.subScenesByStatus.final).toBe(1);
+			expect(counts.subScenesByStatus.revision).toBe(1);
+			expect(counts.subScenesByStatus.idea).toBeUndefined();
+		});
+
+		it('mixed project: chapters + scenes + sub-scenes all roll up correctly', async () => {
+			const project = await seedProject(app, settings, 'Mixed');
+			const chapter = await seedChapter(
+				app,
+				settings,
+				project,
+				'Ch01',
+				'chapter intro three' // 3
+			);
+			const refreshedProject = findProjects(app).find(
+				(p) => p.file.path === project.file.path
+			)!;
+			const refreshedChapter = findChaptersInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((c) => c.file.basename === 'Ch01')!;
+
+			// Scene-in-chapter, no sub-scenes.
+			await createScene(app, settings, {
+				project: refreshedProject,
+				chapter: refreshedChapter,
+				title: 'Flat',
+			});
+			const flat = findScenesInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((s) => s.file.basename === 'Flat')!;
+			const fmBlock = (file: typeof flat.file): string => {
+				const fm = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
+				return (
+					'---\n' +
+					Object.entries(fm)
+						.map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+						.join('\n') +
+					'\n---\n'
+				);
+			};
+			await app.vault.modify(
+				flat.file,
+				`${fmBlock(flat.file)}## Draft\n\nflat scene words two three\n` // 5
+			);
+			flat.file.stat.mtime = Date.now();
+
+			// Hierarchical scene-in-chapter, with one sub-scene.
+			await createScene(app, settings, {
+				project: refreshedProject,
+				chapter: refreshedChapter,
+				title: 'Tall',
+			});
+			const tall = findScenesInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((s) => s.file.basename === 'Tall')!;
+			await app.vault.modify(
+				tall.file,
+				`${fmBlock(tall.file)}## Draft\n\ntall intro words\n` // 3
+			);
+			tall.file.stat.mtime = Date.now() + 1;
+			await seedSubScene(
+				app,
+				settings,
+				refreshedProject,
+				tall,
+				'Beat one',
+				'sub one two three four' // 5
+			);
+
+			const counts = await cache.countForProject(refreshedProject);
+			// Total: chapter (3) + flat scene (5) + tall scene (3) + sub-scene (5) = 16
+			expect(counts.total).toBe(16);
+			expect(counts.chaptersByStatus.idea).toBe(1);
+			expect(counts.scenesByStatus.idea).toBe(2);
+			expect(counts.subScenesByStatus.idea).toBe(1);
 		});
 	});
 

@@ -8,6 +8,7 @@ import {
 	findNoteById,
 	findScenesInChapter,
 	findScenesInProject,
+	findSubScenesInScene,
 	type ProjectNote,
 } from './discovery';
 
@@ -59,6 +60,15 @@ import {
  * shape because it describes a structural invariant rather than a
  * single forward-ref / reverse-array pair. Manual-only repair: the
  * writer must convert the project to one shape or the other.
+ *
+ * Sub-scene-aware scenes (per [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md))
+ * carry `dbench-sub-scenes` / `dbench-sub-scene-ids` reverse arrays
+ * pointing at their child sub-scenes. The `SUB_SCENE_*` codes mirror
+ * the chapter↔scene shape one level deeper. Sub-scene-less scenes
+ * never accumulate issues here because both the declared-children list
+ * and the reverse arrays are empty/absent. Sub-scene-level draft
+ * relationships are not yet integrity-scanned; their codes will land
+ * with Step 10 alongside `createSubSceneDraft`.
  */
 export type IntegrityIssueKind =
 	| 'SCENE_MISSING_IN_PROJECT'
@@ -82,6 +92,9 @@ export type IntegrityIssueKind =
 	| 'DRAFT_MISSING_IN_CHAPTER'
 	| 'STALE_DRAFT_IN_CHAPTER'
 	| 'CHAPTER_DRAFT_CONFLICT'
+	| 'SUB_SCENE_MISSING_IN_SCENE'
+	| 'STALE_SUB_SCENE_IN_SCENE'
+	| 'SCENE_SUB_SCENE_CONFLICT'
 	| 'PROJECT_MIXED_CHILDREN';
 
 export interface IntegrityIssue {
@@ -289,6 +302,40 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 					missing: 'DRAFT_MISSING_IN_SCENE',
 					stale: 'STALE_DRAFT_IN_SCENE',
 					conflict: 'SCENE_DRAFT_CONFLICT',
+				},
+			})
+		);
+
+		// Scene <-> sub-scene. Per [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md),
+		// hierarchical scenes carry `dbench-sub-scenes` /
+		// `dbench-sub-scene-ids` reverse arrays listing their sub-scene
+		// children. Sub-scene-less scenes contribute no issues here
+		// (declaredChildren is empty AND the reverse arrays are absent
+		// or empty, so scanRelationship returns no missing/stale entries).
+		issues.push(
+			...scanRelationship({
+				app,
+				parent: {
+					file: scene.file,
+					frontmatter: scene.frontmatter as unknown as Record<
+						string,
+						unknown
+					>,
+				},
+				parentId: scene.frontmatter['dbench-id'],
+				wikilinkField: 'dbench-sub-scenes',
+				idField: 'dbench-sub-scene-ids',
+				declaredChildren: findSubScenesInScene(
+					app,
+					scene.frontmatter['dbench-id']
+				).map(toGeneric),
+				childDeclaresParent: (fm) =>
+					fm['dbench-scene-id'] === scene.frontmatter['dbench-id'],
+				childTypeLabel: 'Sub-scene',
+				kinds: {
+					missing: 'SUB_SCENE_MISSING_IN_SCENE',
+					stale: 'STALE_SUB_SCENE_IN_SCENE',
+					conflict: 'SCENE_SUB_SCENE_CONFLICT',
 				},
 			})
 		);

@@ -1,6 +1,15 @@
 import type { App, TFile } from 'obsidian';
-import type { ChapterNote, ProjectNote, SceneNote } from './discovery';
-import { findChaptersInProject, findScenesInProject } from './discovery';
+import type {
+	ChapterNote,
+	ProjectNote,
+	SceneNote,
+	SubSceneNote,
+} from './discovery';
+import {
+	findChaptersInProject,
+	findScenesInProject,
+	findSubScenesInProject,
+} from './discovery';
 import { readTargetWords } from './targets';
 import { countScene } from './word-count';
 
@@ -32,6 +41,12 @@ interface CacheEntry {
  * - `chaptersByStatus`: chapter count per status. Empty `{}` for
  *   chapter-less projects so existing UI iterations stay backward
  *   compatible.
+ * - `subScenesByStatus`: sub-scene count per status. Empty `{}` for
+ *   projects without any hierarchical scenes. Per § 5 of
+ *   sub-scene-type.md, sub-scenes carry their own `dbench-status` (not
+ *   derived from the parent scene), so they bucket independently from
+ *   `scenesByStatus`. UIs that want a combined per-status item count
+ *   should sum `scenesByStatus[s] + chaptersByStatus[s] + subScenesByStatus[s]`.
  *
  * Both maps are populated lazily: only statuses actually found on
  * scenes/chapters appear as keys. UIs that want to render zero-rows
@@ -54,6 +69,7 @@ export interface ProjectWordCounts {
 	wordsByStatus: Record<string, number>;
 	scenesByStatus: Record<string, number>;
 	chaptersByStatus: Record<string, number>;
+	subScenesByStatus: Record<string, number>;
 	projectTarget: number | null;
 	sceneTargetSum: number;
 	scenesWithTargets: number;
@@ -110,22 +126,47 @@ export class WordCountCache {
 	}
 
 	/**
+	 * Aggregate word count for a hierarchical scene: scene body's
+	 * `## Draft` (intro prose, often empty) plus the sum of child
+	 * sub-scene bodies. Per § 5 of sub-scene-type.md, this is the
+	 * live-computed rollup that surfaces on the Manuscript view
+	 * scene-card for scenes with sub-scenes. Caller passes the resolved
+	 * sub-scenes-in-scene list (typically from `findSubScenesInScene` +
+	 * sort) so this method stays free of discovery concerns. Mirrors
+	 * `countForChapter`'s shape one level deeper.
+	 */
+	async countForSceneWithSubScenes(
+		scene: SceneNote,
+		subScenes: SubSceneNote[]
+	): Promise<number> {
+		let total = await this.countForFile(scene.file);
+		for (const subScene of subScenes) {
+			total += await this.countForFile(subScene.file);
+		}
+		return total;
+	}
+
+	/**
 	 * Aggregate counts across every scene in `project`, plus the
-	 * chapter-body word counts for chapter-aware projects. Missing
-	 * scenes/chapters (e.g., orphan IDs that no longer resolve) are
-	 * skipped; each resolved unit contributes to `total` and to the
-	 * status bucket named by its `dbench-status`.
+	 * chapter-body word counts for chapter-aware projects, plus the
+	 * sub-scene-body word counts for hierarchical scenes (per § 5 of
+	 * sub-scene-type.md). Missing scenes/chapters/sub-scenes (e.g.,
+	 * orphan IDs that no longer resolve) are skipped; each resolved
+	 * unit contributes to `total` and to the status bucket named by
+	 * ITS OWN `dbench-status` (sub-scene status is never derived from
+	 * the parent scene's).
 	 *
 	 * `findScenesInProject` returns the flat list across all chapters
-	 * for chapter-aware projects, so scenes-in-chapter counts already
-	 * land here. The chapter loop adds the chapter bodies' `## Draft`
-	 * counts on top, matching `countForChapter`'s rollup formula
-	 * applied at the project level.
+	 * for chapter-aware projects; the scene loop counts each scene's
+	 * body. The chapter loop adds chapter bodies' `## Draft` counts.
+	 * The sub-scene loop adds sub-scene bodies and buckets them by the
+	 * sub-scene's own status.
 	 */
 	async countForProject(project: ProjectNote): Promise<ProjectWordCounts> {
 		const projectId = project.frontmatter['dbench-id'];
 		const scenes = findScenesInProject(this.app, projectId);
 		const chapters = findChaptersInProject(this.app, projectId);
+		const subScenes = findSubScenesInProject(this.app, projectId);
 		const result = emptyCounts();
 		result.projectTarget = readTargetWords(
 			project.frontmatter as unknown as Record<string, unknown>
@@ -152,6 +193,14 @@ export class WordCountCache {
 			result.wordsByStatus[status] = (result.wordsByStatus[status] ?? 0) + count;
 			result.chaptersByStatus[status] =
 				(result.chaptersByStatus[status] ?? 0) + 1;
+		}
+		for (const subScene of subScenes) {
+			const count = await this.countForFile(subScene.file);
+			const status = subScene.frontmatter['dbench-status'];
+			result.total += count;
+			result.wordsByStatus[status] = (result.wordsByStatus[status] ?? 0) + count;
+			result.subScenesByStatus[status] =
+				(result.subScenesByStatus[status] ?? 0) + 1;
 		}
 		return result;
 	}
@@ -190,6 +239,7 @@ function emptyCounts(): ProjectWordCounts {
 		wordsByStatus: {},
 		scenesByStatus: {},
 		chaptersByStatus: {},
+		subScenesByStatus: {},
 		projectTarget: null,
 		sceneTargetSum: 0,
 		scenesWithTargets: 0,

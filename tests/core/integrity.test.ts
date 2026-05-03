@@ -181,10 +181,12 @@ async function seedScene(
 	projectTitle: string,
 	projectId: string,
 	reverseDrafts: string[] = [],
-	reverseDraftIds: string[] = []
+	reverseDraftIds: string[] = [],
+	reverseSubScenes: string[] = [],
+	reverseSubSceneIds: string[] = []
 ): Promise<TFile> {
 	const file = await app.vault.create(path, '');
-	app.metadataCache._setFrontmatter(file, {
+	const fm: Record<string, unknown> = {
 		'dbench-type': 'scene',
 		'dbench-id': id,
 		'dbench-project': `[[${projectTitle}]]`,
@@ -193,6 +195,39 @@ async function seedScene(
 		'dbench-status': 'idea',
 		'dbench-drafts': reverseDrafts,
 		'dbench-draft-ids': reverseDraftIds,
+	};
+	// Only stamp the sub-scene reverse arrays when caller actually
+	// passes them; sub-scene-less scenes shouldn't carry empty arrays
+	// that confuse the "absent vs empty" check in integrity tests.
+	if (reverseSubScenes.length > 0 || reverseSubSceneIds.length > 0) {
+		fm['dbench-sub-scenes'] = reverseSubScenes;
+		fm['dbench-sub-scene-ids'] = reverseSubSceneIds;
+	}
+	app.metadataCache._setFrontmatter(file, fm);
+	return file;
+}
+
+async function seedSubScene(
+	app: App,
+	path: string,
+	id: string,
+	projectTitle: string,
+	projectId: string,
+	sceneTitle: string,
+	sceneId: string
+): Promise<TFile> {
+	const file = await app.vault.create(path, '');
+	app.metadataCache._setFrontmatter(file, {
+		'dbench-type': 'sub-scene',
+		'dbench-id': id,
+		'dbench-project': `[[${projectTitle}]]`,
+		'dbench-project-id': projectId,
+		'dbench-scene': `[[${sceneTitle}]]`,
+		'dbench-scene-id': sceneId,
+		'dbench-order': 1,
+		'dbench-status': 'idea',
+		'dbench-drafts': [],
+		'dbench-draft-ids': [],
 	});
 	return file;
 }
@@ -1280,5 +1315,246 @@ describe('applyRepairs — chapter relationships', () => {
 			result.repaired + result.conflictsSkipped + result.errors
 		).toBe(report.issues.length);
 		expect(result.conflictsSkipped).toBeGreaterThanOrEqual(1);
+	});
+});
+
+describe('scanProject — scene<->sub-scene issues', () => {
+	it('produces no issues when a sub-scene-less scene has no sub-scene reverse arrays', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[Flat scene]]'],
+			['sc1-001-tst-001']
+		);
+		await seedScene(
+			app,
+			'Drift/Flat scene.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Drift'));
+		const subSceneKinds = kinds(report.issues).filter((k) =>
+			k.startsWith('SUB_SCENE_') ||
+			k.endsWith('_SUB_SCENE') ||
+			k === 'SCENE_SUB_SCENE_CONFLICT'
+		);
+		expect(subSceneKinds).toEqual([]);
+	});
+
+	it('returns no sub-scene issues for a clean hierarchical scene', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[The auction]]'],
+			['sc1-001-tst-001']
+		);
+		await seedScene(
+			app,
+			'Drift/The auction.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[Lot 47]]'],
+			['sub-001-tst-001']
+		);
+		await seedSubScene(
+			app,
+			'Drift/The auction/Lot 47.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'The auction',
+			'sc1-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Drift'));
+		const subSceneKinds = kinds(report.issues).filter((k) =>
+			k.startsWith('SUB_SCENE_') ||
+			k.endsWith('_SUB_SCENE') ||
+			k === 'SCENE_SUB_SCENE_CONFLICT'
+		);
+		expect(subSceneKinds).toEqual([]);
+	});
+
+	it('flags a sub-scene missing from the parent scene reverse arrays', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[The auction]]'],
+			['sc1-001-tst-001']
+		);
+		// Scene has NO dbench-sub-scenes field at all (sub-scene was
+		// created before the linker could update reverse arrays).
+		await seedScene(
+			app,
+			'Drift/The auction.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001'
+		);
+		await seedSubScene(
+			app,
+			'Drift/The auction/Lot 47.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'The auction',
+			'sc1-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Drift'));
+		const issueKinds = kinds(report.issues);
+		expect(issueKinds).toContain('SUB_SCENE_MISSING_IN_SCENE');
+		const missing = report.issues.find(
+			(i) => i.kind === 'SUB_SCENE_MISSING_IN_SCENE'
+		);
+		expect(missing?.autoRepairable).toBe(true);
+		expect(missing?.repair?.kind).toBe('add-to-reverse');
+	});
+
+	it('flags a stale sub-scene entry in the parent scene reverse arrays', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[The auction]]'],
+			['sc1-001-tst-001']
+		);
+		// Scene's reverse arrays reference a sub-scene that no longer
+		// exists (writer deleted the sub-scene file outside Obsidian).
+		await seedScene(
+			app,
+			'Drift/The auction.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[Ghost sub-scene]]'],
+			['sub-ghost-tst-000']
+		);
+
+		const report = scanProject(app, loadProject(app, 'Drift'));
+		const issueKinds = kinds(report.issues);
+		expect(issueKinds).toContain('STALE_SUB_SCENE_IN_SCENE');
+		const stale = report.issues.find(
+			(i) => i.kind === 'STALE_SUB_SCENE_IN_SCENE'
+		);
+		expect(stale?.autoRepairable).toBe(true);
+		expect(stale?.repair?.kind).toBe('remove-from-reverse');
+	});
+
+	it('flags scene<->sub-scene wikilink/id conflict (manual-only repair)', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[The auction]]'],
+			['sc1-001-tst-001']
+		);
+		// dbench-sub-scenes wikilink points at one sub-scene, but the
+		// id companion at the same index points at a different one.
+		// The writer's intent is ambiguous; integrity flags but doesn't
+		// auto-pick.
+		await seedScene(
+			app,
+			'Drift/The auction.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[Lot 47]]'],
+			['sub-002-tst-002'] // id points at the bidding war, not lot 47
+		);
+		await seedSubScene(
+			app,
+			'Drift/The auction/Lot 47.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'The auction',
+			'sc1-001-tst-001'
+		);
+		await seedSubScene(
+			app,
+			'Drift/The auction/The bidding war.md',
+			'sub-002-tst-002',
+			'Drift',
+			'prj-001-tst-001',
+			'The auction',
+			'sc1-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Drift'));
+		const conflicts = report.issues.filter(
+			(i) => i.kind === 'SCENE_SUB_SCENE_CONFLICT'
+		);
+		expect(conflicts).toHaveLength(1);
+		expect(conflicts[0].autoRepairable).toBe(false);
+	});
+
+	it('detects sub-scene issues across scenes-in-chapters too', async () => {
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Novel/Novel.md',
+			'prj-001-tst-001',
+			'Novel',
+			[],
+			[],
+			{
+				reverseChapters: ['[[Ch01]]'],
+				reverseChapterIds: ['chp-001-tst-001'],
+			}
+		);
+		await seedChapter(
+			app,
+			'Novel/Ch01.md',
+			'chp-001-tst-001',
+			'Novel',
+			'prj-001-tst-001',
+			['[[The auction]]'],
+			['sc1-001-tst-001']
+		);
+		// Scene-in-chapter with sub-scene drift (reverse arrays missing).
+		await seedSceneInChapter(
+			app,
+			'Novel/Ch01/The auction.md',
+			'sc1-001-tst-001',
+			'Novel',
+			'prj-001-tst-001',
+			'Ch01',
+			'chp-001-tst-001'
+		);
+		await seedSubScene(
+			app,
+			'Novel/Ch01/The auction/Lot 47.md',
+			'sub-001-tst-001',
+			'Novel',
+			'prj-001-tst-001',
+			'The auction',
+			'sc1-001-tst-001'
+		);
+
+		const report = scanProject(app, loadProject(app, 'Novel'));
+		expect(kinds(report.issues)).toContain('SUB_SCENE_MISSING_IN_SCENE');
 	});
 });

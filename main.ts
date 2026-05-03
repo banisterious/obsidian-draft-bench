@@ -163,6 +163,23 @@ export default class DraftBenchPlugin extends Plugin {
 	async loadSettings(): Promise<void> {
 		const data = (await this.loadData()) as Partial<DraftBenchSettings> | null;
 		this.settings = { ...DEFAULT_SETTINGS, ...(data ?? {}) };
+
+		// One-shot migration: chapter-aware `scenesFolder` default
+		// (issue #11). Existing installs persisted the V1 default of
+		// `''`; the new default is `'{chapter}/'`, which nests scenes
+		// under their chapter for chapter-aware projects and degrades
+		// to flat for chapter-less ones. Detect "saved file exists,
+		// migration flag absent" and upgrade in place. Idempotent:
+		// fresh installs (no data file) and already-migrated saves
+		// (flag present) skip. A writer who deliberately re-sets `''`
+		// after the upgrade keeps that choice on subsequent loads.
+		if (data !== null && data.scenesFolderMigrated === undefined) {
+			if (this.settings.scenesFolder === '') {
+				this.settings.scenesFolder = '{chapter}/';
+			}
+			this.settings.scenesFolderMigrated = true;
+			await this.saveSettings();
+		}
 	}
 
 	async saveSettings(): Promise<void> {

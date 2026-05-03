@@ -36,9 +36,19 @@ export interface DraftBenchSettings {
 
 	/**
 	 * Default folder template for new scenes, **relative to the project's
-	 * folder**. Supports the `{project}` token. Default (empty string)
-	 * places scenes alongside the project note; set to `'Scenes/'` to
-	 * nest them in a subfolder.
+	 * folder**. Supports `{project}` and `{chapter}` tokens (the latter
+	 * expanded to the parent chapter's basename for scenes-in-chapters,
+	 * or `''` for chapter-less scenes). Default `'{chapter}/'` nests
+	 * scenes under their chapter for chapter-aware projects and degrades
+	 * to flat-at-project-root for chapter-less projects (per
+	 * [issue #11](https://github.com/banisterious/obsidian-draft-bench/issues/11));
+	 * set to `''` to opt out and place scenes alongside the project note
+	 * regardless of chapter shape, or to `'Scenes/'` for an unconditional
+	 * subfolder. The `{project}` token is available for sibling-folder
+	 * layouts (e.g., `'../{project} scenes/'`); the default omits it
+	 * because the resolver already joins relative paths to the project
+	 * folder, so `{project}/{chapter}/` would produce a doubled
+	 * `<projectFolder>/<projectName>/<chapter>/` path.
 	 */
 	scenesFolder: string;
 
@@ -199,6 +209,19 @@ export interface DraftBenchSettings {
 	 * on first install.
 	 */
 	sceneCollapseState: Record<string, boolean>;
+
+	/**
+	 * One-shot migration marker for the `scenesFolder` default flip from
+	 * `''` (V1) to `'{chapter}/'` (per [issue #11](https://github.com/banisterious/obsidian-draft-bench/issues/11)).
+	 * `loadSettings` runs the migration exactly once: when an existing
+	 * data.json is loaded that lacks this key, the empty-string V1
+	 * default is rewritten to `'{chapter}/'` and the flag is flipped
+	 * true. Subsequent loads see the flag and skip the migration, so a
+	 * writer who deliberately re-sets `''` after the upgrade keeps that
+	 * choice. Fresh installs persist `true` on first save without
+	 * touching `scenesFolder`.
+	 */
+	scenesFolderMigrated: boolean;
 }
 
 /**
@@ -207,7 +230,7 @@ export interface DraftBenchSettings {
  */
 export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	projectsFolder: 'Draft Bench/{project}/',
-	scenesFolder: '',
+	scenesFolder: '{chapter}/',
 	chaptersFolder: '',
 	subScenesFolder: '{scene}/',
 	draftsFolderPlacement: 'project-local',
@@ -225,4 +248,5 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	lastSelectedProjectId: null,
 	chapterCollapseState: {},
 	sceneCollapseState: {},
+	scenesFolderMigrated: true,
 };

@@ -72,6 +72,59 @@ describe('resolveScenePaths', () => {
 		);
 	});
 
+	it('expands {chapter} to the parent chapter basename (chapter-aware nesting per #11)', async () => {
+		const app = new App();
+		const project = await seedProject(app, settings, 'My Novel');
+		await createChapter(app, settings, { project, title: 'Chapter 1' });
+		const chapter = findChaptersInProject(
+			app,
+			project.frontmatter['dbench-id']
+		)[0];
+
+		const paths = resolveScenePaths(settings, project, {
+			project,
+			chapter,
+			title: 'Opening',
+		});
+		// Default `{chapter}/` template nests scenes under the chapter folder.
+		expect(paths.folderPath).toBe('Draft Bench/My Novel/Chapter 1');
+		expect(paths.filePath).toBe('Draft Bench/My Novel/Chapter 1/Opening.md');
+	});
+
+	it('expands {chapter} to empty for chapter-less scenes (degrades to project root)', async () => {
+		const app = new App();
+		const project = await seedProject(app, settings, 'My Novel');
+		// Chapter-less project + default `{chapter}/` template: token
+		// expands to '', collapses to flat-at-project-root.
+		const paths = resolveScenePaths(settings, project, {
+			project,
+			title: 'Standalone',
+		});
+		expect(paths.folderPath).toBe('Draft Bench/My Novel');
+		expect(paths.filePath).toBe('Draft Bench/My Novel/Standalone.md');
+	});
+
+	it('expands {chapter} inside a custom location override', async () => {
+		const app = new App();
+		const project = await seedProject(app, settings, 'My Novel');
+		await createChapter(app, settings, { project, title: 'Ch01' });
+		const chapter = findChaptersInProject(
+			app,
+			project.frontmatter['dbench-id']
+		)[0];
+
+		const paths = resolveScenePaths(settings, project, {
+			project,
+			chapter,
+			title: 'Opening',
+			location: 'Scenes/{chapter}/',
+		});
+		expect(paths.folderPath).toBe('Draft Bench/My Novel/Scenes/Ch01');
+		expect(paths.filePath).toBe(
+			'Draft Bench/My Novel/Scenes/Ch01/Opening.md'
+		);
+	});
+
 	it('rejects empty title and forbidden characters', async () => {
 		const app = new App();
 		const project = await seedProject(app, settings, 'Project');
@@ -400,6 +453,21 @@ describe('createScene with chapter parent', () => {
 		expect(fm?.['dbench-project-id']).toBe(project.frontmatter['dbench-id']);
 		expect(fm?.['dbench-chapter']).toBe('[[Chapter 1]]');
 		expect(fm?.['dbench-chapter-id']).toBe(chapter.frontmatter['dbench-id']);
+	});
+
+	it('lands the scene file nested under the chapter (default {chapter}/ per #11)', async () => {
+		const { project, chapter } = await seedProjectAndChapter(
+			'Novel',
+			'Chapter 1'
+		);
+		const file = await createScene(app, settings, {
+			project,
+			chapter,
+			title: 'Scene 1.1',
+		});
+		expect(file.path).toBe(
+			'Draft Bench/Novel/Chapter 1/Scene 1.1.md'
+		);
 	});
 
 	it('updates the chapter reverse array (not the project)', async () => {

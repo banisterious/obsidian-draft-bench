@@ -462,6 +462,20 @@ export class DraftBenchLinker {
 				oldBasename
 			);
 		}
+
+		// Chapter-scenes-folder auto-rename (issue #11): mirrors the
+		// sub-scene case one level up. When a CHAPTER is renamed AND
+		// the configured `scenesFolder` template uses `{chapter}`, find
+		// any sibling folder matching the old chapter basename containing
+		// scenes that reference the renamed chapter's id, and rename the
+		// folder to the new basename.
+		if (type === 'chapter') {
+			await this.renameChapterScenesFolderIfNeeded(
+				file,
+				fm as Record<string, unknown>,
+				oldBasename
+			);
+		}
 	}
 
 	/**
@@ -525,6 +539,72 @@ export class DraftBenchLinker {
 
 		// Skip if the new folder path is already occupied; let integrity
 		// surface the conflict rather than silently overwriting.
+		if (this.app.vault.getAbstractFileByPath(newFolderPath) !== null) {
+			return;
+		}
+
+		await this.app.fileManager.renameFile(oldFolder, newFolderPath);
+	}
+
+	/**
+	 * Issue #11 auto-rename: keep the chapter-aware scenes folder name
+	 * in sync with its parent chapter's basename when the writer renames
+	 * the chapter file. Mirrors `renameSubSceneFolderIfNeeded` one level
+	 * up.
+	 *
+	 * Skipped when:
+	 * - The configured `scenesFolder` template doesn't include
+	 *   `{chapter}` (flat opt-out or any template that doesn't depend on
+	 *   the chapter basename).
+	 * - The chapter's project ref is empty / unresolvable.
+	 * - The expected old folder doesn't exist (writer manually renamed
+	 *   it to something else, or no scenes have been created in this
+	 *   chapter yet).
+	 * - The folder doesn't contain at least one scene that references
+	 *   this chapter's id (defends against renaming an unrelated folder
+	 *   that happens to share the old basename).
+	 * - The new folder path is already occupied; we skip rather than
+	 *   overwrite.
+	 */
+	private async renameChapterScenesFolderIfNeeded(
+		chapterFile: TFile,
+		chapterFm: Record<string, unknown>,
+		oldChapterBasename: string
+	): Promise<void> {
+		const chapterId = readString(chapterFm['dbench-id']);
+		if (chapterId === '') return;
+
+		const settings = this.getSettings();
+		if (!settings.scenesFolder.includes('{chapter}')) return;
+
+		const projectId = readString(chapterFm['dbench-project-id']);
+		if (projectId === '') return;
+		const project = findNoteById(this.app, projectId);
+		if (!project) return;
+
+		const oldFolderPath = computeChapterScenesFolderPath(
+			settings.scenesFolder,
+			project.file,
+			oldChapterBasename
+		);
+		const newFolderPath = computeChapterScenesFolderPath(
+			settings.scenesFolder,
+			project.file,
+			chapterFile.basename
+		);
+
+		if (oldFolderPath === newFolderPath) return;
+
+		const oldFolder = this.app.vault.getAbstractFileByPath(oldFolderPath);
+		if (!oldFolder || !(oldFolder instanceof TFolder)) return;
+
+		const sceneInFolder = findScenes(this.app).some(
+			(s) =>
+				s.file.path.startsWith(`${oldFolderPath}/`) &&
+				s.frontmatter['dbench-chapter-id'] === chapterId
+		);
+		if (!sceneInFolder) return;
+
 		if (this.app.vault.getAbstractFileByPath(newFolderPath) !== null) {
 			return;
 		}
@@ -793,6 +873,31 @@ function computeSubSceneFolderPath(
 	const relative = template
 		.replace(/\{project\}/g, projectFile.basename)
 		.replace(/\{scene\}/g, sceneBasename)
+		.replace(/\/+/g, '/')
+		.replace(/^\/+|\/+$/g, '');
+	const projectFolder = parentPath(projectFile.path);
+	return relative === ''
+		? projectFolder
+		: projectFolder === ''
+			? relative
+			: `${projectFolder}/${relative}`;
+}
+
+/**
+ * Compute the on-disk folder path for scenes of a given parent chapter,
+ * applying `{project}` and `{chapter}` token expansion against
+ * `settings.scenesFolder`. Mirrors `resolveScenePaths` in scenes.ts but
+ * takes a bare chapter basename instead of a `ChapterNote`, so the linker
+ * can reconstruct the OLD path during rename handling. Issue #11.
+ */
+function computeChapterScenesFolderPath(
+	template: string,
+	projectFile: TFile,
+	chapterBasename: string
+): string {
+	const relative = template
+		.replace(/\{project\}/g, projectFile.basename)
+		.replace(/\{chapter\}/g, chapterBasename)
 		.replace(/\/+/g, '/')
 		.replace(/^\/+|\/+$/g, '');
 	const projectFolder = parentPath(projectFile.path);

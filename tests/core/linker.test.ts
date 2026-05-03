@@ -3541,3 +3541,222 @@ describe('DraftBenchLinker — sub-scene-folder auto-rename on parent-scene rena
 		expect(app.vault.getAbstractFileByPath('Drift/New name')).toBeNull();
 	});
 });
+
+describe('DraftBenchLinker — chapter-scenes-folder auto-rename on parent-chapter rename (#11)', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedFolder(path: string): Promise<void> {
+		await app.vault.createFolder(path);
+	}
+
+	async function seedProject(
+		path: string,
+		id: string,
+		title: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'project',
+			'dbench-id': id,
+			'dbench-project': `[[${title}]]`,
+			'dbench-project-id': id,
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-chapters': [],
+			'dbench-chapter-ids': [],
+		});
+		return file;
+	}
+
+	async function seedChapter(
+		path: string,
+		id: string,
+		projectId: string,
+		projectTitle: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'chapter',
+			'dbench-id': id,
+			'dbench-project': `[[${projectTitle}]]`,
+			'dbench-project-id': projectId,
+			'dbench-order': 1,
+			'dbench-status': 'draft',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+		});
+		return file;
+	}
+
+	async function seedSceneInChapter(
+		path: string,
+		id: string,
+		projectId: string,
+		chapterId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'scene',
+			'dbench-id': id,
+			'dbench-project-id': projectId,
+			'dbench-chapter-id': chapterId,
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	it('renames the chapter scenes folder when its parent chapter is renamed', async () => {
+		await seedProject('Drift/Drift.md', 'prj-001-tst-001', 'Drift');
+		const chapter = await seedChapter(
+			'Drift/Old chapter.md',
+			'chp-001-tst-001',
+			'prj-001-tst-001',
+			'Drift'
+		);
+		await seedFolder('Drift/Old chapter');
+		await seedSceneInChapter(
+			'Drift/Old chapter/Scene 1.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'chp-001-tst-001'
+		);
+
+		const oldPath = app.vault._rename(chapter, 'Drift/New chapter.md');
+		app.vault._fire('rename', chapter, oldPath);
+		await flush();
+
+		expect(app.vault.getAbstractFileByPath('Drift/Old chapter')).toBeNull();
+		expect(
+			app.vault.getAbstractFileByPath('Drift/New chapter')
+		).not.toBeNull();
+		// Scene file moved with the folder.
+		expect(
+			app.vault.getAbstractFileByPath('Drift/New chapter/Scene 1.md')
+		).not.toBeNull();
+		expect(
+			app.vault.getAbstractFileByPath('Drift/Old chapter/Scene 1.md')
+		).toBeNull();
+	});
+
+	it("skips when scenesFolder doesn't include {chapter}", async () => {
+		settings.scenesFolder = '';
+		await seedProject('Drift/Drift.md', 'prj-001-tst-001', 'Drift');
+		const chapter = await seedChapter(
+			'Drift/Old chapter.md',
+			'chp-001-tst-001',
+			'prj-001-tst-001',
+			'Drift'
+		);
+		// A folder happens to exist with the old basename, but the
+		// configured template doesn't use {chapter}, so the auto-rename
+		// must not fire.
+		await seedFolder('Drift/Old chapter');
+
+		const oldPath = app.vault._rename(chapter, 'Drift/New chapter.md');
+		app.vault._fire('rename', chapter, oldPath);
+		await flush();
+
+		expect(app.vault.getAbstractFileByPath('Drift/Old chapter')).not.toBeNull();
+		expect(app.vault.getAbstractFileByPath('Drift/New chapter')).toBeNull();
+	});
+
+	it('skips when no scene in the folder references the renamed chapter', async () => {
+		await seedProject('Drift/Drift.md', 'prj-001-tst-001', 'Drift');
+		const chapter = await seedChapter(
+			'Drift/Old chapter.md',
+			'chp-001-tst-001',
+			'prj-001-tst-001',
+			'Drift'
+		);
+		// Folder with old basename exists but contains no matching
+		// scenes (writer-managed folder coincidentally named after the
+		// chapter). Auto-rename must NOT touch it.
+		await seedFolder('Drift/Old chapter');
+		const unrelatedFile = await app.vault.create(
+			'Drift/Old chapter/notes.md',
+			''
+		);
+		app.metadataCache._setFrontmatter(unrelatedFile, {
+			tags: ['notes'],
+		});
+
+		const oldPath = app.vault._rename(chapter, 'Drift/New chapter.md');
+		app.vault._fire('rename', chapter, oldPath);
+		await flush();
+
+		expect(app.vault.getAbstractFileByPath('Drift/Old chapter')).not.toBeNull();
+		expect(app.vault.getAbstractFileByPath('Drift/New chapter')).toBeNull();
+	});
+
+	it('skips when the new folder path is already occupied', async () => {
+		await seedProject('Drift/Drift.md', 'prj-001-tst-001', 'Drift');
+		const chapter = await seedChapter(
+			'Drift/Old chapter.md',
+			'chp-001-tst-001',
+			'prj-001-tst-001',
+			'Drift'
+		);
+		await seedFolder('Drift/Old chapter');
+		await seedSceneInChapter(
+			'Drift/Old chapter/Scene 1.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'chp-001-tst-001'
+		);
+		// Conflicting destination already exists.
+		await seedFolder('Drift/New chapter');
+
+		const oldPath = app.vault._rename(chapter, 'Drift/New chapter.md');
+		app.vault._fire('rename', chapter, oldPath);
+		await flush();
+
+		// Old folder untouched (skip rather than overwrite).
+		expect(app.vault.getAbstractFileByPath('Drift/Old chapter')).not.toBeNull();
+		expect(
+			app.vault.getAbstractFileByPath('Drift/Old chapter/Scene 1.md')
+		).not.toBeNull();
+	});
+
+	it('skips when suspended', async () => {
+		await seedProject('Drift/Drift.md', 'prj-001-tst-001', 'Drift');
+		const chapter = await seedChapter(
+			'Drift/Old chapter.md',
+			'chp-001-tst-001',
+			'prj-001-tst-001',
+			'Drift'
+		);
+		await seedFolder('Drift/Old chapter');
+		await seedSceneInChapter(
+			'Drift/Old chapter/Scene 1.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'chp-001-tst-001'
+		);
+
+		await linker.withSuspended(async () => {
+			const oldPath = app.vault._rename(chapter, 'Drift/New chapter.md');
+			app.vault._fire('rename', chapter, oldPath);
+			await flush();
+		});
+
+		// Suspended: folder not auto-renamed.
+		expect(app.vault.getAbstractFileByPath('Drift/Old chapter')).not.toBeNull();
+		expect(app.vault.getAbstractFileByPath('Drift/New chapter')).toBeNull();
+	});
+});

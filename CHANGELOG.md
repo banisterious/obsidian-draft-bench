@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- `scenesFolder` setting now accepts a `{chapter}` token, expanded to the parent chapter's basename for scenes-in-chapters or to `''` for chapter-less scenes (collapsing to flat-at-project-root). The default flips from `''` to `'{chapter}/'`, so chapter-aware projects automatically nest scenes under their chapter folder while chapter-less projects keep the V1 flat layout. The linker watches chapter renames and renames the matching scenes folder to track, mirroring the sub-scene auto-rename one level up. Existing installs are migrated once on first load: a saved `scenesFolder: ''` is rewritten to `'{chapter}/'` and a one-shot flag prevents re-runs (a writer who deliberately re-sets `''` after the upgrade keeps that choice). Refs #11.
+
 ### Fixed
 
 - Six `createX` functions (`createDraft`, `createChapterDraft`, `createSubSceneDraft`, `createScene`, `createChapter`, `createSubScene`) read the newly-stamped `dbench-id` from `app.metadataCache.getFileCache(file)?.frontmatter?.['dbench-id']` *after* `processFrontMatter` returned, then pushed it into the parent's reverse-id array. Real Obsidian reparses the metadata cache asynchronously, so this read often hit the pre-write cache state and returned `''`. The empty string landed in the parent's `dbench-X-ids` array, paired with a valid `dbench-X` wikilink. Tests didn't catch it because the test mock's `processFrontMatter` updates the cache synchronously. Fix: capture the id INSIDE the `processFrontMatter` callback, where the stamping helper sets it on the frontmatter object — same pattern the rest of the linker already uses. Existing vaults with `""` entries continue to function (the wikilink half still resolves), but the empty entries undermine integrity scans and id-based lookup. A sweep utility for backfilling existing empty entries is planned as a follow-up. Refs #15.

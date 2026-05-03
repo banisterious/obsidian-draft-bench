@@ -71,11 +71,11 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Scenes folder')
 			.setDesc(
-				'Relative to the project folder. Leave empty to place scenes alongside the project note, or enter a subfolder name to nest them.'
+				'Relative to the project folder. Default {chapter}/ nests scenes under their chapter for chapter-aware projects and degrades to flat for chapter-less ones; supports {project} and {chapter} tokens. Set to empty for unconditional flat-at-project-root, or to a literal subfolder name (e.g., Scenes/) to nest unconditionally.'
 			)
 			.addText((text) => {
 				text
-					.setPlaceholder('')
+					.setPlaceholder('{chapter}/')
 					.setValue(settings.scenesFolder)
 					.onChange(async (value) => {
 						settings.scenesFolder = value;

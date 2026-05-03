@@ -307,10 +307,10 @@ describe('createChapterDraft', () => {
 		)[0];
 
 		const departure = app.vault.getAbstractFileByPath(
-			'Draft Bench/Novel/Departure.md'
+			'Draft Bench/Novel/Chapter 1/Departure.md'
 		) as TFile;
 		const firstNight = app.vault.getAbstractFileByPath(
-			'Draft Bench/Novel/First night.md'
+			'Draft Bench/Novel/Chapter 1/First night.md'
 		) as TFile;
 		await setBody(app, refreshedChapter.file, 'Chapter intro.\n');
 		await setBody(app, departure, 'Body of Departure.\n');
@@ -353,10 +353,10 @@ describe('createChapterDraft', () => {
 		)[0];
 
 		const second = app.vault.getAbstractFileByPath(
-			'Draft Bench/Novel/Second.md'
+			'Draft Bench/Novel/Chapter 1/Second.md'
 		) as TFile;
 		const first = app.vault.getAbstractFileByPath(
-			'Draft Bench/Novel/First.md'
+			'Draft Bench/Novel/Chapter 1/First.md'
 		) as TFile;
 		await setBody(app, finalChapter.file, '');
 		await setBody(app, first, '1');
@@ -500,7 +500,7 @@ describe('createChapterDraft', () => {
 			project.frontmatter['dbench-id']
 		)[0];
 		const departure = app.vault.getAbstractFileByPath(
-			'Draft Bench/Novel/Departure.md'
+			'Draft Bench/Novel/Chapter 1/Departure.md'
 		) as TFile;
 		await setBody(app, refreshedChapter.file, 'Chapter body.');
 		await setBody(app, departure, 'Scene body.');

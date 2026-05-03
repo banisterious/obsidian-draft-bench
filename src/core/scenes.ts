@@ -60,8 +60,12 @@ export interface CreateSceneOptions {
 
 	/**
 	 * Override for the scenes-folder template. Falls back to
-	 * `settings.scenesFolder`. Supports `{project}` token, replaced
-	 * with the project's basename.
+	 * `settings.scenesFolder`. Supports `{project}` and `{chapter}`
+	 * tokens, replaced with the project's basename and (when present)
+	 * the parent chapter's basename. For chapter-less scenes, `{chapter}`
+	 * expands to `''`, which collapses to flat-at-project-root once the
+	 * resolver normalizes slashes — so the default `{chapter}/` template
+	 * gracefully degrades to the V1 flat layout for chapter-less projects.
 	 */
 	location?: string;
 
@@ -83,10 +87,13 @@ export interface ResolvedScenePaths {
 /**
  * Pure path resolution. The folder path is `settings.scenesFolder`
  * (or `options.location`) interpreted **relative to the project's
- * folder**, with `{project}` expanded to the project's basename. An
- * empty template (the default) places the scene alongside the project
- * note; a non-empty template nests it in a subfolder. The file path
- * appends `<title>.md`.
+ * folder**, with `{project}` expanded to the project's basename and
+ * `{chapter}` to the parent chapter's basename (or `''` for chapter-
+ * less scenes, which collapses to flat-at-project-root). The default
+ * `{chapter}/` nests scenes under their chapter for chapter-aware
+ * projects and degrades to flat for chapter-less ones; an explicit
+ * empty template places the scene alongside the project note. The
+ * file path appends `<title>.md`.
  */
 export function resolveScenePaths(
 	settings: DraftBenchSettings,
@@ -104,8 +111,10 @@ export function resolveScenePaths(
 	}
 
 	const template = options.location ?? settings.scenesFolder;
+	const chapterBasename = options.chapter?.file.basename ?? '';
 	const relative = template
 		.replace(/\{project\}/g, project.file.basename)
+		.replace(/\{chapter\}/g, chapterBasename)
 		.replace(/\/+/g, '/')
 		.replace(/^\/+|\/+$/g, '');
 

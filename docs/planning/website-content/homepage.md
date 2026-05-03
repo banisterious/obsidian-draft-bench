@@ -18,7 +18,7 @@ The plugin stays narrow on purpose. Plot grids, character databases, beat-sheet 
 
 ## See it in action
 
-Short motion captures of the Manuscript Builder, scene-to-draft snapshots, the compile flow, project creation, and integrity repair live on the [features page](/features/). Each one is a real working vault, not a mockup.
+Five short loops on the [features page](/features/) walk through new projects, the Manuscript view, versioned drafts, compile, and the integrity service — captured from a real vault.
 
 ## Where it sits
 

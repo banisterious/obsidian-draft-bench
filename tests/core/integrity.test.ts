@@ -1890,3 +1890,199 @@ describe('integrity — one-pass convergence on parallel-array residue (#13)', (
 		expect(fm?.['dbench-sub-scene-ids']).toEqual(['sub-001-tst-001']);
 	});
 });
+
+describe('integrity — pairing-preserving add-to-reverse (#14)', () => {
+	async function seedThreeSubScenes(app: App): Promise<void> {
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[Departure]]'],
+			['sc1-001-tst-001']
+		);
+		await seedSubScene(
+			app,
+			'Drift/Departure/Rolling out.md',
+			'ssc-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Departure',
+			'sc1-001-tst-001'
+		);
+		await seedSubScene(
+			app,
+			'Drift/Departure/The road-blessing.md',
+			'ssc-002-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Departure',
+			'sc1-001-tst-001'
+		);
+		await seedSubScene(
+			app,
+			'Drift/Departure/Loading the cart.md',
+			'ssc-003-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Departure',
+			'sc1-001-tst-001'
+		);
+	}
+
+	it('preserves pairing when an interior id is missing from the parent reverse arrays', async () => {
+		// The dev-vault Test 19 scenario: writer manually deletes the
+		// MIDDLE id from `dbench-sub-scene-ids`, leaving wikilinks
+		// intact. The naive `iarr.push(p.id)` in add-to-reverse would
+		// place the missing id at the END, mispairing wikilinks[1] and
+		// ids[1+]. The pairing-preserving splice inserts at the
+		// matching wikilink index instead.
+		const app = new App();
+		await seedThreeSubScenes(app);
+		// Parent: full wikilinks, ids missing the middle entry.
+		await seedScene(
+			app,
+			'Drift/Departure.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[Rolling out]]', '[[The road-blessing]]', '[[Loading the cart]]'],
+			['ssc-001-tst-001', 'ssc-003-tst-001']
+		);
+
+		const project = loadProject(app, 'Drift');
+		const firstReport = scanProject(app, project);
+		// Scan flags MISSING for the road-blessing's id companion.
+		expect(kinds(firstReport.issues)).toContain('SUB_SCENE_MISSING_IN_SCENE');
+
+		await applyRepairs(app, firstReport);
+
+		const sceneFile = app.vault.getAbstractFileByPath(
+			'Drift/Departure.md'
+		) as TFile;
+		const fm = app.metadataCache.getFileCache(sceneFile)?.frontmatter as
+			| Record<string, unknown>
+			| undefined;
+		// Pairing preserved: id ssc-002 lands at index 1, matching
+		// wikilink "[[The road-blessing]]" at the same index.
+		expect(fm?.['dbench-sub-scenes']).toEqual([
+			'[[Rolling out]]',
+			'[[The road-blessing]]',
+			'[[Loading the cart]]',
+		]);
+		expect(fm?.['dbench-sub-scene-ids']).toEqual([
+			'ssc-001-tst-001',
+			'ssc-002-tst-001',
+			'ssc-003-tst-001',
+		]);
+
+		// Re-scan: zero CONFLICT issues (the bug surfaced two CONFLICTs
+		// per the issue description, one for each mispaired entry).
+		const secondReport = scanProject(app, project);
+		const conflicts = secondReport.issues.filter(
+			(i) => i.kind === 'SCENE_SUB_SCENE_CONFLICT'
+		);
+		expect(conflicts).toEqual([]);
+	});
+
+	it('preserves pairing when an interior wikilink is missing (symmetric case)', async () => {
+		// Symmetric repair path: ids array is intact, wikilinks is
+		// missing the middle entry. The splice should insert the
+		// missing wikilink at the matching id index.
+		const app = new App();
+		await seedThreeSubScenes(app);
+		await seedScene(
+			app,
+			'Drift/Departure.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[Rolling out]]', '[[Loading the cart]]'],
+			['ssc-001-tst-001', 'ssc-002-tst-001', 'ssc-003-tst-001']
+		);
+
+		const project = loadProject(app, 'Drift');
+		const firstReport = scanProject(app, project);
+		expect(kinds(firstReport.issues)).toContain('SUB_SCENE_MISSING_IN_SCENE');
+
+		await applyRepairs(app, firstReport);
+
+		const sceneFile = app.vault.getAbstractFileByPath(
+			'Drift/Departure.md'
+		) as TFile;
+		const fm = app.metadataCache.getFileCache(sceneFile)?.frontmatter as
+			| Record<string, unknown>
+			| undefined;
+		expect(fm?.['dbench-sub-scenes']).toEqual([
+			'[[Rolling out]]',
+			'[[The road-blessing]]',
+			'[[Loading the cart]]',
+		]);
+		expect(fm?.['dbench-sub-scene-ids']).toEqual([
+			'ssc-001-tst-001',
+			'ssc-002-tst-001',
+			'ssc-003-tst-001',
+		]);
+
+		const secondReport = scanProject(app, project);
+		const conflicts = secondReport.issues.filter(
+			(i) => i.kind === 'SCENE_SUB_SCENE_CONFLICT'
+		);
+		expect(conflicts).toEqual([]);
+	});
+
+	it('falls back to append when neither side has the value (true missing-child case)', async () => {
+		// Regression guard: the existing append-both behavior must hold
+		// for the case the original code already handled — a child
+		// declares the parent but neither wikilink nor id is in the
+		// reverse arrays at all.
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[Departure]]'],
+			['sc1-001-tst-001']
+		);
+		await seedSubScene(
+			app,
+			'Drift/Departure/Lot 47.md',
+			'ssc-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Departure',
+			'sc1-001-tst-001'
+		);
+		// Parent has empty reverse arrays; sub-scene declares parent
+		// but isn't listed.
+		await seedScene(
+			app,
+			'Drift/Departure.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			[],
+			[]
+		);
+
+		const project = loadProject(app, 'Drift');
+		const firstReport = scanProject(app, project);
+		await applyRepairs(app, firstReport);
+
+		const sceneFile = app.vault.getAbstractFileByPath(
+			'Drift/Departure.md'
+		) as TFile;
+		const fm = app.metadataCache.getFileCache(sceneFile)?.frontmatter as
+			| Record<string, unknown>
+			| undefined;
+		expect(fm?.['dbench-sub-scenes']).toEqual(['[[Lot 47]]']);
+		expect(fm?.['dbench-sub-scene-ids']).toEqual(['ssc-001-tst-001']);
+	});
+});

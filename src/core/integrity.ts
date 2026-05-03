@@ -490,8 +490,23 @@ export async function applyRepairs(
 					if (p.kind === 'add-to-reverse') {
 						const warr = readArray(fm[p.wikilinkField]);
 						const iarr = readArray(fm[p.idField]);
-						if (!warr.includes(p.wikilink)) warr.push(p.wikilink);
-						if (!iarr.includes(p.id)) iarr.push(p.id);
+						const wIdx = warr.indexOf(p.wikilink);
+						const iIdx = iarr.indexOf(p.id);
+						// Pairing-preserving insert (#14): when one side
+						// already has the value at a known index and the
+						// other side is missing, splice the missing side
+						// at that index so wikilinks/ids stay aligned by
+						// position. Only fall back to append-both when
+						// neither side has the value (true "missing
+						// child" case). The both-present case is a no-op.
+						if (wIdx === -1 && iIdx === -1) {
+							warr.push(p.wikilink);
+							iarr.push(p.id);
+						} else if (wIdx >= 0 && iIdx === -1) {
+							iarr.splice(wIdx, 0, p.id);
+						} else if (wIdx === -1 && iIdx >= 0) {
+							warr.splice(iIdx, 0, p.wikilink);
+						}
 						fm[p.wikilinkField] = warr;
 						fm[p.idField] = iarr;
 					} else {

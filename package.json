@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-draft-bench",
-	"version": "0.2.2",
+	"version": "0.2.3",
 	"description": "A full creative writing workflow for Obsidian: project creation, scene management, and manuscript compilation with frontmatter-native data and Bases compatibility.",
 	"main": "main.js",
 	"scripts": {

@@ -154,6 +154,7 @@ describe('buildFileMenuItems — single file smart visibility', () => {
 			'Set as project',
 			'Set as chapter',
 			'Set as scene',
+			'Set as sub-scene',
 			'Set as draft',
 		]);
 	});
@@ -552,6 +553,7 @@ describe('buildFileMenuItems — folder-scope smart Set as project (#3)', () => 
 			'Set as project',
 			'Set as chapter',
 			'Set as scene',
+			'Set as sub-scene',
 			'Set as draft',
 			'Complete essential properties',
 			'Add identifier',

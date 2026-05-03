@@ -10,6 +10,7 @@ import {
 	setAsDraft,
 	setAsProject,
 	setAsScene,
+	setAsSubScene,
 } from '../core/retrofit';
 import {
 	populateMenuSurface,
@@ -81,6 +82,14 @@ function buildFilesMenuItemSpecs(
 				onClick: () =>
 					runBatch(app, settings, files, setAsScene, {
 						action: 'Set as scene',
+					}),
+			},
+			{
+				title: 'Set as sub-scene',
+				icon: 'rows',
+				onClick: () =>
+					runBatch(app, settings, files, setAsSubScene, {
+						action: 'Set as sub-scene',
 					}),
 			},
 			{

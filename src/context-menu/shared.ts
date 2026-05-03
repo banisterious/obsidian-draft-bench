@@ -64,6 +64,13 @@ export function noticeForSingleFile(
 		const reason = result.reason ? ` ${result.reason}` : '';
 		new Notice(`Could not ${labels.failureVerb}.${reason}`);
 	}
+	// Optional informational follow-up notice (e.g., setAsSubScene's
+	// flat\u2192hierarchical transition note when the parent scene already
+	// has whole-scene drafts). Shown in addition to the outcome notice
+	// so the writer sees both the success/failure and the context.
+	if (result.notice) {
+		new Notice(result.notice, 8000);
+	}
 }
 
 /**

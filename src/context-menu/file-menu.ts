@@ -12,14 +12,17 @@ import {
 	setAsDraft,
 	setAsProject,
 	setAsScene,
+	setAsSubScene,
 } from '../core/retrofit';
 import { isChapterFrontmatter } from '../model/chapter';
 import { isProjectFrontmatter } from '../model/project';
 import { findChaptersInProject } from '../core/discovery';
 import { isSceneFrontmatter } from '../model/scene';
+import { isSubSceneFrontmatter } from '../model/sub-scene';
 import { ManuscriptBuilderModal } from '../ui/manuscript-builder/manuscript-builder-modal';
 import { activateManuscriptView } from '../ui/manuscript-view/activate';
 import { MoveToChapterModal } from '../ui/modals/move-to-chapter-modal';
+import { MoveToSceneModal } from '../ui/modals/move-to-scene-modal';
 import { NewChapterDraftModal } from '../ui/modals/new-chapter-draft-modal';
 import { NewDraftModal } from '../ui/modals/new-draft-modal';
 import { RepairProjectModal } from '../ui/modals/repair-project-modal';
@@ -124,13 +127,17 @@ export function buildSingleFileItemSpecs(
 		specs.push(...presetItemSpecs(plugin, linker, file));
 	}
 
-	if (type === 'scene' || type === 'draft') {
+	if (type === 'scene' || type === 'draft' || type === 'sub-scene') {
 		specs.push(...sceneOrDraftCompileItemSpecs(plugin, file));
 	}
 
 	if (type === 'scene') {
 		specs.push(...newSceneDraftItemSpecs(plugin, linker, file));
 		specs.push(...moveToChapterItemSpecs(plugin, file));
+	}
+
+	if (type === 'sub-scene') {
+		specs.push(...moveToSceneItemSpecs(plugin, file));
 	}
 
 	if (type === 'chapter') {
@@ -169,6 +176,17 @@ export function buildSingleFileItemSpecs(
 					noticeForSingleFile(result, {
 						success: 'Set as scene',
 						failureVerb: 'set as scene',
+					});
+				},
+			},
+			{
+				title: 'Set as sub-scene',
+				icon: 'rows',
+				onClick: async () => {
+					const result = await setAsSubScene(app, plugin.settings, file);
+					noticeForSingleFile(result, {
+						success: 'Set as sub-scene',
+						failureVerb: 'set as sub-scene',
 					});
 				},
 			},
@@ -271,6 +289,14 @@ function buildFolderItemSpecs(
 				}),
 		},
 		{
+			title: 'Set as sub-scene',
+			icon: 'rows',
+			onClick: () =>
+				runBatch(app, settings, files, setAsSubScene, {
+					action: 'Set as sub-scene',
+				}),
+		},
+		{
 			title: 'Set as draft',
 			icon: 'file-text',
 			onClick: () =>
@@ -345,6 +371,33 @@ function moveToChapterItemSpecs(
 			icon: 'arrow-right-from-line',
 			onClick: () => {
 				new MoveToChapterModal(plugin.app, { file, frontmatter: fm }).open();
+			},
+		},
+	];
+}
+
+/**
+ * "Move to scene" for a sub-scene. Mirrors the chapter-side
+ * "Move to chapter" affordance one level deeper, per
+ * [sub-scene-type.md § 8](../../docs/planning/sub-scene-type.md).
+ * Hidden when the project link can't be resolved (the modal needs a
+ * project to enumerate target scenes from). Single-file scope; bulk
+ * multi-select moves are post-V1.
+ */
+function moveToSceneItemSpecs(
+	plugin: DraftBenchPlugin,
+	file: TFile
+): MenuItemSpec[] {
+	const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+	if (!isSubSceneFrontmatter(fm)) return [];
+	const projectId = fm['dbench-project-id'];
+	if (typeof projectId !== 'string' || projectId === '') return [];
+	return [
+		{
+			title: 'Move to scene',
+			icon: 'arrow-right-from-line',
+			onClick: () => {
+				new MoveToSceneModal(plugin.app, { file, frontmatter: fm }).open();
 			},
 		},
 	];

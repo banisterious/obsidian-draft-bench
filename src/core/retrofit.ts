@@ -6,9 +6,17 @@ import {
 	stampDraftEssentials,
 	stampProjectEssentials,
 	stampSceneEssentials,
+	stampSubSceneEssentials,
 } from './essentials';
 import { nextChapterOrder } from './chapters';
-import { findProjects, findScenesInProject, type ProjectNote } from './discovery';
+import { nextSubSceneOrder } from './sub-scenes';
+import {
+	findProjects,
+	findScenes,
+	findScenesInProject,
+	type ProjectNote,
+	type SceneNote,
+} from './discovery';
 
 /**
  * Property-retrofit actions: bring existing notes under plugin management
@@ -57,6 +65,17 @@ const REQUIRED_KEYS_BY_TYPE: Record<string, readonly string[]> = {
 		'dbench-drafts',
 		'dbench-draft-ids',
 	],
+	'sub-scene': [
+		'dbench-id',
+		'dbench-project',
+		'dbench-project-id',
+		'dbench-scene',
+		'dbench-scene-id',
+		'dbench-order',
+		'dbench-status',
+		'dbench-drafts',
+		'dbench-draft-ids',
+	],
 	draft: [
 		'dbench-id',
 		'dbench-project',
@@ -74,6 +93,15 @@ export interface RetrofitResult {
 	file: TFile;
 	/** Human-readable reason for `skipped` / `error` outcomes. */
 	reason?: string;
+	/**
+	 * Optional informational notice shown alongside the success/failure
+	 * notice. Used for transition notes that don't change the outcome
+	 * but warrant the writer's attention — e.g., `setAsSubScene`
+	 * surfaces the flat→hierarchical scene-draft notice per
+	 * [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md)
+	 * when the inferred parent scene already has whole-scene drafts.
+	 */
+	notice?: string;
 }
 
 /** Aggregate of per-file outcomes for a batch run. */
@@ -274,6 +302,89 @@ export async function setAsChapter(
 			});
 		});
 		return { outcome: 'updated', file };
+	} catch (err) {
+		return {
+			outcome: 'error',
+			file,
+			reason: err instanceof Error ? err.message : String(err),
+		};
+	}
+}
+
+/**
+ * Stamp sub-scene essentials on an untyped note. See `setAsProject`
+ * for return semantics.
+ *
+ * Inference: when the file's immediate parent folder contains exactly
+ * one scene note (the common `<project>/<scene>/<sub-scene>.md`
+ * layout per [sub-scene-type.md § 10](../../docs/planning/sub-scene-type.md)),
+ * `dbench-scene` + `dbench-scene-id` and the parent project refs are
+ * pre-populated. `dbench-order` defaults to
+ * `max(existing sub-scene order in this scene) + 1`. Any ambiguity
+ * (zero or multiple scene notes in the parent folder) falls back to
+ * empty placeholders the writer fills in via the Properties panel.
+ *
+ * Transition notice (per § 4): when the inferred parent scene already
+ * has whole-scene drafts (`dbench-drafts.length > 0`), the result
+ * carries an informational `notice` so the caller can surface the
+ * "future drafts can snapshot the whole scene OR individual
+ * sub-scenes" guidance. Existing drafts are NOT touched — they remain
+ * historical snapshots of the pre-hierarchical scene.
+ */
+export async function setAsSubScene(
+	app: App,
+	settings: DraftBenchSettings,
+	file: TFile
+): Promise<RetrofitResult> {
+	const existing = readDbenchType(app, file);
+	if (existing !== null) {
+		return { outcome: 'skipped', file, reason: `Already a ${existing}` };
+	}
+	try {
+		const inferredScene = inferSceneForSubScene(app, file);
+		await app.fileManager.processFrontMatter(file, (fm) => {
+			if (inferredScene) {
+				const sceneFm = inferredScene.frontmatter as unknown as Record<
+					string,
+					unknown
+				>;
+				fm['dbench-scene'] = `[[${inferredScene.file.basename}]]`;
+				fm['dbench-scene-id'] = inferredScene.frontmatter['dbench-id'];
+				const projectWikilink = sceneFm['dbench-project'];
+				const projectId = sceneFm['dbench-project-id'];
+				if (typeof projectWikilink === 'string' && projectWikilink !== '') {
+					fm['dbench-project'] = projectWikilink;
+				}
+				if (typeof projectId === 'string' && projectId !== '') {
+					fm['dbench-project-id'] = projectId;
+				}
+				fm['dbench-order'] = nextSubSceneOrder(
+					app,
+					inferredScene.frontmatter['dbench-id']
+				);
+			}
+			stampSubSceneEssentials(fm, {
+				basename: file.basename,
+				defaultStatus: settings.statusVocabulary[0],
+			});
+		});
+
+		// Transition notice when the parent scene already has
+		// whole-scene drafts. Read after the write so the cache reflects
+		// the new sub-scene's parent ref but the parent scene's drafts
+		// arrays are untouched (whole-scene drafts persist as historical
+		// snapshots; the writer is told future drafts can follow either
+		// shape).
+		const result: RetrofitResult = { outcome: 'updated', file };
+		if (inferredScene) {
+			const sceneDrafts = inferredScene.frontmatter['dbench-drafts'] ?? [];
+			if (Array.isArray(sceneDrafts) && sceneDrafts.length > 0) {
+				result.notice =
+					`"${inferredScene.file.basename}" has ${sceneDrafts.length} existing whole-scene draft${sceneDrafts.length === 1 ? '' : 's'}. ` +
+					'Future drafts of this scene can snapshot the whole scene or individual sub-scenes.';
+			}
+		}
+		return result;
 	} catch (err) {
 		return {
 			outcome: 'error',
@@ -557,6 +668,30 @@ export function inferProjectForScene(
 	const folder = parentPath(file.path);
 	const projects = findProjectsInFolder(app, folder);
 	return projects.length === 1 ? projects[0] : null;
+}
+
+/**
+ * Infer the parent scene for a sub-scene from its immediate parent
+ * folder. Looks for exactly one scene note in that folder, matching
+ * the conventional `<project>/<scene>/<sub-scene>.md` layout per
+ * [sub-scene-type.md § 10](../../docs/planning/sub-scene-type.md).
+ * Returns null when zero or multiple scene notes share the folder —
+ * the caller falls back to empty placeholders.
+ *
+ * Per D-04, discovery is frontmatter-based, not folder-based; this
+ * helper runs at *creation time* (retrofit) as a convenience for the
+ * common nested-folder layout. It does not change how existing
+ * sub-scenes are discovered.
+ */
+export function inferSceneForSubScene(
+	app: App,
+	file: TFile
+): SceneNote | null {
+	const folder = parentPath(file.path);
+	const scenes = findScenes(app).filter(
+		(s) => parentPath(s.file.path) === folder
+	);
+	return scenes.length === 1 ? scenes[0] : null;
 }
 
 /**

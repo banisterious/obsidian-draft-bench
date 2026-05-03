@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- Settings tab reorganized into collapsible `<details>` sections with chevron + section description (per [docs/planning/settings-organization-reference.md](docs/planning/settings-organization-reference.md), Charted Roots prior art): Folders, Drafts, Templates, Statuses, Bidirectional sync, About. Each section opens by default; the writer can collapse what they don't care about. The standalone Bases section folded into Folders since it was a single setting. Long `setDesc()` strings on the Scenes folder and Sub-scenes folder shrunk back to one short sentence each; the shared `{project}`/`{chapter}`/`{scene}` token semantics moved to a section-level info box at the top of Folders. The Templates section gained a parallel info box covering shared template-token + leave-empty-for-default semantics. State preservation across re-renders, search/filter, and helper extraction are deferred per the planning doc's start order. Refs #18.
+
 ### Added
 
 - `scenesFolder` setting now accepts a `{chapter}` token, expanded to the parent chapter's basename for scenes-in-chapters or to `''` for chapter-less scenes (collapsing to flat-at-project-root). The default flips from `''` to `'{chapter}/'`, so chapter-aware projects automatically nest scenes under their chapter folder while chapter-less projects keep the V1 flat layout. The linker watches chapter renames and renames the matching scenes folder to track, mirroring the sub-scene auto-rename one level up. Existing installs are migrated once on first load: a saved `scenesFolder: ''` is rewritten to `'{chapter}/'` and a one-shot flag prevents re-runs (a writer who deliberately re-sets `''` after the upgrade keeps that choice). Refs #11.

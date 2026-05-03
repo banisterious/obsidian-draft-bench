@@ -10,16 +10,22 @@ import { FolderSuggest } from './suggesters/folder-suggest';
  * Plugin settings tab rendered under Obsidian's Settings →
  * Community plugins → Draft Bench.
  *
- * Sections:
- *   - Folders      : projects / scenes / templates folder paths
+ * Sections (each rendered as a collapsible `<details>` block per #18):
+ *   - Folders      : projects / scenes / sub-scenes / templates / bases paths
  *   - Drafts       : drafts-folder placement + name
+ *   - Templates    : scene / chapter / sub-scene template files
  *   - Statuses     : editable workflow-status vocabulary
- *   - Sync         : bidirectional linker toggles
+ *   - Bidirectional sync : linker toggles
  *   - About        : version + repository link
  *
  * Folder-path inputs get a `FolderSuggest` autocomplete for quick
  * entry. `draftsFolderName` stays a plain text field (it's a folder
  * name, not a path — suggestions don't apply).
+ *
+ * Sections default to open. State preservation across re-renders is
+ * deferred per [docs/planning/settings-organization-reference.md § 6](../../docs/planning/settings-organization-reference.md);
+ * adopt when the re-collapse-on-re-render behavior actually surfaces
+ * as friction.
  */
 export class DraftBenchSettingTab extends PluginSettingTab {
 	private statusFocusIndex = 0;
@@ -35,28 +41,67 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		containerEl.addClass('dbench-settings');
+		// `dbench-scope` exposes the plugin's spacing / radius scale to
+		// CSS variable references inside this tab.
+		containerEl.addClass('dbench-settings', 'dbench-scope');
 
-		this.renderFolders();
-		this.renderDrafts();
-		this.renderTemplates();
-		this.renderBases();
-		this.renderStatuses();
-		this.renderSync();
-		this.renderAbout();
+		this.renderFolders(this.openSection('Folders', 'Where Draft Bench stores and finds notes'));
+		this.renderDrafts(this.openSection('Drafts', 'Per-scene draft placement'));
+		this.renderTemplates(this.openSection('Templates', 'Markdown files used for new notes'));
+		this.renderStatuses(this.openSection('Statuses', 'Workflow vocabulary for scenes and projects'));
+		this.renderSync(this.openSection('Bidirectional sync', 'Live integrity reconciliation'));
+		this.renderAbout(this.openSection('About', 'Version and repository'));
 	}
 
-	private renderFolders(): void {
-		const { containerEl } = this;
+	/**
+	 * Build a collapsible `<details>` section with a styled summary
+	 * (title + right-aligned description + chevron). Returns the
+	 * content container the section renderer should populate. Per
+	 * [settings-organization-reference.md § 3](../../docs/planning/settings-organization-reference.md):
+	 * native `<details>` so the browser handles open/close, no custom
+	 * JS toggle logic, with a CSS chevron rotated via the `[open]`
+	 * attribute selector.
+	 */
+	private openSection(title: string, desc: string): HTMLElement {
+		const details = this.containerEl.createEl('details', {
+			cls: 'dbench-settings-section',
+			attr: { open: 'true' },
+		});
+		details.dataset.sectionName = title.toLowerCase().replace(/\s+/g, '-');
+
+		const summary = details.createEl('summary');
+		summary.createSpan({ text: title });
+		summary.createSpan({
+			cls: 'dbench-settings-section__desc',
+			text: desc,
+		});
+
+		return details.createDiv({ cls: 'dbench-settings-section__content' });
+	}
+
+	private renderFolders(container: HTMLElement): void {
 		const { settings } = this.plugin;
 
-		new Setting(containerEl).setName('Folders').setHeading();
+		// Section-level info box: shared token semantics, kept out of
+		// individual setDesc() lines so each input row stays scannable.
+		const tokensInfo = container.createDiv({ cls: 'dbench-info-box' });
+		tokensInfo.appendText('Path templates support ');
+		tokensInfo.createEl('code', { text: '{project}' });
+		tokensInfo.appendText(', ');
+		tokensInfo.createEl('code', { text: '{chapter}' });
+		tokensInfo.appendText(', and ');
+		tokensInfo.createEl('code', { text: '{scene}' });
+		tokensInfo.appendText(
+			" tokens, which expand to the relevant note's basename at creation time. Tokens that don't apply to a given note (e.g., "
+		);
+		tokensInfo.createEl('code', { text: '{chapter}' });
+		tokensInfo.appendText(
+			' for a chapter-less scene) expand to an empty string and collapse out of the resolved path.'
+		);
 
-		new Setting(containerEl)
+		new Setting(container)
 			.setName('Projects folder')
-			.setDesc(
-				'Default location for new projects. The {project} token is replaced with the project title at creation time.'
-			)
+			.setDesc('Default location for new projects.')
 			.addText((text) => {
 				text
 					.setPlaceholder('Draft Bench/{project}/')
@@ -68,10 +113,10 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 				new FolderSuggest(this.app, text.inputEl);
 			});
 
-		new Setting(containerEl)
+		new Setting(container)
 			.setName('Scenes folder')
 			.setDesc(
-				'Relative to the project folder. Default {chapter}/ nests scenes under their chapter for chapter-aware projects and degrades to flat for chapter-less ones; supports {project} and {chapter} tokens. Set to empty for unconditional flat-at-project-root, or to a literal subfolder name (e.g., Scenes/) to nest unconditionally.'
+				"Relative to the project folder. Default {chapter}/ nests scenes under their chapter for chapter-aware projects and stays flat for chapter-less ones."
 			)
 			.addText((text) => {
 				text
@@ -84,10 +129,10 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 				new FolderSuggest(this.app, text.inputEl);
 			});
 
-		new Setting(containerEl)
+		new Setting(container)
 			.setName('Sub-scenes folder')
 			.setDesc(
-				"Relative to the parent scene's folder. Default {scene}/ nests sub-scenes next to their parent scene wherever it lives, so chapter-aware scenes carry sub-scenes along under the chapter folder; supports {project} and {scene} tokens. Set to empty for flat-alongside-the-parent-scene (writer typically applies <Scene> - <Sub-scene> filename prefix manually)."
+				"Relative to the parent scene's folder. Default {scene}/ nests sub-scenes next to their parent scene wherever it lives."
 			)
 			.addText((text) => {
 				text
@@ -100,7 +145,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 				new FolderSuggest(this.app, text.inputEl);
 			});
 
-		new Setting(containerEl)
+		new Setting(container)
 			.setName('Templates folder')
 			.setDesc(
 				'Where scene templates live. The built-in default template is created here on first project creation if absent.'
@@ -116,108 +161,10 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 					});
 				new FolderSuggest(this.app, text.inputEl);
 			});
-	}
 
-	private renderDrafts(): void {
-		const { containerEl } = this;
-		const { settings } = this.plugin;
-
-		new Setting(containerEl).setName('Drafts').setHeading();
-
-		new Setting(containerEl)
-			.setName('Drafts folder placement')
-			.setDesc('Where per-scene drafts are stored.')
-			.addDropdown((dropdown) => {
-				dropdown
-					.addOption('project-local', 'Inside each project')
-					.addOption('per-scene', 'Per-scene sibling folder')
-					.addOption('vault-wide', 'Vault-wide root')
-					.setValue(settings.draftsFolderPlacement)
-					.onChange(async (value) => {
-						settings.draftsFolderPlacement =
-							value as DraftsFolderPlacement;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(containerEl)
-			.setName('Drafts folder name')
-			.setDesc(
-				'The drafts folder\'s name. Used by the project-local and vault-wide placements; ignored by per-scene, which derives the name from the scene title.'
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder('Drafts')
-					.setValue(settings.draftsFolderName)
-					.onChange(async (value) => {
-						settings.draftsFolderName = value;
-						await this.plugin.saveSettings();
-					})
-			);
-	}
-
-	private renderTemplates(): void {
-		const { containerEl } = this;
-		const { settings } = this.plugin;
-
-		new Setting(containerEl).setName('Templates').setHeading();
-
-		new Setting(containerEl)
-			.setName('Scene template')
-			.setDesc(
-				'Markdown file used for new scenes. Leave empty to use scene-template.md inside the templates folder; set to override with any markdown file in the vault. Plugin tokens like {{scene_title}} and {{project_title}} are substituted at creation time.'
-			)
-			.addText((text) => {
-				text
-					.setPlaceholder('Draft Bench/Templates/scene-template.md')
-					.setValue(settings.sceneTemplatePath)
-					.onChange(async (value) => {
-						settings.sceneTemplatePath = value;
-						await this.plugin.saveSettings();
-					});
-				new FileSuggest(this.app, text.inputEl);
-			});
-
-		new Setting(containerEl)
-			.setName('Chapter template')
-			.setDesc(
-				'Markdown file used for new chapters. Leave empty to use chapter-template.md inside the templates folder; set to override with any markdown file in the vault. Plugin tokens like {{chapter_title}} and {{project_title}} are substituted at creation time.'
-			)
-			.addText((text) => {
-				text
-					.setPlaceholder('Draft Bench/Templates/chapter-template.md')
-					.setValue(settings.chapterTemplatePath)
-					.onChange(async (value) => {
-						settings.chapterTemplatePath = value;
-						await this.plugin.saveSettings();
-					});
-				new FileSuggest(this.app, text.inputEl);
-			});
-
-		new Setting(containerEl)
-			.setName('Sub-scene template')
-			.setDesc(
-				'Markdown file used for new sub-scenes. Leave empty to use sub-scene-template.md inside the templates folder; set to override with any markdown file in the vault. Plugin tokens like {{sub_scene_title}}, {{scene_title}}, and {{project_title}} are substituted at creation time.'
-			)
-			.addText((text) => {
-				text
-					.setPlaceholder('Draft Bench/Templates/sub-scene-template.md')
-					.setValue(settings.subSceneTemplatePath)
-					.onChange(async (value) => {
-						settings.subSceneTemplatePath = value;
-						await this.plugin.saveSettings();
-					});
-				new FileSuggest(this.app, text.inputEl);
-			});
-	}
-
-	private renderBases(): void {
-		const { containerEl } = this;
-		const { settings } = this.plugin;
-
-		new Setting(containerEl).setName('Bases').setHeading();
-
-		new Setting(containerEl)
+		// Bases folder folded in from the previous standalone Bases
+		// section (#18); single setting didn't justify its own section.
+		new Setting(container)
 			.setName('Bases folder')
 			.setDesc(
 				'Where the install command writes starter .base files. The folder is created if absent; existing files are never overwritten.'
@@ -234,19 +181,114 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 			});
 	}
 
-	private renderStatuses(): void {
-		const { containerEl } = this;
+	private renderDrafts(container: HTMLElement): void {
 		const { settings } = this.plugin;
 
-		new Setting(containerEl).setName('Statuses').setHeading();
+		new Setting(container)
+			.setName('Drafts folder placement')
+			.setDesc('Where per-scene drafts are stored.')
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOption('project-local', 'Inside each project')
+					.addOption('per-scene', 'Per-scene sibling folder')
+					.addOption('vault-wide', 'Vault-wide root')
+					.setValue(settings.draftsFolderPlacement)
+					.onChange(async (value) => {
+						settings.draftsFolderPlacement =
+							value as DraftsFolderPlacement;
+						await this.plugin.saveSettings();
+					});
+			});
 
-		new Setting(containerEl)
+		new Setting(container)
+			.setName('Drafts folder name')
+			.setDesc(
+				"The drafts folder's name. Used by the project-local and vault-wide placements; ignored by per-scene, which derives the name from the scene title."
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder('Drafts')
+					.setValue(settings.draftsFolderName)
+					.onChange(async (value) => {
+						settings.draftsFolderName = value;
+						await this.plugin.saveSettings();
+					})
+			);
+	}
+
+	private renderTemplates(container: HTMLElement): void {
+		const { settings } = this.plugin;
+
+		// Section-level info box: shared template-token semantics +
+		// the leave-empty-to-use-default convention.
+		const templatesInfo = container.createDiv({ cls: 'dbench-info-box' });
+		templatesInfo.appendText(
+			'Template files use plugin tokens like '
+		);
+		templatesInfo.createEl('code', { text: '{{scene_title}}' });
+		templatesInfo.appendText(', ');
+		templatesInfo.createEl('code', { text: '{{project_title}}' });
+		templatesInfo.appendText(
+			', and so on, substituted at note-creation time. Leave a path empty to use the built-in default at '
+		);
+		templatesInfo.createEl('code', { text: '<templates folder>/<type>-template.md' });
+		templatesInfo.appendText(
+			', or set to override with any markdown file in the vault.'
+		);
+
+		new Setting(container)
+			.setName('Scene template')
+			.setDesc('Markdown file used for new scenes.')
+			.addText((text) => {
+				text
+					.setPlaceholder('Draft Bench/Templates/scene-template.md')
+					.setValue(settings.sceneTemplatePath)
+					.onChange(async (value) => {
+						settings.sceneTemplatePath = value;
+						await this.plugin.saveSettings();
+					});
+				new FileSuggest(this.app, text.inputEl);
+			});
+
+		new Setting(container)
+			.setName('Chapter template')
+			.setDesc('Markdown file used for new chapters.')
+			.addText((text) => {
+				text
+					.setPlaceholder('Draft Bench/Templates/chapter-template.md')
+					.setValue(settings.chapterTemplatePath)
+					.onChange(async (value) => {
+						settings.chapterTemplatePath = value;
+						await this.plugin.saveSettings();
+					});
+				new FileSuggest(this.app, text.inputEl);
+			});
+
+		new Setting(container)
+			.setName('Sub-scene template')
+			.setDesc('Markdown file used for new sub-scenes.')
+			.addText((text) => {
+				text
+					.setPlaceholder('Draft Bench/Templates/sub-scene-template.md')
+					.setValue(settings.subSceneTemplatePath)
+					.onChange(async (value) => {
+						settings.subSceneTemplatePath = value;
+						await this.plugin.saveSettings();
+					});
+				new FileSuggest(this.app, text.inputEl);
+			});
+	}
+
+	private renderStatuses(container: HTMLElement): void {
+		const { settings } = this.plugin;
+
+		new Setting(container)
 			.setName('Workflow vocabulary')
 			.setDesc(
 				'The ordered list of statuses available on scenes and projects. The first value is the default for new scenes. Drag by the handle, or focus a row and press up/down, to reorder.'
 			);
 
-		const list = containerEl.createEl('ol', {
+		const list = container.createEl('ol', {
 			cls: 'dbench-statuses__list',
 			attr: {
 				role: 'listbox',
@@ -258,7 +300,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 			this.renderStatusRow(list, status, index);
 		});
 
-		const addButton = containerEl.createEl('button', {
+		const addButton = container.createEl('button', {
 			text: 'Add status',
 			cls: 'dbench-statuses__add',
 		});
@@ -512,13 +554,10 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 		this.display();
 	}
 
-	private renderSync(): void {
-		const { containerEl } = this;
+	private renderSync(container: HTMLElement): void {
 		const { settings } = this.plugin;
 
-		new Setting(containerEl).setName('Bidirectional sync').setHeading();
-
-		new Setting(containerEl)
+		new Setting(container)
 			.setName('Enable bidirectional sync')
 			.setDesc(
 				'Master toggle for the relationship-integrity linker. When off, the linker is dormant; you can still trigger a manual repair from the command palette.'
@@ -533,7 +572,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(container)
 			.setName('Sync on file modify')
 			.setDesc(
 				'Reconcile forward and reverse references in real time when files change. Disable for performance on very large vaults.'
@@ -549,16 +588,12 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 			);
 	}
 
-	private renderAbout(): void {
-		const { containerEl } = this;
-
-		new Setting(containerEl).setName('About').setHeading();
-
-		new Setting(containerEl)
+	private renderAbout(container: HTMLElement): void {
+		new Setting(container)
 			.setName('Version')
 			.setDesc(this.plugin.manifest.version);
 
-		new Setting(containerEl)
+		new Setting(container)
 			.setName('Repository')
 			.setDesc('github.com/banisterious/obsidian-draft-bench');
 	}

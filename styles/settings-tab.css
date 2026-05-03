@@ -2,11 +2,111 @@
  * Plugin settings tab styling.
  *
  * Sections and primary controls inherit Obsidian's native Setting
- * layout; this file only styles Draft-Bench-specific composites. Right
- * now that's the Statuses vocabulary editor: an ordered list of rows
- * with drag handles, an inline text input, a default badge on the
- * first row, and a remove button per row.
+ * layout. Two Draft-Bench-specific composites live here:
+ *
+ *   1. Collapsible top-level sections (`<details>`/`<summary>` per #18)
+ *      with a custom chevron and a right-aligned section description.
+ *   2. The Statuses vocabulary editor: an ordered list of rows with
+ *      drag handles, an inline text input, a default badge on the
+ *      first row, and a remove button per row.
+ *
+ * Plus a section-level info-box pattern for in-section explanatory
+ * text, kept short on individual `setDesc()` lines and consolidated
+ * here for shared concepts (e.g., the {project}/{chapter}/{scene}
+ * token semantics in the Folders section).
  */
+
+/*
+ * Collapsible <details> sections.
+ *
+ * Each top-level section is a real <details> element (no JS toggle
+ * logic; the browser handles open/close natively). The native marker
+ * is hidden and replaced with a CSS chevron that rotates on open.
+ * Section description sits right-aligned on the summary line so the
+ * writer can scan section purpose at a glance.
+ */
+
+.dbench-settings-section {
+	margin: var(--dbench-spacing-lg) 0;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	background-color: var(--background-secondary);
+}
+
+.dbench-settings-section > summary {
+	display: flex;
+	align-items: baseline;
+	gap: var(--dbench-spacing-sm);
+	padding: var(--dbench-spacing-md) var(--dbench-spacing-lg);
+	font-weight: var(--font-semibold);
+	cursor: pointer;
+	user-select: none;
+	border-radius: var(--dbench-radius-md);
+}
+
+.dbench-settings-section > summary:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+/* Hide the native marker so we can draw our own. */
+.dbench-settings-section > summary::-webkit-details-marker {
+	display: none;
+}
+
+.dbench-settings-section > summary::marker {
+	content: "";
+}
+
+.dbench-settings-section > summary::before {
+	content: "›";
+	color: var(--text-muted);
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-medium);
+	transition: transform var(--dbench-transition-fast);
+	display: inline-block;
+	min-width: 1ch;
+}
+
+.dbench-settings-section[open] > summary::before {
+	transform: rotate(90deg);
+}
+
+.dbench-settings-section__desc {
+	color: var(--text-muted);
+	margin-left: auto;
+	font-weight: var(--font-normal);
+	font-size: var(--font-ui-small);
+}
+
+.dbench-settings-section__content {
+	padding: 0 var(--dbench-spacing-lg) var(--dbench-spacing-md);
+}
+
+/*
+ * Section-level info box — explanatory or cross-referencing text that
+ * applies to multiple settings in a section, kept out of individual
+ * `setDesc()` lines to prevent setDesc bloat.
+ */
+
+.dbench-info-box {
+	padding: var(--dbench-spacing-sm) var(--dbench-spacing-md);
+	margin: var(--dbench-spacing-md) 0;
+	background-color: var(--background-primary-alt);
+	border-left: 3px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-sm);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	line-height: var(--line-height-tight);
+}
+
+.dbench-info-box code {
+	background-color: var(--code-background);
+	color: var(--code-normal);
+	padding: 0 var(--dbench-spacing-xs);
+	border-radius: var(--dbench-radius-xs);
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
+}
 
 .dbench-statuses__list {
 	list-style: none;

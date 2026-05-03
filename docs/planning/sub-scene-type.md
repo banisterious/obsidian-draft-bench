@@ -371,6 +371,11 @@ Run started 2026-05-03 against the dev-vault seed described in `dev-vault/00 Sub
 | # | Where | Status | Tracking |
 |---|---|---|---|
 | 1 | Sub-scene folder resolver computes `<projectFolder>/{scene}/` regardless of whether the parent scene lives inside a chapter folder, so for chapter-aware projects sub-scenes end up flat under the project folder rather than nested under the chapter. Knock-on: § 10 folder auto-rename (Test 14) silently skips when the writer manually places sub-scenes under the chapter folder (the ergonomic location), because the resolver looks for the folder at the project-relative path and finds nothing. The wikilink-update branch still works (per-file, location-agnostic). | Filed; pre-1.0 fix. | [#12](https://github.com/banisterious/obsidian-draft-bench/issues/12), companion to [#11](https://github.com/banisterious/obsidian-draft-bench/issues/11) (parallel `scenesFolder` gap) |
+| 2 | Integrity repair can take two passes to fully converge when the writer adds an entry to one of two parallel arrays out-of-band (e.g., adding a fake id to `dbench-sub-scene-ids` via Obsidian's Properties panel). The first scan surfaces the STALE orphan-id; the first repair drops the id; on the next scan a residual issue surfaces (`dbench-sub-scenes[N]=""` does-not-resolve), apparently because the parallel `dbench-sub-scenes` array got auto-padded to length match somewhere along the way (Properties panel UX or processFrontMatter serialization). Repair should converge in one pass; tracking as a quality-of-life follow-up. Surfaced in Test 18. | To file. | TBD (drafted in chat 2026-05-03) |
+
+### Walkthrough wording fixes
+
+- **Tests 18 / 19 had MISSING and STALE swapped.** The "easier path" of adding a fake id to a parent's reverse array triggers `STALE_SUB_SCENE_IN_SCENE` (parent -> child broken forward-ref), not MISSING. Rotating a child's `dbench-id` triggers `SUB_SCENE_MISSING_IN_SCENE` (child still declares parent, parent's reverse arrays no longer contain the new id). Walkthrough updated 2026-05-03 to swap the names + clarify the kind taxonomy in a callout above each test.
 
 ### Design decisions resolved against actual usage
 

@@ -71,31 +71,33 @@ Plugin-managed notes express parent-child relationships via typed properties of 
 |---|---|---|
 | Any plugin-managed note -> project | `dbench-project` | project note |
 | Scene -> chapter | `dbench-chapter` | chapter note |
+| Sub-scene -> scene | `dbench-scene` | scene note |
 | Draft -> scene | `dbench-scene` | scene note |
 | Draft -> chapter (chapter-level snapshot) | `dbench-chapter` | chapter note |
+| Draft -> sub-scene (sub-scene-level snapshot) | `dbench-sub-scene` | sub-scene note |
 
-`dbench-project` remains on every note in a project even when a typed intermediate parent exists. For example, a scene whose chapter is set to `[[Chapter 1]]` still carries `dbench-project: [[My Novel]]`. This keeps project-membership queries cheap regardless of hierarchy depth.
+`dbench-project` remains on every note in a project even when a typed intermediate parent exists. For example, a scene whose chapter is set to `[[Chapter 1]]` still carries `dbench-project: [[My Novel]]`. Sub-scenes carry `dbench-project` + `dbench-scene` (their immediate parent). This keeps project-membership queries cheap regardless of hierarchy depth.
 
-Drafts disambiguate their target type by *which* parent ref is present. A scene-level draft carries `dbench-scene` + `dbench-scene-id`; a chapter-level draft carries `dbench-chapter` + `dbench-chapter-id`; a single-scene-project draft carries only `dbench-project` + `dbench-project-id`. The linker uses parent-ref presence to attach each draft to its correct reverse array. See [chapter-type.md § 4](chapter-type.md) for the implicit-disambiguation ratification.
+Drafts disambiguate their target type by *which* parent ref is present. A scene-level draft carries `dbench-scene` + `dbench-scene-id`; a chapter-level draft carries `dbench-chapter` + `dbench-chapter-id`; a sub-scene-level draft carries `dbench-sub-scene` + `dbench-sub-scene-id`; a single-scene-project draft carries only `dbench-project` + `dbench-project-id`. The linker uses parent-ref presence to attach each draft to its correct reverse array. See [chapter-type.md § 4](chapter-type.md) and [sub-scene-type.md § 4](sub-scene-type.md) for the implicit-disambiguation ratification.
 
 There is no generic `dbench-parent` property. Typed properties are clearer for writers inspecting frontmatter and produce cleaner Bases queries (`dbench-scene is [[Tempting Waters]]` instead of `dbench-parent is [[Tempting Waters]] and dbench-type is draft`).
 
 ### V1 Type Vocabulary
 
-V1 ships with four types:
+V1 ships with five types:
 
 - **`project`**: The landing and metadata note for a work. Holds synopsis, genre, target word count, and other project-level metadata in frontmatter; body holds freeform planning content (outlines, themes, cuts and deferrals), plus (in single-scene projects, see § Project Structure on Disk) the current working draft itself.
 - **`chapter`**: A grouping/ordering layer above scenes for novel-shape projects. Optional — chapter-less projects (the original flat shape) remain a first-class V1 model. Body mirrors the scene template (planning sections + `## Draft`); the chapter's `## Draft` section is chapter-introductory prose only and emits before the chapter's scenes in compile, not interleaved between them. See [chapter-type.md](chapter-type.md) for the full design.
-- **`scene`**: A unit of manuscript content. The primary building block in folder-shaped projects; membership is determined by `dbench-project` frontmatter, not folder location (see § Project Structure on Disk). Body holds the current working draft with planning sections above it (from the scene template). Scenes can attach directly to a project (chapter-less projects) or to a chapter (chapter-aware projects); see § Project Structure on Disk.
-- **`draft`**: An archived snapshot of a scene's prose, a chapter's body plus its scenes, or (in single-scene projects) the project's prose. Created by a "New draft" command parameterized to its target; not authored directly. Lives in a configurable drafts folder.
+- **`scene`**: A unit of manuscript content. The primary building block in folder-shaped projects; membership is determined by `dbench-project` frontmatter, not folder location (see § Project Structure on Disk). Body holds the current working draft with planning sections above it (from the scene template). Scenes can attach directly to a project (chapter-less projects) or to a chapter (chapter-aware projects); see § Project Structure on Disk. Scenes may be **flat** (body is the working draft) or **hierarchical** (body is short introductory prose; the bulk of the prose lives in child sub-scenes).
+- **`sub-scene`**: A unit of prose smaller than a scene — a beat, a moment, a memoir vignette. Optional; opt-in scene-by-scene. Body mirrors the scene template (planning sections + `## Draft`) but uses `## Outline` instead of `## Beat outline` (per the recursive-feel discussion in [sub-scene-type.md § 2](sub-scene-type.md)). When a scene has sub-scenes, the scene's own `## Draft` becomes introductory prose and the sub-scenes carry the bulk of the manuscript content. Sub-scenes attach to their parent scene via `dbench-scene` + `dbench-scene-id` and inherit `dbench-project` + `dbench-project-id`. See [sub-scene-type.md](sub-scene-type.md) for the full design.
+- **`draft`**: An archived snapshot of a scene's prose, a chapter's body plus its scenes, a sub-scene's prose, or (in single-scene projects) the project's prose. Created by a "New draft" command parameterized to its target; not authored directly. Lives in a configurable drafts folder. Whole-scene drafts of hierarchical scenes concatenate the scene body + sub-scene bodies in `dbench-order` per [sub-scene-type.md § 4](sub-scene-type.md).
 
-Beats are represented as headings within scene notes by default. An optional `beat` type (as a separate note) is available for writers who need per-beat metadata, word counts, or Bases queryability.
+Beats inside a sub-scene are represented as headings within the sub-scene body. The sub-scene type is the bottom of the structural unit hierarchy in V1 — there is no four-level nesting (sub-sub-scene).
 
 ### Architected For (Post-V1)
 
 The following types are anticipated but not shipped in V1. The type registry and template system are designed to accommodate them without architectural changes:
 
-- `beat`: Sub-scene unit (as separate note, for writers who need per-beat metadata).
 - `character`: Character bible entry.
 - `location`: Setting/location reference.
 - `research`: Reference material linked to a project.
@@ -167,6 +169,32 @@ The Salt Road/
 
 Backward-compat: the chapter-less and chapter-aware folder shapes both ship as V1 and coexist forever. A chapter-less project never has to "graduate" to chapters; a chapter-aware project can be created with chapters from day one. Writers convert between shapes manually using the retrofit actions (Set as chapter, Move to chapter); there is no auto-conversion.
 
+#### Sub-scene nesting
+
+Scenes can opt into a third structural level by adding child sub-scene notes — a memoir scene with six narrative units, a montage broken into beats, an act compressed into vignettes. Sub-scene-awareness is per-scene, not per-project: any scene in any folder project (chapter-less or chapter-aware) can have sub-scenes; flat scenes coexist with hierarchical scenes inside the same chapter or project indefinitely. Single-scene projects don't currently support sub-scenes (sub-scene-on-project is a structural inversion not in V1 scope).
+
+By default, sub-scenes nest in a folder named after their parent scene (per `subScenesFolder: '{scene}/'` setting). Example layout for a chapter-less project where one scene has sub-scenes:
+
+```
+Things That Transpired/
+├── Things That Transpired.md       ← dbench-type: project, dbench-project-shape: folder
+├── Too Good To Pass Up.md          ← dbench-type: scene (flat — no sub-scenes)
+├── The Quiet Hour.md               ← dbench-type: scene (hierarchical)
+├── The Quiet Hour/                 ← sub-scene folder, named after parent scene
+│   ├── The last patron.md          ← dbench-type: sub-scene, dbench-scene: [[The Quiet Hour]]
+│   └── The phone call.md           ← dbench-type: sub-scene, dbench-scene: [[The Quiet Hour]]
+├── Wax And Iron.md                 ← dbench-type: scene (flat)
+└── Drafts/
+    ├── The Quiet Hour - Draft 1 (...).md           ← whole-scene draft (concatenates body + sub-scenes)
+    └── The last patron - Draft 1 (...).md          ← sub-scene draft
+```
+
+When a scene has sub-scenes, the scene's own `## Draft` becomes introductory prose (often a one-line orientation); the sub-scenes carry the bulk of the manuscript. Compile output reflects this: in chapter mode, scenes with sub-scenes get an `## H2` heading and their sub-scenes get `### H3`; in draft / full mode, the scene is `# H1` and sub-scenes are `## H2`.
+
+The sub-scene-folder template uses `{scene}` to expand to the parent scene's basename. The default `'{scene}/'` is interpreted relative to the *project folder*, which means for chapter-aware projects the sub-scene folder ends up at `<projectFolder>/<sceneName>/` — one level above the chapter folder where the parent scene actually lives. A `{chapter}` token to nest sub-scenes inside the chapter folder is tracked as a pre-1.0 enhancement (see [#11](https://github.com/banisterious/obsidian-draft-bench/issues/11) and [#12](https://github.com/banisterious/obsidian-draft-bench/issues/12)).
+
+A linker rename-watcher keeps the sub-scene folder name in sync with its parent scene's basename: rename `The Quiet Hour.md` to `The Quiet Hour (revised).md` and the sibling `The Quiet Hour/` folder auto-renames to match. Gated on the `subScenesFolder` template containing the `{scene}` token (writers using flat or non-`{scene}` layouts opt out of the auto-rename). See [sub-scene-type.md § 10](sub-scene-type.md).
+
 #### Single-scene project
 
 `dbench-project-shape: single`.
@@ -199,6 +227,7 @@ Settings expose three default folder targets that control where the plugin **cre
 |---|---|---|---|
 | `projectsFolder` | `Draft Bench/{project}/` | Where "Create project" puts new projects. The `{project}` token is replaced with the project's title, yielding `Draft Bench/The Salt Road/` for a project titled "The Salt Road." | `{project}` |
 | `scenesFolder` | inside the project folder (`{project}/`) | Where "New scene in project" puts new scenes. Default places scenes alongside the project note. Writers who prefer a flat per-project layout, or scenes in a separate `Scenes/` subfolder, or scenes grouped by part, can customize with tokens. | `{project}` |
+| `subScenesFolder` | `{scene}/` (project-relative) | Where "New sub-scene in scene" puts new sub-scenes. Default nests sub-scenes in a folder named after the parent scene; an empty value places them flat in the project folder. The `{scene}` token expands to the parent scene's basename. A `{chapter}` token for chapter-aware nesting is pre-1.0 follow-up ([#12](https://github.com/banisterious/obsidian-draft-bench/issues/12)). | `{project}`, `{scene}` |
 | `draftsFolder` | `Drafts/` inside the project folder | Where snapshots go. Three placement options (see § Draft Management § Drafts folder placement). | varies by option |
 
 Example custom settings for a writer who keeps all fiction in one tree and wants scenes in a dedicated subfolder:
@@ -311,12 +340,16 @@ Reverse arrays give the Manuscript view cheap population (read one property, not
 | `dbench-project` (chapter-less scene -> project) | `dbench-scenes` + `dbench-scene-ids` | project |
 | `dbench-project` (chapter -> project) | `dbench-chapters` + `dbench-chapter-ids` | project |
 | `dbench-chapter` (scene-in-chapter -> chapter) | `dbench-scenes` + `dbench-scene-ids` | chapter |
+| `dbench-scene` (sub-scene -> scene) | `dbench-sub-scenes` + `dbench-sub-scene-ids` | scene |
 | `dbench-scene` (scene draft -> scene) | `dbench-drafts` + `dbench-draft-ids` | scene |
 | `dbench-chapter` (chapter draft -> chapter) | `dbench-drafts` + `dbench-draft-ids` | chapter |
+| `dbench-sub-scene` (sub-scene draft -> sub-scene) | `dbench-drafts` + `dbench-draft-ids` | sub-scene |
 | `dbench-project` (single-scene-project draft -> project) | `dbench-drafts` + `dbench-draft-ids` | project |
 | `dbench-project` (compile preset -> project) | `dbench-compile-presets` + `dbench-compile-preset-ids` | project |
 
 Scenes-in-chapters carry both `dbench-project` and `dbench-chapter` refs but appear only in the *chapter's* `dbench-scenes` reverse array, not the project's. The linker's scene→project handler is gated on `dbench-chapter-id` being empty, so a project's `dbench-scenes` stays a list of *direct* children (per the no-mixed-children rule, this is the chapter-less case). See [chapter-type.md § 3 + § 9](chapter-type.md) for ratification.
+
+Sub-scenes carry `dbench-project` (for project membership) and `dbench-scene` (their immediate parent) but appear only in the *scene's* `dbench-sub-scenes` reverse array, not the project's. The linker disambiguates `dbench-scene` between sub-scene-as-child and draft-as-child by note type: the same forward-ref field is reused for both relationships, with the `dbench-type` discriminator routing each to its appropriate parent reverse array. See [sub-scene-type.md § 3](sub-scene-type.md) for the schema rationale.
 
 #### Live sync service
 
@@ -366,12 +399,13 @@ The linker is suspended during plugin-driven operations to avoid stale intermedi
 - New-project creation (project note + initial scene/chapter note + reverse-array stamp).
 - "New scene in project" / "New scene in chapter" (scene note write + parent's `dbench-scenes` array update).
 - "New chapter in project" (chapter note write + project's `dbench-chapters` array update).
-- "New draft of this scene" / "New draft of this chapter" (snapshot file write + parent's `dbench-drafts` array update).
-- "Reorder scenes" / "Reorder chapters in project" (sequential `dbench-order` writes across multiple files).
+- "New sub-scene in scene" (sub-scene note write + parent scene's `dbench-sub-scenes` array update).
+- "New draft of this scene" / "New draft of this chapter" / "New draft of this sub-scene" (snapshot file write + parent's `dbench-drafts` array update).
+- "Reorder scenes" / "Reorder chapters in project" / "Reorder sub-scenes in scene" (sequential `dbench-order` writes across multiple files).
 - "Repair project links" (batch reconciliation across the whole project).
 - Future: bulk scene imports, project-template expansion.
 
-Single-file ops — Set as project / scene / chapter / draft, Move to chapter, Complete essential properties, Add identifier — are *not* wrapped. The linker is designed to react to the single write and populate reverse arrays on parents in response; that's the intended path for retrofit and individual scene→chapter moves.
+Single-file ops — Set as project / scene / chapter / sub-scene / draft, Move to chapter, Move to scene, Complete essential properties, Add identifier — are *not* wrapped. The linker is designed to react to the single write and populate reverse arrays on parents in response; that's the intended path for retrofit and individual scene→chapter / sub-scene→scene moves.
 
 After a suspended operation completes, the plugin runs a targeted re-sync on the affected notes. The failure-mode guarantees above still apply — primary file writes happen first, reverse-array updates second, repair service reconciles any interruption.
 
@@ -389,9 +423,10 @@ Draft Bench's UI has two primary surfaces, split per [D-07](decisions/D-07-contr
 - **Compile CTA** above the toolbar (primary action, opens the Manuscript Builder for the active project's preset workflow).
 - **Toolbar** with three buttons: **New scene**, **New draft of current scene**, **Reorder scenes**. Buttons invoke the existing commands / dedicated modals; the leaf stays open.
 - **Project summary** section (collapsible): status, shape, identifier, total word count, hero progress bar when `dbench-target-words` is set on the project, per-status word/scene-and-chapter breakdown. For chapter-aware projects, the project total includes chapter bodies as well as scenes (per [chapter-type.md § 5](chapter-type.md) ratification).
-- **Manuscript list** section (collapsible). The body shape switches on whether the active project has any chapters:
+- **Manuscript list** section (collapsible). The body shape switches on whether the active project has any chapters and whether any of its scenes have sub-scenes:
   - **Chapter-less projects (flat).** Ordered scene list with click-through, status chip, word-count or per-scene progress bar (when `dbench-target-words` is set), draft count.
   - **Chapter-aware projects (hierarchical).** Stacked chapter cards in `dbench-order`. Each card has a clickable header (chevron + order capsule + chapter title link + status chip + chapter word-count rollup + a "New draft of this chapter" icon button) and a body listing the chapter's scenes via the same scene-row primitive used by the flat list. Cards are individually collapsible; collapse state persists per chapter via `chapterCollapseState` in plugin settings (keyed by `dbench-id`). Title click opens the chapter note; clicking elsewhere on the header toggles collapse. Per [chapter-type.md § 6](chapter-type.md).
+  - **Hierarchical scenes (those with sub-scenes).** Render as collapsible scene-cards mirroring the chapter-card pattern one level deeper: header (chevron + order capsule + scene title link + status chip + scene-rollup word count + a "New sub-scene" icon button) and a body listing sub-scene rows. Scene-cards appear inline alongside flat scene rows, so a chapter or chapter-less project can mix flat and hierarchical scenes freely. Collapse state persists per scene via `sceneCollapseState`. Per [sub-scene-type.md § 6](sub-scene-type.md).
 - **Empty states**: brand-mark + "Your manuscript begins here" CTA when no projects exist; compact prompt when projects exist but none is selected.
 
 Invoked via:
@@ -413,7 +448,7 @@ Invoked via:
 
 **Active-note-sync.** When a writer opens any plugin-managed note (project, chapter, scene, or draft) belonging to a project different from the current selection, the plugin auto-switches the selection to that note's project. The Manuscript view, modal, and any other selection-aware surface react accordingly. Keeps the leaf in sync with the file the writer is actively working on as they navigate around the vault. Untyped notes and notes with empty `dbench-project-id` don't trigger a switch; selection of an already-selected project is a no-op.
 
-**Wikilink-style title affordances.** Chapter card titles and scene row titles in the Manuscript view respond to the same modifier-click patterns Obsidian uses elsewhere for wikilinks: plain click opens in the current leaf; cmd/ctrl-click opens in a new tab; cmd/ctrl + shift opens to the right (split); cmd/ctrl + alt opens in a new window; middle-click opens in a new tab; right-click shows a menu with Open in new tab / split / window. Implemented via a shared `attachWikilinkOpenAffordances` helper so chapter cards' collapse-toggle and the browser's native context menu don't fire alongside the open.
+**Wikilink-style title affordances.** Chapter card titles, scene-card titles, scene row titles, and sub-scene row titles in the Manuscript view respond to the same modifier-click patterns Obsidian uses elsewhere for wikilinks: plain click opens in the current leaf; cmd/ctrl-click opens in a new tab; cmd/ctrl + shift opens to the right (split); cmd/ctrl + alt opens in a new window; middle-click opens in a new tab; right-click shows a menu with Open in new tab / split / window. Implemented via a shared `attachWikilinkOpenAffordances` helper so chapter and scene cards' collapse-toggles and the browser's native context menu don't fire alongside the open.
 
 **Settings.** Plugin configuration lives in Obsidian's native Settings panel (Options -> Community plugins -> Draft Bench), not in either surface. A future Dashboard / Control Center could include a launcher tile that jumps to the native settings tab via `app.setting.open()` + `openTabById('draft-bench')`; no settings UI is duplicated.
 
@@ -427,10 +462,11 @@ For further reading:
 
 Reordering happens in a dedicated modal, not inline in the Manuscript tab. Rationale: reorder is a deliberate, occasional act, not a constant one. A focused modal gives it room, simplifies keyboard accessibility, and keeps the Manuscript tab uncluttered.
 
-V1 ships two reorder modals, both built on the same primitive:
+V1 ships three reorder modals, all built on the same parameterized `ReorderChildrenModal<T>` primitive (genericized in [sub-scene-type.md § 8](sub-scene-type.md) when the third trigger appeared):
 
 - **Reorder scenes** — reorder scenes within their immediate parent (project for chapter-less, chapter for chapter-aware). The command is context-aware: when invoked on a scene-in-chapter, it scopes to that chapter; when invoked on a chapter-less project, it scopes to the project's flat scene list. Per [chapter-type.md § 8](chapter-type.md), within-chapter scene reordering is the default for chapter-aware projects in V1; cross-chapter scene moves are out of reorder's scope (use **Move to chapter** instead).
 - **Reorder chapters in project** — reorder chapters within a chapter-aware project. Same modal primitive, scoped to chapter-level `dbench-order`.
+- **Reorder sub-scenes in scene** — reorder sub-scenes within their parent scene. Cross-scene sub-scene moves are out of reorder's scope (use **Move to scene** instead, paralleling the chapter-level pattern).
 
 **Both modals:**
 
@@ -447,12 +483,15 @@ Right-click actions on files and folders:
 - **Create Draft Bench project** (on folders): opens the new-project modal.
 - **New scene in project** (inside a project folder): opens the new-scene modal.
 - **New chapter in project** (in a chapter-aware project): opens the new-chapter modal. Refused on projects with direct scenes (no-mixed-children rule).
-- **New draft of this scene** (on a scene note): snapshots and carries forward per § Draft Management.
+- **New sub-scene in scene** (palette command, gated to active-scene context per [sub-scene-type.md § 9](sub-scene-type.md)): opens the new-sub-scene modal. Also reachable via a "New sub-scene" icon button on each hierarchical scene-card in the Manuscript view.
+- **New draft of this scene** (on a scene note): snapshots and carries forward per § Draft Management. For hierarchical scenes, the snapshot concatenates the scene body + sub-scene bodies in `dbench-order`.
 - **New draft of this chapter** (on a chapter note): snapshots the chapter body plus its scenes per § Draft Management.
+- **New draft of this sub-scene** (on a sub-scene note): snapshots the sub-scene body. Sub-scene drafts coexist with whole-scene drafts of the parent — writers choose per draft which granularity captures the revision moment ([sub-scene-type.md § 4](sub-scene-type.md)).
 - **Move to chapter** (on a scene whose project has chapters): opens a chapter-picker modal that reassigns the scene's `dbench-chapter` parent. Single-file scope in V1; bulk multi-select moves are post-V1 per [chapter-type.md § 8](chapter-type.md).
-- **Set as…** / **Complete essential properties** / **Add identifier**: context-sensitive retrofit actions for bringing existing notes under plugin management. See § Applying Draft Bench properties to existing notes below.
+- **Move to scene** (on a sub-scene): opens a scene-picker modal scoped to the same project that reassigns the sub-scene's `dbench-scene` parent. Mirrors **Move to chapter** one level deeper.
+- **Set as…** / **Complete essential properties** / **Add identifier**: context-sensitive retrofit actions for bringing existing notes under plugin management. **Set as sub-scene** is one of the V1 retrofits; when run on an untyped child of a scene that already has whole-scene drafts, it surfaces a one-time transition notice clarifying that future drafts can snapshot the whole scene or individual sub-scenes ([sub-scene-type.md § 4](sub-scene-type.md)). See § Applying Draft Bench properties to existing notes below.
 - **Set status** (quick status change).
-- **Reorder scenes** / **Reorder chapters** (anywhere inside a project): opens the appropriate reorder modal per § Reordering.
+- **Reorder scenes** / **Reorder chapters** / **Reorder sub-scenes in scene** (anywhere inside a project): opens the appropriate reorder modal per § Reordering.
 
 ### Applying Draft Bench properties to existing notes
 
@@ -671,9 +710,9 @@ Default status filter is empty (all statuses) so a new preset compiles visibly d
 
 V1 supports three granularity modes via `dbench-compile-heading-scope`:
 
-- **Scene-level, draft-only** (`scope: draft`): include only content below each scene's `^## Draft` heading. Planning sections (Source passages, Beat outline, Open questions) are excluded. Matches the built-in scene template's manuscript-only region. Default for chapter-less projects.
-- **Scene-level, full body** (`scope: full`): include the entire scene body, including planning sections. Useful for internal review compiles; rarely used for submission output.
-- **Chapter-level** (`scope: chapter`): emit one `# <chapter title>` per chapter, then the chapter body's `## Draft` content (chapter-introductory prose) if non-empty, then concatenated scene `## Draft` bodies with scene titles omitted. Produces continuous prose under each chapter heading — the typical novel-compile shape. Default for chapter-aware projects (per [chapter-type.md § 7](chapter-type.md)).
+- **Scene-level, draft-only** (`scope: draft`): include only content below each scene's `^## Draft` heading. Planning sections (Source passages, Beat outline, Open questions) are excluded. Each scene emits as `# <scene title>` (H1); sub-scenes (when the scene has them) emit as `## <sub-scene title>` (H2). Matches the built-in scene template's manuscript-only region. Default for chapter-less projects.
+- **Scene-level, full body** (`scope: full`): include the entire scene body, including planning sections. Heading shape identical to `draft` (scene H1, sub-scene H2). Useful for internal review compiles; rarely used for submission output.
+- **Chapter-level** (`scope: chapter`): emit one `# <chapter title>` per chapter, then the chapter body's `## Draft` content (chapter-introductory prose) if non-empty, then scene content. **Flat scenes** emit their `## Draft` body as continuous prose with the scene title omitted. **Hierarchical scenes** (with sub-scenes) emit `## <scene title>` (H2) followed by the scene's intro prose, followed by their sub-scenes as `### <sub-scene title>` (H3). Three-level cascade — H1 chapter, H2 scene, H3 sub-scene — surfaces the structural hierarchy when sub-scenes are present, while flat scenes within the same chapter continue to render as continuous prose. Default for chapter-aware projects. Per [chapter-type.md § 7](chapter-type.md) and [sub-scene-type.md § 7](sub-scene-type.md).
 
 The default for new presets is auto-selected at create time by inspecting the source project's shape: chapter-aware projects get `scope: chapter`, chapter-less projects get `scope: draft`. Writers override via the Compile tab; existing presets are never silently changed.
 
@@ -700,15 +739,15 @@ Post-V1: EPUB / RTF formats, Kindle direct-send, per-preset output path override
 
 ### Section breaks
 
-Named section breaks (e.g., "Part II." / "Interlude") are scene-scoped decorations, declared on the scene that the break precedes:
+Named section breaks (e.g., "Part II." / "Interlude") are scoped decorations, declared on the unit that the break precedes — a scene or a sub-scene:
 
 ```yaml
-# On the scene note:
+# On the scene or sub-scene note:
 dbench-section-break-title: "II."
 dbench-section-break-style: visual      # visual | page-break; default visual
 ```
 
-Presence of `dbench-section-break-title` triggers a break before that scene during compile. Styles: `visual` = dinkus + heading (default); `page-break` = page break + heading (PDF / ODT; falls back to visual in MD). Absent = no break.
+Presence of `dbench-section-break-title` triggers a break before that unit during compile. Styles: `visual` = dinkus + heading (default); `page-break` = page break + heading (PDF / ODT; falls back to visual in MD). Absent = no break. The same fields work on both scenes and sub-scenes; the writer declares the break on whichever unit immediately follows the structural shift.
 
 Preset-level `dbench-compile-include-section-breaks: true | false` (default true) suppresses all breaks for variant-compile flexibility (workshop compile with breaks off, final compile with breaks on, from the same scene structure).
 
@@ -940,6 +979,20 @@ Promoted from "Phase 5+" to V1 on 2026-04-25 to make novelists comfortable at fi
 - Manuscript view rework: collapsible chapter cards with nested scene rows for chapter-aware projects; chapter-less projects keep the flat list.
 - Compile pipeline: two-level walking (project -> chapters -> scenes), new `chapter` heading-scope value, chapter-aware preset defaults.
 - Modals + commands: `Draft Bench: Create chapter`, `Reorder chapters in project`, retrofit `Set as chapter` and `Move to chapter`.
+
+### Phase 4.5: Sub-scene type
+
+Promoted from "Architected For (Post-V1)" to pre-1.0 on 2026-05-02 after live-vault use surfaced a memoir scene with six narrative units that needed per-unit status, draft attachment, and isolation — exactly the post-V1 promotion trigger the V1 spec had anticipated. Targeted as 0.2.0. Full design in [sub-scene-type.md](sub-scene-type.md); 16 implementation steps with rough effort 5-7 weeks (matching the chapter-type envelope).
+
+- New `dbench-type: sub-scene` note type with frontmatter mirroring scenes (project ref, parent scene ref, status, order, optional target words, optional synopsis + subtitle, reverse arrays for child sub-scene drafts).
+- Sub-scene-awareness is per-scene, not per-project: any scene in any folder project (chapter-less or chapter-aware) can have sub-scenes; flat scenes coexist with hierarchical scenes inside the same chapter or project. There is no "sub-scene-aware project shape" — sub-scenes are scene-by-scene opt-in.
+- Sub-scene-level drafts (§ 4): same `Drafts/` folder as scene/chapter drafts, disambiguated by which parent ref is present (`dbench-sub-scene` for sub-scene-level snapshots).
+- Whole-scene drafts of hierarchical scenes concatenate the scene body + sub-scene bodies in `dbench-order`, so the existing `New draft of this scene` command continues to capture the full scene content even after sub-scenes split it across files.
+- Linker + integrity scans extended for scene<->sub-scene, sub-scene<->draft relationships plus the rename-watcher § 10 sub-scene-folder auto-rename behavior.
+- Manuscript view rework: collapsible scene-cards (mirroring chapter-cards one level deeper) with nested sub-scene rows; flat scenes keep the existing scene-row shape and the two render inline alongside each other.
+- Compile pipeline: descend through scenes into sub-scenes when present; three-level heading cascade in chapter mode (chapter H1, scene H2, sub-scene H3); existing `draft` and `full` modes get sub-scene H2 inline below scene H1.
+- Modals + commands: `Draft Bench: New sub-scene in scene`, `Reorder sub-scenes in scene`, retrofit `Set as sub-scene` (with one-time transition notice when the inferred parent has whole-scene drafts), `Move to scene`, `New draft of this sub-scene`.
+- Reorder modal genericized into `ReorderChildrenModal<T>` covering chapters, scenes, and sub-scenes from a single primitive.
 
 ### Phase 5: Sessions, Goals, and Snapshots
 - Writing session tracking.

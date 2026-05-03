@@ -243,6 +243,211 @@ describe('WordCountCache', () => {
 		});
 	});
 
+	describe('countForChapter', () => {
+		it('returns chapter body alone when the chapter has no scenes', async () => {
+			const project = await seedProject(app, settings, 'P');
+			const chapter = await seedChapter(
+				app,
+				settings,
+				project,
+				'Ch01',
+				'four chapter words here'
+			); // 4
+
+			expect(await cache.countForChapter(chapter, [])).toBe(4);
+		});
+
+		it('sums chapter body + flat scene bodies', async () => {
+			const project = await seedProject(app, settings, 'P');
+			const chapter = await seedChapter(
+				app,
+				settings,
+				project,
+				'Ch01',
+				'three chapter words'
+			); // 3
+			const refreshedProject = findProjects(app).find(
+				(p) => p.file.path === project.file.path
+			)!;
+			const refreshedChapter = findChaptersInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((c) => c.file.basename === 'Ch01')!;
+
+			await createScene(app, settings, {
+				project: refreshedProject,
+				chapter: refreshedChapter,
+				title: 'Flat scene',
+			});
+			const sceneA = findScenesInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((s) => s.file.basename === 'Flat scene')!;
+			const fm = app.metadataCache.getFileCache(sceneA.file)?.frontmatter ?? {};
+			const fmBlock =
+				'---\n' +
+				Object.entries(fm)
+					.map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+					.join('\n') +
+				'\n---\n';
+			await app.vault.modify(
+				sceneA.file,
+				`${fmBlock}## Draft\n\nfive small scene words here\n`
+			); // 5
+			sceneA.file.stat.mtime = Date.now();
+
+			expect(await cache.countForChapter(refreshedChapter, [sceneA])).toBe(
+				3 + 5
+			);
+		});
+
+		it('includes sub-scene bodies for hierarchical scenes-in-chapter (regression for the dev-vault rollup discrepancy)', async () => {
+			// Repro of the Ch01 / Departure case surfaced 2026-05-02:
+			// `countForChapter` was summing scene body counts only, missing
+			// sub-scene contributions for scenes-with-sub-scenes. The chapter
+			// rollup must include each scene's full rollup (body + sub-scenes).
+			const project = await seedProject(app, settings, 'P');
+			const chapter = await seedChapter(
+				app,
+				settings,
+				project,
+				'Ch01',
+				'three chapter words'
+			); // 3
+			const refreshedProject = findProjects(app).find(
+				(p) => p.file.path === project.file.path
+			)!;
+			const refreshedChapter = findChaptersInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((c) => c.file.basename === 'Ch01')!;
+
+			// Hierarchical scene: short intro body + 2 sub-scenes.
+			await createScene(app, settings, {
+				project: refreshedProject,
+				chapter: refreshedChapter,
+				title: 'Departure',
+			});
+			const departure = findScenesInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((s) => s.file.basename === 'Departure')!;
+			const fmDep =
+				app.metadataCache.getFileCache(departure.file)?.frontmatter ?? {};
+			const fmBlockDep =
+				'---\n' +
+				Object.entries(fmDep)
+					.map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+					.join('\n') +
+				'\n---\n';
+			await app.vault.modify(
+				departure.file,
+				`${fmBlockDep}## Draft\n\nfour intro prose words\n`
+			); // 4
+			departure.file.stat.mtime = Date.now();
+
+			await seedSubScene(
+				app,
+				settings,
+				refreshedProject,
+				departure,
+				'Loading',
+				'six words in this sub-scene body'
+			); // 6
+			await seedSubScene(
+				app,
+				settings,
+				refreshedProject,
+				departure,
+				'Rolling out',
+				'three more words'
+			); // 3
+
+			// Chapter (3) + Departure body (4) + sub-scenes (6 + 3) = 16.
+			expect(await cache.countForChapter(refreshedChapter, [departure])).toBe(
+				3 + 4 + 6 + 3
+			);
+		});
+
+		it('handles a mix of flat and hierarchical scenes-in-chapter', async () => {
+			const project = await seedProject(app, settings, 'P');
+			const chapter = await seedChapter(
+				app,
+				settings,
+				project,
+				'Ch01',
+				'three chapter words'
+			); // 3
+			const refreshedProject = findProjects(app).find(
+				(p) => p.file.path === project.file.path
+			)!;
+			const refreshedChapter = findChaptersInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((c) => c.file.basename === 'Ch01')!;
+
+			// Flat scene: 5 words.
+			await createScene(app, settings, {
+				project: refreshedProject,
+				chapter: refreshedChapter,
+				title: 'Flat',
+			});
+			const flat = findScenesInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((s) => s.file.basename === 'Flat')!;
+			const fmFlat = app.metadataCache.getFileCache(flat.file)?.frontmatter ?? {};
+			const fmFlatBlock =
+				'---\n' +
+				Object.entries(fmFlat)
+					.map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+					.join('\n') +
+				'\n---\n';
+			await app.vault.modify(
+				flat.file,
+				`${fmFlatBlock}## Draft\n\nfive flat scene words here\n`
+			); // 5
+			flat.file.stat.mtime = Date.now();
+
+			// Hierarchical scene: 4 intro words + 7 sub-scene words.
+			await createScene(app, settings, {
+				project: refreshedProject,
+				chapter: refreshedChapter,
+				title: 'Hierarchy',
+			});
+			const hier = findScenesInProject(
+				app,
+				refreshedProject.frontmatter['dbench-id']
+			).find((s) => s.file.basename === 'Hierarchy')!;
+			const fmHier = app.metadataCache.getFileCache(hier.file)?.frontmatter ?? {};
+			const fmHierBlock =
+				'---\n' +
+				Object.entries(fmHier)
+					.map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+					.join('\n') +
+				'\n---\n';
+			await app.vault.modify(
+				hier.file,
+				`${fmHierBlock}## Draft\n\nfour hierarchical intro words\n`
+			); // 4
+			hier.file.stat.mtime = Date.now() + 1;
+
+			await seedSubScene(
+				app,
+				settings,
+				refreshedProject,
+				hier,
+				'Sub',
+				'seven sub-scene words filling out the rollup'
+			); // 7
+
+			// Chapter 3 + Flat 5 + Hierarchy body 4 + Hierarchy sub 7 = 19.
+			expect(
+				await cache.countForChapter(refreshedChapter, [flat, hier])
+			).toBe(3 + 5 + 4 + 7);
+		});
+	});
+
 	describe('countForProject', () => {
 		it('returns empty buckets for a project with no scenes', async () => {
 			const project = await seedProject(app, settings, 'Empty');

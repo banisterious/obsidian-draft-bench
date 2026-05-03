@@ -9,6 +9,7 @@ import {
 	findChaptersInProject,
 	findScenesInProject,
 	findSubScenesInProject,
+	findSubScenesInScene,
 } from './discovery';
 import { readTargetWords } from './targets';
 import { countScene } from './word-count';
@@ -117,12 +118,16 @@ export class WordCountCache {
 
 	/**
 	 * Aggregate word count for a chapter: chapter body's `## Draft`
-	 * plus the sum of child scenes' `## Draft` sections. Per § 5 of
-	 * chapter-type.md, this is the live-computed rollup that surfaces
-	 * on the Manuscript view chapter card. Caller passes the resolved
-	 * scenes-in-chapter list (typically from `findScenesInChapter` +
-	 * `sortScenesByOrder`) so this method stays free of discovery
-	 * concerns.
+	 * plus the sum of child scene rollups (each scene contributes its
+	 * own body + the bodies of any sub-scenes it has, per § 5 of
+	 * sub-scene-type.md). Per § 5 of chapter-type.md, this is the
+	 * live-computed rollup that surfaces on the Manuscript view chapter
+	 * card. Caller passes the resolved scenes-in-chapter list (typically
+	 * from `findScenesInChapter` + `sortScenesByOrder`) so this method
+	 * stays free of scene-discovery concerns; sub-scenes are resolved
+	 * internally because the chapter rollup must include them whether
+	 * the scene-card layer or the chapter-card layer is doing the
+	 * displaying.
 	 */
 	async countForChapter(
 		chapter: ChapterNote,
@@ -130,7 +135,13 @@ export class WordCountCache {
 	): Promise<number> {
 		let total = await this.countForFile(chapter.file);
 		for (const scene of scenes) {
-			total += await this.countForScene(scene);
+			const sceneId = scene.frontmatter['dbench-id'];
+			const subScenes = findSubScenesInScene(this.app, sceneId);
+			if (subScenes.length === 0) {
+				total += await this.countForScene(scene);
+			} else {
+				total += await this.countForSceneWithSubScenes(scene, subScenes);
+			}
 		}
 		return total;
 	}

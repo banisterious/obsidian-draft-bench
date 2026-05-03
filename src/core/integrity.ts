@@ -482,6 +482,12 @@ export async function applyRepairs(
 
 	let repaired = 0;
 	let errors = 0;
+	// Per-batch counter for `add-to-reverse` payloads that the length
+	// guard (#20) skipped without writing. Folded into `conflictsSkipped`
+	// at the end so the result accurately reflects "this many issues
+	// remain for the writer to address" rather than treating the
+	// length-guarded skips as successful repairs.
+	let skippedAddToReverse = 0;
 
 	for (const [, payloads] of byParent) {
 		const parentFile = payloads[0].parent;
@@ -497,19 +503,41 @@ export async function applyRepairs(
 						// already has the value at a known index and the
 						// other side is missing, splice the missing side
 						// at that index so wikilinks/ids stay aligned by
-						// position. Only fall back to append-both when
-						// neither side has the value (true "missing
-						// child" case). The both-present case is a no-op.
+						// position. Append-both for the true "missing
+						// child" case. Both-present is a no-op.
+						//
+						// Length guard (#20): when the OTHER array is
+						// already at full length but doesn't contain the
+						// missing value, some slot must hold mispaired
+						// data (typical pre-#15 cache-race residue) —
+						// splicing here would grow the array past the
+						// other side's length and the post-prune would
+						// drop the displaced (real) entry, causing data
+						// loss across repeated apply passes. Skip the
+						// payload; the writer sees the mispairing as a
+						// separate `*_CONFLICT` and resolves it manually.
+						let applied = false;
 						if (wIdx === -1 && iIdx === -1) {
 							warr.push(p.wikilink);
 							iarr.push(p.id);
+							applied = true;
 						} else if (wIdx >= 0 && iIdx === -1) {
-							iarr.splice(wIdx, 0, p.id);
+							if (iarr.length < warr.length) {
+								iarr.splice(wIdx, 0, p.id);
+								applied = true;
+							}
 						} else if (wIdx === -1 && iIdx >= 0) {
-							warr.splice(iIdx, 0, p.wikilink);
+							if (warr.length < iarr.length) {
+								warr.splice(iIdx, 0, p.wikilink);
+								applied = true;
+							}
 						}
-						fm[p.wikilinkField] = warr;
-						fm[p.idField] = iarr;
+						if (applied) {
+							fm[p.wikilinkField] = warr;
+							fm[p.idField] = iarr;
+						} else {
+							skippedAddToReverse++;
+						}
 					} else {
 						// remove-from-reverse — filter by value, not index, so
 						// multiple removals against the same parent don't
@@ -536,10 +564,10 @@ export async function applyRepairs(
 				// on already-clean arrays.
 				const fieldPairs = new Set<string>();
 				for (const p of payloads) {
-					fieldPairs.add(`${p.wikilinkField} ${p.idField}`);
+					fieldPairs.add(`${p.wikilinkField}|${p.idField}`);
 				}
 				for (const key of fieldPairs) {
-					const [wField, iField] = key.split(' ');
+					const [wField, iField] = key.split('|');
 					const warr = readArray(fm[wField]);
 					const iarr = readArray(fm[iField]);
 					const cleanW: string[] = [];
@@ -575,6 +603,12 @@ export async function applyRepairs(
 			errors += payloads.length;
 		}
 	}
+
+	// Length-guarded skips counted as queued repairs above; subtract
+	// from `repaired` and add to `conflictsSkipped` so the result
+	// reflects what the writer still needs to address.
+	repaired -= skippedAddToReverse;
+	conflictsSkipped += skippedAddToReverse;
 
 	return { repaired, conflictsSkipped, errors };
 }
@@ -787,3 +821,4 @@ function readArray(value: unknown): string[] {
 function readString(value: unknown): string {
 	return typeof value === 'string' ? value : '';
 }
+

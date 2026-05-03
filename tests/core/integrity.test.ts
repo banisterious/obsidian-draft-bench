@@ -2165,3 +2165,179 @@ describe('integrity — pairing-preserving add-to-reverse (#14)', () => {
 		expect(fm?.['dbench-sub-scene-ids']).toEqual(['ssc-001-tst-001']);
 	});
 });
+
+describe('integrity — auto-repair length guard against CONFLICT-state arrays (#20)', () => {
+	it("doesn't lose data when MISSING co-occurs with CONFLICT on full-length arrays", async () => {
+		// The Going Down dev-vault scenario: pre-#15 cache-race left
+		// Sc03's `dbench-drafts` arrays at full length but with mispaired
+		// ids (each slot's id belonged to the next slot's wikilink).
+		// Scan flags 2 CONFLICTs + 1 MISSING (Draft 3's id absent from
+		// the array). Pre-fix, applyRepairs spliced the missing id at
+		// the matching wikilink index, shifted the existing (mispaired)
+		// id past the wikilinks-array length, and the post-prune dropped
+		// it as orphan-paired. Each apply pass lost one valid id; the
+		// next scan flagged the dropped child as MISSING; cycle.
+		//
+		// Post-fix: the length guard skips the splice when the other
+		// array is already at full length (i.e., the slot is occupied
+		// by mispaired data, not absent). The MISSING gets counted in
+		// `conflictsSkipped` and the writer resolves the CONFLICTs
+		// manually first.
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[Departure]]'],
+			['sc1-001-tst-001']
+		);
+		// Three real sub-scenes, all declaring Departure.
+		await seedSubScene(
+			app,
+			'Drift/Departure/A.md',
+			'ssc-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Departure',
+			'sc1-001-tst-001'
+		);
+		await seedSubScene(
+			app,
+			'Drift/Departure/B.md',
+			'ssc-002-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Departure',
+			'sc1-001-tst-001'
+		);
+		await seedSubScene(
+			app,
+			'Drift/Departure/C.md',
+			'ssc-003-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Departure',
+			'sc1-001-tst-001'
+		);
+		// Parent: full-length arrays with mispaired ids. Wikilinks are
+		// in order [A, B, C] but ids are shifted by 1: [B-id, C-id,
+		// A-id]. Each slot is a CONFLICT (wikilink and id resolve to
+		// different sub-scenes). One id (B-id is at slot [0], not
+		// matching B's slot [1]) → scan also flags MISSING for whichever
+		// declared sub-scene's id isn't at the matching wikilink index.
+		await seedScene(
+			app,
+			'Drift/Departure.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[A]]', '[[B]]', '[[C]]'],
+			['ssc-002-tst-001', 'ssc-003-tst-001', 'ssc-001-tst-001']
+		);
+
+		const project = loadProject(app, 'Drift');
+		const firstReport = scanProject(app, project);
+		const conflicts = firstReport.issues.filter((i) =>
+			i.kind.endsWith('_CONFLICT')
+		);
+		expect(conflicts.length).toBeGreaterThan(0);
+
+		const result = await applyRepairs(app, firstReport);
+
+		// After apply: arrays unchanged (no splice ran because the
+		// length guard tripped). Data preserved; the writer can manually
+		// fix the CONFLICTs without losing valid pairings.
+		const sceneFile = app.vault.getAbstractFileByPath(
+			'Drift/Departure.md'
+		) as TFile;
+		const fm = app.metadataCache.getFileCache(sceneFile)?.frontmatter as
+			| Record<string, unknown>
+			| undefined;
+		expect(fm?.['dbench-sub-scenes']).toEqual(['[[A]]', '[[B]]', '[[C]]']);
+		expect(fm?.['dbench-sub-scene-ids']).toEqual([
+			'ssc-002-tst-001',
+			'ssc-003-tst-001',
+			'ssc-001-tst-001',
+		]);
+
+		// Skipped MISSING counted in `conflictsSkipped`, not `repaired`.
+		expect(result.errors).toBe(0);
+	});
+
+	it('still auto-repairs MISSING when the other array is shorter (the #14 deletion case)', async () => {
+		// Regression guard: the #14 fix (splice-at-matching-index for
+		// pairing-preserving inserts) must continue to work when the
+		// MISSING comes from a writer manually deleting an interior id.
+		// In that case, ids.length < wikilinks.length, the length guard
+		// passes, and the splice runs as designed.
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[Departure]]'],
+			['sc1-001-tst-001']
+		);
+		await seedSubScene(
+			app,
+			'Drift/Departure/A.md',
+			'ssc-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Departure',
+			'sc1-001-tst-001'
+		);
+		await seedSubScene(
+			app,
+			'Drift/Departure/B.md',
+			'ssc-002-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Departure',
+			'sc1-001-tst-001'
+		);
+		await seedSubScene(
+			app,
+			'Drift/Departure/C.md',
+			'ssc-003-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Departure',
+			'sc1-001-tst-001'
+		);
+		// Wikilinks length 3, ids length 2 (writer deleted middle id).
+		await seedScene(
+			app,
+			'Drift/Departure.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[A]]', '[[B]]', '[[C]]'],
+			['ssc-001-tst-001', 'ssc-003-tst-001']
+		);
+
+		const project = loadProject(app, 'Drift');
+		const firstReport = scanProject(app, project);
+		await applyRepairs(app, firstReport);
+
+		const sceneFile = app.vault.getAbstractFileByPath(
+			'Drift/Departure.md'
+		) as TFile;
+		const fm = app.metadataCache.getFileCache(sceneFile)?.frontmatter as
+			| Record<string, unknown>
+			| undefined;
+		// Repair restored the missing id at the right position.
+		expect(fm?.['dbench-sub-scenes']).toEqual(['[[A]]', '[[B]]', '[[C]]']);
+		expect(fm?.['dbench-sub-scene-ids']).toEqual([
+			'ssc-001-tst-001',
+			'ssc-002-tst-001',
+			'ssc-003-tst-001',
+		]);
+	});
+});

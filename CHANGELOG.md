@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-05-04
+
+Hot patch for a data-loss regression introduced in 0.2.0's integrity-service work.
+
+### Fixed
+
+- `Repair project links` no longer drops valid ids from parent reverse arrays when applying an auto-repair against an array that already holds mispaired data (a `*_CONFLICT` issue and a `*_MISSING_*` issue against the same `(parent, wikilinkField, idField)` tuple). The interaction between the #14 splice-at-matching-index branch and the #13 defensive post-prune meant each apply pass shifted the existing mispaired id past the wikilinks-array length, where the post-prune dropped it as orphan-paired; subsequent scans flagged the dropped child as MISSING and the cycle continued, losing one valid id per pass against pre-#15 cache-race residue. Fix: the `add-to-reverse` handler now guards splice operations on the array-length differential — if the other array is already at full length but doesn't contain the missing value, some slot must hold mispaired data, so the auto-repair skips and counts the entry in `conflictsSkipped` for the writer to address manually via the `*_CONFLICT` listing. Length-shorter cases (the original #14 deletion-shift scenario) continue to splice as designed. + 2 regression tests covering the cycle-suppression and the #14 deletion-shift path. Refs #20.
+
 ## [0.2.0] - 2026-05-04
 
 Sub-scene note type promoted from post-V1 to pre-1.0, plus a settings-tab reorganization, a chapter-aware folder-default flip for scenes and sub-scenes, and a sweep of integrity-service quality-of-life fixes surfaced during the sub-scene walkthrough.

@@ -4,6 +4,20 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.2.1: 2026-05-04 — integrity-repair data-loss hot patch
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.2.1)
+
+Same-day hot patch for a regression introduced by the 0.2.0 integrity-service work. Surfaced during post-release smoke testing in the maintainer's BRAT-public vault when running `Repair project links` against pre-#15 cache-race residue: each apply pass dropped one valid id from the parent's reverse arrays, then flagged the dropped child as MISSING on the next scan, then dropped another id on apply — a tight data-loss cycle that ran until manually stopped.
+
+### Fixed
+
+- **Auto-repair length guard** ([#20](https://github.com/banisterious/obsidian-draft-bench/issues/20)). The `add-to-reverse` handler now skips the splice-at-matching-index branch when the other array is already at full length but doesn't contain the missing value (i.e., some slot holds mispaired data). Such entries are counted in `conflictsSkipped` rather than being auto-repaired; the writer fixes the underlying `*_CONFLICT` manually first, then re-running scan converges cleanly. The original #14 deletion-shift scenario (where one array is genuinely shorter) continues to auto-repair as designed.
+
+If you ran `Repair project links` against a pre-#15 vault between 0.2.0 and this patch and saw repeated MISSING flags, your reverse arrays may have lost ids. Recovery: open each affected child's frontmatter, copy its `dbench-id`, paste it into the parent's reverse-id array at the matching wikilink position. The integrity scan after this patch will surface the right targets via `*_CONFLICT` descriptions.
+
+1095 unit + integration tests, all green. Desktop-only.
+
 ## 0.2.0: 2026-05-04 — sub-scene note type
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.2.0)

@@ -2,7 +2,7 @@
 
 Planning doc for the addition of `dbench-type: sub-scene` to Draft Bench's vocabulary. Originally scoped as the post-V1 `beat` type in [specification.md § Architected For (Post-V1)](specification.md), promoted to pre-1.0 on 2026-05-02 after the maintainer's own real-vault use surfaced the friction the spec entry anticipated.
 
-**Status:** Design pending ratification. Sections below mirror [chapter-type.md](chapter-type.md)'s template (the most recent V1-scope-expansion precedent). Ratify each section before moving to the next.
+**Status:** §§ 1-10 ratified 2026-05-02. Sections below mirror [chapter-type.md](chapter-type.md)'s template (the most recent V1-scope-expansion precedent). Implementation pending per the sequence at the end of this doc; tracked via [#10](https://github.com/banisterious/obsidian-draft-bench/issues/10).
 
 **Naming decision (locked 2026-05-02):** the type is `sub-scene`, not `beat`. Rationale captured in § 1 below; in short: genre-neutral, self-explanatory, no collision with the existing `dbench-section-break-*` vocabulary.
 
@@ -10,7 +10,7 @@ Planning doc for the addition of `dbench-type: sub-scene` to Draft Bench's vocab
 
 ## Why this is in pre-1.0 now
 
-The maintainer hit it in their own writing on 2026-05-02. A scene in *Going Down* has at least six distinct narrative units that work better in relative isolation. The V1 beats-as-headings approach surfaces four costs:
+The maintainer hit it in their own writing on 2026-05-02 — a scene with at least six distinct narrative units that work better in relative isolation. The V1 beats-as-headings approach surfaces four costs:
 
 1. **No visibility into which parts of a scene are complete.** Status is per-scene; sub-scenes have no first-class state.
 2. **Drafts attach to scenes, not sub-scenes.** A draft that snapshots only "sub-scene 6" can't be tracked as such — it's "Draft 4 of the scene" with no per-sub-scene record of what's actually in it.
@@ -83,9 +83,9 @@ The craft term "beat" stays valid in user-facing copy where it fits — the spec
 2. **Body utility.** Each sub-scene's body holds its own planning sections + draft prose, mirroring the scene template. Writers gain isolation when they want it.
 3. **Forward-compat.** Status / target-words / synopsis / draft chains all live in sub-scene frontmatter naturally.
 
-**Counter-consideration:** Option B is genuinely lighter — it's the V1 status quo. Writers who don't want per-sub-scene metadata stick with headings (backward compat per § 8 below). Option A is opt-in, not mandatory.
+**Counter-consideration:** Option B is genuinely lighter — it's the V1 status quo. Writers who don't want per-sub-scene metadata stick with headings (backward compat per § 9 below). Option A is opt-in, not mandatory.
 
-**Decision:** ⏳ Pending ratification.
+**Decision:** ✅ **A (sub-scene-as-note), ratified 2026-05-02.**
 
 **Implications if ratified:**
 
@@ -113,12 +113,12 @@ dbench-status: <writer-set, default first status from vocabulary>
 dbench-drafts: []
 dbench-draft-ids: []
 dbench-subtitle: ''     # optional, scene-style
-dbench-synopsis: ''     # optional, for Manuscript view sub-scene-card consumption
+dbench-synopsis: ''     # optional, one-line "what this unit does" for Manuscript view (e.g., "the lot's provenance falls apart", "two bidders escalate past reason")
 ```
 
 **Why both project and scene refs?** Matches the draft schema precedent — drafts carry both project + scene refs (or both project + chapter refs for chapter drafts) so project-scoped queries don't have to walk through scenes. Same logic here: `findSubScenesInProject` is O(n) over sub-scenes filtering by `dbench-project-id`, not O(n × m) walking through scenes.
 
-**Decision:** ⏳ Pending ratification.
+**Decision:** ✅ **Ratified 2026-05-02.** Mirror scene shape with parent refs to scene + project; `dbench-synopsis` retained for Manuscript view sub-scene-cards (concrete use case: short "what this unit does" tags like "the lot's provenance falls apart" or "the buyer breaks the silence" for sub-scenes in a hierarchical scene).
 
 ---
 
@@ -137,7 +137,11 @@ Concrete shape:
 
 Filename collision concern: a scene draft `<Scene> - Draft N (date).md` and a sub-scene draft `<Scene> - <Sub-scene> - Draft N (date).md` are distinct by basename. No conflict.
 
-**Decision:** ⏳ Pending ratification.
+**Snapshot semantics — drafts are immutable historical state.** Reorder operations affect current state only, not historical drafts. A whole-scene draft snapshots sub-scene order at capture time; later reordering of the live scene does not propagate to existing drafts. This is correct (the draft *is* the historical state, ordering and all), but writers using diff tools to compare drafts will see structural reshuffling alongside prose changes when the live scene's sub-scene order has changed since an earlier snapshot. Worth surfacing in user-facing docs; not worth special-casing in code.
+
+**Transition from flat to hierarchical.** When "Set as sub-scene" runs on a note whose parent scene already has whole-scene drafts, the action surfaces a one-time notice explaining that the choice applies to *future* drafts only — existing snapshots stay as-is since they're historical. After the transition, the writer can produce either whole-scene drafts (concatenated, including sub-scenes via the existing "New draft of this scene" command) or per-sub-scene drafts (via the new "New draft of this sub-scene" command); both remain available indefinitely.
+
+**Decision:** ✅ **Ratified 2026-05-02.** YES, both — sub-scene drafts and concatenated whole-scene drafts. Snapshot semantics frozen at capture; flat→hierarchical transition surfaces a one-time notice.
 
 ---
 
@@ -151,7 +155,7 @@ Filename collision concern: a scene draft `<Scene> - Draft N (date).md` and a su
 - **Word count** lives in `WordCountCache`; computed live (no persistence). Scene total = scene body + sum of sub-scene bodies. Project / chapter rollups walk through to sub-scenes when present.
 - **Per-sub-scene target** is optional (`dbench-target-words` on a sub-scene note, defaults unset). Project-level target (already in V1) stays the canonical writer commitment; sub-scene targets are local checkpoints.
 
-**Decision:** ⏳ Pending ratification.
+**Decision:** ✅ **Ratified 2026-05-02.** Status writer-set, never derived; word count live (no persistence); per-sub-scene target optional.
 
 ---
 
@@ -174,7 +178,9 @@ Settings persistence: new `sceneCollapseState: Record<DbenchId, boolean>` (paral
 
 Mixed shape — a project where some scenes have sub-scenes and some don't — is normal and expected. No mixed-children rule like chapter-type § 9; sub-scenes are an opt-in per-scene structural choice.
 
-**Decision:** ⏳ Pending ratification.
+**Scene-card affordances.** A collapsible scene-card (one with sub-scenes) includes a "New sub-scene" button paralleling the chapter-card's "New draft of this chapter" affordance. Removes a Manuscript-view → command-palette context switch when the writer is in the middle of structuring a hierarchical scene.
+
+**Decision:** ✅ **Ratified 2026-05-02.** Three-level rendering with collapsible scene-cards mirroring chapter-cards; "New sub-scene" affordance on scene-card; mixed shape is normal.
 
 ---
 
@@ -190,7 +196,7 @@ Mixed shape — a project where some scenes have sub-scenes and some don't — i
 - **Heading levels** — chapter = H1, scene = H2 (in chapter mode), sub-scene = H3. In `draft` mode (chapter-less), scene = H1 and sub-scene = H2. Rules in `chapter-rules.ts` and existing scene-rules extend to handle sub-scene headings.
 - **Sub-scene wikilink excludes** — `dbench-compile-scene-excludes` extended (or new `dbench-compile-sub-scene-excludes` field) to support filtering at sub-scene granularity.
 
-**Decision:** ⏳ Pending ratification.
+**Decision:** ✅ **Ratified 2026-05-02.** Three-level heading cascade H1/H2/H3 in chapter mode; scene body emits as scene-introductory prose when sub-scenes exist; walker extends via single dispatch in `compile-service`.
 
 ---
 
@@ -208,7 +214,7 @@ Mixed shape — a project where some scenes have sub-scenes and some don't — i
 
 Sub-scene reorder context: active scene resolves the parent. Cross-scene sub-scene moves use a "Move to scene" retrofit action (parallel to chapter-type's "Move to chapter").
 
-**Decision:** ⏳ Pending ratification.
+**Decision:** ✅ **Ratified 2026-05-02.** Refactor `ReorderScenesModal` + `ReorderChaptersModal` into parameterized `ReorderChildrenModal`; new "Reorder sub-scenes in scene" palette command. Cross-scene moves via "Move to scene" retrofit.
 
 ---
 
@@ -229,7 +235,65 @@ A writer can:
 
 **No mixed-children rule.** Unlike chapter-type § 9 (which forbade projects with both chapters and direct scenes), sub-scenes don't introduce a parallel constraint. A scene either has sub-scenes or it doesn't; if it has them, the body is intro; if it doesn't, the body is the prose.
 
-**Decision:** ⏳ Pending ratification.
+**What "Set as sub-scene" does and doesn't.** The retrofit action stamps frontmatter (`dbench-type: sub-scene`, parent-scene refs, `dbench-order`) on the selected note. It does not move prose content. Writers extracting a sub-scene from a flat scene's body are responsible for: (a) creating the new sub-scene note (or splitting an existing note off), (b) cutting the relevant prose from the parent scene's `## Draft` into the sub-scene note's body, (c) running "Set as sub-scene" to stamp the parent refs. After extraction, the parent scene's `## Draft` becomes intro-only or empty. Matches the existing "Set as scene" / "Set as chapter" retrofit semantics — these actions classify, they don't migrate content.
+
+**Decision:** ✅ **Ratified 2026-05-02.** Sub-scene-less scenes coexist forever; no mixed-children rule (intro prose + sub-scenes in same scene is fine); "Set as sub-scene" stamps frontmatter only, prose extraction is manual.
+
+---
+
+### 10. Folder structure / on-disk layout
+
+**Question:** Where do sub-scene notes live on disk?
+
+**Background:** Per [specification.md § Project Structure on Disk](specification.md), Draft Bench discovery is frontmatter-based, not folder-based — a note's project / scene membership comes from `dbench-project` / `dbench-scene` frontmatter refs, not its filesystem location. Discovery works regardless of where the file lives; folder structure is purely a creation default that writers can override per-write or undo by manually moving files.
+
+**Recommendation:** Sub-scenes default to nested under their parent scene — `subScenesFolder: '{project}/{scene}/'`. Membership comes from `dbench-scene` frontmatter ref; the folder location is the creation default.
+
+```
+Meridian Drift/
+├── Meridian Drift.md              ← project
+├── Reception.md                   ← scene without sub-scenes
+├── The auction.md                 ← scene with sub-scenes
+├── The auction/                   ← sub-scenes nested under parent
+│   ├── Lot 47.md                  ← sub-scene (dbench-scene: [[The auction]])
+│   ├── The bidding war.md         ← sub-scene
+│   └── The walk-out.md            ← sub-scene
+└── Drafts/
+    ├── The auction - Draft 1 (20260502).md             ← whole-scene draft
+    └── The auction - Lot 47 - Draft 1 (20260502).md    ← sub-scene draft
+```
+
+The nested layout matches the writer's mental model — sub-scenes are constituents of one specific scene, not floating units that share a parent ref. Visual grouping in the file explorer maps to the structural relationship without requiring writers to scan the project root for naming-prefix patterns.
+
+**Why nested by default (when chapters and chapter-aware scenes default flat).** Two reasons:
+
+1. **Sub-scenes are tighter than chapter→scene relationships.** A sub-scene is structurally meaningless outside its parent scene; a scene can in principle stand alone. The folder grouping reflects that asymmetry.
+2. **Sub-scenes are more numerous.** Hierarchical scenes typically split into 3-6+ sub-scenes; a project with several hierarchical scenes adds 20+ files. The project-root density problem hits faster than for chapters/scenes.
+
+The chapter / chapter-aware-scene flat default is itself under separate review — the plugin author dogfooding their own plugin reports they "haven't imposed manual nesting within my personal projects, but my inclination is to do so. Facing friction there, because I want to follow what the plugin suggests." That signal motivates a separate FR ([#11](https://github.com/banisterious/obsidian-draft-bench/issues/11): `scenesFolder` should support a `{chapter}` token; consider nested default for chapter-aware projects); not in scope for sub-scene type, but the same writer-friction reasoning applies.
+
+**Sub-scene drafts** share the existing `Drafts/` folder with scene and chapter drafts; frontmatter parent refs disambiguate, and the naming convention `<Scene> - <Sub-scene> - Draft N (date).md` prevents filename collision. Matches the existing "all drafts share the same folder" pattern from [specification.md § Draft Management](specification.md). Drafts do not nest under their source scene's folder; they remain centralized in `Drafts/`.
+
+**Settings — `subScenesFolder` token support.** New setting paralleling `scenesFolder`, with `{project}` and `{scene}` token support. Default `'{project}/{scene}/'`. Writers who prefer flat-at-project-root can set `subScenesFolder: ''`:
+
+```
+Meridian Drift/
+├── Meridian Drift.md
+├── Reception.md
+├── The auction.md
+├── The auction - Lot 47.md               ← sub-scene at project root (flat opt-out)
+├── The auction - The bidding war.md
+├── The auction - The walk-out.md
+└── Drafts/
+```
+
+In the flat layout, the naming convention `<Scene> - <Sub-scene>` provides alphabetical clustering. Either layout works; discovery is frontmatter-authoritative.
+
+**Filename naming in the flat layout.** The `<Scene> - <Sub-scene>` prefix is *writer-applied*, not auto-prefixed by the resolver. The new-sub-scene modal follows the established "what you type is what gets named" convention from the new-scene and new-chapter flows; the writer types the full filename including the parent-scene prefix if they want alphabetical clustering. The default nested layout doesn't need the prefix because the folder name does the grouping work. The flat opt-out is for writers who have their own organizational system, have so few sub-scenes that clustering isn't a concern, or are willing to type the prefix themselves. The new-sub-scene modal can show a one-line tip when `subScenesFolder` is empty (e.g., "Tip: prefix with parent scene name to group sub-scenes alphabetically at the project root"); not auto-applying preserves predictability.
+
+**Auto-rename on parent-scene rename.** Because the default uses `{scene}` in the path template, parent-scene renames need to propagate to the sub-scene folder name to avoid divergence. The rename-watcher (which already updates wikilinks across the vault on scene rename per the linker) extends to: when a scene is renamed, find any sibling folder matching the old scene basename containing files with `dbench-scene-id` matching the renamed scene; rename the folder to the new basename. Edge cases: writer manually renamed the folder to something else (no match → no rename); scene title contains characters not allowed in folder names (resolver sanitizes per `FILENAME_FORBIDDEN_CHARS`, same as new-scene creation).
+
+**Decision:** ✅ **Ratified 2026-05-02.** Default `subScenesFolder: '{project}/{scene}/'` (nested under parent scene); `''` opt-out for flat-at-root; auto-rename on parent-scene rename via the linker rename-watcher; flat-layout filename prefix is writer-applied (not auto-prefixed).
 
 ---
 
@@ -240,12 +304,12 @@ Once design is ratified, implementation in this order:
 1. **Model + types.** [src/model/types.ts](../../src/model/types.ts) extended with `sub-scene` in `DbenchType`. New [src/model/sub-scene.ts](../../src/model/sub-scene.ts) with `SubSceneFrontmatter` + `isSubSceneFrontmatter`. [src/core/essentials.ts](../../src/core/essentials.ts) gets `stampSubSceneEssentials`.
 2. **Discovery.** [src/core/discovery.ts](../../src/core/discovery.ts) extended with `SubSceneNote`, `findSubScenes`, `findSubScenesInScene`, `findSubScenesInProject`. Existing `findScenesInProject` updated to walk through sub-scenes for word-count purposes.
 3. **Core operations.** New [src/core/sub-scenes.ts](../../src/core/sub-scenes.ts) with `createSubScene`, `resolveSubScenePaths`, `nextSubSceneOrder`. `createScene` unchanged (sub-scenes are opt-in).
-4. **Linker.** [src/core/linker.ts](../../src/core/linker.ts) gains `RelationshipConfig` entries for scene↔sub-scene and sub-scene↔draft. Existing scene↔draft relationship still works for sub-scene-less scenes.
+4. **Linker.** [src/core/linker.ts](../../src/core/linker.ts) gains `RelationshipConfig` entries for scene↔sub-scene and sub-scene↔draft. Existing scene↔draft relationship still works for sub-scene-less scenes. Rename-watcher extended: on scene rename, auto-rename a matching sub-scene folder when `subScenesFolder` uses `{scene}` (per § 10).
 5. **Integrity.** [src/core/integrity.ts](../../src/core/integrity.ts) extends `scanProject` with sub-scene relationship passes. New issue kinds: `SUB_SCENE_MISSING_IN_SCENE`, `STALE_SUB_SCENE_IN_SCENE`, `SCENE_SUB_SCENE_CONFLICT`.
-6. **Settings.** Add `sceneCollapseState: Record<DbenchId, boolean>` to `DraftBenchSettings`. New `subSceneTemplatePath` setting.
-7. **Manuscript view rework.** Hierarchical render with collapsible scene cards (mirror of chapter cards) that nest sub-scene rows. Section module extends `chapter-card-section.ts` pattern with `scene-card-section.ts`. Scenes without sub-scenes keep today's flat row render.
+6. **Settings.** Add `sceneCollapseState: Record<DbenchId, boolean>` to `DraftBenchSettings`. New `subSceneTemplatePath` setting. New `subScenesFolder` setting with `{project}` + `{scene}` token support (per § 10); default `'{project}/{scene}/'` (nested under parent scene). Writers can set `''` for flat-at-project-root.
+7. **Manuscript view rework.** Hierarchical render with collapsible scene cards (mirror of chapter cards) that nest sub-scene rows; scene-card includes a "New sub-scene" affordance paralleling chapter-card's "New draft of this chapter" (per § 6). Section module extends `chapter-card-section.ts` pattern with `scene-card-section.ts`. Scenes without sub-scenes keep today's flat row render.
 8. **Compile pipeline.** `walkChapterAware` extended to descend into sub-scenes; new heading-level rules in `chapter-rules.ts` and `compile-rules.ts` for the third level. Default heading-scope for new presets unchanged (writer's call whether their project is sub-scene-aware).
-9. **Modals + commands.** `NewSubSceneModal`, `Draft Bench: New sub-scene in scene` palette command, retrofit "Set as sub-scene" action, "Move to scene" bulk action. Context-menu entries on sub-scene notes (Run compile scoped to sub-scene's parent project; Move to scene).
+9. **Modals + commands.** `NewSubSceneModal` (title placeholder `Sub-scene <next-order>`, mirroring `NewChapterModal`); `Draft Bench: New sub-scene in scene` palette command; retrofit "Set as sub-scene" action (surfaces a one-time notice when run on a child of a scene with existing whole-scene drafts, per § 4); "Move to scene" available as both single (context menu on a sub-scene note) and bulk (retrofit modal) actions, mirroring chapter-type's "Move to chapter"; context-menu entry on sub-scene notes for "Run compile scoped to sub-scene's parent project".
 10. **Sub-scene-level drafts** (per § 4). New [src/core/sub-scene-drafts.ts](../../src/core/sub-scene-drafts.ts) parallel to `src/core/drafts.ts`: `createSubSceneDraft`, `resolveSubSceneDraftPaths`. Linker `RelationshipConfig` entry for sub-scene↔draft. Scene-draft snapshot mechanic extended to concatenate sub-scene bodies when sub-scenes present. New palette command `Draft Bench: New draft of this sub-scene`, context-menu entry.
 11. **Reorder modal genericization** (per § 8). Refactor `ReorderScenesModal` + `ReorderChaptersModal` into `ReorderChildrenModal`. New `Draft Bench: Reorder sub-scenes in scene` palette command.
 12. **Bidirectional sync hooks.** All sub-scene-modifying operations run inside `linker.withSuspended(...)`.
@@ -272,11 +336,15 @@ Realistic estimate: 4-6 weeks of focused work for code + tests; 1 week for spec 
 
 ## Open questions
 
-- **Sub-scene template content.** Same four-section shape as scenes (Source passages / Beat outline / Open questions / Draft)? Or a leaner shape since sub-scenes are smaller? My instinct: same four-section shape for consistency; writers can edit the template if they want leaner.
-- **Sub-scene title default.** `Sub-scene <next-order>`? Or empty / writer-set? Same approach as `NewChapterModal`'s `Chapter <next-order>` placeholder.
-- **`Move to scene` action — single-scope or bulk?** Probably both, mirror of chapter-type's "Move to chapter" decision.
-- **Sub-scene creation from Manuscript view scene-card.** Add a "New sub-scene" button to the scene-card UI (mirror of chapter-card "New draft of this chapter")?
-- **What happens to scene drafts when sub-scenes are added later?** A writer has Scene X with Drafts 1-3 (whole-scene drafts). They add sub-scenes. Future drafts could be (a) whole-scene drafts (concatenated), (b) per-sub-scene drafts, or (c) mixed. The model supports all three; UI / writer-guidance question is which is the default and how to surface the choice. My instinct: writer chooses per draft via the New-draft modal (existing scene draft → snapshot whole scene; new "sub-scene draft" command → snapshot one sub-scene).
+The five questions originally listed here were resolved during 2026-05-02 ratification:
+
+- **Sub-scene template content** — same four-section shape as scenes (Source passages / Beat outline / Open questions / Draft); writers can edit the template if they want leaner. See § 2 implications.
+- **Sub-scene title default** — `Sub-scene <next-order>` placeholder, mirroring `NewChapterModal`. See implementation step 9.
+- **`Move to scene` action** — both single (context menu on a sub-scene note) and bulk (retrofit modal), mirroring chapter-type's "Move to chapter". See implementation step 9.
+- **Sub-scene creation from Manuscript view scene-card** — yes; "New sub-scene" affordance on the scene-card, parallel to chapter-card's "New draft of this chapter". See § 6.
+- **Scene drafts when sub-scenes are added later** — writer chooses per draft via the relevant "New draft" command; "Set as sub-scene" surfaces a one-time notice the first time it runs on a child of a scene with existing whole-scene drafts. See § 4.
+
+New open questions will be added below as design progresses.
 
 ---
 
@@ -287,11 +355,12 @@ Realistic estimate: 4-6 weeks of focused work for code + tests; 1 week for spec 
 | Section | Decision | Date | Notes |
 |---|---|---|---|
 | 1. Terminology | ✅ A (sub-scene) | 2026-05-02 | Genre-neutral; no `dbench-section-break-*` collision; "beat" stays valid in user-facing copy where craft fluency applies |
-| 2. Sub-scene modeling | ⏳ Pending | — | — |
-| 3. Frontmatter shape | ⏳ Pending | — | — |
-| 4. Drafts | ⏳ Pending | — | — |
-| 5. Status + rollups | ⏳ Pending | — | — |
-| 6. Manuscript view | ⏳ Pending | — | — |
-| 7. Compile assembly | ⏳ Pending | — | — |
-| 8. Reorder genericization | ⏳ Pending | — | — |
-| 9. Backward-compat | ⏳ Pending | — | — |
+| 2. Sub-scene modeling | ✅ A (sub-scene-as-note) | 2026-05-02 | Pattern consistency with project / chapter / scene / draft; body utility for per-unit planning sections; sub-scenes are opt-in per scene |
+| 3. Frontmatter shape | ✅ Ratified | 2026-05-02 | Mirror scene shape with parent refs to scene + project; `dbench-synopsis` retained for Manuscript view sub-scene-cards |
+| 4. Drafts | ✅ Ratified | 2026-05-02 | YES, both — sub-scene drafts and concatenated whole-scene drafts; drafts freeze sub-scene order at capture; flat→hierarchical transition surfaces a one-time notice |
+| 5. Status + rollups | ✅ Ratified | 2026-05-02 | Status writer-set, never derived; word count live (no persistence); per-sub-scene target optional |
+| 6. Manuscript view | ✅ Ratified | 2026-05-02 | Three-level rendering with collapsible scene-cards mirroring chapter-cards; "New sub-scene" affordance on scene-card; mixed shape (some hierarchical, some flat) is normal |
+| 7. Compile assembly | ✅ Ratified | 2026-05-02 | Three-level heading cascade H1/H2/H3 in chapter mode; scene body emits as scene-introductory prose when sub-scenes exist; walker extends via single dispatch |
+| 8. Reorder genericization | ✅ Ratified | 2026-05-02 | Refactor `ReorderScenesModal` + `ReorderChaptersModal` into parameterized `ReorderChildrenModal`; new "Reorder sub-scenes in scene" palette command; cross-scene moves via "Move to scene" retrofit |
+| 9. Backward-compat | ✅ Ratified | 2026-05-02 | Sub-scene-less scenes coexist forever; no mixed-children rule; "Set as sub-scene" stamps frontmatter only, prose extraction is manual |
+| 10. Folder structure | ✅ Ratified | 2026-05-02 | Default `subScenesFolder: '{project}/{scene}/'` (nested under parent scene); `''` opt-out for flat-at-root; auto-rename on parent-scene rename via linker rename-watcher; flat-layout filename prefix is writer-applied. Adjacent FR for chapter/scene parallel: [#11](https://github.com/banisterious/obsidian-draft-bench/issues/11) |

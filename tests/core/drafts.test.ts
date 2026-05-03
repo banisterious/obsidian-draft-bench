@@ -205,6 +205,52 @@ describe('createDraft', () => {
 		expect(sceneFm?.['dbench-draft-ids']).toEqual([draftId]);
 	});
 
+	it("captures draft id inside processFrontMatter (regression for cache-reparse race, #15)", async () => {
+		// Real Obsidian reparses the metadataCache asynchronously after
+		// processFrontMatter writes to disk. The pre-fix code read
+		// dbench-id from the cache *after* the call returned, often
+		// hitting the pre-write state and getting ''. The empty string
+		// then landed in the parent's dbench-X-ids array.
+		//
+		// This test wraps processFrontMatter to delete dbench-id from
+		// the cache after each call, mirroring the production race.
+		// Without the fix, draftId is '' and the parent's reverse-id
+		// array contains ''. With the fix, the id is captured inside
+		// the callback and the parent's array has the actual id.
+		const original = app.fileManager.processFrontMatter.bind(
+			app.fileManager
+		);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		(app.fileManager as any).processFrontMatter = async (
+			file: typeof scene.file,
+			fn: (fm: Record<string, unknown>) => void
+		) => {
+			await original(file, fn);
+			const cached = app.metadataCache.getFileCache(file);
+			if (cached?.frontmatter && 'dbench-id' in cached.frontmatter) {
+				delete cached.frontmatter['dbench-id'];
+			}
+		};
+
+		try {
+			await createDraft(app, settings, {
+				scene,
+				date: FIXED_DATE,
+			});
+		} finally {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(app.fileManager as any).processFrontMatter = original;
+		}
+
+		const sceneFm = app.metadataCache.getFileCache(scene.file)?.frontmatter;
+		const draftIds = sceneFm?.['dbench-draft-ids'] as string[] | undefined;
+
+		expect(draftIds).toBeDefined();
+		expect(draftIds).toHaveLength(1);
+		expect(draftIds![0]).not.toBe('');
+		expect(isValidDbenchId(draftIds![0])).toBe(true);
+	});
+
 	it('auto-numbers sequentially across multiple drafts', async () => {
 		const d1 = await createDraft(app, settings, {
 			scene,

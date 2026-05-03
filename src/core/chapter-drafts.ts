@@ -234,6 +234,8 @@ export async function createChapterDraft(
 	const projectId = chapter.frontmatter['dbench-project-id'];
 	const chapterWikilink = `[[${chapter.file.basename}]]`;
 
+	// Capture id inside the callback to avoid the cache-reparse race. Refs #15.
+	let draftId = '';
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Pre-set draft-specific fields so stampDraftEssentials' setIfMissing
 		// leaves them alone. Per § 4, chapter drafts carry both project + chapter
@@ -244,11 +246,9 @@ export async function createChapterDraft(
 		frontmatter['dbench-chapter-id'] = chapterId;
 		frontmatter['dbench-draft-number'] = draftNumber;
 		stampDraftEssentials(frontmatter, { basename: file.basename });
+		draftId = String(frontmatter['dbench-id'] ?? '');
 	});
 
-	const draftId = String(
-		app.metadataCache.getFileCache(file)?.frontmatter?.['dbench-id'] ?? ''
-	);
 	const draftWikilink = `[[${file.basename}]]`;
 
 	await app.fileManager.processFrontMatter(chapter.file, (frontmatter) => {

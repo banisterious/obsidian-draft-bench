@@ -212,6 +212,8 @@ export async function createChapter(
 		options.templateFile
 	);
 
+	// Capture id inside the callback to avoid the cache-reparse race. Refs #15.
+	let chapterId = '';
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Pre-set chapter-specific fields so stampChapterEssentials'
 		// setIfMissing leaves them alone.
@@ -223,11 +225,9 @@ export async function createChapter(
 			basename: file.basename,
 			defaultStatus,
 		});
+		chapterId = String(frontmatter['dbench-id'] ?? '');
 	});
 
-	const chapterId = String(
-		app.metadataCache.getFileCache(file)?.frontmatter?.['dbench-id'] ?? ''
-	);
 	const chapterWikilink = `[[${file.basename}]]`;
 
 	await app.fileManager.processFrontMatter(options.project.file, (frontmatter) => {

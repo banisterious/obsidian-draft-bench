@@ -208,6 +208,8 @@ export async function createSubScene(
 		options.templateFile
 	);
 
+	// Capture id inside the callback to avoid the cache-reparse race. Refs #15.
+	let subSceneId = '';
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Pre-set sub-scene-specific fields so stampSubSceneEssentials'
 		// setIfMissing leaves them alone.
@@ -221,11 +223,9 @@ export async function createSubScene(
 			basename: file.basename,
 			defaultStatus,
 		});
+		subSceneId = String(frontmatter['dbench-id'] ?? '');
 	});
 
-	const subSceneId = String(
-		app.metadataCache.getFileCache(file)?.frontmatter?.['dbench-id'] ?? ''
-	);
 	const subSceneWikilink = `[[${file.basename}]]`;
 
 	// Update reverse arrays on the parent scene.

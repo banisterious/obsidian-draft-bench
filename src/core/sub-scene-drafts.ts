@@ -197,6 +197,8 @@ export async function createSubSceneDraft(
 	const subSceneWikilink = `[[${subScene.file.basename}]]`;
 	const subSceneId = subScene.frontmatter['dbench-id'];
 
+	// Capture id inside the callback to avoid the cache-reparse race. Refs #15.
+	let draftId = '';
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Pre-set draft-specific fields so stampDraftEssentials' setIfMissing
 		// leaves them alone. Sub-scene drafts carry both project + sub-scene
@@ -207,11 +209,9 @@ export async function createSubSceneDraft(
 		frontmatter['dbench-sub-scene-id'] = subSceneId;
 		frontmatter['dbench-draft-number'] = draftNumber;
 		stampDraftEssentials(frontmatter, { basename: file.basename });
+		draftId = String(frontmatter['dbench-id'] ?? '');
 	});
 
-	const draftId = String(
-		app.metadataCache.getFileCache(file)?.frontmatter?.['dbench-id'] ?? ''
-	);
 	const draftWikilink = `[[${file.basename}]]`;
 
 	await app.fileManager.processFrontMatter(subScene.file, (frontmatter) => {

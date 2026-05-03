@@ -257,6 +257,8 @@ export async function createScene(
 		options.templateFile
 	);
 
+	// Capture id inside the callback to avoid the cache-reparse race. Refs #15.
+	let sceneId = '';
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Pre-set scene-specific fields so stampSceneEssentials' setIfMissing
 		// leaves them alone.
@@ -272,11 +274,9 @@ export async function createScene(
 			basename: file.basename,
 			defaultStatus,
 		});
+		sceneId = String(frontmatter['dbench-id'] ?? '');
 	});
 
-	const sceneId = String(
-		app.metadataCache.getFileCache(file)?.frontmatter?.['dbench-id'] ?? ''
-	);
 	const sceneWikilink = `[[${file.basename}]]`;
 
 	// Update reverse array on the *immediate* parent (chapter or project).

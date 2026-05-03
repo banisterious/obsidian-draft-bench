@@ -253,6 +253,13 @@ export async function createDraft(
 	const sceneWikilink = `[[${scene.file.basename}]]`;
 	const sceneId = scene.frontmatter['dbench-id'];
 
+	// Capture the generated dbench-id INSIDE the processFrontMatter
+	// callback. Reading from app.metadataCache.getFileCache after the
+	// call returns races the cache reparse: real Obsidian updates the
+	// cache asynchronously, so a post-call read often hits the pre-write
+	// state and returns ''. The empty string then lands in the parent's
+	// dbench-X-ids array. Refs #15.
+	let draftId = '';
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Pre-set draft-specific fields so stampDraftEssentials' setIfMissing
 		// leaves them alone. `dbench-project-id` isn't stamped by essentials
@@ -263,11 +270,9 @@ export async function createDraft(
 		frontmatter['dbench-scene-id'] = sceneId;
 		frontmatter['dbench-draft-number'] = draftNumber;
 		stampDraftEssentials(frontmatter, { basename: file.basename });
+		draftId = String(frontmatter['dbench-id'] ?? '');
 	});
 
-	const draftId = String(
-		app.metadataCache.getFileCache(file)?.frontmatter?.['dbench-id'] ?? ''
-	);
 	const draftWikilink = `[[${file.basename}]]`;
 
 	await app.fileManager.processFrontMatter(scene.file, (frontmatter) => {

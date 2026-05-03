@@ -1,5 +1,5 @@
 import type { App } from 'obsidian';
-import type { ChapterNote, SceneNote } from './discovery';
+import type { ChapterNote, SceneNote, SubSceneNote } from './discovery';
 
 /**
  * Write sequential `dbench-order` values onto each scene in
@@ -44,15 +44,15 @@ export async function reorderScenes(
  * Same semantics as `reorderScenes` but for chapter notes:
  * idempotent per chapter, returns the count of actually-modified
  * files. The chapter walker in the compile pipeline reads
- * `dbench-order` to decide chapter sequence (Step 8); this is the
- * single writer that chapter callers should use.
+ * `dbench-order` to decide chapter sequence; this is the single
+ * writer that chapter callers should use.
  *
  * Sibling function rather than a generic over both types so the
  * call sites stay type-explicit, matching the project's
- * typed-relationships style. A genericized variant becomes worth
- * the abstraction when a third reorder context arrives (the
- * scenes-in-chapter reorder per chapter-type.md § 8 is the natural
- * trigger).
+ * typed-relationships style. The genericized UI lives in
+ * `src/ui/modals/reorder-children-modal.ts` (per § 8 of
+ * sub-scene-type.md, the third reorder context — sub-scenes-in-scene —
+ * triggered the modal-level abstraction).
  */
 export async function reorderChapters(
 	app: App,
@@ -65,6 +65,34 @@ export async function reorderChapters(
 		if (chapter.frontmatter['dbench-order'] === desired) continue;
 
 		await app.fileManager.processFrontMatter(chapter.file, (frontmatter) => {
+			frontmatter['dbench-order'] = desired;
+		});
+		changed++;
+	}
+	return changed;
+}
+
+/**
+ * Write sequential `dbench-order` values onto each sub-scene in
+ * `orderedSubScenes`, matching the array's index (1-based). Per
+ * [sub-scene-type.md § 8](../../docs/planning/sub-scene-type.md):
+ * sub-scene order is within-parent-scene, so callers pass the
+ * already-resolved sub-scenes for one parent.
+ *
+ * Same semantics as `reorderScenes` / `reorderChapters`: idempotent
+ * per sub-scene, returns the count of actually-modified files.
+ */
+export async function reorderSubScenes(
+	app: App,
+	orderedSubScenes: SubSceneNote[]
+): Promise<number> {
+	let changed = 0;
+	for (let i = 0; i < orderedSubScenes.length; i++) {
+		const subScene = orderedSubScenes[i];
+		const desired = i + 1;
+		if (subScene.frontmatter['dbench-order'] === desired) continue;
+
+		await app.fileManager.processFrontMatter(subScene.file, (frontmatter) => {
 			frontmatter['dbench-order'] = desired;
 		});
 		changed++;

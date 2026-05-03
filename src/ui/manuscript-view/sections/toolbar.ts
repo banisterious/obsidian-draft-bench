@@ -1,11 +1,12 @@
 import { Notice, setIcon } from 'obsidian';
 import type DraftBenchPlugin from '../../../../main';
+import { buildSceneReorderConfig } from '../../../commands/reorder-scenes';
 import { pickPresetAndCompile } from '../../../core/compile/operations';
 import type { ProjectNote } from '../../../core/discovery';
 import { isSceneFrontmatter } from '../../../model/scene';
 import { NewDraftModal } from '../../modals/new-draft-modal';
 import { NewSceneModal } from '../../modals/new-scene-modal';
-import { ReorderScenesModal } from '../../modals/reorder-scenes-modal';
+import { ReorderChildrenModal } from '../../modals/reorder-children-modal';
 
 /**
  * Manuscript-leaf primary CTA — "Compile" promoted out of the
@@ -80,7 +81,8 @@ export function renderToolbar(
 	});
 
 	addToolbarButton(toolbar, 'Reorder scenes', 'list-ordered', () => {
-		new ReorderScenesModal(plugin.app, plugin.linker, selectedProject).open();
+		const config = buildSceneReorderConfig(plugin.app, selectedProject);
+		new ReorderChildrenModal(plugin.app, plugin.linker, config).open();
 	});
 }
 

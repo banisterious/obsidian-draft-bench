@@ -1,35 +1,70 @@
-import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
+import { App, Modal, Notice, Setting, setIcon, type TFile } from 'obsidian';
 import type { DraftBenchLinker } from '../../core/linker';
-import { reorderChapters } from '../../core/reorder';
-import {
-	findChaptersInProject,
-	findProjects,
-	type ChapterNote,
-	type ProjectNote,
-} from '../../core/discovery';
 
 /**
- * "Reorder chapters" modal.
+ * Generic "reorder N items in a parent" modal, parameterized by a
+ * `ReorderModalConfig`. Per [sub-scene-type.md § 8](../../../docs/planning/sub-scene-type.md):
+ * the sub-scenes-in-scene context was the third reorder trigger, which
+ * tipped the design toward genericization. Three contexts now share
+ * this modal:
  *
- * Mirrors `ReorderScenesModal` for chapter notes per chapter-type.md
- * § 8 ("single Reorder modal parameterized by parent scope").
- * Sibling implementation rather than a shared generic for now —
- * with two reorder contexts (scenes-in-project, chapters-in-project)
- * the duplication is light; the natural genericize trigger is the
- * third context (scenes-in-chapter, deferred per the Step 9 plan).
+ * - `Reorder chapters in project`
+ * - `Reorder scenes` (in a project)
+ * - `Reorder sub-scenes in scene`
  *
- * - Project picker at top (pre-selected from the active file when
- *   it belongs to a project).
- * - Scrollable chapter list in current `dbench-order`.
- * - Per row: drag handle, position number, title, status.
- * - Mouse: grab the handle and drag; drop indicators mark the target slot.
- * - Keyboard: focus a row and press up/down (or k/j) to move the row.
- * - Apply writes via `core/reorder` inside `linker.withSuspended(...)`.
+ * UX is identical across contexts: parent picker at top, scrollable
+ * list of items in current `dbench-order`, drag handles + keyboard
+ * (arrow keys, j/k) for moves, Apply commits the new order via the
+ * caller-supplied `applyOrder` (run inside `linker.withSuspended`).
  */
-export class ReorderChaptersModal extends Modal {
-	private projects: ProjectNote[];
-	private selectedProject: ProjectNote | null = null;
-	private ordered: ChapterNote[] = [];
+
+export interface ReorderItem {
+	file: TFile;
+	frontmatter: { 'dbench-order': number; 'dbench-status'?: string };
+}
+
+export interface ReorderModalConfig<T extends ReorderItem> {
+	/** Modal heading, e.g., "Reorder scenes". */
+	title: string;
+	/** Singular item label, e.g., "scene" — used in success/empty notices. */
+	itemLabel: string;
+	/** Plural item label, e.g., "scenes". */
+	itemLabelPlural: string;
+	/** Parent picker label, e.g., "Project" or "Scene". */
+	parentLabel: string;
+	/** Parent picker description text. */
+	parentDesc: string;
+	/** Hint text shown above the list (drag/keyboard guidance). */
+	hint: string;
+	/** ARIA label for the list, e.g., "Scenes in story order". */
+	listLabel: string;
+	/** Empty-state text when the selected parent has no items. */
+	emptyText: string;
+	/**
+	 * Empty-state text when no parents exist at all — distinct from
+	 * `emptyText` (which fires when a parent IS selected but has no
+	 * children). Optional; falls back to a generic message.
+	 */
+	noParentsText?: string;
+	/** Available parent choices (id + display label). */
+	parents: ReadonlyArray<{ id: string; label: string }>;
+	/** Initially selected parent id, or null to default to the first. */
+	initialParentId: string | null;
+	/**
+	 * Resolve items belonging to `parentId`. Returned in any order; the
+	 * modal sorts by `dbench-order` itself. Empty array OK.
+	 */
+	loadItems(parentId: string): T[];
+	/**
+	 * Commit the new order to disk. Returns count of items actually
+	 * changed (idempotent skip for already-correct positions).
+	 */
+	applyOrder(ordered: T[]): Promise<number>;
+}
+
+export class ReorderChildrenModal<T extends ReorderItem> extends Modal {
+	private selectedParentId: string;
+	private ordered: T[] = [];
 	private listEl: HTMLOListElement | null = null;
 	private applyButton: HTMLButtonElement | null = null;
 	private focusedIndex = 0;
@@ -38,13 +73,11 @@ export class ReorderChaptersModal extends Modal {
 	constructor(
 		app: App,
 		private linker: DraftBenchLinker,
-		initialProject: ProjectNote | null
+		private config: ReorderModalConfig<T>
 	) {
 		super(app);
-		this.projects = findProjects(app);
-		this.selectedProject =
-			initialProject ??
-			(this.projects.length > 0 ? this.projects[0] : null);
+		this.selectedParentId =
+			config.initialParentId ?? config.parents[0]?.id ?? '';
 	}
 
 	onOpen(): void {
@@ -52,11 +85,13 @@ export class ReorderChaptersModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass('dbench-reorder-modal');
 
-		contentEl.createEl('h2', { text: 'Reorder chapters' });
+		contentEl.createEl('h2', { text: this.config.title });
 
-		if (this.projects.length === 0) {
+		if (this.config.parents.length === 0) {
 			contentEl.createEl('p', {
-				text: 'No projects exist yet. Create a project first via the command palette.',
+				text:
+					this.config.noParentsText ??
+					`No ${this.config.parentLabel.toLowerCase()} options exist yet.`,
 			});
 			const closeButton = contentEl.createEl('button', {
 				text: 'Close',
@@ -67,39 +102,33 @@ export class ReorderChaptersModal extends Modal {
 		}
 
 		new Setting(contentEl)
-			.setName('Project')
-			.setDesc('Which project to reorder.')
+			.setName(this.config.parentLabel)
+			.setDesc(this.config.parentDesc)
 			.addDropdown((dropdown) => {
-				for (const p of this.projects) {
-					dropdown.addOption(
-						p.frontmatter['dbench-id'],
-						p.file.basename
-					);
+				for (const p of this.config.parents) {
+					dropdown.addOption(p.id, p.label);
 				}
-				if (this.selectedProject) {
-					dropdown.setValue(this.selectedProject.frontmatter['dbench-id']);
+				if (this.selectedParentId !== '') {
+					dropdown.setValue(this.selectedParentId);
 				}
 				dropdown.onChange((value) => {
-					this.selectedProject =
-						this.projects.find(
-							(p) => p.frontmatter['dbench-id'] === value
-						) ?? null;
-					this.loadChapters();
+					this.selectedParentId = value;
+					this.loadAndSort();
 					this.renderList();
 				});
 			});
 
 		contentEl.createEl('p', {
 			cls: 'dbench-reorder-modal__hint',
-			text: 'Drag a chapter by its handle, or focus a row and use the up or down arrow keys (or j/k).',
+			text: this.config.hint,
 		});
 
 		this.listEl = contentEl.createEl('ol', {
 			cls: 'dbench-reorder-modal__list',
-			attr: { role: 'listbox', 'aria-label': 'Chapters in story order' },
+			attr: { role: 'listbox', 'aria-label': this.config.listLabel },
 		});
 
-		this.loadChapters();
+		this.loadAndSort();
 		this.renderList();
 
 		const buttonRow = contentEl.createDiv({ cls: 'modal-button-container' });
@@ -121,16 +150,13 @@ export class ReorderChaptersModal extends Modal {
 		this.contentEl.empty();
 	}
 
-	private loadChapters(): void {
-		if (!this.selectedProject) {
+	private loadAndSort(): void {
+		if (this.selectedParentId === '') {
 			this.ordered = [];
 			return;
 		}
-		const chapters = findChaptersInProject(
-			this.app,
-			this.selectedProject.frontmatter['dbench-id']
-		);
-		this.ordered = [...chapters].sort(
+		const items = this.config.loadItems(this.selectedParentId);
+		this.ordered = [...items].sort(
 			(a, b) =>
 				(a.frontmatter['dbench-order'] ?? 0) -
 				(b.frontmatter['dbench-order'] ?? 0)
@@ -145,7 +171,7 @@ export class ReorderChaptersModal extends Modal {
 		if (this.ordered.length === 0) {
 			this.listEl.createEl('li', {
 				cls: 'dbench-reorder-modal__empty',
-				text: 'This project has no chapters yet.',
+				text: this.config.emptyText,
 			});
 			if (this.applyButton) this.applyButton.disabled = true;
 			return;
@@ -153,13 +179,14 @@ export class ReorderChaptersModal extends Modal {
 
 		if (this.applyButton) this.applyButton.disabled = false;
 
-		this.ordered.forEach((chapter, index) => {
+		this.ordered.forEach((item, index) => {
 			const row = this.listEl!.createEl('li', {
 				cls: 'dbench-reorder-modal__row',
 				attr: {
 					role: 'option',
 					tabindex: index === this.focusedIndex ? '0' : '-1',
-					'aria-selected': index === this.focusedIndex ? 'true' : 'false',
+					'aria-selected':
+						index === this.focusedIndex ? 'true' : 'false',
 					draggable: 'true',
 				},
 			});
@@ -179,11 +206,11 @@ export class ReorderChaptersModal extends Modal {
 			});
 			row.createEl('span', {
 				cls: 'dbench-reorder-modal__title',
-				text: chapter.file.basename,
+				text: item.file.basename,
 			});
 			row.createEl('span', {
 				cls: 'dbench-reorder-modal__status',
-				text: String(chapter.frontmatter['dbench-status'] ?? ''),
+				text: String(item.frontmatter['dbench-status'] ?? ''),
 			});
 
 			row.addEventListener('keydown', (ev) => {
@@ -226,7 +253,10 @@ export class ReorderChaptersModal extends Modal {
 				if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
 				const rect = row.getBoundingClientRect();
 				const before = ev.clientY - rect.top < rect.height / 2;
-				row.removeClass('dbench-reorder-modal__row--drop-before', 'dbench-reorder-modal__row--drop-after');
+				row.removeClass(
+					'dbench-reorder-modal__row--drop-before',
+					'dbench-reorder-modal__row--drop-after'
+				);
 				row.addClass(
 					before
 						? 'dbench-reorder-modal__row--drop-before'
@@ -234,11 +264,17 @@ export class ReorderChaptersModal extends Modal {
 				);
 			});
 			row.addEventListener('dragleave', () => {
-				row.removeClass('dbench-reorder-modal__row--drop-before', 'dbench-reorder-modal__row--drop-after');
+				row.removeClass(
+					'dbench-reorder-modal__row--drop-before',
+					'dbench-reorder-modal__row--drop-after'
+				);
 			});
 			row.addEventListener('drop', (ev) => {
 				ev.preventDefault();
-				row.removeClass('dbench-reorder-modal__row--drop-before', 'dbench-reorder-modal__row--drop-after');
+				row.removeClass(
+					'dbench-reorder-modal__row--drop-before',
+					'dbench-reorder-modal__row--drop-after'
+				);
 				const from = this.dragFromIndex;
 				if (from === null || from === index) return;
 				const rect = row.getBoundingClientRect();
@@ -250,11 +286,18 @@ export class ReorderChaptersModal extends Modal {
 			});
 			row.addEventListener('dragend', () => {
 				this.dragFromIndex = null;
-				row.removeClass('dbench-reorder-modal__row--dragging', 'dbench-reorder-modal__row--drop-before', 'dbench-reorder-modal__row--drop-after');
+				row.removeClass(
+					'dbench-reorder-modal__row--dragging',
+					'dbench-reorder-modal__row--drop-before',
+					'dbench-reorder-modal__row--drop-after'
+				);
 				for (const sibling of Array.from(
 					this.listEl!.children
 				) as HTMLElement[]) {
-					sibling.removeClass('dbench-reorder-modal__row--drop-before', 'dbench-reorder-modal__row--drop-after');
+					sibling.removeClass(
+						'dbench-reorder-modal__row--drop-before',
+						'dbench-reorder-modal__row--drop-after'
+					);
 				}
 			});
 
@@ -290,12 +333,15 @@ export class ReorderChaptersModal extends Modal {
 		}
 		try {
 			const changed = await this.linker.withSuspended(() =>
-				reorderChapters(this.app, this.ordered)
+				this.config.applyOrder(this.ordered)
 			);
 			if (changed === 0) {
-				new Notice('Chapter order was already up to date.');
+				new Notice(`${capitalize(this.config.itemLabel)} order was already up to date.`);
 			} else {
-				const suffix = changed === 1 ? 'chapter' : 'chapters';
+				const suffix =
+					changed === 1
+						? this.config.itemLabel
+						: this.config.itemLabelPlural;
 				new Notice(`✓ Reordered ${changed} ${suffix}.`);
 			}
 			this.close();
@@ -308,4 +354,9 @@ export class ReorderChaptersModal extends Modal {
 			}
 		}
 	}
+}
+
+function capitalize(s: string): string {
+	if (s.length === 0) return s;
+	return s.charAt(0).toUpperCase() + s.slice(1);
 }

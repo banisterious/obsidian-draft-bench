@@ -3,13 +3,22 @@ import { App } from 'obsidian';
 import { createProject } from '../../src/core/projects';
 import { createScene } from '../../src/core/scenes';
 import { createChapter } from '../../src/core/chapters';
-import { reorderChapters, reorderScenes } from '../../src/core/reorder';
+import { createSubScene } from '../../src/core/sub-scenes';
+import {
+	reorderChapters,
+	reorderScenes,
+	reorderSubScenes,
+} from '../../src/core/reorder';
 import {
 	findChaptersInProject,
 	findProjects,
+	findScenes,
 	findScenesInProject,
+	findSubScenesInScene,
 	type ChapterNote,
+	type ProjectNote,
 	type SceneNote,
+	type SubSceneNote,
 } from '../../src/core/discovery';
 import {
 	DEFAULT_SETTINGS,
@@ -205,5 +214,67 @@ describe('reorderChapters', () => {
 		expect(readChapterOrder(app, chapters[0])).toBe(1);
 		expect(readChapterOrder(app, chapters[1])).toBe(3);
 		expect(readChapterOrder(app, chapters[2])).toBe(2);
+	});
+});
+
+describe('reorderSubScenes', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let project: ProjectNote;
+	let scene: SceneNote;
+
+	beforeEach(async () => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		await createProject(app, settings, { title: 'Drift', shape: 'folder' });
+		project = findProjects(app)[0];
+		await createScene(app, settings, { project, title: 'The auction' });
+		scene = findScenes(app).find((s) => s.file.basename === 'The auction')!;
+	});
+
+	async function seedSubScenes(titles: string[]): Promise<SubSceneNote[]> {
+		for (const title of titles) {
+			await createSubScene(app, settings, { project, scene, title });
+		}
+		return findSubScenesInScene(app, scene.frontmatter['dbench-id']).sort(
+			(a, b) =>
+				a.frontmatter['dbench-order'] - b.frontmatter['dbench-order']
+		);
+	}
+
+	function readOrder(subScene: SubSceneNote): number {
+		return Number(
+			app.metadataCache.getFileCache(subScene.file)?.frontmatter?.[
+				'dbench-order'
+			]
+		);
+	}
+
+	it('writes sequential 1-based dbench-order to a freshly-shuffled list', async () => {
+		const subs = await seedSubScenes(['Alpha', 'Beta', 'Gamma']);
+		// Reverse the order: Gamma, Beta, Alpha → expect 1, 2, 3.
+		const reversed = [subs[2], subs[1], subs[0]];
+		const changed = await reorderSubScenes(app, reversed);
+		expect(changed).toBe(2); // Alpha and Gamma swap; Beta stays at 2.
+		// Re-read fresh from cache.
+		const fresh = findSubScenesInScene(app, scene.frontmatter['dbench-id']);
+		const gamma = fresh.find((s) => s.file.basename === 'Gamma')!;
+		const beta = fresh.find((s) => s.file.basename === 'Beta')!;
+		const alpha = fresh.find((s) => s.file.basename === 'Alpha')!;
+		expect(readOrder(gamma)).toBe(1);
+		expect(readOrder(beta)).toBe(2);
+		expect(readOrder(alpha)).toBe(3);
+	});
+
+	it('skips writes for already-correct positions (idempotent)', async () => {
+		const subs = await seedSubScenes(['A', 'B', 'C']);
+		// Same order as creation: all already at correct positions.
+		const changed = await reorderSubScenes(app, subs);
+		expect(changed).toBe(0);
+	});
+
+	it('returns 0 for an empty list (no work to do)', async () => {
+		const changed = await reorderSubScenes(app, []);
+		expect(changed).toBe(0);
 	});
 });

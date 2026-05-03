@@ -1,13 +1,19 @@
-import type { Plugin } from 'obsidian';
+import { type App, type Plugin } from 'obsidian';
 import type { DraftBenchLinker } from '../core/linker';
 import {
 	findNoteById,
 	findProjects,
+	findScenesInProject,
 	type ProjectNote,
+	type SceneNote,
 } from '../core/discovery';
 import { isProjectFrontmatter } from '../model/project';
 import { isSceneFrontmatter } from '../model/scene';
-import { ReorderScenesModal } from '../ui/modals/reorder-scenes-modal';
+import { reorderScenes } from '../core/reorder';
+import {
+	ReorderChildrenModal,
+	type ReorderModalConfig,
+} from '../ui/modals/reorder-children-modal';
 
 /**
  * Register the "Draft Bench: Reorder scenes" command.
@@ -16,6 +22,10 @@ import { ReorderScenesModal } from '../ui/modals/reorder-scenes-modal';
  * that scene's project. When the active file is a project note, the
  * modal pre-selects that project. Otherwise the picker starts at the
  * first available project.
+ *
+ * Now opens the generic `ReorderChildrenModal` per
+ * [sub-scene-type.md § 8](../../docs/planning/sub-scene-type.md);
+ * the scene-specific configuration is built here at the command site.
  */
 export function registerReorderScenesCommand(
 	plugin: Plugin,
@@ -25,10 +35,39 @@ export function registerReorderScenesCommand(
 		id: 'reorder-scenes',
 		name: 'Reorder scenes',
 		callback: () => {
-			const initial = resolveInitialProject(plugin);
-			new ReorderScenesModal(plugin.app, linker, initial).open();
+			const config = buildSceneReorderConfig(
+				plugin.app,
+				resolveInitialProject(plugin)
+			);
+			new ReorderChildrenModal(plugin.app, linker, config).open();
 		},
 	});
+}
+
+export function buildSceneReorderConfig(
+	app: App,
+	initialProject: ProjectNote | null
+): ReorderModalConfig<SceneNote> {
+	const projects = findProjects(app);
+	return {
+		title: 'Reorder scenes',
+		itemLabel: 'scene',
+		itemLabelPlural: 'scenes',
+		parentLabel: 'Project',
+		parentDesc: 'Which project to reorder.',
+		hint: 'Drag a scene by its handle, or focus a row and use the up or down arrow keys (or j/k).',
+		listLabel: 'Scenes in story order',
+		emptyText: 'This project has no scenes yet.',
+		noParentsText:
+			'No projects exist yet. Create a project first via the command palette.',
+		parents: projects.map((p) => ({
+			id: p.frontmatter['dbench-id'],
+			label: p.file.basename,
+		})),
+		initialParentId: initialProject?.frontmatter['dbench-id'] ?? null,
+		loadItems: (projectId) => findScenesInProject(app, projectId),
+		applyOrder: (ordered) => reorderScenes(app, ordered),
+	};
 }
 
 function resolveInitialProject(plugin: Plugin): ProjectNote | null {
@@ -51,8 +90,6 @@ function resolveInitialProject(plugin: Plugin): ProjectNote | null {
 				frontmatter: resolved.frontmatter,
 			};
 		}
-		// Fallback: pick the project by ID from the cached list (keeps
-		// pre-selection behavior intact even if findNoteById returns raw).
 		const project = findProjects(plugin.app).find(
 			(p) => p.frontmatter['dbench-id'] === projectId
 		);

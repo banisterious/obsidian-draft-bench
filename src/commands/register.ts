@@ -16,6 +16,7 @@ import { registerNewSubSceneDraftCommand } from './new-sub-scene-draft';
 import { registerNewDraftCommand } from './new-draft';
 import { registerReorderChaptersCommand } from './reorder-chapters';
 import { registerReorderScenesCommand } from './reorder-scenes';
+import { registerReorderSubScenesCommand } from './reorder-sub-scenes';
 import { registerRepairProjectCommand } from './repair-project';
 import { registerRunCompileCommand } from './run-compile';
 import { registerShowManuscriptViewCommand } from './show-manuscript-view';
@@ -62,6 +63,7 @@ export function registerCommands(
 	registerShowWelcomeCommand(plugin);
 	registerReorderChaptersCommand(plugin, linker);
 	registerReorderScenesCommand(plugin, linker);
+	registerReorderSubScenesCommand(plugin, linker);
 	registerRepairProjectCommand(plugin, linker);
 	registerRunCompileCommand(plugin);
 	registerSetAsProjectCommand(plugin, getSettings);

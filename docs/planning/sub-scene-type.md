@@ -375,7 +375,9 @@ Run started 2026-05-03 against the dev-vault seed described in `dev-vault/00 Sub
 
 ### Walkthrough wording fixes
 
-- **Tests 18 / 19 had MISSING and STALE swapped.** The "easier path" of adding a fake id to a parent's reverse array triggers `STALE_SUB_SCENE_IN_SCENE` (parent -> child broken forward-ref), not MISSING. Rotating a child's `dbench-id` triggers `SUB_SCENE_MISSING_IN_SCENE` (child still declares parent, parent's reverse arrays no longer contain the new id). Walkthrough updated 2026-05-03 to swap the names + clarify the kind taxonomy in a callout above each test.
+- **Tests 18 / 19 had MISSING and STALE swapped.** The "easier path" of adding a fake id to a parent's reverse array triggers `STALE_SUB_SCENE_IN_SCENE` (parent -> child broken forward-ref), not MISSING. Walkthrough updated 2026-05-03 to swap the names + clarify the kind taxonomy in a callout above each test.
+
+- **Test 19's child-id-rotation path doesn't trigger MISSING — the linker auto-heals.** Originally the test rotated the child's `dbench-id` and expected `SUB_SCENE_MISSING_IN_SCENE` to surface on the next integrity scan. In practice, the linker's `onModify -> ensureChildInReverse` ([src/core/linker.ts:349](../../src/core/linker.ts#L349)) fires on save and proactively adds the new id to the parent's reverse array — so by the time the writer runs integrity, MISSING is already healed. Reverting the rotation leaves an orphan id in the parent's reverse array (STALE), but never the MISSING state. Walkthrough updated 2026-05-03 to use a parent-array-trim path instead: edit the *parent's* `dbench-sub-scene-ids` directly to remove an entry. The linker watches child-side changes for re-sync, not parent-side trims, so this path reliably surfaces MISSING. The auto-heal behavior is correct (it's the linker doing its job); the original test setup was naive about what would trigger MISSING in practice.
 
 ### Design decisions resolved against actual usage
 

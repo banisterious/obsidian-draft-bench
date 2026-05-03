@@ -2,18 +2,24 @@
  * Shared type aliases and unions used across the Draft Bench data model.
  *
  * Per-type frontmatter shapes and guards live in sibling files
- * (project.ts, scene.ts, draft.ts). Plugin settings live in settings.ts.
+ * (project.ts, chapter.ts, scene.ts, sub-scene.ts, draft.ts). Plugin
+ * settings live in settings.ts.
  */
 
 /**
  * The discriminator value of `dbench-type`. V1 vocabulary:
- * `project`, `chapter`, `scene`, `draft`, `compile-preset`.
+ * `project`, `chapter`, `scene`, `sub-scene`, `draft`, `compile-preset`.
  *
  * `chapter` was promoted from Phase 5+ into V1 on 2026-04-25 per the
  * novelist-audience pivot. See [chapter-type.md](../../docs/planning/chapter-type.md)
  * for the full design rationale.
+ *
+ * `sub-scene` was promoted from post-V1 into pre-1.0 on 2026-05-02 after
+ * real-vault use surfaced the friction the spec entry anticipated. See
+ * [sub-scene-type.md](../../docs/planning/sub-scene-type.md) for the
+ * full design rationale.
  */
-export type DbenchType = 'project' | 'chapter' | 'scene' | 'draft' | 'compile-preset';
+export type DbenchType = 'project' | 'chapter' | 'scene' | 'sub-scene' | 'draft' | 'compile-preset';
 
 /**
  * A Draft Bench stable identifier (format `abc-123-def-456`).

@@ -43,6 +43,7 @@ export interface EssentialsContext {
 
 const DEFAULT_PROJECT_SHAPE = 'folder';
 const DEFAULT_SCENE_ORDER = 9999;
+const DEFAULT_SUB_SCENE_ORDER = 9999;
 const DEFAULT_CHAPTER_ORDER = 9999;
 const DEFAULT_DRAFT_NUMBER = 1;
 
@@ -144,6 +145,41 @@ export function stampSceneEssentials(
 	setIfMissing(frontmatter, 'dbench-project', '');
 	setIfMissing(frontmatter, 'dbench-project-id', '');
 	setIfMissing(frontmatter, 'dbench-order', DEFAULT_SCENE_ORDER);
+	setIfMissing(frontmatter, 'dbench-status', defaultStatusOf(context));
+	setIfMissing(frontmatter, 'dbench-drafts', []);
+	setIfMissing(frontmatter, 'dbench-draft-ids', []);
+}
+
+/**
+ * Stamp sub-scene essentials onto `frontmatter`.
+ *
+ * Adds (when absent): `dbench-type`, `dbench-id`, `dbench-project`
+ * (empty placeholder until the writer assigns a project),
+ * `dbench-project-id` (empty placeholder), `dbench-scene` (empty
+ * placeholder until the writer assigns a parent scene),
+ * `dbench-scene-id` (empty placeholder), `dbench-order` (high default
+ * so the sub-scene sorts at the end of its parent scene's sub-scene
+ * list), `dbench-status`, and the empty `dbench-drafts` /
+ * `dbench-draft-ids` reverse arrays.
+ *
+ * Optional `dbench-target-words`, `dbench-subtitle`, `dbench-synopsis`,
+ * and the `dbench-section-break-*` pair are NOT stamped; writers set
+ * them via the Properties panel when desired.
+ *
+ * `context.defaultStatus` seeds `dbench-status` when absent; callers
+ * should pass `settings.statusVocabulary[0]`. Idempotent.
+ */
+export function stampSubSceneEssentials(
+	frontmatter: Record<string, unknown>,
+	context: EssentialsContext
+): void {
+	setIfMissing(frontmatter, 'dbench-type', 'sub-scene');
+	setIfMissing(frontmatter, 'dbench-id', generateDbenchId());
+	setIfMissing(frontmatter, 'dbench-project', '');
+	setIfMissing(frontmatter, 'dbench-project-id', '');
+	setIfMissing(frontmatter, 'dbench-scene', '');
+	setIfMissing(frontmatter, 'dbench-scene-id', '');
+	setIfMissing(frontmatter, 'dbench-order', DEFAULT_SUB_SCENE_ORDER);
 	setIfMissing(frontmatter, 'dbench-status', defaultStatusOf(context));
 	setIfMissing(frontmatter, 'dbench-drafts', []);
 	setIfMissing(frontmatter, 'dbench-draft-ids', []);

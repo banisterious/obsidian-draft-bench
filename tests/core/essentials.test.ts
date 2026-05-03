@@ -6,6 +6,7 @@ import {
 	stampDraftEssentials,
 	stampProjectEssentials,
 	stampSceneEssentials,
+	stampSubSceneEssentials,
 	type CompilePresetEssentialsContext,
 	type EssentialsContext,
 } from '../../src/core/essentials';
@@ -239,6 +240,101 @@ describe('stampSceneEssentials', () => {
 		stampSceneEssentials(fm, ctx('Scene'));
 		expect(fm['tags']).toEqual(['draft']);
 		expect(fm['wordcount']).toBe(1500);
+	});
+});
+
+describe('stampSubSceneEssentials', () => {
+	it('stamps all ten sub-scene keys onto an empty frontmatter', () => {
+		const fm: Record<string, unknown> = {};
+		stampSubSceneEssentials(fm, ctx('Lot 47'));
+
+		expect(fm['dbench-type']).toBe('sub-scene');
+		expect(isValidDbenchId(fm['dbench-id'])).toBe(true);
+		expect(fm['dbench-project']).toBe('');
+		expect(fm['dbench-project-id']).toBe('');
+		expect(fm['dbench-scene']).toBe('');
+		expect(fm['dbench-scene-id']).toBe('');
+		expect(fm['dbench-order']).toBe(9999);
+		expect(fm['dbench-status']).toBe('idea');
+		expect(fm['dbench-drafts']).toEqual([]);
+		expect(fm['dbench-draft-ids']).toEqual([]);
+	});
+
+	it('does not stamp optional target-words, subtitle, synopsis, or section-break', () => {
+		const fm: Record<string, unknown> = {};
+		stampSubSceneEssentials(fm, ctx('Lot 47'));
+		expect(fm['dbench-target-words']).toBeUndefined();
+		expect(fm['dbench-subtitle']).toBeUndefined();
+		expect(fm['dbench-synopsis']).toBeUndefined();
+		expect(fm['dbench-section-break-title']).toBeUndefined();
+		expect(fm['dbench-section-break-style']).toBeUndefined();
+	});
+
+	it('is idempotent', () => {
+		const fm: Record<string, unknown> = {};
+		stampSubSceneEssentials(fm, ctx('Lot 47'));
+		const snapshot = { ...fm };
+		stampSubSceneEssentials(fm, ctx('Lot 47'));
+		expect(fm).toEqual(snapshot);
+	});
+
+	it('preserves dbench-order: 0 (must not be replaced with default 9999)', () => {
+		const fm: Record<string, unknown> = { 'dbench-order': 0 };
+		stampSubSceneEssentials(fm, ctx('Lot 47'));
+		expect(fm['dbench-order']).toBe(0);
+	});
+
+	it('preserves an existing project + scene assignment', () => {
+		const fm: Record<string, unknown> = {
+			'dbench-project': '[[Meridian Drift]]',
+			'dbench-project-id': 'abc-123-def-456',
+			'dbench-scene': '[[The auction]]',
+			'dbench-scene-id': 'ghi-789-jkl-012',
+		};
+		stampSubSceneEssentials(fm, ctx('Lot 47'));
+		expect(fm['dbench-project']).toBe('[[Meridian Drift]]');
+		expect(fm['dbench-project-id']).toBe('abc-123-def-456');
+		expect(fm['dbench-scene']).toBe('[[The auction]]');
+		expect(fm['dbench-scene-id']).toBe('ghi-789-jkl-012');
+	});
+
+	it('preserves writer-set target-words, subtitle, synopsis, and section-break', () => {
+		const fm: Record<string, unknown> = {
+			'dbench-target-words': 800,
+			'dbench-subtitle': 'POV shift to Mara',
+			'dbench-synopsis': "the lot's provenance falls apart",
+			'dbench-section-break-title': 'Three days later',
+			'dbench-section-break-style': 'visual',
+		};
+		stampSubSceneEssentials(fm, ctx('Lot 47'));
+		expect(fm['dbench-target-words']).toBe(800);
+		expect(fm['dbench-subtitle']).toBe('POV shift to Mara');
+		expect(fm['dbench-synopsis']).toBe("the lot's provenance falls apart");
+		expect(fm['dbench-section-break-title']).toBe('Three days later');
+		expect(fm['dbench-section-break-style']).toBe('visual');
+	});
+
+	it('preserves existing reverse arrays', () => {
+		const fm: Record<string, unknown> = {
+			'dbench-drafts': ['[[Lot 47 - Draft 1 (20260502)]]'],
+			'dbench-draft-ids': ['drf-555-666-777'],
+		};
+		stampSubSceneEssentials(fm, ctx('Lot 47'));
+		expect(fm['dbench-drafts']).toEqual(['[[Lot 47 - Draft 1 (20260502)]]']);
+		expect(fm['dbench-draft-ids']).toEqual(['drf-555-666-777']);
+	});
+
+	it('preserves non-dbench properties', () => {
+		const fm: Record<string, unknown> = { tags: ['sub-scene'], pov: 'Mara' };
+		stampSubSceneEssentials(fm, ctx('Lot 47'));
+		expect(fm['tags']).toEqual(['sub-scene']);
+		expect(fm['pov']).toBe('Mara');
+	});
+
+	it('uses context.defaultStatus when provided', () => {
+		const fm: Record<string, unknown> = {};
+		stampSubSceneEssentials(fm, { basename: 'Lot 47', defaultStatus: 'in-progress' });
+		expect(fm['dbench-status']).toBe('in-progress');
 	});
 });
 

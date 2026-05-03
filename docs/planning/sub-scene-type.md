@@ -314,7 +314,7 @@ Once design is ratified, implementation in this order:
 11. **Reorder modal genericization** (per § 8). Refactor `ReorderScenesModal` + `ReorderChaptersModal` into `ReorderChildrenModal`. New `Draft Bench: Reorder sub-scenes in scene` palette command.
 12. **Bidirectional sync hooks.** All sub-scene-modifying operations run inside `linker.withSuspended(...)` *where appropriate*. Audit completed 2026-05-02 — see § Bidirectional sync hooks audit below.
 13. **Tests.** Each new module gets unit + integration coverage. Estimate: +200-300 tests over current 947. Audit completed 2026-05-02 — see § Test coverage audit below; +120 actual delta, view-render harness deferred per chapter precedent.
-14. **Dev-vault validation.** Walkthrough scenarios for sub-scene creation, scene-to-sub-scene assignment, reordering, status rollup, compile output, sub-scene-draft snapshots. New walkthrough doc at `dev-vault/00 Sub-scene type walkthrough.md` written 2026-05-02 (gitignored, local-only); 38 scenarios across 11 sections covering Steps 1-11. Shared seed with `dev-vault/00 Chapter type walkthrough.md`; the chapter walkthrough's Test 1/2/8 expectations were updated to match the new seed (Departure now hierarchical with 3 sub-scenes; The Quiet Hour now hierarchical with 2 sub-scenes). **Manual pass against a real Obsidian instance is the gate before any 0.2.0 release.**
+14. **Dev-vault validation.** Walkthrough scenarios for sub-scene creation, scene-to-sub-scene assignment, reordering, status rollup, compile output, sub-scene-draft snapshots. New walkthrough doc at `dev-vault/00 Sub-scene type walkthrough.md` written 2026-05-02 (gitignored, local-only); 38 scenarios across 11 sections covering Steps 1-11. Shared seed with `dev-vault/00 Chapter type walkthrough.md`; the chapter walkthrough's Test 1/2/8 expectations were updated to match the new seed (Departure now hierarchical with 3 sub-scenes; The Quiet Hour now hierarchical with 2 sub-scenes). **Manual pass against a real Obsidian instance is the gate before any 0.2.0 release.** Run started 2026-05-03 — see § Walkthrough run findings below for surfaced bugs and decisions.
 15. **Spec rewrites.** Specification.md updates per § Note Types, § Project Structure on Disk, § Manuscript view, § Book Builder, § Bidirectional linking, § Development Phases (sub-scene moves to V1 / pre-1.0).
 16. **Wiki content.** New page or extended Manuscript-Builder.md / Drafts-And-Versioning.md sections explaining the sub-scene shape and sub-scene-draft snapshots. Getting-Started.md updates.
 
@@ -353,6 +353,32 @@ Audit completed 2026-05-02. The original Step 13 estimate of "+200-300 tests ove
 **View-rendering coverage (deferred):** zero tests exist for [src/ui/manuscript-view/sections/](../../src/ui/manuscript-view/sections/) — neither the new sub-scene primitives (`scene-card-section.ts`, `sub-scene-row.ts`) nor the chapter-type primitives (`chapter-card-section.ts`, `scene-row.ts`, `manuscript-list-section.ts`) have render tests. **No render harness exists in the project at all**: vitest runs `environment: 'node'`, the obsidian mock has stub `containerEl = {} as HTMLElement` placeholders without `setIcon` export or `createEl`/`createDiv`/`createSpan`/`addClass`/`toggleClass`/`setText`/`empty`/`isConnected` extensions on HTMLElement.
 
 The chapter-type Phase 4 work (which shipped to BRAT-public users in 0.1.0-0.1.4) followed the precedent: rely on the dev-vault walkthrough (Step 14 here, `dev-vault/00 Chapter type walkthrough.md` in the chapter case) for view-render validation. Adding a DOM harness *just for sub-scene primitives* would diverge from that precedent and front-load infra work that should cover the whole `manuscript-view/sections/` tree if undertaken at all. Decision: Step 13 closes without a render harness; Step 14 dev-vault walkthrough is the validation gate for view-rendering correctness. A future view-render harness (jsdom env + Obsidian DOM extension polyfills + `setIcon` mock) is a candidate post-1.0 ticket, scoped to cover both chapter and sub-scene primitives, motivated when writers report a render bug that escaped manual walkthroughs.
+
+---
+
+## Walkthrough run findings (Step 14)
+
+Run started 2026-05-03 against the dev-vault seed described in `dev-vault/00 Sub-scene type walkthrough.md`. Captures bugs surfaced during manual validation and design decisions resolved against actual usage. Updated incrementally as the run progresses; the run-header in the walkthrough doc is the source of truth for pass/partial/fail status per scenario.
+
+### Bugs surfaced and fixed in-flight
+
+| # | Where | Fix | Commit |
+|---|---|---|---|
+| 1 | Chapter-card word-count rollup missed sub-scene contributions for hierarchical scenes-in-chapter (Test 2: Ch01 read 347 instead of expected ~489). [`countForChapter`](../../src/core/word-count-cache.ts#L127) summed scene bodies via `countForScene`; should sum scene rollups via `countForSceneWithSubScenes` when sub-scenes exist. `countForProject` already handled this correctly via separate sub-scene iteration, so the bug was localized. | `countForChapter` now resolves each scene's sub-scenes via `findSubScenesInScene` and sums the rollup when any exist; falls back to `countForScene` for flat scenes. + 4 regression tests (empty / flat-only / hierarchical / mixed). | [`4ef0162`](https://github.com/banisterious/obsidian-draft-bench/commit/4ef0162) |
+
+### Bugs surfaced and deferred to follow-up issue
+
+| # | Where | Status | Tracking |
+|---|---|---|---|
+| 1 | Sub-scene folder resolver computes `<projectFolder>/{scene}/` regardless of whether the parent scene lives inside a chapter folder, so for chapter-aware projects sub-scenes end up flat under the project folder rather than nested under the chapter. Knock-on: § 10 folder auto-rename (Test 14) silently skips when the writer manually places sub-scenes under the chapter folder (the ergonomic location), because the resolver looks for the folder at the project-relative path and finds nothing. The wikilink-update branch still works (per-file, location-agnostic). | Filed; pre-1.0 fix. | [#12](https://github.com/banisterious/obsidian-draft-bench/issues/12), companion to [#11](https://github.com/banisterious/obsidian-draft-bench/issues/11) (parallel `scenesFolder` gap) |
+
+### Design decisions resolved against actual usage
+
+- **`Draft Bench: New sub-scene in scene` requires an active scene** (Test 10 setup wrinkle). The command uses `checkCallback` and hides itself from the palette unless the active note is a scene; `NewSubSceneModal` is constructed with project + scene injected, no internal picker. This diverges from `New scene in project` / `New chapter in project` (which have project pickers and are always palette-available). Decision (option **A**): accept the current implementation, update the walkthrough's Test 10 wording to "open the parent scene first, then run the command." Sub-scenes are deeply scoped, so requiring scene context is defensible; two reachable creation paths remain (active-scene palette command + scene-card affordance in Manuscript view). A future `NewSubSceneModal` refactor to add a project + scene picker would bring it in line with siblings — candidate post-V1 polish, file as enhancement if writers report friction.
+
+### Run status (incremental)
+
+Walkthrough is in progress. Tests 1-13 + 15+ ahead pass against fresh deploys after the fixes above. Test 14 partially fails pending #12 (folder auto-rename sub-step is annotated as known-failing in the walkthrough doc; wikilink-update sub-step still passes). When #12 ships, re-run Test 14 in full and clear the `currently fails` annotations.
 
 ---
 

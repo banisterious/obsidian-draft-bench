@@ -54,11 +54,16 @@ export interface DraftBenchSettings {
 	 * Default folder template for new sub-scenes, **relative to the
 	 * project's folder**. Supports `{project}` and `{scene}` tokens
 	 * (the latter expanded to the parent scene's basename). Default
-	 * `'{project}/{scene}/'` nests sub-scenes under their parent scene
+	 * `'{scene}/'` nests sub-scenes under their parent scene
 	 * (per [sub-scene-type.md § 10](../../docs/planning/sub-scene-type.md));
 	 * set to `''` for flat-at-project-root, where the writer is expected
 	 * to apply a `<Scene> - <Sub-scene>` filename prefix manually for
-	 * clustering.
+	 * clustering. The `{project}` token is available for writers who
+	 * want sub-scenes in a sibling-folder layout (e.g.,
+	 * `'../{project} sub-scenes/{scene}/'`); the default omits it
+	 * because the resolver already joins relative paths to the project
+	 * folder, so `{project}/{scene}/` would produce a doubled
+	 * `<projectFolder>/<projectName>/<sceneName>/` path.
 	 */
 	subScenesFolder: string;
 
@@ -190,7 +195,7 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	projectsFolder: 'Draft Bench/{project}/',
 	scenesFolder: '',
 	chaptersFolder: '',
-	subScenesFolder: '{project}/{scene}/',
+	subScenesFolder: '{scene}/',
 	draftsFolderPlacement: 'project-local',
 	draftsFolderName: 'Drafts',
 	templatesFolder: 'Draft Bench/Templates/',

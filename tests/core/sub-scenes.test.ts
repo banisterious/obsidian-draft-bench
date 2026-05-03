@@ -44,7 +44,7 @@ function stripFrontmatter(content: string): string {
 describe('resolveSubScenePaths', () => {
 	const settings: DraftBenchSettings = { ...DEFAULT_SETTINGS };
 
-	it("defaults to '{project}/{scene}/' (nested under parent scene)", async () => {
+	it("defaults to '{scene}/' (nested under parent scene)", async () => {
 		const app = new App();
 		const project = await seedProject(app, settings, 'Meridian Drift');
 		await createScene(app, settings, { project, title: 'The auction' });
@@ -56,10 +56,10 @@ describe('resolveSubScenePaths', () => {
 			title: 'Lot 47',
 		});
 		expect(paths.folderPath).toBe(
-			'Draft Bench/Meridian Drift/Meridian Drift/The auction'
+			'Draft Bench/Meridian Drift/The auction'
 		);
 		expect(paths.filePath).toBe(
-			'Draft Bench/Meridian Drift/Meridian Drift/The auction/Lot 47.md'
+			'Draft Bench/Meridian Drift/The auction/Lot 47.md'
 		);
 	});
 
@@ -185,7 +185,7 @@ describe('createSubScene', () => {
 		});
 
 		expect(file.path).toBe(
-			'Draft Bench/Meridian Drift/Meridian Drift/The auction/Lot 47.md'
+			'Draft Bench/Meridian Drift/The auction/Lot 47.md'
 		);
 		expect(file.basename).toBe('Lot 47');
 

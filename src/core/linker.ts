@@ -1,6 +1,12 @@
-import { TFile, type App, type EventRef } from 'obsidian';
+import { TFile, TFolder, type App, type EventRef } from 'obsidian';
 import type { DraftBenchSettings } from '../model/settings';
-import { findChapters, findNoteById, findProjects, findScenes } from './discovery';
+import {
+	findChapters,
+	findNoteById,
+	findProjects,
+	findScenes,
+	findSubScenes,
+} from './discovery';
 
 /**
  * `DraftBenchLinker` — live bidirectional sync service.
@@ -443,6 +449,87 @@ export class DraftBenchLinker {
 				}
 			});
 		}
+
+		// Sub-scene-folder auto-rename per [sub-scene-type.md § 10](../../docs/planning/sub-scene-type.md):
+		// when a SCENE is renamed AND the configured `subScenesFolder`
+		// template uses `{scene}`, find any sibling folder matching the
+		// old scene basename containing sub-scenes that reference the
+		// renamed scene's id, and rename the folder to the new basename.
+		if (type === 'scene') {
+			await this.renameSubSceneFolderIfNeeded(
+				file,
+				fm as Record<string, unknown>,
+				oldBasename
+			);
+		}
+	}
+
+	/**
+	 * § 10 auto-rename: keep the sub-scene folder name in sync with its
+	 * parent scene's basename when the writer renames the scene file.
+	 *
+	 * Skipped when:
+	 * - The configured `subScenesFolder` template doesn't include
+	 *   `{scene}` (flat opt-out or any template that doesn't depend on
+	 *   the parent-scene basename).
+	 * - The scene's project ref is empty / unresolvable.
+	 * - The expected old folder doesn't exist (writer manually renamed
+	 *   it to something else, or no sub-scenes have been created yet).
+	 * - The folder doesn't contain at least one sub-scene that references
+	 *   this scene's id (defends against renaming an unrelated folder
+	 *   that happens to share the old basename).
+	 * - The new folder path is already occupied (some other folder
+	 *   exists at the target name); we skip rather than overwrite.
+	 */
+	private async renameSubSceneFolderIfNeeded(
+		sceneFile: TFile,
+		sceneFm: Record<string, unknown>,
+		oldSceneBasename: string
+	): Promise<void> {
+		const sceneId = readString(sceneFm['dbench-id']);
+		if (sceneId === '') return;
+
+		const settings = this.getSettings();
+		if (!settings.subScenesFolder.includes('{scene}')) return;
+
+		const projectId = readString(sceneFm['dbench-project-id']);
+		if (projectId === '') return;
+		const project = findNoteById(this.app, projectId);
+		if (!project) return;
+
+		const oldFolderPath = computeSubSceneFolderPath(
+			settings.subScenesFolder,
+			project.file,
+			oldSceneBasename
+		);
+		const newFolderPath = computeSubSceneFolderPath(
+			settings.subScenesFolder,
+			project.file,
+			sceneFile.basename
+		);
+
+		if (oldFolderPath === newFolderPath) return;
+
+		const oldFolder = this.app.vault.getAbstractFileByPath(oldFolderPath);
+		if (!oldFolder || !(oldFolder instanceof TFolder)) return;
+
+		// Defend against renaming an unrelated folder that happens to
+		// share the old basename: only rename when the folder contains
+		// at least one sub-scene whose `dbench-scene-id` matches.
+		const subSceneInFolder = findSubScenes(this.app).some(
+			(s) =>
+				s.file.path.startsWith(`${oldFolderPath}/`) &&
+				s.frontmatter['dbench-scene-id'] === sceneId
+		);
+		if (!subSceneInFolder) return;
+
+		// Skip if the new folder path is already occupied; let integrity
+		// surface the conflict rather than silently overwriting.
+		if (this.app.vault.getAbstractFileByPath(newFolderPath) !== null) {
+			return;
+		}
+
+		await this.app.fileManager.renameFile(oldFolder, newFolderPath);
 	}
 }
 
@@ -502,14 +589,23 @@ interface RelationshipConfig {
  *   suppresses the add when `dbench-chapter-id` is present, so the
  *   project's `dbench-scenes` reverse array stays a list of *direct*
  *   children only (per § 9 + the doc on `ProjectFrontmatter.dbench-scenes`).
- * - `draft`: three possible parents depending on the declared fields.
+ * - `sub-scene`: one parent, the enclosing scene. Reverse arrays
+ *   `dbench-sub-scenes` / `dbench-sub-scene-ids` on the scene (optional
+ *   fields per `SceneFrontmatter`; the linker creates them on first
+ *   use). Sub-scenes also carry `dbench-project-id` for query
+ *   convenience but the project doesn't track sub-scenes directly (per
+ *   [sub-scene-type.md § 3](../../docs/planning/sub-scene-type.md));
+ *   parallel to how scenes-in-chapters don't appear in their project's
+ *   reverse arrays.
+ * - `draft`: four possible parents depending on the declared fields.
  *   Scene-parented drafts live in folder projects; project-parented
  *   drafts live in single-scene projects; chapter-parented drafts live
- *   in chapter-aware projects (§ 4). All three configs run on every
- *   draft modify; the one whose declared parent id doesn't resolve is
- *   a no-op on adds but still cleans up any stale references — which
- *   lets the linker recover when a writer converts a draft between
- *   target shapes.
+ *   in chapter-aware projects (§ 4); sub-scene-parented drafts live
+ *   inside hierarchical scenes (per [sub-scene-type.md § 4](../../docs/planning/sub-scene-type.md)).
+ *   All four configs run on every draft modify; the one whose declared
+ *   parent id doesn't resolve is a no-op on adds but still cleans up
+ *   any stale references — which lets the linker recover when a writer
+ *   converts a draft between target shapes.
  * - `compile-preset`: one parent, the enclosing project (either shape).
  *   Reverse arrays `dbench-compile-presets` / `dbench-compile-preset-ids`
  *   live on the project note.
@@ -553,6 +649,19 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 				})),
 		},
 	],
+	'sub-scene': [
+		{
+			childParentIdField: 'dbench-scene-id',
+			childParentWikilinkField: 'dbench-scene',
+			parentWikilinkField: 'dbench-sub-scenes',
+			parentIdField: 'dbench-sub-scene-ids',
+			candidateParents: (app) =>
+				findScenes(app).map((s) => ({
+					file: s.file,
+					frontmatter: s.frontmatter as unknown as Record<string, unknown>,
+				})),
+		},
+	],
 	draft: [
 		{
 			childParentIdField: 'dbench-scene-id',
@@ -593,6 +702,17 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 							unknown
 						>,
 					})),
+		},
+		{
+			childParentIdField: 'dbench-sub-scene-id',
+			childParentWikilinkField: 'dbench-sub-scene',
+			parentWikilinkField: 'dbench-drafts',
+			parentIdField: 'dbench-draft-ids',
+			candidateParents: (app) =>
+				findSubScenes(app).map((s) => ({
+					file: s.file,
+					frontmatter: s.frontmatter as unknown as Record<string, unknown>,
+				})),
 		},
 	],
 	'compile-preset': [
@@ -645,6 +765,42 @@ function basenameFromPath(filePath: string): string {
 	const tail = slash >= 0 ? filePath.slice(slash + 1) : filePath;
 	const dot = tail.lastIndexOf('.');
 	return dot > 0 ? tail.slice(0, dot) : tail;
+}
+
+/**
+ * Return the parent-folder portion of a path (everything before the
+ * final slash). Returns `''` for vault-root files. Mirrors the helper
+ * used in scenes.ts / chapters.ts / sub-scenes.ts.
+ */
+function parentPath(filePath: string): string {
+	const idx = filePath.lastIndexOf('/');
+	if (idx < 0) return '';
+	return filePath.slice(0, idx);
+}
+
+/**
+ * Compute the on-disk folder path for sub-scenes of a given parent scene,
+ * applying `{project}` and `{scene}` token expansion against
+ * `settings.subScenesFolder`. Mirrors `resolveSubScenePaths` in
+ * sub-scenes.ts but takes a bare scene basename instead of a `SceneNote`,
+ * so the linker can reconstruct the OLD path during rename handling.
+ */
+function computeSubSceneFolderPath(
+	template: string,
+	projectFile: TFile,
+	sceneBasename: string
+): string {
+	const relative = template
+		.replace(/\{project\}/g, projectFile.basename)
+		.replace(/\{scene\}/g, sceneBasename)
+		.replace(/\/+/g, '/')
+		.replace(/^\/+|\/+$/g, '');
+	const projectFolder = parentPath(projectFile.path);
+	return relative === ''
+		? projectFolder
+		: projectFolder === ''
+			? relative
+			: `${projectFolder}/${relative}`;
 }
 
 /**

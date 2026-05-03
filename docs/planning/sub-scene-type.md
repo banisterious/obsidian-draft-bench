@@ -247,7 +247,7 @@ A writer can:
 
 **Background:** Per [specification.md § Project Structure on Disk](specification.md), Draft Bench discovery is frontmatter-based, not folder-based — a note's project / scene membership comes from `dbench-project` / `dbench-scene` frontmatter refs, not its filesystem location. Discovery works regardless of where the file lives; folder structure is purely a creation default that writers can override per-write or undo by manually moving files.
 
-**Recommendation:** Sub-scenes default to nested under their parent scene — `subScenesFolder: '{project}/{scene}/'`. Membership comes from `dbench-scene` frontmatter ref; the folder location is the creation default.
+**Recommendation:** Sub-scenes default to nested under their parent scene — `subScenesFolder: '{scene}/'`. Membership comes from `dbench-scene` frontmatter ref; the folder location is the creation default. (The `{project}` token is supported but omitted from the default because the resolver already joins relative paths to the project folder; `'{project}/{scene}/'` would produce a doubled `<projectFolder>/<projectName>/<sceneName>/` path.)
 
 ```
 Meridian Drift/
@@ -274,7 +274,7 @@ The chapter / chapter-aware-scene flat default is itself under separate review �
 
 **Sub-scene drafts** share the existing `Drafts/` folder with scene and chapter drafts; frontmatter parent refs disambiguate, and the naming convention `<Scene> - <Sub-scene> - Draft N (date).md` prevents filename collision. Matches the existing "all drafts share the same folder" pattern from [specification.md § Draft Management](specification.md). Drafts do not nest under their source scene's folder; they remain centralized in `Drafts/`.
 
-**Settings — `subScenesFolder` token support.** New setting paralleling `scenesFolder`, with `{project}` and `{scene}` token support. Default `'{project}/{scene}/'`. Writers who prefer flat-at-project-root can set `subScenesFolder: ''`:
+**Settings — `subScenesFolder` token support.** New setting paralleling `scenesFolder`, with `{project}` and `{scene}` token support. Default `'{scene}/'`. Writers who prefer flat-at-project-root can set `subScenesFolder: ''`:
 
 ```
 Meridian Drift/
@@ -306,7 +306,7 @@ Once design is ratified, implementation in this order:
 3. **Core operations.** New [src/core/sub-scenes.ts](../../src/core/sub-scenes.ts) with `createSubScene`, `resolveSubScenePaths`, `nextSubSceneOrder`. `createScene` unchanged (sub-scenes are opt-in).
 4. **Linker.** [src/core/linker.ts](../../src/core/linker.ts) gains `RelationshipConfig` entries for scene↔sub-scene and sub-scene↔draft. Existing scene↔draft relationship still works for sub-scene-less scenes. Rename-watcher extended: on scene rename, auto-rename a matching sub-scene folder when `subScenesFolder` uses `{scene}` (per § 10).
 5. **Integrity.** [src/core/integrity.ts](../../src/core/integrity.ts) extends `scanProject` with sub-scene relationship passes. New issue kinds: `SUB_SCENE_MISSING_IN_SCENE`, `STALE_SUB_SCENE_IN_SCENE`, `SCENE_SUB_SCENE_CONFLICT`.
-6. **Settings.** Add `sceneCollapseState: Record<DbenchId, boolean>` to `DraftBenchSettings`. New `subSceneTemplatePath` setting. New `subScenesFolder` setting with `{project}` + `{scene}` token support (per § 10); default `'{project}/{scene}/'` (nested under parent scene). Writers can set `''` for flat-at-project-root.
+6. **Settings.** Add `sceneCollapseState: Record<DbenchId, boolean>` to `DraftBenchSettings`. New `subSceneTemplatePath` setting. New `subScenesFolder` setting with `{project}` + `{scene}` token support (per § 10); default `'{scene}/'` (nested under parent scene). Writers can set `''` for flat-at-project-root.
 7. **Manuscript view rework.** Hierarchical render with collapsible scene cards (mirror of chapter cards) that nest sub-scene rows; scene-card includes a "New sub-scene" affordance paralleling chapter-card's "New draft of this chapter" (per § 6). Section module extends `chapter-card-section.ts` pattern with `scene-card-section.ts`. Scenes without sub-scenes keep today's flat row render.
 8. **Compile pipeline.** `walkChapterAware` extended to descend into sub-scenes; new heading-level rules in `chapter-rules.ts` and `compile-rules.ts` for the third level. Default heading-scope for new presets unchanged (writer's call whether their project is sub-scene-aware).
 9. **Modals + commands.** `NewSubSceneModal` (title placeholder `Sub-scene <next-order>`, mirroring `NewChapterModal`); `Draft Bench: New sub-scene in scene` palette command; retrofit "Set as sub-scene" action (surfaces a one-time notice when run on a child of a scene with existing whole-scene drafts, per § 4); "Move to scene" available as both single (context menu on a sub-scene note) and bulk (retrofit modal) actions, mirroring chapter-type's "Move to chapter"; context-menu entry on sub-scene notes for "Run compile scoped to sub-scene's parent project".
@@ -363,4 +363,4 @@ New open questions will be added below as design progresses.
 | 7. Compile assembly | ✅ Ratified | 2026-05-02 | Three-level heading cascade H1/H2/H3 in chapter mode; scene body emits as scene-introductory prose when sub-scenes exist; walker extends via single dispatch |
 | 8. Reorder genericization | ✅ Ratified | 2026-05-02 | Refactor `ReorderScenesModal` + `ReorderChaptersModal` into parameterized `ReorderChildrenModal`; new "Reorder sub-scenes in scene" palette command; cross-scene moves via "Move to scene" retrofit |
 | 9. Backward-compat | ✅ Ratified | 2026-05-02 | Sub-scene-less scenes coexist forever; no mixed-children rule; "Set as sub-scene" stamps frontmatter only, prose extraction is manual |
-| 10. Folder structure | ✅ Ratified | 2026-05-02 | Default `subScenesFolder: '{project}/{scene}/'` (nested under parent scene); `''` opt-out for flat-at-root; auto-rename on parent-scene rename via linker rename-watcher; flat-layout filename prefix is writer-applied. Adjacent FR for chapter/scene parallel: [#11](https://github.com/banisterious/obsidian-draft-bench/issues/11) |
+| 10. Folder structure | ✅ Ratified | 2026-05-02 | Default `subScenesFolder: '{scene}/'` (nested under parent scene); `''` opt-out for flat-at-root; auto-rename on parent-scene rename via linker rename-watcher; flat-layout filename prefix is writer-applied. Adjacent FR for chapter/scene parallel: [#11](https://github.com/banisterious/obsidian-draft-bench/issues/11) |

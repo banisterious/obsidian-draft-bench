@@ -206,6 +206,63 @@ export class Vault {
 		return oldPath;
 	}
 
+	/**
+	 * Test helper: simulate Obsidian's folder rename. Updates the
+	 * folder's path + name, then recursively path-prefix-rewrites every
+	 * descendant file and folder. Cache entries for descendant files are
+	 * re-keyed under their new paths. Does NOT fire any rename events
+	 * (production Obsidian fires for the folder and each descendant
+	 * file; the mock keeps the surface minimal — tests that need event
+	 * firing can call `_fire` themselves).
+	 *
+	 * Used by `FileManager.renameFile(folder, ...)` to back the linker's
+	 * § 10 sub-scene-folder auto-rename.
+	 */
+	_renameFolder(folder: TFolder, newPath: string): string {
+		const oldPath = folder.path;
+		const oldPrefix = `${oldPath}/`;
+		const newPrefix = `${newPath}/`;
+
+		// Move the folder entry.
+		this.folders.delete(oldPath);
+		folder.path = newPath;
+		folder.name = newPath.split('/').pop() ?? newPath;
+		this.folders.set(newPath, folder);
+
+		// Rewrite descendant folder paths.
+		const folderPathsToMove: Array<[string, TFolder]> = [];
+		for (const [path, f] of this.folders) {
+			if (path.startsWith(oldPrefix)) folderPathsToMove.push([path, f]);
+		}
+		for (const [path, f] of folderPathsToMove) {
+			const updatedPath = newPrefix + path.slice(oldPrefix.length);
+			this.folders.delete(path);
+			f.path = updatedPath;
+			f.name = updatedPath.split('/').pop() ?? updatedPath;
+			this.folders.set(updatedPath, f);
+		}
+
+		// Rewrite descendant file paths + content map + cache entries.
+		const filePathsToMove: Array<[string, TFile]> = [];
+		for (const [path, f] of this.files) {
+			if (path.startsWith(oldPrefix)) filePathsToMove.push([path, f]);
+		}
+		for (const [path, f] of filePathsToMove) {
+			const updatedPath = newPrefix + path.slice(oldPrefix.length);
+			const content = this.content.get(path) ?? '';
+			this.files.delete(path);
+			this.content.delete(path);
+			f.path = updatedPath;
+			this.files.set(updatedPath, f);
+			this.content.set(updatedPath, content);
+			if (this.cacheRef) {
+				this.cacheRef._moveCacheEntry(path, updatedPath);
+			}
+		}
+
+		return oldPath;
+	}
+
 	// Test helper: fire an event manually (for testing event-driven code).
 	_fire(event: 'modify', file: TFile): void;
 	_fire(event: 'delete', file: TFile): void;
@@ -350,6 +407,24 @@ export class FileManager {
 		const { body } = parseFrontMatter(content);
 		const serialized = serializeFrontMatter(frontmatter, body);
 		await this.vault.modify(file, serialized);
+	}
+
+	/**
+	 * Mock for Obsidian's `app.fileManager.renameFile`. Supports both
+	 * files and folders. For files, behaves like `Vault._rename` + fires
+	 * a rename event. For folders, recursively updates the paths of
+	 * descendant files and folders (path-prefix replacement) and re-keys
+	 * cache entries; fires a rename event for the folder itself.
+	 *
+	 * Used by the linker's § 10 sub-scene-folder auto-rename behavior.
+	 */
+	async renameFile(file: TFile | TFolder, newPath: string): Promise<void> {
+		if (file instanceof TFile) {
+			const oldPath = this.vault._rename(file, newPath);
+			this.vault._fire('rename', file, oldPath);
+			return;
+		}
+		this.vault._renameFolder(file, newPath);
 	}
 }
 

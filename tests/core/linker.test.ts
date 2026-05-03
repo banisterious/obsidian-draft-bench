@@ -2922,3 +2922,622 @@ describe('DraftBenchLinker — wikilink canonicalization on backfill (#7)', () =
 		expect(draftFm?.['dbench-scene-id']).toBe('sc1-001-tst-001');
 	});
 });
+
+describe('DraftBenchLinker — scene<->sub-scene sync', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedScene(
+		path: string,
+		id: string,
+		projectId: string,
+		title: string,
+		projectTitle: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'scene',
+			'dbench-id': id,
+			'dbench-project': `[[${projectTitle}]]`,
+			'dbench-project-id': projectId,
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		// Suppress unused-name lint by referencing title in path equivalence.
+		void title;
+		return file;
+	}
+
+	async function seedSubScene(
+		path: string,
+		id: string,
+		projectTitle: string,
+		projectId: string,
+		sceneTitle: string,
+		sceneId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'sub-scene',
+			'dbench-id': id,
+			'dbench-project': `[[${projectTitle}]]`,
+			'dbench-project-id': projectId,
+			'dbench-scene': `[[${sceneTitle}]]`,
+			'dbench-scene-id': sceneId,
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	function patchCache(file: TFile, updates: Record<string, unknown>): void {
+		const current = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
+		app.metadataCache._setFrontmatter(file, { ...current, ...updates });
+	}
+
+	it('modify: adds sub-scene to parent scene reverse arrays', async () => {
+		const scene = await seedScene(
+			'Drift/The auction.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'The auction',
+			'Drift'
+		);
+		const subScene = await seedSubScene(
+			'Drift/The auction/Lot 47.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'The auction',
+			'sc1-001-tst-001'
+		);
+
+		// Starting state: scene has no sub-scene reverse arrays.
+		expect(
+			app.metadataCache.getFileCache(scene)?.frontmatter?.['dbench-sub-scenes']
+		).toBeUndefined();
+
+		app.metadataCache._fire('changed', subScene);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(fm?.['dbench-sub-scenes']).toEqual(['[[Lot 47]]']);
+		expect(fm?.['dbench-sub-scene-ids']).toEqual(['sub-001-tst-001']);
+	});
+
+	it('modify: moves sub-scene between parent scenes (removes from old, adds to new)', async () => {
+		const oldScene = await seedScene(
+			'Drift/Old scene.md',
+			'sc1-old-tst-001',
+			'prj-001-tst-001',
+			'Old scene',
+			'Drift'
+		);
+		const newScene = await seedScene(
+			'Drift/New scene.md',
+			'sc1-new-tst-002',
+			'prj-001-tst-001',
+			'New scene',
+			'Drift'
+		);
+		const subScene = await seedSubScene(
+			'Drift/Old scene/Sub.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Old scene',
+			'sc1-old-tst-001'
+		);
+
+		patchCache(oldScene, {
+			'dbench-sub-scenes': ['[[Sub]]'],
+			'dbench-sub-scene-ids': ['sub-001-tst-001'],
+		});
+
+		patchCache(subScene, {
+			'dbench-scene': '[[New scene]]',
+			'dbench-scene-id': 'sc1-new-tst-002',
+		});
+
+		app.metadataCache._fire('changed', subScene);
+		await flush();
+
+		const oldFm = app.metadataCache.getFileCache(oldScene)?.frontmatter;
+		const newFm = app.metadataCache.getFileCache(newScene)?.frontmatter;
+		expect(oldFm?.['dbench-sub-scenes']).toEqual([]);
+		expect(oldFm?.['dbench-sub-scene-ids']).toEqual([]);
+		expect(newFm?.['dbench-sub-scenes']).toEqual(['[[Sub]]']);
+		expect(newFm?.['dbench-sub-scene-ids']).toEqual(['sub-001-tst-001']);
+	});
+
+	it('modify: idempotent — no writes when already in sync', async () => {
+		const scene = await seedScene(
+			'Drift/Scene.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'Scene',
+			'Drift'
+		);
+		const subScene = await seedSubScene(
+			'Drift/Scene/Sub.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Scene',
+			'sc1-001-tst-001'
+		);
+
+		patchCache(scene, {
+			'dbench-sub-scenes': ['[[Sub]]'],
+			'dbench-sub-scene-ids': ['sub-001-tst-001'],
+		});
+
+		app.metadataCache._fire('changed', subScene);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(fm?.['dbench-sub-scenes']).toEqual(['[[Sub]]']);
+		expect(fm?.['dbench-sub-scene-ids']).toEqual(['sub-001-tst-001']);
+	});
+
+	it('modify: skipped when suspended', async () => {
+		const scene = await seedScene(
+			'Drift/Scene.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'Scene',
+			'Drift'
+		);
+		const subScene = await seedSubScene(
+			'Drift/Scene/Sub.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Scene',
+			'sc1-001-tst-001'
+		);
+
+		await linker.withSuspended(async () => {
+			app.metadataCache._fire('changed', subScene);
+			await flush();
+		});
+
+		const fm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(fm?.['dbench-sub-scenes']).toBeUndefined();
+	});
+
+	it('delete: removes sub-scene from parent scene reverse arrays', async () => {
+		const scene = await seedScene(
+			'Drift/Scene.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'Scene',
+			'Drift'
+		);
+		const subScene = await seedSubScene(
+			'Drift/Scene/Sub.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Scene',
+			'sc1-001-tst-001'
+		);
+
+		patchCache(scene, {
+			'dbench-sub-scenes': ['[[Sub]]'],
+			'dbench-sub-scene-ids': ['sub-001-tst-001'],
+		});
+
+		app.vault._fire('delete', subScene);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(fm?.['dbench-sub-scenes']).toEqual([]);
+		expect(fm?.['dbench-sub-scene-ids']).toEqual([]);
+	});
+
+	it('rename: updates sub-scene wikilink in parent scene reverse array', async () => {
+		const scene = await seedScene(
+			'Drift/Scene.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'Scene',
+			'Drift'
+		);
+		const subScene = await seedSubScene(
+			'Drift/Scene/Old name.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Scene',
+			'sc1-001-tst-001'
+		);
+
+		patchCache(scene, {
+			'dbench-sub-scenes': ['[[Old name]]'],
+			'dbench-sub-scene-ids': ['sub-001-tst-001'],
+		});
+
+		const oldPath = app.vault._rename(subScene, 'Drift/Scene/New name.md');
+		app.vault._fire('rename', subScene, oldPath);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(scene)?.frontmatter;
+		expect(fm?.['dbench-sub-scenes']).toEqual(['[[New name]]']);
+	});
+});
+
+describe('DraftBenchLinker — sub-scene<->draft sync', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedSubScene(
+		path: string,
+		id: string,
+		projectTitle: string,
+		projectId: string,
+		sceneTitle: string,
+		sceneId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'sub-scene',
+			'dbench-id': id,
+			'dbench-project': `[[${projectTitle}]]`,
+			'dbench-project-id': projectId,
+			'dbench-scene': `[[${sceneTitle}]]`,
+			'dbench-scene-id': sceneId,
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	async function seedSubSceneDraft(
+		path: string,
+		id: string,
+		subSceneTitle: string,
+		subSceneId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'draft',
+			'dbench-id': id,
+			'dbench-sub-scene': `[[${subSceneTitle}]]`,
+			'dbench-sub-scene-id': subSceneId,
+			'dbench-draft-number': 1,
+		});
+		return file;
+	}
+
+	it('modify: adds sub-scene draft to sub-scene reverse arrays', async () => {
+		const subScene = await seedSubScene(
+			'Drift/Scene/Lot 47.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Scene',
+			'sc1-001-tst-001'
+		);
+		const draft = await seedSubSceneDraft(
+			'Drift/Drafts/Scene - Lot 47 - Draft 1 (20260502).md',
+			'drf-001-tst-001',
+			'Lot 47',
+			'sub-001-tst-001'
+		);
+
+		expect(
+			app.metadataCache.getFileCache(subScene)?.frontmatter?.['dbench-drafts']
+		).toEqual([]);
+
+		app.metadataCache._fire('changed', draft);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(subScene)?.frontmatter;
+		expect(fm?.['dbench-drafts']).toEqual([
+			'[[Scene - Lot 47 - Draft 1 (20260502)]]',
+		]);
+		expect(fm?.['dbench-draft-ids']).toEqual(['drf-001-tst-001']);
+	});
+
+	it('delete: removes sub-scene draft from sub-scene reverse arrays', async () => {
+		const subScene = await seedSubScene(
+			'Drift/Scene/Sub.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'Scene',
+			'sc1-001-tst-001'
+		);
+		const draft = await seedSubSceneDraft(
+			'Drift/Drafts/Sub - Draft 1.md',
+			'drf-001-tst-001',
+			'Sub',
+			'sub-001-tst-001'
+		);
+
+		const current = app.metadataCache.getFileCache(subScene)?.frontmatter ?? {};
+		app.metadataCache._setFrontmatter(subScene, {
+			...current,
+			'dbench-drafts': ['[[Sub - Draft 1]]'],
+			'dbench-draft-ids': ['drf-001-tst-001'],
+		});
+
+		app.vault._fire('delete', draft);
+		await flush();
+
+		const fm = app.metadataCache.getFileCache(subScene)?.frontmatter;
+		expect(fm?.['dbench-drafts']).toEqual([]);
+		expect(fm?.['dbench-draft-ids']).toEqual([]);
+	});
+});
+
+describe('DraftBenchLinker — sub-scene-folder auto-rename on parent-scene rename', () => {
+	let app: App;
+	let settings: DraftBenchSettings;
+	let linker: DraftBenchLinker;
+
+	beforeEach(() => {
+		app = new App();
+		settings = { ...DEFAULT_SETTINGS };
+		linker = new DraftBenchLinker(app, () => settings);
+		linker.start();
+	});
+
+	async function flush(): Promise<void> {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	}
+
+	async function seedFolder(path: string): Promise<void> {
+		await app.vault.createFolder(path);
+	}
+
+	async function seedProject(
+		path: string,
+		id: string,
+		title: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'project',
+			'dbench-id': id,
+			'dbench-project': `[[${title}]]`,
+			'dbench-project-id': id,
+			'dbench-project-shape': 'folder',
+			'dbench-status': 'draft',
+			'dbench-scenes': [],
+			'dbench-scene-ids': [],
+		});
+		return file;
+	}
+
+	async function seedScene(
+		path: string,
+		id: string,
+		projectId: string,
+		title: string,
+		projectTitle: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'scene',
+			'dbench-id': id,
+			'dbench-project': `[[${projectTitle}]]`,
+			'dbench-project-id': projectId,
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		void title;
+		return file;
+	}
+
+	async function seedSubScene(
+		path: string,
+		id: string,
+		projectId: string,
+		sceneId: string
+	): Promise<TFile> {
+		const file = await app.vault.create(path, '');
+		app.metadataCache._setFrontmatter(file, {
+			'dbench-type': 'sub-scene',
+			'dbench-id': id,
+			'dbench-project-id': projectId,
+			'dbench-scene-id': sceneId,
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		return file;
+	}
+
+	it('renames the sub-scene folder when its parent scene is renamed', async () => {
+		await seedProject(
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift'
+		);
+		const scene = await seedScene(
+			'Drift/Old name.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'Old name',
+			'Drift'
+		);
+		await seedFolder('Drift/Old name');
+		await seedSubScene(
+			'Drift/Old name/Sub.md',
+			'sub-001-tst-001',
+			'prj-001-tst-001',
+			'sc1-001-tst-001'
+		);
+
+		const oldPath = app.vault._rename(scene, 'Drift/New name.md');
+		app.vault._fire('rename', scene, oldPath);
+		await flush();
+
+		expect(app.vault.getAbstractFileByPath('Drift/Old name')).toBeNull();
+		const renamed = app.vault.getAbstractFileByPath('Drift/New name');
+		expect(renamed).not.toBeNull();
+		// Sub-scene file moved with the folder.
+		expect(app.vault.getAbstractFileByPath('Drift/New name/Sub.md')).not.toBeNull();
+		expect(app.vault.getAbstractFileByPath('Drift/Old name/Sub.md')).toBeNull();
+	});
+
+	it("skips when subScenesFolder doesn't include {scene}", async () => {
+		settings.subScenesFolder = '';
+		await seedProject(
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift'
+		);
+		const scene = await seedScene(
+			'Drift/Old name.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'Old name',
+			'Drift'
+		);
+		// A folder happens to exist with the old basename, but the
+		// configured template doesn't use {scene}, so the auto-rename
+		// must not fire.
+		await seedFolder('Drift/Old name');
+
+		const oldPath = app.vault._rename(scene, 'Drift/New name.md');
+		app.vault._fire('rename', scene, oldPath);
+		await flush();
+
+		// Folder untouched.
+		expect(app.vault.getAbstractFileByPath('Drift/Old name')).not.toBeNull();
+		expect(app.vault.getAbstractFileByPath('Drift/New name')).toBeNull();
+	});
+
+	it('skips when no sub-scene in the folder references the renamed scene', async () => {
+		await seedProject(
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift'
+		);
+		const scene = await seedScene(
+			'Drift/Old name.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'Old name',
+			'Drift'
+		);
+		// Folder with old basename exists but contains no matching
+		// sub-scenes (writer-managed folder coincidentally named after
+		// the scene). Auto-rename must NOT touch it.
+		await seedFolder('Drift/Old name');
+		const unrelatedFile = await app.vault.create(
+			'Drift/Old name/notes.md',
+			''
+		);
+		app.metadataCache._setFrontmatter(unrelatedFile, {
+			tags: ['notes'],
+		});
+
+		const oldPath = app.vault._rename(scene, 'Drift/New name.md');
+		app.vault._fire('rename', scene, oldPath);
+		await flush();
+
+		expect(app.vault.getAbstractFileByPath('Drift/Old name')).not.toBeNull();
+		expect(app.vault.getAbstractFileByPath('Drift/New name')).toBeNull();
+	});
+
+	it('skips when the new folder path is already occupied', async () => {
+		await seedProject(
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift'
+		);
+		const scene = await seedScene(
+			'Drift/Old name.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'Old name',
+			'Drift'
+		);
+		await seedFolder('Drift/Old name');
+		await seedSubScene(
+			'Drift/Old name/Sub.md',
+			'sub-001-tst-001',
+			'prj-001-tst-001',
+			'sc1-001-tst-001'
+		);
+		// Conflicting destination already exists.
+		await seedFolder('Drift/New name');
+
+		const oldPath = app.vault._rename(scene, 'Drift/New name.md');
+		app.vault._fire('rename', scene, oldPath);
+		await flush();
+
+		// Old folder untouched (skip rather than overwrite).
+		expect(app.vault.getAbstractFileByPath('Drift/Old name')).not.toBeNull();
+		expect(app.vault.getAbstractFileByPath('Drift/Old name/Sub.md')).not.toBeNull();
+	});
+
+	it('skips when suspended', async () => {
+		await seedProject(
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift'
+		);
+		const scene = await seedScene(
+			'Drift/Old name.md',
+			'sc1-001-tst-001',
+			'prj-001-tst-001',
+			'Old name',
+			'Drift'
+		);
+		await seedFolder('Drift/Old name');
+		await seedSubScene(
+			'Drift/Old name/Sub.md',
+			'sub-001-tst-001',
+			'prj-001-tst-001',
+			'sc1-001-tst-001'
+		);
+
+		await linker.withSuspended(async () => {
+			const oldPath = app.vault._rename(scene, 'Drift/New name.md');
+			app.vault._fire('rename', scene, oldPath);
+			await flush();
+		});
+
+		// Suspended: folder not auto-renamed.
+		expect(app.vault.getAbstractFileByPath('Drift/Old name')).not.toBeNull();
+		expect(app.vault.getAbstractFileByPath('Drift/New name')).toBeNull();
+	});
+});

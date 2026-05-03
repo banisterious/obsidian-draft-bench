@@ -6,7 +6,7 @@ Common questions from writers evaluating Draft Bench. For deeper documentation, 
 
 ### What is Draft Bench?
 
-A writing plugin for Obsidian. It manages the manuscript spine — projects, chapters, scenes, drafts, and compile — as first-class note types in your vault, using Obsidian's native frontmatter properties. See [the homepage](/) for a longer overview.
+A writing plugin for Obsidian. It manages the manuscript spine — projects, chapters, scenes, sub-scenes, drafts, and compile — as first-class note types in your vault, using Obsidian's native frontmatter properties. See [the homepage](/) for a longer overview.
 
 ### Who is it for?
 
@@ -16,11 +16,11 @@ If you're looking for a plotting tool with character databases, plot grids, and 
 
 ### When can I install it?
 
-Now. Draft Bench's first BRAT-public release (0.1.0) shipped on 2026-04-29. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin, then enabling Draft Bench in **Settings -> Community plugins**. Community-plugin directory submission follows after the 0.x phase stabilizes.
+Now. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin, then enabling Draft Bench in **Settings -> Community plugins**. The current release is **0.2.3** (2026-05-04); the first BRAT-public release was 0.1.0 on 2026-04-29. Community-plugin directory submission follows after the 0.x phase stabilizes.
 
 ### Is it free?
 
-Yes. Draft Bench is open-source and free to use. The plugin will be available through Obsidian's BRAT plugin first; community-plugin directory submission follows after V1 stabilizes.
+Yes. Draft Bench is open-source and free to use. The plugin is available through Obsidian's BRAT plugin during the 0.x phase; community-plugin directory submission follows after the 0.x line stabilizes.
 
 ## How it compares
 
@@ -61,3 +61,9 @@ No. Every Draft Bench artifact is a regular markdown file with `dbench-` frontma
 Generally yes. Draft Bench's `dbench-` frontmatter prefix is namespaced so it doesn't collide with other plugins' properties, and the plugin opts in to standard Obsidian APIs (FileManager, Bases, Style Settings) rather than parallel mechanisms.
 
 Specific compatibility: Draft Bench is built to coexist with [Charted Roots](https://github.com/banisterious/charted-roots) (sibling plugin, no overlap by design). Coexistence with Longform or StoryLine in the same vault is technically possible but not a tested configuration — those plugins overlap with Draft Bench's manuscript-spine scope, so most writers will pick one.
+
+## Getting help
+
+### Where do I report a bug or request a feature?
+
+[GitHub issues](https://github.com/banisterious/obsidian-draft-bench/issues). Both bug reports and feature requests welcome; the BRAT-public phase is when feedback shapes V1.x most. For day-to-day usage questions, the [wiki](https://github.com/banisterious/obsidian-draft-bench/wiki) covers Getting Started, Manuscript Builder, Drafts and Versioning, Projects and Scenes, and Settings.

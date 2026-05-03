@@ -4,6 +4,31 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.2.0: 2026-05-04 — sub-scene note type
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.2.0)
+
+The first feature release after the BRAT-public 0.1.x patch series. Sub-scene type promoted from post-V1 to pre-1.0 (the maintainer hit it themselves while writing: six distinct narrative units in a single scene that needed per-unit status, drafts, and isolation), plus a settings-tab reorganization, chapter-aware folder defaults, and a sweep of integrity-service quality-of-life fixes.
+
+### Headline
+
+- **Sub-scene note type** ([#10](https://github.com/banisterious/obsidian-draft-bench/issues/10)). Break a scene into per-unit narrative blocks (the setpieces of an auction night, the movements of a trial sequence, the four memories of a grief sequence), each with its own status, drafts, word count, and reorder position. Hierarchical scenes render as collapsible cards in the Manuscript view; the compile pipeline descends into sub-scenes in narrative order (preserving the parent scene's intro prose under `## Draft` when present); the integrity service tracks scene `<->` sub-scene and sub-scene `<->` draft relationships with the same scan + repair affordances as the other types. New affordances: `New sub-scene` palette command, `Draft Bench` -> `New sub-scene` context-menu entry, `Draft Bench` -> `Set as sub-scene` retrofit, `New draft of this sub-scene`, an "Add sub-scene" button on each Manuscript-view scene card. **Backward-compatible**: scenes without sub-scenes work exactly as before.
+
+### UX + organization
+
+- **Settings tab reorganized** ([#18](https://github.com/banisterious/obsidian-draft-bench/issues/18)). Six collapsible sections (Folders, Drafts, Templates, Statuses, Bidirectional sync, About) replace the previous flat scroll. Long descriptions on Scenes folder + Sub-scenes folder shrunk to one short sentence each; shared `{project}` / `{chapter}` / `{scene}` token semantics moved to a section-level info box. About section gained clickable Repository / Wiki / Website links.
+- **Chapter-aware folder defaults** ([#11](https://github.com/banisterious/obsidian-draft-bench/issues/11), [#12](https://github.com/banisterious/obsidian-draft-bench/issues/12)). New `scenesFolder` default `{chapter}/` nests scenes under their chapter folder for chapter-aware projects (degrades to flat for chapter-less ones). `subScenesFolder` joins against the parent scene's actual folder, so sub-scenes follow scenes wherever they live. Existing installs migrate once on first 0.2.0 load, and the linker auto-renames the matching folders when a chapter or scene gets renamed.
+
+### Integrity-service quality-of-life
+
+- **One-pass repair convergence** ([#13](https://github.com/banisterious/obsidian-draft-bench/issues/13)). `Repair project links` now resolves length-mismatched parallel arrays (orphan id + padded-empty wikilink, or vice versa) in a single pass instead of needing two.
+- **Pairing-preserving repair** ([#14](https://github.com/banisterious/obsidian-draft-bench/issues/14)). When the scan flags a missing entry on one side of a paired array, the repair splices the missing side at the matching index so wikilinks and ids stay aligned by position.
+- **Sorted reverse arrays** ([#19](https://github.com/banisterious/obsidian-draft-bench/issues/19)). `dbench-scenes` / `dbench-sub-scenes` / etc. now sort by each child's `dbench-order` so frontmatter inspection mirrors narrative order.
+- **`processFrontMatter` cache-race fix** ([#15](https://github.com/banisterious/obsidian-draft-bench/issues/15)). Six `createX` functions previously read the newly-stamped `dbench-id` from the metadata cache after the write returned, often hitting pre-write cache state. Fix captures the id inside the callback. Existing vaults with `""` reverse-id entries from before this fix continue to function; a sweep utility for backfilling is planned as a follow-up.
+- **Word-count rollup fix** ([#16](https://github.com/banisterious/obsidian-draft-bench/issues/16)). Chapter-card word counts now include sub-scene contributions for hierarchical scenes-in-chapter (was dropping them one level up).
+
+1093 unit + integration tests, all green. Desktop-only.
+
 ## 0.1.4: 2026-04-30 — property-type registration + scene context-menu parity
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.1.4)

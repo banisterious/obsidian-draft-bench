@@ -1712,3 +1712,181 @@ describe('scanProject — sub-scene<->draft issues', () => {
 		expect(subSceneDraftKinds).toEqual([]);
 	});
 });
+
+describe('integrity — one-pass convergence on parallel-array residue (#13)', () => {
+	it('repairs the orphan-id-with-padded-empty-wikilink case in one pass', async () => {
+		// The dev-vault Test 18 scenario: writer adds a fake id via
+		// Obsidian's Properties panel; the panel auto-pads the parallel
+		// `dbench-sub-scenes` array with an empty entry to length-match.
+		// First repair pass should drop both the orphan id AND the
+		// padded empty wikilink, leaving balanced arrays. Second scan
+		// should find zero issues.
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[The auction]]'],
+			['sc1-001-tst-001']
+		);
+		// Real sub-scene exists.
+		await seedSubScene(
+			app,
+			'Drift/The auction/Lot 47.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'The auction',
+			'sc1-001-tst-001'
+		);
+		// Parent scene's reverse arrays: one real sub-scene + one
+		// padded-empty wikilink + one orphan id. Mimics the post-pad
+		// state from Obsidian's Properties panel.
+		await seedScene(
+			app,
+			'Drift/The auction.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[Lot 47]]', ''],
+			['sub-001-tst-001', 'ssc-deleted-001']
+		);
+
+		const project = loadProject(app, 'Drift');
+
+		const firstReport = scanProject(app, project);
+		// Scan flags STALE for the orphan id (with truthy id) AND the
+		// asymmetric-arrays summary; both auto-repairable.
+		const firstStaleCount = firstReport.issues.filter(
+			(i) => i.kind === 'STALE_SUB_SCENE_IN_SCENE'
+		).length;
+		expect(firstStaleCount).toBeGreaterThan(0);
+
+		const result = await applyRepairs(app, firstReport);
+		expect(result.errors).toBe(0);
+
+		// Second scan: arrays should be balanced and clean — zero issues.
+		const secondReport = scanProject(app, project);
+		const secondStale = secondReport.issues.filter(
+			(i) => i.kind === 'STALE_SUB_SCENE_IN_SCENE'
+		);
+		expect(secondStale).toEqual([]);
+
+		// Final state: arrays length 1, both sides aligned.
+		const sceneFile = app.vault.getAbstractFileByPath(
+			'Drift/The auction.md'
+		) as TFile;
+		const fm = app.metadataCache.getFileCache(sceneFile)?.frontmatter as
+			| Record<string, unknown>
+			| undefined;
+		expect(fm?.['dbench-sub-scenes']).toEqual(['[[Lot 47]]']);
+		expect(fm?.['dbench-sub-scene-ids']).toEqual(['sub-001-tst-001']);
+	});
+
+	it('flags asymmetric arrays even when no truthy orphan exists', async () => {
+		// Case where lengths differ but neither side has a truthy orphan
+		// at the trailing index — pure padding. Existing scan would skip
+		// the empty-paired index; the new asymmetry summary surfaces it.
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[The auction]]'],
+			['sc1-001-tst-001']
+		);
+		await seedSubScene(
+			app,
+			'Drift/The auction/Lot 47.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'The auction',
+			'sc1-001-tst-001'
+		);
+		// Parent: wikilinks length 2 (with trailing ""), ids length 1.
+		// At i=1: wikilink="", id=undefined. Both falsy. Old scan skipped.
+		await seedScene(
+			app,
+			'Drift/The auction.md',
+			'sc1-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			[],
+			[],
+			['[[Lot 47]]', ''],
+			['sub-001-tst-001']
+		);
+
+		const project = loadProject(app, 'Drift');
+		const firstReport = scanProject(app, project);
+		const stale = firstReport.issues.filter(
+			(i) => i.kind === 'STALE_SUB_SCENE_IN_SCENE'
+		);
+		expect(stale.length).toBeGreaterThan(0);
+		expect(stale[0].repair?.kind).toBe('remove-from-reverse');
+
+		await applyRepairs(app, firstReport);
+
+		// Re-scan: arrays balanced, clean.
+		const secondReport = scanProject(app, project);
+		const secondStale = secondReport.issues.filter(
+			(i) => i.kind === 'STALE_SUB_SCENE_IN_SCENE'
+		);
+		expect(secondStale).toEqual([]);
+	});
+
+	it("post-prune drops null-padded entries that the value-filter doesn't match", async () => {
+		// Variant of the pad bug where Obsidian/YAML stores the empty
+		// entry as `null` rather than `""`. The existing value-based
+		// filter `x => x !== ''` doesn't match null, so the residue
+		// would survive without the defensive post-prune.
+		const app = new App();
+		await seedFolderProject(
+			app,
+			'Drift/Drift.md',
+			'prj-001-tst-001',
+			'Drift',
+			['[[The auction]]'],
+			['sc1-001-tst-001']
+		);
+		await seedSubScene(
+			app,
+			'Drift/The auction/Lot 47.md',
+			'sub-001-tst-001',
+			'Drift',
+			'prj-001-tst-001',
+			'The auction',
+			'sc1-001-tst-001'
+		);
+		const sceneFile = await app.vault.create('Drift/The auction.md', '');
+		// Manually craft frontmatter with `null` in the wikilinks slot.
+		app.metadataCache._setFrontmatter(sceneFile, {
+			'dbench-type': 'scene',
+			'dbench-id': 'sc1-001-tst-001',
+			'dbench-project': '[[Drift]]',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+			'dbench-sub-scenes': ['[[Lot 47]]', null],
+			'dbench-sub-scene-ids': ['sub-001-tst-001', 'ssc-deleted-001'],
+		});
+
+		const project = loadProject(app, 'Drift');
+		const firstReport = scanProject(app, project);
+		await applyRepairs(app, firstReport);
+
+		const fm = app.metadataCache.getFileCache(sceneFile)?.frontmatter as
+			| Record<string, unknown>
+			| undefined;
+		// Post-prune drops the null-paired entry alongside the orphan id.
+		expect(fm?.['dbench-sub-scenes']).toEqual(['[[Lot 47]]']);
+		expect(fm?.['dbench-sub-scene-ids']).toEqual(['sub-001-tst-001']);
+	});
+});

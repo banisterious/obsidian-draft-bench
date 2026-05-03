@@ -508,6 +508,45 @@ export async function applyRepairs(
 						fm[p.idField] = iarr;
 					}
 				}
+
+				// Defensive post-prune (#13): walk every (wikilinkField,
+				// idField) pair touched by this batch and drop any index
+				// where one side is empty (`''` / `null` / `undefined`).
+				// Catches the auto-pad residue that the value-based
+				// filters above can miss when one side is stored as
+				// `null` rather than `''`, and rebalances arrays whose
+				// lengths diverged because Obsidian's Properties panel
+				// padded one side after a writer's manual edit. Idempotent
+				// on already-clean arrays.
+				const fieldPairs = new Set<string>();
+				for (const p of payloads) {
+					fieldPairs.add(`${p.wikilinkField} ${p.idField}`);
+				}
+				for (const key of fieldPairs) {
+					const [wField, iField] = key.split(' ');
+					const warr = readArray(fm[wField]);
+					const iarr = readArray(fm[iField]);
+					const cleanW: string[] = [];
+					const cleanI: string[] = [];
+					const maxLen = Math.max(warr.length, iarr.length);
+					for (let i = 0; i < maxLen; i++) {
+						const w = warr[i];
+						const id = iarr[i];
+						const wValid = typeof w === 'string' && w !== '';
+						const iValid = typeof id === 'string' && id !== '';
+						if (wValid && iValid) {
+							cleanW.push(w);
+							cleanI.push(id);
+						}
+					}
+					if (
+						cleanW.length !== warr.length ||
+						cleanI.length !== iarr.length
+					) {
+						fm[wField] = cleanW;
+						fm[iField] = cleanI;
+					}
+				}
 			});
 			repaired += payloads.length;
 		} catch {
@@ -570,6 +609,7 @@ function scanRelationship(scan: RelationshipScan): IntegrityIssue[] {
 
 	// Stale + conflict: walk parent's reverse arrays.
 	const maxLen = Math.max(wikilinks.length, ids.length);
+	let asymmetricEmptyDetected = false;
 	for (let i = 0; i < maxLen; i++) {
 		const wikilink = wikilinks[i];
 		const id = ids[i];
@@ -598,7 +638,10 @@ function scanRelationship(scan: RelationshipScan): IntegrityIssue[] {
 		if (!actualTarget) {
 			// Stale: neither wikilink nor id resolves. Only flag if at
 			// least one value is present (empty paired entries in a new
-			// reverse array aren't issues).
+			// reverse array aren't issues — but length-mismatched parallel
+			// arrays where one side is silently padded by Obsidian's
+			// Properties panel ARE an issue, surfaced by the asymmetric-
+			// pair check below per #13).
 			if (wikilink || id) {
 				issues.push({
 					kind: scan.kinds.stale,
@@ -613,6 +656,19 @@ function scanRelationship(scan: RelationshipScan): IntegrityIssue[] {
 						idField: scan.idField,
 					},
 				});
+				continue;
+			}
+			// Asymmetric-empty: at this index, one side has a value (or
+			// the index exists) and the other is empty/null/undefined.
+			// `wikilink || id` was falsy, so neither side resolves; but
+			// the index lengths might still diverge, or one side might
+			// hold `null` / `undefined` while the other holds `''`. The
+			// pair is corrupt regardless — flag it, repair via the
+			// post-prune.
+			const wEmpty = wikilink === '' || wikilink === undefined || wikilink === null;
+			const idEmpty = id === '' || id === undefined || id === null;
+			if (!wEmpty || !idEmpty) {
+				asymmetricEmptyDetected = true;
 			}
 			continue;
 		}
@@ -633,6 +689,28 @@ function scanRelationship(scan: RelationshipScan): IntegrityIssue[] {
 				},
 			});
 		}
+	}
+
+	// Length-mismatched arrays: silent corruption from Obsidian's
+	// Properties panel auto-padding paired-named arrays, or from a
+	// hand-edited YAML where one side gained or lost an entry. Flag once
+	// per relationship so the writer sees what happened; the repair
+	// triggers the defensive post-prune in applyRepairs which drops any
+	// index where one side is empty. Refs #13.
+	if (wikilinks.length !== ids.length || asymmetricEmptyDetected) {
+		issues.push({
+			kind: scan.kinds.stale,
+			autoRepairable: true,
+			description: `${scan.parent.file.basename}'s ${scan.wikilinkField} (${wikilinks.length}) and ${scan.idField} (${ids.length}) are unbalanced or contain orphan-paired empty entries.`,
+			repair: {
+				kind: 'remove-from-reverse',
+				parent: scan.parent.file,
+				wikilink: '',
+				id: '',
+				wikilinkField: scan.wikilinkField,
+				idField: scan.idField,
+			},
+		});
 	}
 
 	return issues;

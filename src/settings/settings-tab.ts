@@ -87,7 +87,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Sub-scenes folder')
 			.setDesc(
-				'Relative to the project folder. Default {scene}/ nests sub-scenes under their parent scene; supports {project} and {scene} tokens. Set to empty for flat-at-project-root (writer applies <Scene> - <Sub-scene> filename prefix manually).'
+				"Relative to the parent scene's folder. Default {scene}/ nests sub-scenes next to their parent scene wherever it lives, so chapter-aware scenes carry sub-scenes along under the chapter folder; supports {project} and {scene} tokens. Set to empty for flat-alongside-the-parent-scene (writer typically applies <Scene> - <Sub-scene> filename prefix manually)."
 			)
 			.addText((text) => {
 				text

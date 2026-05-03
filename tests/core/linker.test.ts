@@ -3540,6 +3540,48 @@ describe('DraftBenchLinker — sub-scene-folder auto-rename on parent-scene rena
 		expect(app.vault.getAbstractFileByPath('Drift/Old name')).not.toBeNull();
 		expect(app.vault.getAbstractFileByPath('Drift/New name')).toBeNull();
 	});
+
+	it('renames the chapter-nested sub-scene folder when its parent scene is renamed (#12)', async () => {
+		// Per #12, sub-scene folders are joined to the scene's parent
+		// folder. For a scene-in-chapter at `Drift/Ch01/Old name.md`, the
+		// sub-scene folder lives at `Drift/Ch01/Old name/` — under the
+		// chapter, not at the project root. Rename of the scene should
+		// rename the chapter-nested sub-scene folder too.
+		await seedProject('Drift/Drift.md', 'prj-001-tst-001', 'Drift');
+		await seedFolder('Drift/Ch01');
+		const sceneFile = await app.vault.create('Drift/Ch01/Old name.md', '');
+		app.metadataCache._setFrontmatter(sceneFile, {
+			'dbench-type': 'scene',
+			'dbench-id': 'sc1-001-tst-001',
+			'dbench-project-id': 'prj-001-tst-001',
+			'dbench-chapter-id': 'chp-001-tst-001',
+			'dbench-order': 1,
+			'dbench-status': 'idea',
+			'dbench-drafts': [],
+			'dbench-draft-ids': [],
+		});
+		await seedFolder('Drift/Ch01/Old name');
+		await seedSubScene(
+			'Drift/Ch01/Old name/Sub.md',
+			'sub-001-tst-001',
+			'prj-001-tst-001',
+			'sc1-001-tst-001'
+		);
+
+		const oldPath = app.vault._rename(sceneFile, 'Drift/Ch01/New name.md');
+		app.vault._fire('rename', sceneFile, oldPath);
+		await flush();
+
+		expect(
+			app.vault.getAbstractFileByPath('Drift/Ch01/Old name')
+		).toBeNull();
+		expect(
+			app.vault.getAbstractFileByPath('Drift/Ch01/New name')
+		).not.toBeNull();
+		expect(
+			app.vault.getAbstractFileByPath('Drift/Ch01/New name/Sub.md')
+		).not.toBeNull();
+	});
 });
 
 describe('DraftBenchLinker — chapter-scenes-folder auto-rename on parent-chapter rename (#11)', () => {

@@ -77,11 +77,17 @@ export interface ResolvedSubScenePaths {
 
 /**
  * Pure path resolution. The folder path is `settings.subScenesFolder`
- * (or `options.location`) interpreted **relative to the project's
- * folder**, with `{project}` expanded to the project's basename and
- * `{scene}` expanded to the parent scene's basename. The default
- * `'{project}/{scene}/'` nests sub-scenes under their parent scene; an
- * empty template places the sub-scene alongside the project note (flat
+ * (or `options.location`) interpreted **relative to the parent scene's
+ * folder** (per [issue #12](https://github.com/banisterious/obsidian-draft-bench/issues/12)),
+ * with `{project}` expanded to the project's basename and `{scene}`
+ * expanded to the parent scene's basename. Joining against the scene's
+ * folder rather than the project's keeps sub-scenes nested next to
+ * their parent scene wherever that scene lives — chapter-aware scenes
+ * (post-#11) get sub-scenes nested under the chapter folder; chapter-
+ * less scenes get them nested at the project root; writer-customized
+ * scene locations carry sub-scenes along automatically. The default
+ * `'{scene}/'` produces a `<scene-folder>/<scene-name>/` subfolder; an
+ * empty template places the sub-scene alongside the parent scene (flat
  * opt-out per § 10). The file path appends `<title>.md`.
  */
 export function resolveSubScenePaths(
@@ -107,12 +113,12 @@ export function resolveSubScenePaths(
 		.replace(/\/+/g, '/')
 		.replace(/^\/+|\/+$/g, '');
 
-	const projectFolder = parentPath(project.file.path);
+	const sceneFolder = parentPath(scene.file.path);
 	const folderPath = relative === ''
-		? projectFolder
-		: projectFolder === ''
+		? sceneFolder
+		: sceneFolder === ''
 			? relative
-			: `${projectFolder}/${relative}`;
+			: `${sceneFolder}/${relative}`;
 
 	const filePath =
 		folderPath === '' ? `${title}.md` : `${folderPath}/${title}.md`;

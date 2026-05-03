@@ -511,14 +511,21 @@ export class DraftBenchLinker {
 		const project = findNoteById(this.app, projectId);
 		if (!project) return;
 
+		// Per #12: sub-scene folders are joined to the scene's parent
+		// folder, not the project's. The scene's parent folder is
+		// invariant across a basename rename, so both old and new paths
+		// share the same scene folder; only the leaf basename differs.
+		const sceneFolder = parentPath(sceneFile.path);
 		const oldFolderPath = computeSubSceneFolderPath(
 			settings.subScenesFolder,
-			project.file,
+			project.file.basename,
+			sceneFolder,
 			oldSceneBasename
 		);
 		const newFolderPath = computeSubSceneFolderPath(
 			settings.subScenesFolder,
-			project.file,
+			project.file.basename,
+			sceneFolder,
 			sceneFile.basename
 		);
 
@@ -862,25 +869,28 @@ function parentPath(filePath: string): string {
  * Compute the on-disk folder path for sub-scenes of a given parent scene,
  * applying `{project}` and `{scene}` token expansion against
  * `settings.subScenesFolder`. Mirrors `resolveSubScenePaths` in
- * sub-scenes.ts but takes a bare scene basename instead of a `SceneNote`,
- * so the linker can reconstruct the OLD path during rename handling.
+ * sub-scenes.ts but takes the scene's folder + basename as separate
+ * arguments, so the linker can reconstruct the OLD path during rename
+ * handling. The relative template is joined to `sceneFolder` (per #12)
+ * rather than the project folder so chapter-aware scene placements
+ * carry their sub-scenes along automatically.
  */
 function computeSubSceneFolderPath(
 	template: string,
-	projectFile: TFile,
+	projectBasename: string,
+	sceneFolder: string,
 	sceneBasename: string
 ): string {
 	const relative = template
-		.replace(/\{project\}/g, projectFile.basename)
+		.replace(/\{project\}/g, projectBasename)
 		.replace(/\{scene\}/g, sceneBasename)
 		.replace(/\/+/g, '/')
 		.replace(/^\/+|\/+$/g, '');
-	const projectFolder = parentPath(projectFile.path);
 	return relative === ''
-		? projectFolder
-		: projectFolder === ''
+		? sceneFolder
+		: sceneFolder === ''
 			? relative
-			: `${projectFolder}/${relative}`;
+			: `${sceneFolder}/${relative}`;
 }
 
 /**

@@ -6,8 +6,10 @@ import {
 	resolveSubScenePaths,
 } from '../../src/core/sub-scenes';
 import { createScene } from '../../src/core/scenes';
+import { createChapter } from '../../src/core/chapters';
 import { createProject } from '../../src/core/projects';
 import {
+	findChaptersInProject,
 	findProjects,
 	findScenes,
 	findSubScenesInScene,
@@ -99,6 +101,67 @@ describe('resolveSubScenePaths', () => {
 		expect(paths.folderPath).toBe(
 			'Draft Bench/Meridian Drift/Sub-scenes/The auction'
 		);
+	});
+
+	it('nests sub-scenes under the chapter folder for chapter-aware scenes (#12)', async () => {
+		const app = new App();
+		const project = await seedProject(app, settings, 'The Salt Road');
+		await createChapter(app, settings, {
+			project,
+			title: 'Ch01 - The crossing',
+		});
+		const refreshedProject = findProjects(app).find(
+			(p) => p.frontmatter['dbench-id'] === project.frontmatter['dbench-id']
+		)!;
+		const chapter = findChaptersInProject(
+			app,
+			project.frontmatter['dbench-id']
+		)[0];
+		await createScene(app, settings, {
+			project: refreshedProject,
+			chapter,
+			title: 'Departure',
+		});
+		const scene = findScenes(app).find((s) => s.file.basename === 'Departure')!;
+
+		const paths = resolveSubScenePaths(settings, refreshedProject, scene, {
+			project: refreshedProject,
+			scene,
+			title: 'First glance',
+		});
+		// Scene lives at `Draft Bench/The Salt Road/Ch01 - The crossing/Departure.md`
+		// (post-#11 chapter-aware default); sub-scene must nest under the
+		// chapter folder, not at the project root.
+		expect(paths.folderPath).toBe(
+			'Draft Bench/The Salt Road/Ch01 - The crossing/Departure'
+		);
+		expect(paths.filePath).toBe(
+			'Draft Bench/The Salt Road/Ch01 - The crossing/Departure/First glance.md'
+		);
+	});
+
+	it("tracks the scene's actual on-disk folder regardless of scenesFolder shape", async () => {
+		// Option 2's robustness property: sub-scenes nest next to their
+		// parent scene wherever it actually lives, so writer-customized
+		// scene placements (or chapter-aware nesting from #11) carry
+		// sub-scenes along without requiring matched scenesFolder /
+		// subScenesFolder customization.
+		const app = new App();
+		const project = await seedProject(app, settings, 'Drift');
+		await createScene(app, settings, {
+			project,
+			title: 'Departure',
+			location: 'Custom/',
+		});
+		const scene = findScenes(app)[0];
+		expect(scene.file.path).toBe('Draft Bench/Drift/Custom/Departure.md');
+
+		const paths = resolveSubScenePaths(settings, project, scene, {
+			project,
+			scene,
+			title: 'Lot 47',
+		});
+		expect(paths.folderPath).toBe('Draft Bench/Drift/Custom/Departure');
 	});
 
 	it('rejects empty title and forbidden characters', async () => {

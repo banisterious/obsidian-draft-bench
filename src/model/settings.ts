@@ -62,18 +62,22 @@ export interface DraftBenchSettings {
 
 	/**
 	 * Default folder template for new sub-scenes, **relative to the
-	 * project's folder**. Supports `{project}` and `{scene}` tokens
-	 * (the latter expanded to the parent scene's basename). Default
-	 * `'{scene}/'` nests sub-scenes under their parent scene
-	 * (per [sub-scene-type.md § 10](../../docs/planning/sub-scene-type.md));
-	 * set to `''` for flat-at-project-root, where the writer is expected
-	 * to apply a `<Scene> - <Sub-scene>` filename prefix manually for
-	 * clustering. The `{project}` token is available for writers who
-	 * want sub-scenes in a sibling-folder layout (e.g.,
-	 * `'../{project} sub-scenes/{scene}/'`); the default omits it
-	 * because the resolver already joins relative paths to the project
-	 * folder, so `{project}/{scene}/` would produce a doubled
-	 * `<projectFolder>/<projectName>/<sceneName>/` path.
+	 * parent scene's folder** (per [issue #12](https://github.com/banisterious/obsidian-draft-bench/issues/12)).
+	 * Supports `{project}` and `{scene}` tokens (the latter expanded to
+	 * the parent scene's basename). Default `'{scene}/'` produces a
+	 * `<scene-folder>/<scene-name>/` subfolder, so sub-scenes nest next
+	 * to their parent scene wherever it lives — chapter-aware scenes
+	 * get sub-scenes nested under the chapter folder automatically;
+	 * chapter-less scenes get them at the project root; writer-
+	 * customized scene locations carry sub-scenes along (per
+	 * [sub-scene-type.md § 10](../../docs/planning/sub-scene-type.md)).
+	 * Set to `''` for flat-alongside-the-parent-scene (writers typically
+	 * apply a `<Scene> - <Sub-scene>` filename prefix for clustering).
+	 * The `{project}` token is available for sibling-folder layouts
+	 * (e.g., `'../{project} sub-scenes/{scene}/'`); note that with the
+	 * scene-folder join base, `..` walks up from the scene folder, so
+	 * such templates resolve relative to the scene's parent rather than
+	 * the project root.
 	 */
 	subScenesFolder: string;
 

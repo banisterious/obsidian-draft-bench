@@ -13,6 +13,14 @@
 
 ---
 
+## Promoted to planning docs (no longer candidates)
+
+Items that started as candidates here and have since graduated to their own planning docs (with implementation sequences, ratification sections, and a target release):
+
+- **Manuscript Builder Preview tab** — promoted 2026-05-04, target 0.3.0. Adds a Preview tab to the Manuscript Builder modal that renders the current preset's compile output as a continuous read-only document, alongside today's Build tab (the existing collapsible-section content). Complementary with [#3 (Scrivenings-style continuous Manuscript view)](#3-scrivenings-style-continuous-manuscript-view-alternate-mode) below: two distinct use cases, two independent ship paths. See [manuscript-builder-preview.md](manuscript-builder-preview.md).
+
+---
+
 ## Shipped (no longer candidates)
 
 The following appeared as candidates and have since landed in main during the pre-V1 polish round (2026-04-28):
@@ -56,7 +64,7 @@ The following appeared as candidates and have since landed in main during the pr
 
 ### 3. Scrivenings-style continuous Manuscript view (alternate mode)
 
-**Scope.** A second view mode on the Manuscript leaf: in addition to today's chapter-cards-and-scene-rows, a "continuous read" mode that renders the entire manuscript as one scrollable read-only document. Click any heading to open the underlying note in the active leaf for editing. Toggle between modes via a button on the leaf header.
+**Scope.** A second view mode on the Manuscript leaf: in addition to today's chapter-cards-and-scene-rows, a "continuous read" mode that renders the entire manuscript as one scrollable read-only document. Descends into sub-scenes the way compile does. Click any heading to open the underlying note in the active leaf for editing. Toggle between modes via a button on the leaf header.
 
 **Rationale.** Scrivener's "Scrivenings" is a beloved feature for read-throughs. Writers want to see their manuscript as a continuous flow during revision passes (catch repetition, pacing problems, voice drift). The chapter-card view is great for navigation and progress; it's not great for reading. StoryLine has this (with embedded Live Preview editors, which is heavier than necessary).
 

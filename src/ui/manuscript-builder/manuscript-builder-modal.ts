@@ -432,14 +432,28 @@ export class ManuscriptBuilderModal extends Modal {
 			return;
 		}
 
+		// Step 5: 250ms-threshold "Rendering..." spinner. Per
+		// docs/planning/manuscript-builder-preview.md § 3 (ratified
+		// 2026-05-04): sub-threshold renders skip the spinner so
+		// snappy operations don't flash. The timer fires only if the
+		// render is still in flight at 250ms; cleared as soon as we
+		// either error out or transition to writing the rendered DOM.
+		const spinnerTimer = window.setTimeout(() => {
+			if (token !== this.previewRenderToken) return;
+			this.renderPreviewSpinner(body);
+		}, 250);
+
 		let markdown: string;
 		try {
 			const result = await new CompileService(this.app).generate(preset);
 			markdown = result.markdown;
 		} catch {
 			// Step 6 handles the render-error empty state.
+			window.clearTimeout(spinnerTimer);
 			return;
 		}
+
+		window.clearTimeout(spinnerTimer);
 
 		if (token !== this.previewRenderToken) return;
 
@@ -474,6 +488,23 @@ export class ManuscriptBuilderModal extends Modal {
 			// the partially-rendered DOM stays as-is rather than being
 			// wiped, so the writer at least sees what landed.
 		}
+	}
+
+	private renderPreviewSpinner(body: HTMLElement): void {
+		body.empty();
+		const wrap = body.createDiv({
+			cls: 'dbench-manuscript-builder__preview-spinner',
+			attr: { role: 'status', 'aria-live': 'polite' },
+		});
+		const icon = wrap.createSpan({
+			cls: 'dbench-manuscript-builder__preview-spinner-icon dbench-spinner',
+			attr: { 'aria-hidden': 'true' },
+		});
+		setIcon(icon, 'loader-2');
+		wrap.createSpan({
+			cls: 'dbench-manuscript-builder__preview-spinner-text',
+			text: 'Rendering...',
+		});
 	}
 
 	private renderFormSection(

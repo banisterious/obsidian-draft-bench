@@ -9,6 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Changed
 
 - **Manuscript view status chip drops the redundant colored dot.** The chip's small colored dot and pill background were both derived from the same `--dbench-status-<status>` variable, encoding status twice. The dot is gone; the pill background is now the sole visual carrier of status color. Pill padding rebalanced to symmetric horizontal (`var(--dbench-spacing-sm)` on both sides) since the previous left-tight padding was specifically tuned for the dot-then-label flex layout. Affects scene rows, sub-scene rows, and chapter card headers (all share the same chip helper). Refs #23.
+- **Manuscript Builder status filter restyled as toggleable pills.** The Inclusion section's "compile scenes whose status is..." filter previously rendered each status as a native checkbox + label, which visually read as a radio-button (single-select) pattern despite being multi-select. Each status now renders as a pill: outlined when unselected, color-mix-tinted with the per-status `--dbench-status-<status>` variable when selected. Click anywhere on the pill toggles. The underlying `<input type="checkbox">` stays in the DOM (visually hidden) so screen readers and keyboard navigation continue to work; CSS `:has(input:focus-visible)` transfers the focus indicator to the chip. Mirrors the Manuscript view's status-chip pattern but with bolder emphasis for the active-config register. Refs #25.
 
 ## [0.2.3] - 2026-05-04
 

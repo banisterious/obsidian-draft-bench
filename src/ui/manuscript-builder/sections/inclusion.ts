@@ -75,11 +75,19 @@ export function renderInclusionSection(
  * row layout); only the control surface is custom because Obsidian's
  * Setting API has no built-in multi-select primitive.
  *
- * Chip visual: plain `<label>` containing a checkbox + the status
- * text, laid out horizontally with `display: flex` + gap. No pill
- * background or border — Obsidian's native checkbox styling carries
- * the visual weight. One opt-in CSS rule for the flex container is
- * the only thing custom.
+ * Chip visual: a `<label>` styled as a toggleable pill, wrapping a
+ * visually-hidden `<input type="checkbox">` plus the status text.
+ * Click anywhere on the pill toggles via the standard label-wraps-
+ * input affordance. The `data-status` attribute carries the lowercased
+ * status value so CSS selectors can theme the active state per
+ * status via `[data-status="brainstorm"]` etc., mirroring the
+ * Manuscript view's status-chip pattern.
+ *
+ * Visual contract: outlined when unselected, color-mix-tinted with
+ * the per-status `--dbench-status-<status>` variable when selected.
+ * The hidden checkbox stays focusable for keyboard / screen-reader
+ * accessibility; CSS `:has(input:focus-visible)` transfers the
+ * focus indicator to the chip.
  */
 function renderStatusFilter(
 	parent: HTMLElement,
@@ -98,13 +106,17 @@ function renderStatusFilter(
 	for (const status of settings.statusVocabulary) {
 		const label = wrapper.createEl('label', {
 			cls: 'dbench-manuscript-builder__status-chip',
+			attr: { 'data-status': status.toLowerCase() },
 		});
 		const checkbox = label.createEl('input', {
 			type: 'checkbox',
 			attr: { 'aria-label': status },
 		});
 		checkbox.checked = current.has(status);
-		label.createSpan({ text: status });
+		label.createSpan({
+			cls: 'dbench-manuscript-builder__status-chip-label',
+			text: status,
+		});
 		checkbox.addEventListener('change', () => {
 			if (checkbox.checked) {
 				current.add(status);

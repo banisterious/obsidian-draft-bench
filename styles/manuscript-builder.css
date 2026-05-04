@@ -119,15 +119,98 @@
 .dbench-manuscript-builder__status-chips {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--dbench-spacing-md);
+	gap: var(--dbench-spacing-sm);
 	align-items: center;
 }
 
+/*
+ * Toggleable filter pill. Each chip wraps a visually-hidden
+ * <input type="checkbox"> plus the status label. Outlined by default;
+ * fills with a color-mix tint of the per-status `--dbench-status-<status>`
+ * variable when the underlying checkbox is :checked.
+ *
+ * Tinted-fill rather than full-saturation: the brand-color variables
+ * (#5b8cd6, #9aa0a6, #d4a443, #74b275) are mid-tone foreground colors
+ * that don't reach WCAG AA contrast against either white or dark text
+ * if used as full-saturation backgrounds. The color-mix tint pattern
+ * (mirroring the Manuscript view's read-only chip) keeps the brand
+ * color readable as text on its own tinted background, preserves
+ * Style Settings overrides (foreground variable change shifts both
+ * text and bg), and signals "selected" clearly.
+ */
 .dbench-manuscript-builder__status-chip {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--dbench-spacing-xs);
+	padding: 3px var(--dbench-spacing-md);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 999px;
+	color: var(--text-muted);
+	background: transparent;
+	font-size: var(--font-smallest);
+	line-height: 1.4;
 	cursor: pointer;
+	user-select: none;
+	transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.dbench-manuscript-builder__status-chip-label {
+	text-transform: lowercase;
+	letter-spacing: 0.02em;
+}
+
+/* Visually hide the checkbox while keeping it focusable for screen
+   readers and keyboard navigation. Standard sr-only pattern. */
+.dbench-manuscript-builder__status-chip input[type="checkbox"] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Hover: subtle text-color lift for unselected chips. */
+.dbench-manuscript-builder__status-chip:hover:not(:has(input:checked)) {
+	color: var(--text-normal);
+}
+
+/* Keyboard focus: hidden input takes focus; transfer the visual
+   indicator to the chip itself. */
+.dbench-manuscript-builder__status-chip:has(input:focus-visible) {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+/*
+ * Selected state. Per-status color is set via the data-status overrides
+ * below; this base rule applies the color-mix derivation pattern so any
+ * status that ends up with a `color` value (set or default) gets a
+ * matching tinted background.
+ */
+.dbench-manuscript-builder__status-chip:has(input:checked) {
+	color: var(--dbench-status-default);
+	border-color: currentcolor;
+	background: color-mix(in srgb, currentcolor 22%, transparent);
+}
+
+.dbench-manuscript-builder__status-chip[data-status="brainstorm"]:has(input:checked),
+.dbench-manuscript-builder__status-chip[data-status="idea"]:has(input:checked) {
+	color: var(--dbench-status-brainstorm);
+}
+
+.dbench-manuscript-builder__status-chip[data-status="draft"]:has(input:checked) {
+	color: var(--dbench-status-draft);
+}
+
+.dbench-manuscript-builder__status-chip[data-status="revision"]:has(input:checked) {
+	color: var(--dbench-status-revision);
+}
+
+.dbench-manuscript-builder__status-chip[data-status="final"]:has(input:checked) {
+	color: var(--dbench-status-final);
 }
 
 /* Monospace styling for textarea inputs (e.g., excludes wikilinks). */

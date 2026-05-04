@@ -94,17 +94,20 @@ The 250ms threshold matches the standard responsive-UI register: Nielsen's 100ms
 
 ### 4. Preview re-render trigger granularity
 
-**Question:** Beyond tab activation, what else triggers a Preview re-render?
+**Ratified 2026-05-04: Re-render on tab activation, preset-selector change, and project-selector change. Skip external-edit reactivity for 0.3.0.**
 
-**Locked:** tab activation always re-renders.
+The Preview tab re-renders in three situations:
 
-**Open:**
+1. **Tab activation.** Each time the user clicks Preview, the tab re-renders against the current preset state. Already locked under "What's locked at the meta level."
+2. **Preset-selector change while on Preview tab.** If the writer flips presets via the dropdown, Preview follows immediately so the rendered output always reflects the *current* preset.
+3. **Project-selector change while on Preview tab.** Same logic; Preview tracks the modal's current project.
 
-- **(a) Preset-selector change while on Preview tab.** Probably yes — the Preview should reflect the *current* preset. If the writer flips presets via the dropdown, Preview should follow.
-- **(b) Project-selector change while on Preview tab.** Yes, same logic.
-- **(c) External edit to a source note while modal is open.** Probably no — too noisy. The writer can re-trigger by clicking back to Build then back to Preview, or by adding a "Refresh preview" button (see § 5).
+**External-edit reactivity is explicitly out of scope for 0.3.0.** Writers may have the modal open and edit a source note in another pane; Preview does not pick up those edits live. Two reasons: (a) per-keystroke re-rendering would feel chaotic during active editing, and (b) even file-save reactivity adds plumbing (vault event listeners with cleanup) for a use case that's served well enough by flipping Build -> Preview to re-trigger. Revisit if writers report wanting it.
 
-**Recommendation:** **Re-render on tab activation, preset change, project change.** Skip external-edit reactivity for 0.3.0.
+**Considered and not chosen for 0.3.0:**
+
+- File-save reactivity (re-render Preview when a scene file is saved while the modal is open). Plausible later addition; deferred until concrete demand.
+- Debounced live-update (re-render Preview on a debounced timer as source notes change). Heavier still; would compete with the manual flip-tab gesture without clearly improving on it.
 
 ### 5. "Refresh preview" button
 
@@ -214,3 +217,4 @@ Track ratifications and reversals here as work proceeds.
 - **2026-05-04** — § 1 ratified: underline pattern, custom CSS with `dbench-` prefix, after evaluating three visual mockups. Pattern 3 (segmented control) was the close runner-up and is noted as a potential future revisit if the tab count grows past two.
 - **2026-05-04** — § 2 ratified: Option A (single-pass `MarkdownRenderer`, no virtualization), not gated on a pre-ship performance smoke test. Future activity: build a seeded large dummy vault (100k+ words) for benchmarking, independent of 0.3.0 release timing. Chunked-render (Option B) is the known fallback if performance reports surface.
 - **2026-05-04** — § 3 ratified: Option B with N = 250ms. Spinner appears only when render exceeds the threshold; implemented via `setTimeout` cleared on render completion.
+- **2026-05-04** — § 4 ratified: Preview re-renders on tab activation, preset-selector change, and project-selector change. External-edit reactivity (file-save or debounced live-update) explicitly deferred.

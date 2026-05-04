@@ -50,7 +50,6 @@ export class ManuscriptBuilderModal extends Modal {
 	private project: ProjectNote | null = null;
 	private presets: CompilePresetNote[] = [];
 	private selectedPresetId: string | null = null;
-	private bodyEl: HTMLElement | null = null;
 	private tabBodyEl: HTMLElement | null = null;
 	private activeTab: ManuscriptBuilderTab = 'build';
 	private previewComponent: Component | null = null;
@@ -124,7 +123,17 @@ export class ManuscriptBuilderModal extends Modal {
 		this.contentEl.empty();
 		this.contentEl.addClass('dbench-manuscript-builder');
 
-		this.contentEl.createEl('h2', {
+		// Sticky region: title, project + preset header, tab strip.
+		// Stays pinned to the top of the modal's scroll container so
+		// the writer can switch projects, presets, and tabs from any
+		// scroll position when the Preview tab's prose is long. Per
+		// docs/planning/manuscript-builder-preview.md § 6 "long-scroll
+		// consideration".
+		const sticky = this.contentEl.createDiv({
+			cls: 'dbench-manuscript-builder__sticky-header',
+		});
+
+		sticky.createEl('h2', {
 			cls: 'dbench-manuscript-builder__title',
 			// eslint-disable-next-line obsidianmd/ui/sentence-case -- branded surface name (parallel to "Manuscript view")
 			text: 'Manuscript Builder',
@@ -135,12 +144,10 @@ export class ManuscriptBuilderModal extends Modal {
 			return;
 		}
 
-		this.renderHeader();
-		this.bodyEl = this.contentEl.createDiv({
-			cls: 'dbench-manuscript-builder__body',
-		});
-		this.renderTabs();
-		this.tabBodyEl = this.bodyEl.createDiv({
+		this.renderHeader(sticky);
+		this.renderTabs(sticky);
+
+		this.tabBodyEl = this.contentEl.createDiv({
 			cls: 'dbench-manuscript-builder__tab-body',
 		});
 		this.renderActiveTab();
@@ -160,10 +167,10 @@ export class ManuscriptBuilderModal extends Modal {
 		});
 	}
 
-	private renderHeader(): void {
+	private renderHeader(parent: HTMLElement): void {
 		if (!this.project) return;
 
-		const header = this.contentEl.createDiv({
+		const header = parent.createDiv({
 			cls: 'dbench-manuscript-builder__header',
 		});
 
@@ -175,9 +182,29 @@ export class ManuscriptBuilderModal extends Modal {
 			attr: { 'aria-hidden': 'true' },
 		});
 		setIcon(projectIcon, 'book');
-		projectRow.createSpan({
-			cls: 'dbench-manuscript-builder__project-name',
-			text: this.project.file.basename,
+
+		const allProjects = findProjects(this.app);
+		const projectSelect = projectRow.createEl('select', {
+			cls: 'dropdown dbench-manuscript-builder__project-picker',
+			attr: { 'aria-label': 'Project' },
+		});
+		const currentProjectId = this.project.frontmatter['dbench-id'];
+		for (const p of allProjects) {
+			const option = projectSelect.createEl('option', {
+				value: p.frontmatter['dbench-id'],
+				text: p.file.basename,
+			});
+			if (p.frontmatter['dbench-id'] === currentProjectId) {
+				option.selected = true;
+			}
+		}
+		projectSelect.addEventListener('change', () => {
+			// Routing through plugin.selection notifies the Manuscript
+			// leaf and any other subscribed surfaces, so the rest of
+			// the workspace stays in sync with the modal's switch.
+			this.plugin.selection.set(projectSelect.value);
+			this.initState();
+			this.renderAll();
 		});
 
 		const presetRow = header.createDiv({
@@ -270,9 +297,8 @@ export class ManuscriptBuilderModal extends Modal {
 			fm as unknown as CompilePresetNote['frontmatter'];
 	}
 
-	private renderTabs(): void {
-		if (!this.bodyEl) return;
-		const tabs = this.bodyEl.createDiv({
+	private renderTabs(parent: HTMLElement): void {
+		const tabs = parent.createDiv({
 			cls: 'dbench-manuscript-builder__tabs',
 			attr: { role: 'tablist' },
 		});
@@ -308,8 +334,7 @@ export class ManuscriptBuilderModal extends Modal {
 	}
 
 	private refreshTabActiveState(): void {
-		if (!this.bodyEl) return;
-		const buttons = this.bodyEl.querySelectorAll<HTMLElement>(
+		const buttons = this.contentEl.querySelectorAll<HTMLElement>(
 			'.dbench-manuscript-builder__tab'
 		);
 		buttons.forEach((btn) => {

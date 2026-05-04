@@ -31,8 +31,33 @@
 }
 
 .dbench-manuscript-builder__title {
-	margin: 0 0 var(--dbench-spacing-sm);
+	margin: 0;
 	font-size: var(--h2-size);
+}
+
+/*
+ * Sticky region: title, project + preset header, tab strip. Pins to
+ * the top of the modal's scroll container so the writer can switch
+ * projects, presets, and tabs from any scroll position when the
+ * Preview tab's prose is long. Per
+ * docs/planning/manuscript-builder-preview.md § 6 "long-scroll
+ * consideration": the sticky-header pattern was flagged as a cheap
+ * mitigation for the deep-scroll case where the header would
+ * otherwise scroll out of reach.
+ *
+ * Opaque background so scrolled content doesn't show through. The
+ * tab strip's existing bottom border serves as the visible boundary
+ * between the sticky region and the scrolling body, so the sticky
+ * container itself doesn't need its own border.
+ */
+.dbench-manuscript-builder__sticky-header {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-md);
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	background: var(--background-primary);
 }
 
 .dbench-manuscript-builder__header {
@@ -45,20 +70,20 @@
 
 .dbench-manuscript-builder__project-row {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: var(--dbench-spacing-sm);
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
 }
 
 .dbench-manuscript-builder__project-icon {
 	display: inline-flex;
 	align-items: center;
+	color: var(--text-muted);
 }
 
-.dbench-manuscript-builder__project-name {
-	color: var(--text-normal);
-	font-weight: var(--font-semibold);
+.dbench-manuscript-builder__project-picker {
+	flex: 1 1 auto;
+	min-width: 12em;
 }
 
 .dbench-manuscript-builder__preset-row {
@@ -82,12 +107,6 @@
 .dbench-manuscript-builder__buttons {
 	display: flex;
 	gap: var(--dbench-spacing-sm);
-}
-
-.dbench-manuscript-builder__body {
-	display: flex;
-	flex-direction: column;
-	gap: var(--dbench-spacing-md);
 }
 
 /*

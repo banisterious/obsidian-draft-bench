@@ -79,15 +79,18 @@ The Preview tab calls `MarkdownRenderer.render` against the `CompileService` mar
 
 ### 3. Spinner threshold
 
-**Question:** When does the "Rendering..." spinner appear?
+**Ratified 2026-05-04: Option B with N = 250ms.**
 
-**Options:**
+The "Rendering..." spinner appears only when the render takes longer than 250 milliseconds. Sub-N renders happen invisibly so writers don't see a spinner-flash on snappy operations; longer renders get explicit progress feedback so writers know the modal isn't frozen.
 
-- **A. Always.** Spinner shows for the full render window, however brief.
-- **B. After N ms** (e.g., 250ms). Sub-N renders happen invisibly; longer renders show the spinner.
-- **C. Never.** Skip the spinner; trust that renders are fast enough.
+The 250ms threshold matches the standard responsive-UI register: Nielsen's 100ms ("perceived as instant") and 1000ms ("user notices the delay") guidelines bracket ~250ms as the sweet spot for "delay worth acknowledging."
 
-**Recommendation:** **B with N = 250ms.** Sub-quarter-second renders look snappy without spinner flash; longer renders get explicit progress feedback. Matches the standard responsive-UI threshold (Nielsen's 100ms / 1000ms guidelines split the difference at ~250ms for "perceived as a delay worth acknowledging").
+**Implementation note:** trigger the spinner via a `setTimeout(showSpinner, 250)` cleared on render completion; the timeout fires only if the render is still running at the threshold. Standard pattern.
+
+**Considered and not chosen:**
+
+- **A. Always show the spinner.** Causes a visible flash on every snappy render. Annoying.
+- **C. Never show the spinner.** Leaves writers with no feedback during longer renders; the modal would feel frozen.
 
 ### 4. Preview re-render trigger granularity
 
@@ -210,3 +213,4 @@ Track ratifications and reversals here as work proceeds.
 - **2026-05-04** — Doc created. All §§ "What's locked at the meta level" decisions ratified during the design conversation. §§ 1-8 "Sections requiring ratification" recommendations awaiting confirmation.
 - **2026-05-04** — § 1 ratified: underline pattern, custom CSS with `dbench-` prefix, after evaluating three visual mockups. Pattern 3 (segmented control) was the close runner-up and is noted as a potential future revisit if the tab count grows past two.
 - **2026-05-04** — § 2 ratified: Option A (single-pass `MarkdownRenderer`, no virtualization), not gated on a pre-ship performance smoke test. Future activity: build a seeded large dummy vault (100k+ words) for benchmarking, independent of 0.3.0 release timing. Chunked-render (Option B) is the known fallback if performance reports surface.
+- **2026-05-04** — § 3 ratified: Option B with N = 250ms. Spinner appears only when render exceeds the threshold; implemented via `setTimeout` cleared on render completion.

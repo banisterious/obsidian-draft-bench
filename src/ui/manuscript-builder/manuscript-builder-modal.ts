@@ -1,5 +1,6 @@
-import { Modal, setIcon, type App } from 'obsidian';
+import { Component, MarkdownRenderer, Modal, setIcon, type App } from 'obsidian';
 import type DraftBenchPlugin from '../../../main';
+import { CompileService } from '../../core/compile-service';
 import {
 	compileAndNotify,
 	formatPresetLabel,
@@ -51,6 +52,8 @@ export class ManuscriptBuilderModal extends Modal {
 	private bodyEl: HTMLElement | null = null;
 	private tabBodyEl: HTMLElement | null = null;
 	private activeTab: ManuscriptBuilderTab = 'build';
+	private previewComponent: Component | null = null;
+	private previewRenderToken = 0;
 
 	constructor(
 		app: App,
@@ -68,7 +71,16 @@ export class ManuscriptBuilderModal extends Modal {
 	}
 
 	onClose(): void {
+		this.tearDownPreview();
 		this.contentEl.empty();
+	}
+
+	private tearDownPreview(): void {
+		this.previewRenderToken++;
+		if (this.previewComponent) {
+			this.previewComponent.unload();
+			this.previewComponent = null;
+		}
 	}
 
 	private initState(): void {
@@ -311,6 +323,10 @@ export class ManuscriptBuilderModal extends Modal {
 
 	private renderActiveTab(): void {
 		if (!this.tabBodyEl) return;
+		// Switching away from Preview, or re-entering Preview, both
+		// invalidate any in-flight preview render and release the
+		// component bound to the old DOM before we wipe the body.
+		this.tearDownPreview();
 		this.tabBodyEl.empty();
 		if (this.activeTab === 'build') {
 			this.renderBuildTab(this.tabBodyEl);
@@ -385,11 +401,79 @@ export class ManuscriptBuilderModal extends Modal {
 	}
 
 	private renderPreviewTab(body: HTMLElement): void {
-		// Placeholder for Step 1; render plumbing lands in Step 4 of
-		// docs/planning/manuscript-builder-preview.md.
-		body.createDiv({
+		void this.renderPreviewAsync(body);
+	}
+
+	/*
+	 * Preview render path: single-pass MarkdownRenderer.render against
+	 * CompileService's markdown intermediate, no chunking, no
+	 * virtualization. Per docs/planning/manuscript-builder-preview.md
+	 * § 2 (ratified 2026-05-04): trust the renderer for typical
+	 * novel-sized projects; fall back to chunked render (descend
+	 * chapter-by-chapter, render each, concat) if writers report lag
+	 * or the planned large-vault benchmark surfaces unacceptable
+	 * render times. Virtualized scroll is the next step beyond that
+	 * and remains deferred.
+	 *
+	 * The renderToken pattern guards against stale renders when the
+	 * writer flips tabs / presets faster than CompileService.generate
+	 * resolves: each invocation increments the token, the post-await
+	 * check abandons any render whose token is no longer current.
+	 */
+	private async renderPreviewAsync(body: HTMLElement): Promise<void> {
+		const token = ++this.previewRenderToken;
+
+		const preset = this.presets.find(
+			(p) => p.frontmatter['dbench-id'] === this.selectedPresetId
+		);
+		if (!preset || !this.project) {
+			// Step 6 will render dedicated empty states for the no-
+			// project / no-preset / no-scenes / render-error cases.
+			return;
+		}
+
+		let markdown: string;
+		try {
+			const result = await new CompileService(this.app).generate(preset);
+			markdown = result.markdown;
+		} catch {
+			// Step 6 handles the render-error empty state.
+			return;
+		}
+
+		if (token !== this.previewRenderToken) return;
+
+		// Tear down the previous render's component before swapping
+		// in the new one, so embeds / dataview blocks / etc. release
+		// their resources cleanly.
+		if (this.previewComponent) {
+			this.previewComponent.unload();
+			this.previewComponent = null;
+		}
+
+		body.empty();
+		const previewEl = body.createDiv({
 			cls: 'dbench-manuscript-builder__preview',
 		});
+
+		const component = new Component();
+		component.load();
+		this.previewComponent = component;
+
+		const sourcePath = this.project.file.path;
+		try {
+			await MarkdownRenderer.render(
+				this.app,
+				markdown,
+				previewEl,
+				sourcePath,
+				component
+			);
+		} catch {
+			// Step 6 handles the render-error empty state. For now,
+			// the partially-rendered DOM stays as-is rather than being
+			// wiped, so the writer at least sees what landed.
+		}
 	}
 
 	private renderFormSection(

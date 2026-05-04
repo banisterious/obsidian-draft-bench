@@ -17,6 +17,7 @@ export default [
 			"docs/**",
 			"external/**",
 			"dev-vault/**",
+			"capture-vault/**",
 			"tests/**",
 		],
 	},

@@ -4,6 +4,20 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.2.4: 2026-05-04 — Manuscript view + Builder UI polish
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.2.4)
+
+UI polish patch covering three small Manuscript-view and Manuscript Builder changes. Simplifies the primary action surface, clarifies multi-select intent on the status filter, and removes a redundant visual element on the status chip. No data-shape, compile-pipeline, linker, or integrity-service changes.
+
+### Changed
+
+- **Status chip drops the redundant colored dot** ([#23](https://github.com/banisterious/obsidian-draft-bench/issues/23)). The chip's small colored dot and pill background were both derived from the same `--dbench-status-<status>` variable, encoding status twice. The dot is gone; the pill background alone now carries the status color, matching the convention used in GitHub, Linear, Notion, and similar status-badge implementations. Pill horizontal padding rebalanced to symmetric since the previous left-tight padding was tuned for the dot-then-label flex layout. Affects scene rows, sub-scene rows, and chapter card headers (all share the same chip helper). Style Settings overrides on `--dbench-status-*` continue to work unchanged.
+- **Status filter restyled as toggleable pills** ([#25](https://github.com/banisterious/obsidian-draft-bench/issues/25)). The Manuscript Builder's Inclusion section previously rendered each status as a native checkbox plus label, which visually read as a radio-button (single-select) pattern despite being multi-select. Each status now renders as a pill: outlined when unselected, color-mix-tinted with the per-status color when selected. Click anywhere on the pill toggles. The underlying `<input type="checkbox">` stays in the DOM (visually hidden) so screen readers and keyboard navigation continue to work; CSS `:has(input:focus-visible)` transfers the focus indicator to the chip. Mirrors the Manuscript view's status-chip pattern but with bolder emphasis for the active-config register.
+- **Manuscript view's primary CTA now opens the Manuscript Builder** ([#24](https://github.com/banisterious/obsidian-draft-bench/issues/24)). The prominent "Compile" button used to short-circuit to instant compile (the only preset on single-preset projects, or a fuzzy preset picker on multi-preset projects). It now opens the Manuscript Builder modal, where the writer picks a preset, configures filters, and runs compile from the modal's header. The button is renamed "Compile..." per the standard ellipsis convention signaling "opens further UI before action." The smaller `book-up` icon button that previously opened the Builder from the Manuscript view header is removed as redundant. Writers who want true one-click compile can bind a hotkey to one of the existing palette commands (`Draft Bench: Compile current project`, `Draft Bench: Run compile...`).
+
+1102 unit + integration tests, all green. Desktop-only.
+
 ## 0.2.3: 2026-05-04 — defensive linker-sort fixes
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.2.3)

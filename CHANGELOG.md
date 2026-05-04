@@ -6,11 +6,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-05-04
+
+UI polish patch. Three Manuscript-view and Manuscript Builder changes that simplify the primary action surface, clarify multi-select intent on the status filter, and remove a redundant visual element on the status chip. No data-shape, compile-pipeline, linker, or integrity-service changes.
+
 ### Changed
 
 - **Manuscript view status chip drops the redundant colored dot.** The chip's small colored dot and pill background were both derived from the same `--dbench-status-<status>` variable, encoding status twice. The dot is gone; the pill background is now the sole visual carrier of status color. Pill padding rebalanced to symmetric horizontal (`var(--dbench-spacing-sm)` on both sides) since the previous left-tight padding was specifically tuned for the dot-then-label flex layout. Affects scene rows, sub-scene rows, and chapter card headers (all share the same chip helper). Refs #23.
 - **Manuscript Builder status filter restyled as toggleable pills.** The Inclusion section's "compile scenes whose status is..." filter previously rendered each status as a native checkbox + label, which visually read as a radio-button (single-select) pattern despite being multi-select. Each status now renders as a pill: outlined when unselected, color-mix-tinted with the per-status `--dbench-status-<status>` variable when selected. Click anywhere on the pill toggles. The underlying `<input type="checkbox">` stays in the DOM (visually hidden) so screen readers and keyboard navigation continue to work; CSS `:has(input:focus-visible)` transfers the focus indicator to the chip. Mirrors the Manuscript view's status-chip pattern but with bolder emphasis for the active-config register. Refs #25.
-- **Manuscript view's primary CTA now opens the Manuscript Builder.** The prominent "Compile" button in the Manuscript view header used to short-circuit to instant compile (the only preset on single-preset projects, or a fuzzy preset picker on multi-preset projects). It now opens the Manuscript Builder modal, where the writer picks a preset, configures filters, and runs compile from the modal's header. The button is renamed "Compile..." per the standard ellipsis convention signaling "opens further UI before action." The smaller `book-up` icon button that previously opened the Builder from the Manuscript view header is removed as redundant. Writers who relied on the instant-compile path can bind a hotkey to a future "Compile with last preset" palette command (out of scope for this change). Refs #24.
+- **Manuscript view's primary CTA now opens the Manuscript Builder.** The prominent "Compile" button in the Manuscript view header used to short-circuit to instant compile (the only preset on single-preset projects, or a fuzzy preset picker on multi-preset projects). It now opens the Manuscript Builder modal, where the writer picks a preset, configures filters, and runs compile from the modal's header. The button is renamed "Compile..." per the standard ellipsis convention signaling "opens further UI before action." The smaller `book-up` icon button that previously opened the Builder from the Manuscript view header is removed as redundant. Writers who relied on the instant-compile path can bind a hotkey to one of the existing palette commands (`Draft Bench: Compile current project`, `Draft Bench: Run compile...`) which preserve the pre-0.2.4 behavior. Refs #24.
+
+1102 unit + integration tests, all green. Desktop-only.
 
 ## [0.2.3] - 2026-05-04
 

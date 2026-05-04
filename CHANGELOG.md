@@ -6,6 +6,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+Manuscript Builder Preview tab marquee. The Builder modal gains a Preview tab alongside the existing form stack (now Build tab), letting writers tune compile presets and read the rendered output without writing a real export file. Several maintainer-facing improvements ride along: an in-modal project switcher, a sticky header that keeps controls reachable during long Preview scroll, and per-project tab persistence.
+
+### Added
+
+- **Manuscript Builder Preview tab.** A new Preview tab renders the current preset's compile output as continuous read-only prose using Obsidian's `MarkdownRenderer`. Tweak settings on Build, flip to Preview, see the impact, iterate. Re-renders on tab activation, preset change, and project change; external edits to source notes mid-session are not auto-reactive (flip Build -> Preview to re-trigger). Sub-scene descent matches the compile pipeline (parent intro prose first, then sub-scenes in `dbench-order`). Tested clean against a 110k-word fixture project; the implementation is single-pass, no chunking or virtualization. A 250ms-threshold "Rendering..." spinner covers the perceived-latency case for larger projects. Empty-state messages cover the no-presets, no-scenes, filters-exclude-all, and render-error cases. Refs #26.
+- **Preview typography toolbar.** Above the rendered Preview prose, a four-control toolbar lets the writer tune reading register without leaving the modal: text alignment (Left / Justify), reading width (Full / Med ~50em / Narrow ~40em), font size (12-24px stepper), and font family (Theme default / Serif / Sans-serif / Monospace). Choices persist globally as `plugin.settings.previewTypography` (reading-register preferences, not project-specific). No Style Settings dependency.
+- **Project switcher in Manuscript Builder header.** The previous read-only project label is now a dropdown listing every project in the vault. Switching there updates the modal in place (presets, selected preset, last-active tab) and routes through `plugin.selection.set` so the Manuscript view re-renders to match.
+- **Sticky modal header.** The title, project + preset row, tab strip, and (when active) Preview typography toolbar pin to the top of the modal's scroll container. Keeps controls reachable during long Preview prose scroll.
+- **Last-active tab persisted per project.** The modal remembers each project's last-used tab via a new `manuscriptBuilderTabState` settings field (mirrors the `chapterCollapseState` / `sceneCollapseState` pattern). First-open of any project lands on Build.
+- **Style Settings exposure for Preview.** Seven CSS variables — `--dbench-tab-active-accent` plus six Preview-typography vars (font-family, font-size, line-height, max-width, paragraph-spacing, text-align) — exposed as a "Manuscript Builder Preview" section in the Style Settings community plugin. The in-modal toolbar covers the most common knobs without needing Style Settings; these variables serve power users wanting deeper customization.
+
+### Fixed
+
+- **Modal close button stays visible during long Preview scroll.** The sticky header's z-index could paint over the close button (the X in the top-right corner) once content scrolled under. The close button now sits at z-index 2 (scoped via the modal class) so it remains clickable from any scroll position.
+
 ## [0.2.4] - 2026-05-04
 
 UI polish patch. Three Manuscript-view and Manuscript Builder changes that simplify the primary action surface, clarify multi-select intent on the status filter, and remove a redundant visual element on the status chip. No data-shape, compile-pipeline, linker, or integrity-service changes.

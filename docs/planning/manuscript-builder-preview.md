@@ -150,19 +150,23 @@ Neither is locked; both are easier to add later than to remove if writers find t
 
 ### 7. Empty-state copy (placeholders)
 
-**Question:** What does each empty state actually say?
+**Ratified 2026-05-04: Ship with the placeholder copy below; iterate post-launch based on writer reactions.**
 
-**Locked:** three states (filters exclude all, project has no scenes, render error) get brief actionable messages.
+The Preview tab handles three empty / non-content states. Each surfaces a brief actionable message; copy is intentionally placeholder-grade and may shift after writers hit the messages in practice.
 
-**Open:** the actual copy.
+| State | Message |
+|---|---|
+| Filters exclude all scenes | "No scenes match this preset's filters. Adjust scene-statuses or scene-excludes on the Build tab." |
+| Project has no scenes | "No scenes in this project yet. Create scenes from the Manuscript view." |
+| Render error | "Preview render failed: `<error message>`. The Build tab settings may be inconsistent; check the console for details." |
 
-**Initial drafts (placeholder, refine post-launch):**
+**Notes:**
 
-- **Filters exclude all:** "No scenes match this preset's filters. Adjust scene-statuses or scene-excludes on the Build tab."
-- **Project has no scenes:** "No scenes in this project yet. Create scenes from the Manuscript view."
-- **Render error:** "Preview render failed: `<error message>`. The Build tab settings may be inconsistent; check the console for details."
+- The "Filters exclude all" message names two specific filter fields (`scene-statuses`, `scene-excludes`) rather than going generic. Concrete > generic for actionability; minor cost is needing a copy update if those filter names change in the future.
+- The "Project has no scenes" message intentionally doesn't mention sub-scenes — a project with zero scenes has zero sub-scenes by definition (sub-scenes live under scenes), so the scene-only framing is correct.
+- The "Render error" copy embeds the raw error message inline. Useful for debugging, potentially intimidating for non-technical writers. If post-launch feedback indicates the raw-error inline is too rough, a friendlier framing with the raw error tucked into a collapsible is the natural follow-up. Not worth pre-engineering for 0.3.0.
 
-**Recommendation:** Ship with these placeholders. Iterate based on actual writer reactions.
+The fourth case (no project / no preset selected) is presumably handled by the modal at large; Preview inherits whatever empty state the modal shows. Confirm during Step 4 of implementation.
 
 ### 8. CSS class hooks for theme authors
 
@@ -238,3 +242,4 @@ Track ratifications and reversals here as work proceeds.
 - **2026-05-04** — § 5 ratified: no refresh button for 0.3.0. Modal-blocks-vault constraint strengthens the deferral; the only paths for external file changes during a session are out-of-Obsidian edits or background sync, both narrow enough to be served by the manual flip-tab gesture. Forward-compat note added pointing at the leaf-mode candidate ([post-v1-candidates.md § 3](post-v1-candidates.md)).
 - **2026-05-04** — Reciprocal cross-reference added in [post-v1-candidates.md § 3](post-v1-candidates.md) noting that the modal Preview tab defers external-edit reactivity by design and the leaf-mode candidate is where that reactivity would naturally live.
 - **2026-05-04** — § 6 ratified: no secondary Compile affordance on the Preview tab for 0.3.0. Header Compile button is the single source. Sticky-header CSS and "back to top" affordance flagged as cheap long-scroll mitigations to evaluate during implementation (not locked).
+- **2026-05-04** — § 7 ratified: ship the three placeholder empty-state messages as drafted (filters exclude all; project has no scenes; render error). Iterate post-launch based on writer reactions. Friendlier render-error framing flagged as a natural follow-up if raw-inline-error is too rough in practice.

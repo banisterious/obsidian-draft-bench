@@ -126,13 +126,27 @@ The Preview tab does not include an explicit refresh affordance. The re-render t
 
 ### 6. Compile button visibility on the Preview tab
 
-**Question:** Locked that the button stays in the modal header (visible from both tabs). What about secondary affordances?
+**Ratified 2026-05-04: No secondary Compile affordance on the Preview tab for 0.3.0.**
 
-**Open:**
+The Compile button stays in the modal header per the meta-level lock and is visible from both tabs. The Preview tab body does not add a sticky footer button, an inline end-of-preview button, or any other Compile-prompting affordance.
 
-- Should the Preview tab include a "ready to compile?" callout near the bottom of the rendered preview, especially after a long scroll? (e.g., a sticky footer or inline button at end of preview)
+**Rationale.** Three reasons reinforce the no-secondary-affordance call:
 
-**Recommendation:** **No additional Compile-prompting in Preview for 0.3.0.** The header button is reachable; the Preview tab is for review, not action-prompting. Avoid double-affordance.
+1. The header button is already reachable from anywhere in the modal; a second instance would create double-affordance (two paths to the same action), mild UX noise.
+2. A sticky footer in Preview competes with the rendered prose for visual attention while the writer is reading.
+3. The Preview tab is conceptually a *review* surface; prompting compile mid-review pushes the writer out of review-mode. Better to let them finish reading, then click the header button when ready.
+
+**Long-scroll consideration:** on long manuscripts, after a deep scroll the modal header may be off-screen, making the Compile button less visible. Two cheap mitigations to evaluate during implementation (Step 4):
+
+- The modal header could be sticky (CSS `position: sticky` on the header bar) so it stays visible during Preview scroll. Lightweight; no new affordance.
+- A subtle "back to top" button at the bottom of long previews. Simpler than a redundant Compile button and more in line with browsing conventions.
+
+Neither is locked; both are easier to add later than to remove if writers find the long-scroll case painful in practice.
+
+**Considered and not chosen:**
+
+- **Sticky footer with inline Compile button** at the bottom of the Preview viewport. Real estate cost during reading; double-affordance noise.
+- **End-of-preview Compile button** (rendered after the last scene's content). Less obtrusive than a sticky footer but still double-affordance.
 
 ### 7. Empty-state copy (placeholders)
 
@@ -222,3 +236,5 @@ Track ratifications and reversals here as work proceeds.
 - **2026-05-04** — § 3 ratified: Option B with N = 250ms. Spinner appears only when render exceeds the threshold; implemented via `setTimeout` cleared on render completion.
 - **2026-05-04** — § 4 ratified: Preview re-renders on tab activation, preset-selector change, and project-selector change. External-edit reactivity (file-save or debounced live-update) explicitly deferred.
 - **2026-05-04** — § 5 ratified: no refresh button for 0.3.0. Modal-blocks-vault constraint strengthens the deferral; the only paths for external file changes during a session are out-of-Obsidian edits or background sync, both narrow enough to be served by the manual flip-tab gesture. Forward-compat note added pointing at the leaf-mode candidate ([post-v1-candidates.md § 3](post-v1-candidates.md)).
+- **2026-05-04** — Reciprocal cross-reference added in [post-v1-candidates.md § 3](post-v1-candidates.md) noting that the modal Preview tab defers external-edit reactivity by design and the leaf-mode candidate is where that reactivity would naturally live.
+- **2026-05-04** — § 6 ratified: no secondary Compile affordance on the Preview tab for 0.3.0. Header Compile button is the single source. Sticky-header CSS and "back to top" affordance flagged as cheap long-scroll mitigations to evaluate during implementation (not locked).

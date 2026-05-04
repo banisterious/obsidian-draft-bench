@@ -74,6 +74,8 @@ The following appeared as candidates and have since landed in main during the pr
 
 **References.** Scrivener's Scrivenings mode. StoryLine's Manuscript view. Obsidian's `MarkdownRenderer.render` API.
 
+**Relationship to the modal-based Preview tab (promoted, target 0.3.0).** The [Manuscript Builder Preview tab](manuscript-builder-preview.md) ships the same continuous-render machinery inside the Manuscript Builder modal as a "preview before compile" task surface. Because Obsidian modals block interaction with the rest of the workspace, that implementation explicitly defers external-edit reactivity (file-save reactivity, debounced live-update, manual refresh button) per [its § 5](manuscript-builder-preview.md). This leaf-mode candidate is where that reactivity would naturally live, since a leaf can stay open while writers edit source notes in another pane — making the two surfaces complementary rather than redundant.
+
 ---
 
 ## Borderline candidates (mention, don't commit)

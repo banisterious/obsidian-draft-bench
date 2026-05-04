@@ -170,19 +170,44 @@ The fourth case (no project / no preset selected) is presumably handled by the m
 
 ### 8. CSS class hooks for theme authors
 
-**Question:** What new class hooks does this work expose for Style Settings / theme authors?
+**Ratified 2026-05-04: Seven class hooks + seven Style Settings variables (one tab-related, six Preview-typography).**
 
-**Recommendation:** Expose:
+**Class hooks** (used by both the implementation and Style Settings):
 
-- `dbench-manuscript-builder__tabs` — tab strip container
-- `dbench-manuscript-builder__tab` — individual tab
-- `dbench-manuscript-builder__tab--active` — active tab state
-- `dbench-manuscript-builder__tab-body` — body region whose content swaps on tab change
-- `dbench-manuscript-builder__preview` — Preview tab body specifically (so theme authors can target preview-rendered prose without affecting Build)
-- `dbench-manuscript-builder__preview-empty` — empty-state container
-- `dbench-manuscript-builder__preview-spinner` — "Rendering..." spinner
+| Hook | Purpose |
+|---|---|
+| `dbench-manuscript-builder__tabs` | Tab strip container |
+| `dbench-manuscript-builder__tab` | Individual tab |
+| `dbench-manuscript-builder__tab--active` | Active tab state |
+| `dbench-manuscript-builder__tab-body` | Body region whose content swaps on tab change |
+| `dbench-manuscript-builder__preview` | Preview tab body container (lets theme authors target preview-rendered prose without affecting Build's form fields) |
+| `dbench-manuscript-builder__preview-empty` | Empty-state container (the three messages from § 7) |
+| `dbench-manuscript-builder__preview-spinner` | The 250ms-delayed "Rendering..." spinner from § 3 |
 
-Style Settings variable (new): `--dbench-tab-active-accent` defaulting to `var(--interactive-accent)`.
+The first three plus the active-tab variable were also captured in § 1; listed here for completeness.
+
+**Style Settings variables:**
+
+| Variable | Default | What it controls |
+|---|---|---|
+| `--dbench-tab-active-accent` | `var(--interactive-accent)` | Underline + active-text color for the tab strip. |
+| `--dbench-preview-font-family` | `var(--font-text)` | Font used in Preview body. Writers often prefer serif (Crimson, Garamond, Caslon) for prose review even when their regular note font is sans-serif. |
+| `--dbench-preview-font-size` | `var(--font-text-size)` | Body font size in Preview. |
+| `--dbench-preview-line-height` | `var(--line-height-normal)` | Line spacing; a major readability lever for long-form prose. |
+| `--dbench-preview-max-width` | `none` | Optional reading-column constraint (e.g., `45em` for a 65-75-character column). Many writers prefer a constrained column for prose review even when the modal is wider. |
+| `--dbench-preview-paragraph-spacing` | `1em` | Gap between paragraphs. |
+| `--dbench-preview-text-align` | `left` | Body text alignment. Style Settings exposes the choice as a select with options `left` and `justify`. |
+
+All Preview-typography defaults inherit from Obsidian's text-pane variables where reasonable, so default Preview matches the writer's regular note-reading register out of the box. Style Settings users override per-variable to tune Preview without affecting their other notes.
+
+**Important framing for the Style Settings UI copy and any user docs.** Preview is for in-Obsidian review, **not** a faithful render of the compiled PDF / ODT / DOCX output. Different rendering pipelines (`MarkdownRenderer` here versus pdfmake / docx generators in the actual compile path). The variables above tune Preview *display*, not the exported file. Writers wanting "how will my final PDF look?" should compile to disk and open the file. Worth stating explicitly so writers don't expect Preview to WYSIWYG the compiled output.
+
+**Considered and not chosen for 0.3.0:**
+
+- `--dbench-preview-text-color` — theme-derived defaults (`--text-normal`) cover the common case; explicit override is rare and hard to do well. Add later if writers ask.
+- `--dbench-preview-background` — same; theme-driven. A "paper-like" rendering mode (cream / off-white) is interesting but worth a separate FR.
+- `--dbench-preview-hyphens` (controlling `hyphens: auto`) — paired with justify-alignment, automatic hyphenation can dramatically improve justified-prose appearance by breaking up rivers. Skipping for 0.3.0; revisit if writers report ugly justified output.
+- `--dbench-preview-content` class hook — redundant with `MarkdownRenderer.render`'s built-in `.markdown-rendered` class.
 
 ---
 
@@ -198,7 +223,7 @@ Numbered steps to ship 0.3.0. Each step is committable independently.
 6. **Empty states.** Implement the three empty-state branches per § 7. Use the placeholder copy.
 7. **Sub-scene descent verification.** Test against a project with hierarchical scenes (sub-scenes); confirm Preview matches the actual compile output structurally (parent intro prose first, then sub-scenes in `dbench-order`).
 8. **Performance smoke test.** Test against a 100k-word project per § 2. If render exceeds 2 seconds, file a follow-up issue and decide whether to fall back to chunked render before shipping.
-9. **Style Settings exposure.** Document the new class hooks and the `--dbench-tab-active-accent` variable in [styles/style-settings.css](../../styles/style-settings.css) so theme authors can target them.
+9. **Style Settings exposure.** Document the seven new class hooks and the seven new Style Settings variables (one tab-related, six Preview-typography) in [styles/style-settings.css](../../styles/style-settings.css). See § 8 for the full list and defaults; the Preview-typography group should land under a "Manuscript Builder Preview" Style Settings section with a brief intro noting that Preview is for in-Obsidian review, not a WYSIWYG of compiled output.
 10. **Wiki updates.** Refresh the [Manuscript-Builder wiki page](../../wiki-content/Manuscript-Builder.md) to document the Build/Preview tabs. Possibly a new screenshot showing Preview in action.
 11. **CHANGELOG entry.** Under `[Unreleased]`, then cut to `[0.3.0]` at release time.
 
@@ -243,3 +268,4 @@ Track ratifications and reversals here as work proceeds.
 - **2026-05-04** — Reciprocal cross-reference added in [post-v1-candidates.md § 3](post-v1-candidates.md) noting that the modal Preview tab defers external-edit reactivity by design and the leaf-mode candidate is where that reactivity would naturally live.
 - **2026-05-04** — § 6 ratified: no secondary Compile affordance on the Preview tab for 0.3.0. Header Compile button is the single source. Sticky-header CSS and "back to top" affordance flagged as cheap long-scroll mitigations to evaluate during implementation (not locked).
 - **2026-05-04** — § 7 ratified: ship the three placeholder empty-state messages as drafted (filters exclude all; project has no scenes; render error). Iterate post-launch based on writer reactions. Friendlier render-error framing flagged as a natural follow-up if raw-inline-error is too rough in practice.
+- **2026-05-04** — § 8 ratified: seven class hooks + seven Style Settings variables. Variables: one tab-related (`--dbench-tab-active-accent`) + six Preview-typography (`font-family`, `font-size`, `line-height`, `max-width`, `paragraph-spacing`, `text-align`). Justification was added to the typography set during ratification. Preview-as-not-WYSIWYG-of-compile-output framing captured for the Style Settings UI copy.

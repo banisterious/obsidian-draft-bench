@@ -22,6 +22,14 @@ import { DEFAULT_STATUS_VOCABULARY } from './types';
 export type DraftsFolderPlacement = 'project-local' | 'per-scene' | 'vault-wide';
 
 /**
+ * The two tabs in the Manuscript Builder modal. `build` is the form
+ * stack (Metadata, Inclusion, Output, Content handling, Last compile);
+ * `preview` renders the current preset's compile output as continuous
+ * read-only prose. See [docs/planning/manuscript-builder-preview.md](../../docs/planning/manuscript-builder-preview.md).
+ */
+export type ManuscriptBuilderTab = 'build' | 'preview';
+
+/**
  * The persisted plugin settings.
  *
  * Per Obsidian style: TypeScript identifiers are camelCase even though
@@ -215,6 +223,21 @@ export interface DraftBenchSettings {
 	sceneCollapseState: Record<string, boolean>;
 
 	/**
+	 * Per-project last-active tab in the Manuscript Builder modal.
+	 * Keyed by the project's `dbench-id`. Missing entries default to
+	 * `'build'`, so a writer who has never opened Preview lands on the
+	 * familiar form stack on first open.
+	 *
+	 * Persistence rationale mirrors `chapterCollapseState` /
+	 * `sceneCollapseState`: route through `saveSettings()` so late-
+	 * session flips survive reload (per
+	 * [docs/planning/manuscript-builder-preview.md § "What's locked at
+	 * the meta level"](../../docs/planning/manuscript-builder-preview.md)).
+	 * Empty `{}` on first install.
+	 */
+	manuscriptBuilderTabState: Record<string, ManuscriptBuilderTab>;
+
+	/**
 	 * One-shot migration marker for the `scenesFolder` default flip from
 	 * `''` (V1) to `'{chapter}/'` (per [issue #11](https://github.com/banisterious/obsidian-draft-bench/issues/11)).
 	 * `loadSettings` runs the migration exactly once: when an existing
@@ -252,5 +275,6 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	lastSelectedProjectId: null,
 	chapterCollapseState: {},
 	sceneCollapseState: {},
+	manuscriptBuilderTabState: {},
 	scenesFolderMigrated: true,
 };

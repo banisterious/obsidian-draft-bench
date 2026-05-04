@@ -11,6 +11,7 @@ import {
 	type ProjectNote,
 } from '../../core/discovery';
 import type { DraftBenchLinker } from '../../core/linker';
+import type { ManuscriptBuilderTab } from '../../model/settings';
 import { renderSection } from '../manuscript-view/sections/section-base';
 import { NewCompilePresetModal } from '../modals/new-compile-preset-modal';
 import { renderContentHandlingSection } from './sections/content-handling';
@@ -43,8 +44,6 @@ import { renderOutputSection } from './sections/output';
  * selected, shows an empty-state prompt directing the writer to the
  * Manuscript view to pick one.
  */
-export type ManuscriptBuilderTab = 'build' | 'preview';
-
 export class ManuscriptBuilderModal extends Modal {
 	private project: ProjectNote | null = null;
 	private presets: CompilePresetNote[] = [];
@@ -90,6 +89,22 @@ export class ManuscriptBuilderModal extends Modal {
 			this.presets.length > 0
 				? this.presets[0].frontmatter['dbench-id']
 				: null;
+		this.activeTab = this.loadActiveTab();
+	}
+
+	private loadActiveTab(): ManuscriptBuilderTab {
+		if (!this.project) return 'build';
+		const projectId = this.project.frontmatter['dbench-id'];
+		const saved = this.plugin.settings.manuscriptBuilderTabState[projectId];
+		return saved === 'preview' ? 'preview' : 'build';
+	}
+
+	private persistActiveTab(): void {
+		if (!this.project) return;
+		const projectId = this.project.frontmatter['dbench-id'];
+		this.plugin.settings.manuscriptBuilderTabState[projectId] =
+			this.activeTab;
+		void this.plugin.saveSettings();
 	}
 
 	private renderAll(): void {
@@ -273,6 +288,7 @@ export class ManuscriptBuilderModal extends Modal {
 		button.addEventListener('click', () => {
 			if (this.activeTab === tab) return;
 			this.activeTab = tab;
+			this.persistActiveTab();
 			this.refreshTabActiveState();
 			this.renderActiveTab();
 		});

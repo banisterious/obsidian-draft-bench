@@ -13,7 +13,12 @@ import {
 	type ProjectNote,
 } from '../../core/discovery';
 import type { DraftBenchLinker } from '../../core/linker';
-import type { ManuscriptBuilderTab } from '../../model/settings';
+import type {
+	ManuscriptBuilderTab,
+	PreviewFontFamily,
+	PreviewReadingWidth,
+	PreviewTextAlign,
+} from '../../model/settings';
 import { renderSection } from '../manuscript-view/sections/section-base';
 import { NewCompilePresetModal } from '../modals/new-compile-preset-modal';
 import { renderContentHandlingSection } from './sections/content-handling';
@@ -21,6 +26,38 @@ import { renderInclusionSection } from './sections/inclusion';
 import { renderLastCompileSection } from './sections/last-compile';
 import { renderMetadataSection } from './sections/metadata';
 import { renderOutputSection } from './sections/output';
+
+/**
+ * Preview-typography mappings. The settings store named values
+ * ("full" / "narrow" / "serif" / etc.); these tables resolve them
+ * to the actual CSS values written onto the modal's contentEl as
+ * `--dbench-preview-*` overrides. Keeping the named values in
+ * settings (rather than raw CSS strings) means future renames or
+ * additions don't break stored data.
+ */
+/*
+ * Reading-width values are tuned against the modal's
+ * `min(960px, 92vw)` width: each step needs to clip below the
+ * effective inner content width to be visible. 65em (~1040px) was
+ * larger than the modal itself, so "Medium" looked identical to
+ * "Full"; 50em (~800px) and 40em (~640px) give three visibly
+ * distinct widths on a 960px modal.
+ */
+const PREVIEW_READING_WIDTH_VALUE: Record<PreviewReadingWidth, string> = {
+	full: 'none',
+	medium: '50em',
+	narrow: '40em',
+};
+
+const PREVIEW_FONT_FAMILY_VALUE: Record<PreviewFontFamily, string> = {
+	default: 'var(--font-text)',
+	serif: 'Georgia, "Times New Roman", serif',
+	sans: 'system-ui, -apple-system, sans-serif',
+	mono: 'var(--font-monospace)',
+};
+
+const PREVIEW_FONT_SIZE_MIN = 12;
+const PREVIEW_FONT_SIZE_MAX = 24;
 
 /**
  * Manuscript Builder modal — the focused, dedicated surface for
@@ -146,11 +183,211 @@ export class ManuscriptBuilderModal extends Modal {
 
 		this.renderHeader(sticky);
 		this.renderTabs(sticky);
+		this.refreshPreviewToolbar();
 
 		this.tabBodyEl = this.contentEl.createDiv({
 			cls: 'dbench-manuscript-builder__tab-body',
 		});
+		this.applyPreviewTypography();
 		this.renderActiveTab();
+	}
+
+	/*
+	 * Preview typography wiring. Toolbar above the rendered prose
+	 * (only visible on the Preview tab) lets the writer tune text
+	 * alignment, reading width, font size, and font family. Choices
+	 * persist globally via plugin settings (these are reading-
+	 * register preferences, not project-specific). Applied as
+	 * inline `--dbench-preview-*` overrides on contentEl so the
+	 * existing CSS rules in manuscript-builder.css light up
+	 * unchanged.
+	 *
+	 * The Style Settings hooks declared in style-settings.css remain
+	 * for power users who prefer body-scope persistence; the toolbar
+	 * is the primary affordance and works without depending on the
+	 * Style Settings community plugin.
+	 */
+	private applyPreviewTypography(): void {
+		const t = this.plugin.settings.previewTypography;
+		this.contentEl.style.setProperty(
+			'--dbench-preview-text-align',
+			t.textAlign
+		);
+		this.contentEl.style.setProperty(
+			'--dbench-preview-max-width',
+			PREVIEW_READING_WIDTH_VALUE[t.readingWidth]
+		);
+		this.contentEl.style.setProperty(
+			'--dbench-preview-font-size',
+			`${t.fontSize}px`
+		);
+		this.contentEl.style.setProperty(
+			'--dbench-preview-font-family',
+			PREVIEW_FONT_FAMILY_VALUE[t.fontFamily]
+		);
+	}
+
+	private refreshPreviewToolbar(): void {
+		this.contentEl
+			.querySelector('.dbench-manuscript-builder__preview-toolbar')
+			?.remove();
+		if (this.activeTab !== 'preview') return;
+
+		const sticky = this.contentEl.querySelector<HTMLElement>(
+			'.dbench-manuscript-builder__sticky-header'
+		);
+		if (!sticky) return;
+
+		const toolbar = sticky.createDiv({
+			cls: 'dbench-manuscript-builder__preview-toolbar',
+			attr: { role: 'toolbar', 'aria-label': 'Preview typography' },
+		});
+		this.renderTextAlignToggle(toolbar);
+		this.renderReadingWidthToggle(toolbar);
+		this.renderFontSizeStepper(toolbar);
+		this.renderFontFamilyDropdown(toolbar);
+	}
+
+	private renderTextAlignToggle(parent: HTMLElement): void {
+		const group = parent.createDiv({
+			cls: 'dbench-manuscript-builder__toolbar-group',
+			attr: { role: 'group', 'aria-label': 'Text alignment' },
+		});
+		const buttons = new Map<PreviewTextAlign, HTMLElement>();
+		const setActive = (value: PreviewTextAlign): void => {
+			buttons.forEach((btn, val) => {
+				btn.toggleClass(
+					'dbench-manuscript-builder__toolbar-button--active',
+					val === value
+				);
+			});
+		};
+		const make = (
+			value: PreviewTextAlign,
+			label: string,
+			icon: string
+		): void => {
+			const btn = group.createEl('button', {
+				cls: 'dbench-manuscript-builder__toolbar-button',
+				attr: { type: 'button', 'aria-label': label },
+			});
+			setIcon(btn, icon);
+			btn.addEventListener('click', () => {
+				this.plugin.settings.previewTypography.textAlign = value;
+				void this.plugin.saveSettings();
+				this.applyPreviewTypography();
+				setActive(value);
+			});
+			buttons.set(value, btn);
+		};
+		make('left', 'Align left', 'align-left');
+		make('justify', 'Justify', 'align-justify');
+		setActive(this.plugin.settings.previewTypography.textAlign);
+	}
+
+	private renderReadingWidthToggle(parent: HTMLElement): void {
+		const group = parent.createDiv({
+			cls: 'dbench-manuscript-builder__toolbar-group',
+			attr: { role: 'group', 'aria-label': 'Reading width' },
+		});
+		const buttons = new Map<PreviewReadingWidth, HTMLElement>();
+		const setActive = (value: PreviewReadingWidth): void => {
+			buttons.forEach((btn, val) => {
+				btn.toggleClass(
+					'dbench-manuscript-builder__toolbar-button--active',
+					val === value
+				);
+			});
+		};
+		const make = (value: PreviewReadingWidth, label: string): void => {
+			const btn = group.createEl('button', {
+				cls: 'dbench-manuscript-builder__toolbar-button dbench-manuscript-builder__toolbar-button--text',
+				text: label,
+				attr: { type: 'button', 'aria-label': `Reading width ${label}` },
+			});
+			btn.addEventListener('click', () => {
+				this.plugin.settings.previewTypography.readingWidth = value;
+				void this.plugin.saveSettings();
+				this.applyPreviewTypography();
+				setActive(value);
+			});
+			buttons.set(value, btn);
+		};
+		make('full', 'Full');
+		make('medium', 'Med');
+		make('narrow', 'Narrow');
+		setActive(this.plugin.settings.previewTypography.readingWidth);
+	}
+
+	private renderFontSizeStepper(parent: HTMLElement): void {
+		const group = parent.createDiv({
+			cls: 'dbench-manuscript-builder__toolbar-group',
+			attr: { role: 'group', 'aria-label': 'Font size' },
+		});
+		const minus = group.createEl('button', {
+			cls: 'dbench-manuscript-builder__toolbar-button',
+			attr: { type: 'button', 'aria-label': 'Decrease font size' },
+		});
+		setIcon(minus, 'minus');
+		const valueEl = group.createSpan({
+			cls: 'dbench-manuscript-builder__toolbar-value',
+			text: `${this.plugin.settings.previewTypography.fontSize}px`,
+			attr: { 'aria-live': 'polite' },
+		});
+		const plus = group.createEl('button', {
+			cls: 'dbench-manuscript-builder__toolbar-button',
+			attr: { type: 'button', 'aria-label': 'Increase font size' },
+		});
+		setIcon(plus, 'plus');
+
+		const refreshDisabled = (): void => {
+			const fs = this.plugin.settings.previewTypography.fontSize;
+			minus.disabled = fs <= PREVIEW_FONT_SIZE_MIN;
+			plus.disabled = fs >= PREVIEW_FONT_SIZE_MAX;
+		};
+		const step = (delta: number): void => {
+			const current = this.plugin.settings.previewTypography.fontSize;
+			const next = Math.max(
+				PREVIEW_FONT_SIZE_MIN,
+				Math.min(PREVIEW_FONT_SIZE_MAX, current + delta)
+			);
+			if (next === current) return;
+			this.plugin.settings.previewTypography.fontSize = next;
+			void this.plugin.saveSettings();
+			this.applyPreviewTypography();
+			valueEl.setText(`${next}px`);
+			refreshDisabled();
+		};
+		minus.addEventListener('click', () => step(-1));
+		plus.addEventListener('click', () => step(1));
+		refreshDisabled();
+	}
+
+	private renderFontFamilyDropdown(parent: HTMLElement): void {
+		const select = parent.createEl('select', {
+			cls: 'dropdown dbench-manuscript-builder__toolbar-select',
+			attr: { 'aria-label': 'Font family' },
+		});
+		const options: Array<{ value: PreviewFontFamily; label: string }> = [
+			{ value: 'default', label: 'Theme default' },
+			{ value: 'serif', label: 'Serif' },
+			{ value: 'sans', label: 'Sans-serif' },
+			{ value: 'mono', label: 'Monospace' },
+		];
+		const current = this.plugin.settings.previewTypography.fontFamily;
+		for (const o of options) {
+			const opt = select.createEl('option', {
+				value: o.value,
+				text: o.label,
+			});
+			if (o.value === current) opt.selected = true;
+		}
+		select.addEventListener('change', () => {
+			this.plugin.settings.previewTypography.fontFamily =
+				select.value as PreviewFontFamily;
+			void this.plugin.saveSettings();
+			this.applyPreviewTypography();
+		});
 	}
 
 	private renderEmptyNoProject(): void {
@@ -329,6 +566,7 @@ export class ManuscriptBuilderModal extends Modal {
 			this.activeTab = tab;
 			this.persistActiveTab();
 			this.refreshTabActiveState();
+			this.refreshPreviewToolbar();
 			this.renderActiveTab();
 		});
 	}

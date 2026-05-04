@@ -30,6 +30,26 @@ export type DraftsFolderPlacement = 'project-local' | 'per-scene' | 'vault-wide'
 export type ManuscriptBuilderTab = 'build' | 'preview';
 
 /**
+ * Preview tab typography preferences. Surfaced as an in-modal
+ * toolbar above the rendered prose; tunes the `--dbench-preview-*`
+ * CSS variables consumed by the Preview tab (declared in
+ * variables.css, applied in manuscript-builder.css). Persisted as
+ * a top-level settings field rather than per-project: these are
+ * reading-register preferences ("how I like to read prose"), not
+ * project-specific settings.
+ */
+export type PreviewTextAlign = 'left' | 'justify';
+export type PreviewReadingWidth = 'full' | 'medium' | 'narrow';
+export type PreviewFontFamily = 'default' | 'serif' | 'sans' | 'mono';
+
+export interface PreviewTypography {
+	textAlign: PreviewTextAlign;
+	readingWidth: PreviewReadingWidth;
+	fontSize: number;
+	fontFamily: PreviewFontFamily;
+}
+
+/**
  * The persisted plugin settings.
  *
  * Per Obsidian style: TypeScript identifiers are camelCase even though
@@ -238,6 +258,23 @@ export interface DraftBenchSettings {
 	manuscriptBuilderTabState: Record<string, ManuscriptBuilderTab>;
 
 	/**
+	 * Preview tab typography preferences. Tunes the in-modal
+	 * Preview toolbar's controls (text alignment, reading width,
+	 * font size, font family). Globally scoped — these are
+	 * reading-register preferences, not per-project settings.
+	 *
+	 * The four values map to the `--dbench-preview-*` CSS
+	 * variables: textAlign -> --dbench-preview-text-align,
+	 * readingWidth -> --dbench-preview-max-width (named values
+	 * "full" | "medium" | "narrow" map to "none" | "65em" |
+	 * "45em"), fontSize -> --dbench-preview-font-size (px),
+	 * fontFamily -> --dbench-preview-font-family (named values
+	 * "default" | "serif" | "sans" | "mono" map to font-family
+	 * stacks).
+	 */
+	previewTypography: PreviewTypography;
+
+	/**
 	 * One-shot migration marker for the `scenesFolder` default flip from
 	 * `''` (V1) to `'{chapter}/'` (per [issue #11](https://github.com/banisterious/obsidian-draft-bench/issues/11)).
 	 * `loadSettings` runs the migration exactly once: when an existing
@@ -276,5 +313,11 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	chapterCollapseState: {},
 	sceneCollapseState: {},
 	manuscriptBuilderTabState: {},
+	previewTypography: {
+		textAlign: 'left',
+		readingWidth: 'full',
+		fontSize: 16,
+		fontFamily: 'default',
+	},
 	scenesFolderMigrated: true,
 };

@@ -450,7 +450,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-BUILDER.CSS  (378 lines, 11.3 KB)
+   MANUSCRIPT-BUILDER.CSS  (480 lines, 14.19 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -477,6 +477,18 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
  */
 .dbench-manuscript-builder-modal {
 	width: min(960px, 92vw);
+}
+
+/*
+ * Close button stacking. The sticky header inside .modal-content
+ * has z-index: 1 (so scrolled content doesn't bleed through its
+ * opaque background). Without an explicit z-index on the close
+ * button, the sticky header's stacking context can paint over it
+ * once the writer scrolls. Scoped via the modal class so we don't
+ * touch other plugins' modals.
+ */
+.dbench-manuscript-builder-modal .modal-close-button {
+	z-index: 2;
 }
 
 .dbench-manuscript-builder {
@@ -615,6 +627,96 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	display: flex;
 	flex-direction: column;
 	gap: var(--dbench-spacing-md);
+}
+
+/*
+ * Preview typography toolbar. Sits inside the sticky header
+ * region, only rendered when the Preview tab is active. Four
+ * controls: text alignment (Left / Justify), reading width (Full /
+ * Med / Narrow), font size (- N px +), font family dropdown. Each
+ * writes to plugin.settings.previewTypography and applies via
+ * inline `--dbench-preview-*` overrides on the modal contentEl.
+ */
+.dbench-manuscript-builder__preview-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--dbench-spacing-md);
+	padding-top: var(--dbench-spacing-sm);
+	border-top: 1px solid var(--background-modifier-border-hover);
+}
+
+.dbench-manuscript-builder__toolbar-group {
+	display: inline-flex;
+	align-items: stretch;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	overflow: hidden;
+}
+
+.dbench-manuscript-builder__toolbar-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 32px;
+	height: 28px;
+	padding: 0 var(--dbench-spacing-sm);
+	margin: 0;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+	box-shadow: none;
+	transition: color 0.12s, background 0.12s;
+}
+
+.dbench-manuscript-builder__toolbar-button + .dbench-manuscript-builder__toolbar-button {
+	border-left: 1px solid var(--background-modifier-border);
+}
+
+.dbench-manuscript-builder__toolbar-button:hover:not(:disabled) {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.dbench-manuscript-builder__toolbar-button:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+}
+
+.dbench-manuscript-builder__toolbar-button:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.dbench-manuscript-builder__toolbar-button--active {
+	color: var(--text-on-accent);
+	background: var(--interactive-accent);
+}
+
+.dbench-manuscript-builder__toolbar-button--active:hover:not(:disabled) {
+	color: var(--text-on-accent);
+	background: var(--interactive-accent-hover);
+}
+
+.dbench-manuscript-builder__toolbar-value {
+	display: inline-flex;
+	align-items: center;
+	min-width: 3.5em;
+	padding: 0 var(--dbench-spacing-sm);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-variant-numeric: tabular-nums;
+	border-left: 1px solid var(--background-modifier-border);
+	border-right: 1px solid var(--background-modifier-border);
+	justify-content: center;
+}
+
+.dbench-manuscript-builder__toolbar-select {
+	height: 28px;
+	min-width: 11em;
 }
 
 /*
@@ -2314,12 +2416,12 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 9
-   Total:      2236 lines, 63.2 KB
+   Total:      2338 lines, 66.09 KB
    - variables.css: 108 lines, 3.85 KB
    - style-settings.css: 190 lines, 7.27 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - manuscript-builder.css: 378 lines, 11.3 KB
+   - manuscript-builder.css: 480 lines, 14.19 KB
    - welcome-modal.css: 94 lines, 2.21 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 1031 lines, 27.59 KB

@@ -64,17 +64,18 @@ Visual mockups for all three considered patterns lived under `docs/mockups/tab-p
 
 ### 2. Render performance ceiling
 
-**Question:** What's the practical upper bound on project size before the simple-approach (one `MarkdownRenderer.render` pass) starts feeling slow?
+**Ratified 2026-05-04: Option A (trust `MarkdownRenderer`, no virtualization). Not gated on a pre-ship performance smoke test.**
 
-**Options:**
+The Preview tab calls `MarkdownRenderer.render` against the `CompileService` markdown intermediate in a single pass. No chunking, no virtualization. The "Rendering..." spinner (per § 3) covers the perceived-latency case for whatever render time results.
 
-- **A. Trust `MarkdownRenderer`, no virtualization.** Simplest. Works fine for typical novel-length manuscripts (60-100k words). May lag for 200k+ word projects.
-- **B. Chunked render** (descend chapter-by-chapter, render each, concat). More complex. Smoother feel for large projects.
-- **C. Virtualized scroll** (render visible chapters only, lazy-load on scroll). Most complex; biggest implementation cost.
+**Code-comment requirement:** the renderer call site carries a comment naming this decision and pointing at the chunked-render path as the next step if performance reports surface. Format: a brief paragraph describing the trade-off, so a future contributor lands in the right place without having to dig through git history.
 
-**Recommendation:** **A for 0.3.0; revisit if writers report lag.** The "Rendering..." spinner already covers the perceived-latency case. Document the ceiling in a code comment so a future contributor knows where to start if the issue surfaces.
+**Future activity (not a ship blocker):** build a seeded, large dummy vault (target 100k+ words across multiple chapters with hierarchical scenes) and benchmark Preview render time. The maintainer's own active vaults are not large enough to surface large-project lag organically, so a deliberate test fixture is the right way to characterize where Option A breaks down. This work is independent of 0.3.0 release timing.
 
-**Smoke-test target:** A 100k-word project should render in under 2 seconds on a modest desktop. If that fails the test, fall back to B before shipping.
+**Considered and not chosen:**
+
+- **B. Chunked render** (descend chapter-by-chapter, render each, concat). The known fallback path. More complex than A; warranted only if writers report lag or the eventual large-vault benchmark surfaces unacceptable render times.
+- **C. Virtualized scroll** (render visible chapters only, lazy-load on scroll). Real engineering project. Defer indefinitely.
 
 ### 3. Spinner threshold
 
@@ -208,3 +209,4 @@ Track ratifications and reversals here as work proceeds.
 
 - **2026-05-04** — Doc created. All §§ "What's locked at the meta level" decisions ratified during the design conversation. §§ 1-8 "Sections requiring ratification" recommendations awaiting confirmation.
 - **2026-05-04** — § 1 ratified: underline pattern, custom CSS with `dbench-` prefix, after evaluating three visual mockups. Pattern 3 (segmented control) was the close runner-up and is noted as a potential future revisit if the tab count grows past two.
+- **2026-05-04** — § 2 ratified: Option A (single-pass `MarkdownRenderer`, no virtualization), not gated on a pre-ship performance smoke test. Future activity: build a seeded large dummy vault (100k+ words) for benchmarking, independent of 0.3.0 release timing. Chunked-render (Option B) is the known fallback if performance reports surface.

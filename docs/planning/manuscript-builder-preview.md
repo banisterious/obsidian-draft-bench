@@ -40,17 +40,27 @@ Each section below presents a remaining design decision. Ratify each before impl
 
 ### 1. Tab styling and pattern
 
-**Question:** What pattern do the Build / Preview tabs follow visually?
+**Ratified 2026-05-04: underline pattern, custom CSS with `dbench-` prefix.**
 
-**Options:**
+The Build / Preview tabs render as plain text labels with a 2-pixel accent-colored underline beneath the active tab. Inactive tabs are muted text (`var(--text-muted)`) with a hover state lifting them to `var(--text-normal)`. Active tab text and underline both use `var(--interactive-accent)`. Tab padding ~10px vertical / 16px horizontal. The tab strip has a 1-pixel bottom border (`var(--background-modifier-border)`) that the active tab's underline overlaps by 1 pixel (negative bottom margin) so the active tab visually "punches through" the strip's border.
 
-| Option | Pros | Cons |
-|---|---|---|
-| **A. Native Obsidian tab pattern** (e.g., the `.workspace-tab-header` pattern Obsidian uses for editor tabs) | Visual coherence with the rest of Obsidian; respects user themes automatically | Intended for editor tabs specifically; might look heavy at modal scale |
-| **B. Custom CSS pattern with `dbench-` prefix** | Tunable to modal scale; explicit hooks for Style Settings | More CSS to maintain; needs theme-respect testing |
-| **C. Setting tab-style horizontal nav** (matches Obsidian Settings' top-of-page tab pattern when applicable) | Lighter visual weight than editor tabs; familiar from Settings | Settings doesn't actually use top-tabs in the same way; possible mismatch |
+This is the lowest-visual-weight of the patterns evaluated; status badges and other modal chrome stay primary, with tabs reading as quiet navigation.
 
-**Recommendation:** **B (custom CSS with `dbench-` prefix)**, taking visual cues from native Obsidian tab styling but pared down for modal scale. Class hooks: `dbench-manuscript-builder__tabs`, `dbench-manuscript-builder__tab`, `dbench-manuscript-builder__tab--active`. Style Settings exposes the active-tab accent color (defaults to `--interactive-accent`).
+**Class hooks** (used by both the implementation and Style Settings):
+
+- `dbench-manuscript-builder__tabs` — tab strip container
+- `dbench-manuscript-builder__tab` — individual tab
+- `dbench-manuscript-builder__tab--active` — active tab state
+
+**Style Settings variable:** `--dbench-tab-active-accent`, defaulting to `var(--interactive-accent)`. Lets theme authors override the underline / active-text color independently of Obsidian's global accent if desired.
+
+**Considered and not chosen:**
+
+- **Native Obsidian editor-tab pattern** (`.workspace-tab-header`). Visual coherence pro, but intended for editor tabs and reads heavy at modal scale.
+- **Pill-style** (rounded-pill background tinted with accent on the active tab; Notion / Linear pattern). Medium visual weight; reads as "selectable state" but the modal didn't need that emphasis.
+- **Segmented control** (both tabs in a unified background container; active tab a raised inner cell; iOS-like). Strong "binary toggle" framing — close runner-up. May be worth revisiting if Build / Preview ever expands to more than two tabs (which would break the segmented metaphor anyway).
+
+Visual mockups for all three considered patterns lived under `docs/mockups/tab-pattern-{1,2,3}-*.html` during the design phase (gitignored).
 
 ### 2. Render performance ceiling
 
@@ -197,3 +207,4 @@ Items the design conversation didn't resolve; carry forward into implementation:
 Track ratifications and reversals here as work proceeds.
 
 - **2026-05-04** — Doc created. All §§ "What's locked at the meta level" decisions ratified during the design conversation. §§ 1-8 "Sections requiring ratification" recommendations awaiting confirmation.
+- **2026-05-04** — § 1 ratified: underline pattern, custom CSS with `dbench-` prefix, after evaluating three visual mockups. Pattern 3 (segmented control) was the close runner-up and is noted as a potential future revisit if the tab count grows past two.

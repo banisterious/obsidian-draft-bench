@@ -14,9 +14,19 @@ It pairs with the **[Manuscript view](#manuscript-view)** (a dockable workspace 
 
 If no compile preset exists yet for the active project, the modal opens with a **+ New preset** button so you can create one in place.
 
-## Sections
+## Header
 
-The modal is a stack of collapsible sections. Each section's fields persist directly to the preset note's `dbench-compile-*` frontmatter — no separate save step.
+A sticky region at the top of the modal that stays pinned to view as content below scrolls. Three pieces:
+
+- **Project picker** — a dropdown listing every project in the vault. Switching here updates the modal in place (presets, selected preset, last-active tab) and routes through plugin selection so the [Manuscript view](#manuscript-view) re-renders to match.
+- **Preset picker + New preset** — a dropdown listing the active project's compile presets, plus a button to create a new one inline.
+- **Run compile** — the modal's primary verb. Runs the active preset end to end. Reachable from both the Build and Preview tabs since it lives in the sticky header.
+
+Below the header, two tabs swap the body: **Build** (form fields) and **Preview** (rendered prose).
+
+## Build tab
+
+The Build tab is a stack of collapsible sections that edit the active preset's `dbench-compile-*` frontmatter. No separate save step — each field writes through immediately.
 
 ### Metadata
 
@@ -47,7 +57,7 @@ Per-preset overrides for the five content-handling rules that have meaningful pe
 - **`scope: draft`** — emits only the `## Draft` content from each scene. Planning sections are stripped. Scene titles become H1s; sub-scene titles (when present) become H2s. Default for chapter-less projects.
 - **`scope: chapter`** — chapter-aware compile. Emits one `# <chapter title>` per chapter, then the chapter body's `## Draft` content (chapter-introductory prose) when non-empty, then scene content. Flat scenes emit their `## Draft` body as continuous prose with the scene title omitted. **Hierarchical scenes** (with sub-scenes) emit `## <scene title>` (H2) followed by the scene's intro prose, followed by their sub-scenes as `### <sub-scene title>` (H3). Three-level cascade — chapter / scene / sub-scene = H1 / H2 / H3 — surfaces structure where it exists; flat scenes within the same chapter continue to render as continuous prose. Default for chapter-aware projects.
 
-The default is auto-selected when the preset is created based on the project's shape; you can override later via the Compile tab. Existing presets are never silently changed when a project gains chapters or scenes gain sub-scenes.
+The default is auto-selected when the preset is created based on the project's shape; you can override later via the Build tab. Existing presets are never silently changed when a project gains chapters or scenes gain sub-scenes.
 
 A compile preset is itself a note in the vault. Its content-handling rules live in the note's frontmatter, editable from the Properties panel as well as from the Manuscript Builder modal:
 
@@ -60,6 +70,38 @@ A compile preset is itself a note in the vault. Its content-handling rules live 
 ### Last compile
 
 Read-only display of when the preset last compiled, where the output landed, and how many scenes have changed since (computed from per-scene content hashes).
+
+## Preview tab
+
+The Preview tab renders the current preset's compile output as continuous read-only prose, in place. Tweak settings on Build, flip to Preview, see the impact, iterate — without writing a real output file each time.
+
+Preview re-renders on three triggers: tab activation, preset-selector change, and project-selector change. External edits to source notes mid-session do not auto-refresh; flip Build -> Preview to re-trigger.
+
+> **Preview is for in-Obsidian review, not WYSIWYG of the compiled file.** The actual PDF / ODT / DOCX outputs run through different rendering pipelines (pdfmake / docx generators), so Preview's typography won't match exactly. Compile to disk and open the file to verify the final exported result.
+
+### Typography toolbar
+
+Above the rendered prose, a toolbar lets the writer tune Preview's reading register without leaving the modal. Choices persist globally (these are reading-register preferences, not project-specific).
+
+- **Text alignment** — Left / Justify.
+- **Reading width** — Full (modal width), Med (~50em), Narrow (~40em).
+- **Font size** — `−` and `+` buttons step the body font size between 12px and 24px.
+- **Font family** — Theme default (matches Obsidian's `--font-text`), Serif (Georgia stack), Sans-serif (system stack), Monospace (matches Obsidian's `--font-monospace`).
+
+Power users wanting deeper control (custom font stacks, line-height, paragraph spacing, accent color) can override the underlying `--dbench-preview-*` and `--dbench-tab-active-accent` CSS variables via a snippet or the Style Settings community plugin — see [Settings and Configuration](Settings-And-Configuration).
+
+### Empty states
+
+Preview surfaces a brief actionable message when there's nothing to render:
+
+- **No compile presets yet** — create one via the New preset button in the header.
+- **No scenes in this project yet** — create scenes from the Manuscript view.
+- **No scenes match this preset's filters** — adjust scene-statuses or scene-excludes on the Build tab.
+- **Preview render failed** — the Build tab settings may be inconsistent; the inline error message names the cause, and the developer console (Ctrl-Shift-I) carries a stack trace for follow-up.
+
+### Performance
+
+The current implementation renders the whole preset markdown in one pass, using Obsidian's MarkdownRenderer. No chunking, no virtualization. Tested clean on novel-sized projects (110k+ words across multiple chapters with hierarchical scenes); if you hit lag on a much larger project, [open an issue](https://github.com/banisterious/obsidian-draft-bench/issues) so we can characterize the threshold.
 
 ## Run compile
 

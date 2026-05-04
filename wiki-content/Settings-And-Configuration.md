@@ -36,10 +36,11 @@ Draft Bench keeps relationships between notes consistent across renames, moves, 
 
 ## Style Settings
 
-If the [Style Settings plugin](https://github.com/mgmeyers/obsidian-style-settings) is installed, Draft Bench exposes variables for scene and draft styling:
+If the [Style Settings plugin](https://github.com/mgmeyers/obsidian-style-settings) is installed, Draft Bench exposes variables for scene, draft, and Preview tab styling:
 
 - **Scene leaf**: font family, font size, line height, max width, background, text color.
 - **Draft leaf (archival cue)**: background, text color, left border. Defaults to a visually distinct appearance signaling "this is an archived snapshot, not the live scene."
+- **Manuscript Builder Preview**: tab active accent, plus Preview-tab typography (font family, size, line height, max width, paragraph spacing, text alignment). The in-modal [Preview typography toolbar](Manuscript-Builder#typography-toolbar) covers the most common knobs without needing Style Settings; the variables here are for power users wanting custom font stacks, line-height, paragraph spacing, or accent-color overrides.
 
 <p align="center">
   <img src="https://draftbench.io/img/dbench-style-settings.png"

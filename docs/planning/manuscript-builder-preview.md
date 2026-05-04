@@ -111,15 +111,18 @@ The Preview tab re-renders in three situations:
 
 ### 5. "Refresh preview" button
 
-**Question:** Does the Preview tab include a manual refresh affordance?
+**Ratified 2026-05-04: Option A (no button) for 0.3.0.**
 
-**Options:**
+The Preview tab does not include an explicit refresh affordance. The re-render triggers ratified in § 4 (tab activation, preset-selector change, project-selector change) cover the in-modal scenarios; flipping Build -> Preview is the natural gesture for any other re-trigger.
 
-- **A. No button.** Tab activation is the only re-trigger. Writer flips Build -> Preview to refresh after editing settings.
-- **B. Small refresh button** in the Preview tab header (e.g., circular-arrow icon). Lets the writer re-render without round-tripping through Build.
-- **C. Refresh button only when stale** (i.e., something changed since last render and the writer is still on Preview). Fancy; needs change-detection.
+**Strengthening rationale (modal context):** Obsidian modals block interaction with the rest of the workspace. Writers cannot edit a source note while the Manuscript Builder modal is open. The only ways external file changes can land during a session are (a) a different application modifying a source file from outside Obsidian, or (b) a background sync (Obsidian Sync, Syncthing, git pull) landing changes mid-session. Both are genuine edge cases, but rare enough that the manual flip-tab gesture is a sufficient workaround.
 
-**Recommendation:** **A for 0.3.0 (no button).** Tab activation always re-renders against current state; flipping back-and-forth is the natural refresh gesture. If writers report wanting an explicit refresh, add B (small button) in a follow-up.
+**Forward-compat note:** if the Preview surface ever moves to a leaf or gains a dockable variant (cf. [post-v1-candidates.md § 3 (Scrivenings-style continuous Manuscript view)](post-v1-candidates.md)), the modal-blocks-vault rationale stops applying — writers could edit source notes in another pane while Preview stays open. At that point, external-edit reactivity becomes a real use case worth revisiting (either as a "Refresh preview" button, file-save reactivity, or debounced live-update). The leaf-mode candidate already implies this; this is a reminder that the modal-only Preview tab inherits a narrower interaction model by design.
+
+**Considered and not chosen for 0.3.0:**
+
+- **B. Small refresh button** in the Preview tab header (e.g., circular-arrow icon). Cheap to add later if writers report wanting it; defer until concrete demand.
+- **C. Refresh button only when stale** (change-detection driven). Heavier; needs the same vault-event-listener plumbing § 4 deferred. Same rationale as B for skipping in 0.3.0.
 
 ### 6. Compile button visibility on the Preview tab
 
@@ -218,3 +221,4 @@ Track ratifications and reversals here as work proceeds.
 - **2026-05-04** — § 2 ratified: Option A (single-pass `MarkdownRenderer`, no virtualization), not gated on a pre-ship performance smoke test. Future activity: build a seeded large dummy vault (100k+ words) for benchmarking, independent of 0.3.0 release timing. Chunked-render (Option B) is the known fallback if performance reports surface.
 - **2026-05-04** — § 3 ratified: Option B with N = 250ms. Spinner appears only when render exceeds the threshold; implemented via `setTimeout` cleared on render completion.
 - **2026-05-04** — § 4 ratified: Preview re-renders on tab activation, preset-selector change, and project-selector change. External-edit reactivity (file-save or debounced live-update) explicitly deferred.
+- **2026-05-04** — § 5 ratified: no refresh button for 0.3.0. Modal-blocks-vault constraint strengthens the deferral; the only paths for external file changes during a session are out-of-Obsidian edits or background sync, both narrow enough to be served by the manual flip-tab gesture. Forward-compat note added pointing at the leaf-mode candidate ([post-v1-candidates.md § 3](post-v1-candidates.md)).

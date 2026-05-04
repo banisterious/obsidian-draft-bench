@@ -19,7 +19,7 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
 
 - **Getting started**: [Getting Started](Getting-Started) · [Manuscript Builder](Manuscript-Builder)
 - **Core workflow**: [Projects, Chapters, and Scenes](Projects-And-Scenes) · [Drafts and Versioning](Drafts-And-Versioning) · [Templates](Templates)
-- **Reference**: [Essential Properties](Essential-Properties) · [Settings and Configuration](Settings-And-Configuration) · [Context Menu Actions](Context-Menu-Actions)
+- **Reference**: [Essential Properties](Essential-Properties) · [Frontmatter Reference](Frontmatter-Reference) · [Settings and Configuration](Settings-And-Configuration) · [Context Menu Actions](Context-Menu-Actions)
 - **Help**: [FAQ](FAQ) · [Release History](Release-History)
 
 ## Community & Support

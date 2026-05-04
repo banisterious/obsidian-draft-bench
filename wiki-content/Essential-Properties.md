@@ -1,6 +1,6 @@
 # Essential Properties
 
-Draft Bench manages notes via frontmatter properties prefixed with `dbench-`. This page is a cheat sheet. For the full data model, see the [specification](https://github.com/banisterious/obsidian-draft-bench/blob/main/docs/planning/specification.md).
+Draft Bench manages notes via frontmatter properties prefixed with `dbench-`. This page is a cheat sheet for the everyday properties. For the complete inventory of every key (compile-preset configuration, templates, plugin-managed state, recommended sort order for Linter), see [Frontmatter Reference](Frontmatter-Reference). For the full data model, see the [specification](https://github.com/banisterious/obsidian-draft-bench/blob/main/docs/planning/specification.md).
 
 ---
 
@@ -8,7 +8,7 @@ Draft Bench manages notes via frontmatter properties prefixed with `dbench-`. Th
 
 | Property | Type | Description |
 |---|---|---|
-| `dbench-type` | string | Note role: `project`, `chapter`, `scene`, `draft` (V1). Future: `character`, `beat`, etc. |
+| `dbench-type` | string | Note role: `project`, `chapter`, `scene`, `sub-scene`, `draft`, `compile-preset`. |
 | `dbench-id` | string | Stable identifier, format `abc-123-def-456`. Stamped at creation; never changes. |
 | `dbench-project` | wikilink | The project this note belongs to. |
 | `dbench-project-id` | string | Stable-ID companion to `dbench-project`. |
@@ -49,20 +49,42 @@ A project's top-level children are *either* all chapters *or* all direct scenes 
 | `dbench-chapter-id` | string (optional) | Stable-ID companion to `dbench-chapter`. |
 | `dbench-target-words` | number (optional) | Per-scene authoring target; surfaces as a per-scene progress bar in the Manuscript view. |
 | `dbench-subtitle` | string (optional) | Short second-line text under the scene title in the Manuscript view. Useful for POV markers, time stamps, setting cues, or descriptors that disambiguate similarly-titled scenes. |
+| `dbench-sub-scenes` | array of wikilinks (optional) | Reverse array of sub-scene children (hierarchical scenes only). Maintained by the linker. |
+| `dbench-sub-scene-ids` | array of strings (optional) | Stable-ID companions for `dbench-sub-scenes`. |
 | `dbench-drafts` | array of wikilinks | Reverse array of prior scene draft snapshots. |
 | `dbench-draft-ids` | array of strings | Stable-ID companions for `dbench-drafts`. |
+
+When a scene has sub-scenes, its body's `## Draft` section is treated as scene-introductory prose only; the narrative units live in the sub-scene bodies. See [Projects, Chapters, Scenes, and Sub-scenes](Projects-And-Scenes).
+
+## Sub-scene (`dbench-type: sub-scene`)
+
+| Property | Type | Description |
+|---|---|---|
+| `dbench-order` | number | Sort position within the parent scene. Each scene resets to 1, 2, 3... |
+| `dbench-status` | string | Workflow status per default vocabulary. |
+| `dbench-scene` | wikilink | Parent scene. |
+| `dbench-scene-id` | string | Stable-ID companion to `dbench-scene`. |
+| `dbench-target-words` | number (optional) | Per-sub-scene authoring target. The project-level target stays the canonical writer commitment; sub-scene targets are local checkpoints. |
+| `dbench-subtitle` | string (optional) | Short second-line text under the sub-scene title in the Manuscript view. |
+| `dbench-synopsis` | string (optional) | Short "what this unit does" tag, surfaced in the Manuscript view's sub-scene card. |
+| `dbench-drafts` | array of wikilinks | Reverse array of prior sub-scene draft snapshots. |
+| `dbench-draft-ids` | array of strings | Stable-ID companions for `dbench-drafts`. |
+
+Sub-scenes also support per-unit `dbench-section-break-title` and `dbench-section-break-style` for compile-time section breaks (mirrors the scene-level mechanism).
 
 ## Draft (`dbench-type: draft`)
 
 | Property | Type | Description |
 |---|---|---|
-| `dbench-scene` | wikilink | The parent scene (for scene-level drafts). Empty for chapter or single-scene-project drafts. |
+| `dbench-scene` | wikilink | The parent scene (for scene-level drafts). Empty for chapter, sub-scene, or single-scene-project drafts. |
 | `dbench-scene-id` | string | Stable-ID companion to `dbench-scene`. |
-| `dbench-chapter` | wikilink | The parent chapter (for chapter-level drafts). Empty for scene or single-scene-project drafts. |
-| `dbench-chapter-id` | string | Stable-ID companion to `dbench-chapter`. |
+| `dbench-chapter` | wikilink (optional) | The parent chapter (for chapter-level drafts). |
+| `dbench-chapter-id` | string (optional) | Stable-ID companion to `dbench-chapter`. |
+| `dbench-sub-scene` | wikilink (optional) | The parent sub-scene (for sub-scene-level drafts). |
+| `dbench-sub-scene-id` | string (optional) | Stable-ID companion to `dbench-sub-scene`. |
 | `dbench-draft-number` | number | Sequential draft number per parent; plugin-managed. |
 
-A draft's target type is implicit: scene drafts carry `dbench-scene`, chapter drafts carry `dbench-chapter`, single-scene-project drafts carry only the project ref. See [Drafts and Versioning](Drafts-And-Versioning).
+A draft's target type is implicit: scene drafts carry `dbench-scene`, chapter drafts carry `dbench-chapter`, sub-scene drafts carry `dbench-sub-scene`, single-scene-project drafts carry only the project ref. See [Drafts and Versioning](Drafts-And-Versioning).
 
 ---
 

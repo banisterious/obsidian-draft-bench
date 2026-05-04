@@ -14,6 +14,7 @@
 
 ### Reference
 - [Essential Properties](Essential-Properties)
+- [Frontmatter Reference](Frontmatter-Reference)
 - [Settings and Configuration](Settings-And-Configuration)
 
 ### Help

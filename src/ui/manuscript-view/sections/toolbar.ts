@@ -1,35 +1,37 @@
 import { Notice, setIcon } from 'obsidian';
 import type DraftBenchPlugin from '../../../../main';
 import { buildSceneReorderConfig } from '../../../commands/reorder-scenes';
-import { pickPresetAndCompile } from '../../../core/compile/operations';
 import type { ProjectNote } from '../../../core/discovery';
 import { isSceneFrontmatter } from '../../../model/scene';
+import { ManuscriptBuilderModal } from '../../manuscript-builder/manuscript-builder-modal';
 import { NewDraftModal } from '../../modals/new-draft-modal';
 import { NewSceneModal } from '../../modals/new-scene-modal';
 import { ReorderChildrenModal } from '../../modals/reorder-children-modal';
 
 /**
- * Manuscript-leaf primary CTA — "Compile" promoted out of the
- * 3-button toolbar row into a distinct block above it. The writer's
- * final action on a project gets visual weight matching its
- * importance; per the Ulysses-warm direction (D-design-refinement),
- * the CTA carries `.mod-cta` so Obsidian's native accent treatment
- * does the work.
+ * Manuscript-leaf primary CTA — "Compile..." opens the Manuscript
+ * Builder modal where the writer picks a preset, optionally previews
+ * the output (0.3.0+), and runs compile from the modal's header. The
+ * trailing ellipsis follows the standard convention signaling
+ * "opens further UI before action."
  *
- * Wired to the shared `pickPresetAndCompile` helper so this path
- * behaves identically to the palette / context-menu entries.
+ * Replaces the earlier instant-compile behavior (which short-circuited
+ * to the only preset on single-preset projects, or showed a fuzzy
+ * preset picker on multi-preset projects, then ran compile directly
+ * without the Builder's configuration / preview surface). Writers
+ * who want a true one-click compile path can bind a hotkey to a
+ * future "Compile with last preset" command (out of scope here).
  */
 export function renderCompileCta(
 	container: HTMLElement,
-	plugin: DraftBenchPlugin,
-	selectedProject: ProjectNote
+	plugin: DraftBenchPlugin
 ): void {
 	const ctaRow = container.createDiv({
 		cls: 'dbench-manuscript-view__compile-cta-row',
 	});
 	const button = ctaRow.createEl('button', {
 		cls: 'mod-cta dbench-manuscript-view__compile-cta',
-		attr: { 'aria-label': 'Compile', title: 'Compile' },
+		attr: { 'aria-label': 'Compile...', title: 'Compile...' },
 	});
 	const iconEl = button.createSpan({
 		cls: 'dbench-manuscript-view__compile-cta-icon',
@@ -38,10 +40,14 @@ export function renderCompileCta(
 	setIcon(iconEl, 'book-marked');
 	button.createSpan({
 		cls: 'dbench-manuscript-view__compile-cta-label',
-		text: 'Compile',
+		text: 'Compile...',
 	});
 	button.addEventListener('click', () => {
-		void pickPresetAndCompile(plugin, selectedProject);
+		new ManuscriptBuilderModal(
+			plugin.app,
+			plugin,
+			plugin.linker
+		).open();
 	});
 }
 

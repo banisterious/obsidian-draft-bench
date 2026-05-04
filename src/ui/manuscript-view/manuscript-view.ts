@@ -20,7 +20,6 @@ import {
 } from '../../core/discovery';
 import { sortScenesByOrder } from '../../core/sort-scenes';
 import { appendBrandMark } from '../brand-mark';
-import { ManuscriptBuilderModal } from '../manuscript-builder/manuscript-builder-modal';
 import { renderSection } from './sections/section-base';
 import { renderProjectSummaryBody } from './sections/project-summary-section';
 import { renderManuscriptListBody } from './sections/manuscript-list-section';
@@ -267,7 +266,7 @@ export class ManuscriptView extends ItemView {
 			cls: 'dbench-manuscript-view__content',
 		});
 
-		renderCompileCta(content, this.plugin, project);
+		renderCompileCta(content, this.plugin);
 		renderToolbar(content, this.plugin, project);
 
 		const projectId = project.frontmatter['dbench-id'];
@@ -382,27 +381,6 @@ export class ManuscriptView extends ItemView {
 		setIcon(newProjectButton, 'plus');
 		newProjectButton.addEventListener('click', () => {
 			this.openCreateProjectCommand();
-		});
-
-		// Manuscript Builder entry point. Sidebar leaves hide the
-		// view-header strip where ItemView.addAction() puts buttons,
-		// so the entry point lives in our own picker header (which is
-		// inside contentEl and always visible regardless of leaf
-		// position).
-		const builderButton = header.createEl('button', {
-			cls: 'dbench-manuscript-view__header-button',
-			attr: {
-				'aria-label': 'Build manuscript',
-				title: 'Build manuscript',
-			},
-		});
-		setIcon(builderButton, 'book-up');
-		builderButton.addEventListener('click', () => {
-			new ManuscriptBuilderModal(
-				this.plugin.app,
-				this.plugin,
-				this.plugin.linker
-			).open();
 		});
 	}
 

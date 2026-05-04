@@ -8,6 +8,7 @@ import {
 import {
 	findCompilePresetsOfProject,
 	findProjects,
+	findScenesInProject,
 	type CompilePresetNote,
 	type ProjectNote,
 } from '../../core/discovery';
@@ -423,14 +424,23 @@ export class ManuscriptBuilderModal extends Modal {
 	private async renderPreviewAsync(body: HTMLElement): Promise<void> {
 		const token = ++this.previewRenderToken;
 
+		// Empty state: no compile presets configured. Mirrors the
+		// Build tab's parallel state so flipping into Preview from a
+		// presets-less project doesn't drop the writer into an
+		// unexplained blank pane.
+		if (this.presets.length === 0) {
+			this.renderPreviewEmpty(
+				body,
+				'This project has no compile presets.',
+				'Use the button above to create your first compile configuration.'
+			);
+			return;
+		}
+
 		const preset = this.presets.find(
 			(p) => p.frontmatter['dbench-id'] === this.selectedPresetId
 		);
-		if (!preset || !this.project) {
-			// Step 6 will render dedicated empty states for the no-
-			// project / no-preset / no-scenes / render-error cases.
-			return;
-		}
+		if (!preset || !this.project) return;
 
 		// Step 5: 250ms-threshold "Rendering..." spinner. Per
 		// docs/planning/manuscript-builder-preview.md § 3 (ratified
@@ -444,18 +454,45 @@ export class ManuscriptBuilderModal extends Modal {
 		}, 250);
 
 		let markdown: string;
+		let scenesCompiled: number;
 		try {
 			const result = await new CompileService(this.app).generate(preset);
 			markdown = result.markdown;
-		} catch {
-			// Step 6 handles the render-error empty state.
+			scenesCompiled = result.scenesCompiled;
+		} catch (err) {
 			window.clearTimeout(spinnerTimer);
+			if (token !== this.previewRenderToken) return;
+			console.error('[DraftBench] preview compile failed:', err);
+			this.renderPreviewError(body, err);
 			return;
 		}
 
 		window.clearTimeout(spinnerTimer);
 
 		if (token !== this.previewRenderToken) return;
+
+		// Empty-state branches per § 7. Discriminate "no scenes at
+		// all" from "filters excluded everything" by checking the
+		// project's total scene count: scenesCompiled === 0 alone
+		// would conflate the two.
+		if (scenesCompiled === 0) {
+			const projectId = this.project.frontmatter['dbench-id'];
+			const totalScenes = findScenesInProject(this.app, projectId);
+			if (totalScenes.length === 0) {
+				this.renderPreviewEmpty(
+					body,
+					'No scenes in this project yet.',
+					'Create scenes from the Manuscript view.'
+				);
+			} else {
+				this.renderPreviewEmpty(
+					body,
+					"No scenes match this preset's filters.",
+					'Adjust scene-statuses or scene-excludes on the Build tab.'
+				);
+			}
+			return;
+		}
 
 		// Tear down the previous render's component before swapping
 		// in the new one, so embeds / dataview blocks / etc. release
@@ -483,11 +520,39 @@ export class ManuscriptBuilderModal extends Modal {
 				sourcePath,
 				component
 			);
-		} catch {
-			// Step 6 handles the render-error empty state. For now,
-			// the partially-rendered DOM stays as-is rather than being
-			// wiped, so the writer at least sees what landed.
+		} catch (err) {
+			if (token !== this.previewRenderToken) return;
+			console.error('[DraftBench] preview render failed:', err);
+			this.renderPreviewError(body, err);
 		}
+	}
+
+	private renderPreviewEmpty(
+		body: HTMLElement,
+		message: string,
+		hint: string
+	): void {
+		body.empty();
+		const wrap = body.createDiv({
+			cls: 'dbench-manuscript-builder__preview-empty',
+		});
+		wrap.createEl('p', {
+			cls: 'dbench-manuscript-builder__preview-empty-message',
+			text: message,
+		});
+		wrap.createEl('p', {
+			cls: 'dbench-manuscript-builder__preview-empty-hint',
+			text: hint,
+		});
+	}
+
+	private renderPreviewError(body: HTMLElement, err: unknown): void {
+		const message = err instanceof Error ? err.message : String(err);
+		this.renderPreviewEmpty(
+			body,
+			`Preview render failed: ${message}`,
+			'The Build tab settings may be inconsistent; check the console for details.'
+		);
 	}
 
 	private renderPreviewSpinner(body: HTMLElement): void {

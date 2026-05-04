@@ -176,6 +176,34 @@
 	align-items: center;
 }
 
+/*
+ * Preview empty states: no presets, no scenes, filters excluded
+ * everything, render error. Per
+ * docs/planning/manuscript-builder-preview.md § 7. Visual register
+ * matches the parent `__empty` block; the dedicated class hook lets
+ * theme authors tune Preview empty states (e.g., dim more, add
+ * illustration) without affecting the Build tab's empty states.
+ */
+.dbench-manuscript-builder__preview-empty {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-sm);
+	padding: var(--dbench-spacing-xl) var(--dbench-spacing-lg);
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.dbench-manuscript-builder__preview-empty-message {
+	margin: 0;
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.dbench-manuscript-builder__preview-empty-hint {
+	margin: 0;
+	font-size: var(--font-ui-small);
+}
+
 .dbench-manuscript-builder__empty {
 	display: flex;
 	flex-direction: column;

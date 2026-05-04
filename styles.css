@@ -372,7 +372,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-BUILDER.CSS  (306 lines, 8.78 KB)
+   MANUSCRIPT-BUILDER.CSS  (334 lines, 9.59 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -551,6 +551,34 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-manuscript-builder__preview-spinner-icon {
 	display: inline-flex;
 	align-items: center;
+}
+
+/*
+ * Preview empty states: no presets, no scenes, filters excluded
+ * everything, render error. Per
+ * docs/planning/manuscript-builder-preview.md § 7. Visual register
+ * matches the parent `__empty` block; the dedicated class hook lets
+ * theme authors tune Preview empty states (e.g., dim more, add
+ * illustration) without affecting the Build tab's empty states.
+ */
+.dbench-manuscript-builder__preview-empty {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-sm);
+	padding: var(--dbench-spacing-xl) var(--dbench-spacing-lg);
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.dbench-manuscript-builder__preview-empty-message {
+	margin: 0;
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.dbench-manuscript-builder__preview-empty-hint {
+	margin: 0;
+	font-size: var(--font-ui-small);
 }
 
 .dbench-manuscript-builder__empty {
@@ -2164,12 +2192,12 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 9
-   Total:      2086 lines, 57.2 KB
+   Total:      2114 lines, 58.01 KB
    - variables.css: 87 lines, 2.99 KB
    - style-settings.css: 133 lines, 4.65 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - manuscript-builder.css: 306 lines, 8.78 KB
+   - manuscript-builder.css: 334 lines, 9.59 KB
    - welcome-modal.css: 94 lines, 2.21 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 1031 lines, 27.59 KB

@@ -174,11 +174,16 @@ settings:
     -
         id: --dbench-preview-text-align
         title: Preview text alignment
-        description: Body text alignment in Preview. "justify" can read more book-like for serif fonts but may produce wide gaps without hyphenation.
+        description: Body text alignment in Preview. "Justify" can read more book-like for serif fonts but may produce wide gaps without hyphenation.
         type: variable-select
+        allowEmpty: false
         default: left
         options:
-            - left
-            - justify
+            -
+                label: Left
+                value: left
+            -
+                label: Justify
+                value: justify
 
 */

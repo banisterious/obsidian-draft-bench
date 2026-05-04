@@ -187,8 +187,16 @@
 	text-align: var(--dbench-preview-text-align);
 }
 
+/*
+ * text-align is also re-applied here because Obsidian's prose
+ * styling sets `text-align: start` on rendered paragraphs at a
+ * specificity higher than the inherited value from .__preview;
+ * relying on inheritance alone leaves the Style Settings
+ * justify / left choice ineffective.
+ */
 .dbench-manuscript-builder__preview .markdown-rendered p {
 	margin-block-end: var(--dbench-preview-paragraph-spacing);
+	text-align: var(--dbench-preview-text-align);
 }
 
 /*

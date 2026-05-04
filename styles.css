@@ -126,7 +126,7 @@ body {
 /* End of variables.css */
 
 /* --------------------------------------------------------------------------
-   STYLE-SETTINGS.CSS  (185 lines, 7.14 KB)
+   STYLE-SETTINGS.CSS  (190 lines, 7.27 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -305,12 +305,17 @@ settings:
     -
         id: --dbench-preview-text-align
         title: Preview text alignment
-        description: Body text alignment in Preview. "justify" can read more book-like for serif fonts but may produce wide gaps without hyphenation.
+        description: Body text alignment in Preview. "Justify" can read more book-like for serif fonts but may produce wide gaps without hyphenation.
         type: variable-select
+        allowEmpty: false
         default: left
         options:
-            - left
-            - justify
+            -
+                label: Left
+                value: left
+            -
+                label: Justify
+                value: justify
 
 */
 
@@ -445,7 +450,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-BUILDER.CSS  (370 lines, 10.96 KB)
+   MANUSCRIPT-BUILDER.CSS  (378 lines, 11.3 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -637,8 +642,16 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	text-align: var(--dbench-preview-text-align);
 }
 
+/*
+ * text-align is also re-applied here because Obsidian's prose
+ * styling sets `text-align: start` on rendered paragraphs at a
+ * specificity higher than the inherited value from .__preview;
+ * relying on inheritance alone leaves the Style Settings
+ * justify / left choice ineffective.
+ */
 .dbench-manuscript-builder__preview .markdown-rendered p {
 	margin-block-end: var(--dbench-preview-paragraph-spacing);
+	text-align: var(--dbench-preview-text-align);
 }
 
 /*
@@ -2301,12 +2314,12 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 9
-   Total:      2223 lines, 62.74 KB
+   Total:      2236 lines, 63.2 KB
    - variables.css: 108 lines, 3.85 KB
-   - style-settings.css: 185 lines, 7.14 KB
+   - style-settings.css: 190 lines, 7.27 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - manuscript-builder.css: 370 lines, 10.96 KB
+   - manuscript-builder.css: 378 lines, 11.3 KB
    - welcome-modal.css: 94 lines, 2.21 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 1031 lines, 27.59 KB

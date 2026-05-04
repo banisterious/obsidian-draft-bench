@@ -43,11 +43,15 @@ import { renderOutputSection } from './sections/output';
  * selected, shows an empty-state prompt directing the writer to the
  * Manuscript view to pick one.
  */
+export type ManuscriptBuilderTab = 'build' | 'preview';
+
 export class ManuscriptBuilderModal extends Modal {
 	private project: ProjectNote | null = null;
 	private presets: CompilePresetNote[] = [];
 	private selectedPresetId: string | null = null;
 	private bodyEl: HTMLElement | null = null;
+	private tabBodyEl: HTMLElement | null = null;
+	private activeTab: ManuscriptBuilderTab = 'build';
 
 	constructor(
 		app: App,
@@ -107,7 +111,11 @@ export class ManuscriptBuilderModal extends Modal {
 		this.bodyEl = this.contentEl.createDiv({
 			cls: 'dbench-manuscript-builder__body',
 		});
-		this.renderBody();
+		this.renderTabs();
+		this.tabBodyEl = this.bodyEl.createDiv({
+			cls: 'dbench-manuscript-builder__tab-body',
+		});
+		this.renderActiveTab();
 	}
 
 	private renderEmptyNoProject(): void {
@@ -169,7 +177,7 @@ export class ManuscriptBuilderModal extends Modal {
 			}
 			select.addEventListener('change', () => {
 				this.selectedPresetId = select.value;
-				this.renderBody();
+				this.renderActiveTab();
 			});
 		}
 
@@ -216,7 +224,7 @@ export class ManuscriptBuilderModal extends Modal {
 		try {
 			await compileAndNotify(this.app, preset);
 			this.refreshPresetFrontmatter(preset.frontmatter['dbench-id']);
-			this.renderBody();
+			this.renderActiveTab();
 		} finally {
 			runButton.disabled = this.presets.length === 0;
 			runButton.textContent = originalText;
@@ -234,12 +242,70 @@ export class ManuscriptBuilderModal extends Modal {
 			fm as unknown as CompilePresetNote['frontmatter'];
 	}
 
-	private renderBody(): void {
+	private renderTabs(): void {
 		if (!this.bodyEl) return;
-		this.bodyEl.empty();
+		const tabs = this.bodyEl.createDiv({
+			cls: 'dbench-manuscript-builder__tabs',
+			attr: { role: 'tablist' },
+		});
+		this.renderTabButton(tabs, 'build', 'Build');
+		this.renderTabButton(tabs, 'preview', 'Preview');
+	}
 
+	private renderTabButton(
+		tabs: HTMLElement,
+		tab: ManuscriptBuilderTab,
+		label: string
+	): void {
+		const isActive = this.activeTab === tab;
+		const button = tabs.createEl('button', {
+			cls: isActive
+				? 'dbench-manuscript-builder__tab dbench-manuscript-builder__tab--active'
+				: 'dbench-manuscript-builder__tab',
+			text: label,
+			attr: {
+				type: 'button',
+				role: 'tab',
+				'data-tab': tab,
+				'aria-selected': isActive ? 'true' : 'false',
+			},
+		});
+		button.addEventListener('click', () => {
+			if (this.activeTab === tab) return;
+			this.activeTab = tab;
+			this.refreshTabActiveState();
+			this.renderActiveTab();
+		});
+	}
+
+	private refreshTabActiveState(): void {
+		if (!this.bodyEl) return;
+		const buttons = this.bodyEl.querySelectorAll<HTMLElement>(
+			'.dbench-manuscript-builder__tab'
+		);
+		buttons.forEach((btn) => {
+			const isActive = btn.dataset.tab === this.activeTab;
+			btn.toggleClass(
+				'dbench-manuscript-builder__tab--active',
+				isActive
+			);
+			btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+		});
+	}
+
+	private renderActiveTab(): void {
+		if (!this.tabBodyEl) return;
+		this.tabBodyEl.empty();
+		if (this.activeTab === 'build') {
+			this.renderBuildTab(this.tabBodyEl);
+		} else {
+			this.renderPreviewTab(this.tabBodyEl);
+		}
+	}
+
+	private renderBuildTab(body: HTMLElement): void {
 		if (this.presets.length === 0) {
-			const empty = this.bodyEl.createDiv({
+			const empty = body.createDiv({
 				cls: 'dbench-manuscript-builder__empty',
 			});
 			empty.createEl('p', {
@@ -258,17 +324,18 @@ export class ManuscriptBuilderModal extends Modal {
 		);
 		if (!preset) return;
 
-		this.renderFormSection('metadata', 'Metadata', 'book-text', (body) => {
-			renderMetadataSection(body, this.app, preset);
+		this.renderFormSection(body, 'metadata', 'Metadata', 'book-text', (sec) => {
+			renderMetadataSection(sec, this.app, preset);
 		});
 
 		this.renderFormSection(
+			body,
 			'inclusion',
 			'Inclusion',
 			'list-filter',
-			(body) => {
+			(sec) => {
 				renderInclusionSection(
-					body,
+					sec,
 					this.app,
 					preset,
 					this.plugin.settings
@@ -276,37 +343,47 @@ export class ManuscriptBuilderModal extends Modal {
 			}
 		);
 
-		this.renderFormSection('output', 'Output', 'file-output', (body) => {
-			renderOutputSection(body, this.app, preset);
+		this.renderFormSection(body, 'output', 'Output', 'file-output', (sec) => {
+			renderOutputSection(sec, this.app, preset);
 		});
 
 		this.renderFormSection(
+			body,
 			'content-handling',
 			'Content handling',
 			'wand',
-			(body) => {
-				renderContentHandlingSection(body, this.app, preset);
+			(sec) => {
+				renderContentHandlingSection(sec, this.app, preset);
 			}
 		);
 
 		this.renderFormSection(
+			body,
 			'last-compile',
 			'Last compile',
 			'history',
-			(body) => {
-				renderLastCompileSection(body, this.app, preset);
+			(sec) => {
+				renderLastCompileSection(sec, this.app, preset);
 			}
 		);
 	}
 
+	private renderPreviewTab(body: HTMLElement): void {
+		// Placeholder for Step 1; render plumbing lands in Step 4 of
+		// docs/planning/manuscript-builder-preview.md.
+		body.createDiv({
+			cls: 'dbench-manuscript-builder__preview',
+		});
+	}
+
 	private renderFormSection(
+		parent: HTMLElement,
 		id: string,
 		title: string,
 		icon: string,
 		contentRenderer: (body: HTMLElement) => void
 	): void {
-		if (!this.bodyEl) return;
-		renderSection(this.bodyEl, {
+		renderSection(parent, {
 			sectionId: `manuscript-builder-${id}`,
 			title,
 			icon,

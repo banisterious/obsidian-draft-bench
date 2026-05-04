@@ -372,7 +372,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-BUILDER.CSS  (220 lines, 6.24 KB)
+   MANUSCRIPT-BUILDER.CSS  (273 lines, 7.79 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -462,6 +462,59 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 }
 
 .dbench-manuscript-builder__body {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-md);
+}
+
+/*
+ * Tab strip (Build / Preview). Underline pattern per
+ * docs/planning/manuscript-builder-preview.md § 1: plain text labels,
+ * 2px accent-colored underline beneath the active tab; the strip's
+ * 1px bottom border is overlapped by 1px (negative margin on the
+ * active underline) so the active tab visually punches through the
+ * strip's border.
+ *
+ * --dbench-tab-active-accent is the Style Settings hook for theme
+ * authors who want the underline / active-text color to differ from
+ * Obsidian's global accent. Defaults to --interactive-accent.
+ */
+.dbench-manuscript-builder__tabs {
+	display: flex;
+	gap: var(--dbench-spacing-md);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.dbench-manuscript-builder__tab {
+	margin: 0;
+	padding: 10px 16px;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	color: var(--text-muted);
+	font-size: var(--font-ui-medium);
+	cursor: pointer;
+	transition: color 0.12s, border-color 0.12s;
+}
+
+.dbench-manuscript-builder__tab:hover:not(.dbench-manuscript-builder__tab--active) {
+	color: var(--text-normal);
+}
+
+.dbench-manuscript-builder__tab:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+}
+
+.dbench-manuscript-builder__tab--active {
+	color: var(--dbench-tab-active-accent, var(--interactive-accent));
+	border-bottom-color: var(--dbench-tab-active-accent, var(--interactive-accent));
+}
+
+.dbench-manuscript-builder__tab-body {
 	display: flex;
 	flex-direction: column;
 	gap: var(--dbench-spacing-md);
@@ -2078,12 +2131,12 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 9
-   Total:      2000 lines, 54.67 KB
+   Total:      2053 lines, 56.21 KB
    - variables.css: 87 lines, 2.99 KB
    - style-settings.css: 133 lines, 4.65 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - manuscript-builder.css: 220 lines, 6.24 KB
+   - manuscript-builder.css: 273 lines, 7.79 KB
    - welcome-modal.css: 94 lines, 2.21 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 1031 lines, 27.59 KB

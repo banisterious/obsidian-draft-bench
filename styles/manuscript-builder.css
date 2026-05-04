@@ -90,6 +90,59 @@
 	gap: var(--dbench-spacing-md);
 }
 
+/*
+ * Tab strip (Build / Preview). Underline pattern per
+ * docs/planning/manuscript-builder-preview.md § 1: plain text labels,
+ * 2px accent-colored underline beneath the active tab; the strip's
+ * 1px bottom border is overlapped by 1px (negative margin on the
+ * active underline) so the active tab visually punches through the
+ * strip's border.
+ *
+ * --dbench-tab-active-accent is the Style Settings hook for theme
+ * authors who want the underline / active-text color to differ from
+ * Obsidian's global accent. Defaults to --interactive-accent.
+ */
+.dbench-manuscript-builder__tabs {
+	display: flex;
+	gap: var(--dbench-spacing-md);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.dbench-manuscript-builder__tab {
+	margin: 0;
+	padding: 10px 16px;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	color: var(--text-muted);
+	font-size: var(--font-ui-medium);
+	cursor: pointer;
+	transition: color 0.12s, border-color 0.12s;
+}
+
+.dbench-manuscript-builder__tab:hover:not(.dbench-manuscript-builder__tab--active) {
+	color: var(--text-normal);
+}
+
+.dbench-manuscript-builder__tab:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+}
+
+.dbench-manuscript-builder__tab--active {
+	color: var(--dbench-tab-active-accent, var(--interactive-accent));
+	border-bottom-color: var(--dbench-tab-active-accent, var(--interactive-accent));
+}
+
+.dbench-manuscript-builder__tab-body {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-md);
+}
+
 .dbench-manuscript-builder__empty {
 	display: flex;
 	flex-direction: column;

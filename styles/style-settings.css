@@ -128,5 +128,57 @@ settings:
         type: variable-color
         format: hex
         default: "#74b275"
+    -
+        id: dbench-manuscript-builder-preview-heading
+        title: Manuscript Builder Preview
+        description: "Tunes the Preview tab in the Manuscript Builder modal. Note: Preview is for in-Obsidian review only; it is NOT a faithful render of the final compiled PDF / ODT / DOCX output (those go through different rendering pipelines). Compile to disk and open the file to check the exported result."
+        type: heading
+        level: 1
+        collapsed: true
+    -
+        id: --dbench-tab-active-accent
+        title: Tab active color
+        description: Underline and active-text color for the Build / Preview tab strip. Defaults to your theme's interactive accent.
+        type: variable-text
+        default: "var(--interactive-accent)"
+    -
+        id: --dbench-preview-font-family
+        title: Preview font family
+        description: Font for Preview body. Many writers prefer a serif (e.g., Crimson, Garamond, Caslon) for prose review even when their regular note font is sans-serif.
+        type: variable-text
+        default: "var(--font-text)"
+    -
+        id: --dbench-preview-font-size
+        title: Preview font size
+        description: Body font size in Preview. 1em / 16px / 1.1rem / etc.
+        type: variable-text
+        default: "var(--font-text-size)"
+    -
+        id: --dbench-preview-line-height
+        title: Preview line height
+        description: Line spacing in Preview. A major readability lever for long-form prose; 1.6 - 1.8 reads comfortably for most serifs.
+        type: variable-text
+        default: "var(--line-height-normal)"
+    -
+        id: --dbench-preview-max-width
+        title: Preview reading width
+        description: Optional max-width constraint on the Preview column. Defaults to "none" (fills the modal). Set to "45em" or similar for a constrained 65-75 character reading column.
+        type: variable-text
+        default: none
+    -
+        id: --dbench-preview-paragraph-spacing
+        title: Preview paragraph spacing
+        description: Gap between paragraphs in Preview. 1em is roughly one blank line; tighten to 0.5em for denser prose, loosen to 1.5em for airier.
+        type: variable-text
+        default: 1em
+    -
+        id: --dbench-preview-text-align
+        title: Preview text alignment
+        description: Body text alignment in Preview. "justify" can read more book-like for serif fonts but may produce wide gaps without hyphenation.
+        type: variable-select
+        default: left
+        options:
+            - left
+            - justify
 
 */

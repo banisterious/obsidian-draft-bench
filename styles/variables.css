@@ -83,4 +83,25 @@ body {
 	--dbench-status-revision: #d4a443;
 	--dbench-status-final: #74b275;
 	--dbench-status-default: var(--text-muted);
+
+	/*
+	 * Manuscript Builder Preview tab. Tunes the underline-pattern
+	 * tabs in the Builder modal and the Preview tab's rendered
+	 * prose. Per docs/planning/manuscript-builder-preview.md § 8;
+	 * applied in manuscript-builder.css, exposed via
+	 * style-settings.css.
+	 *
+	 * Preview tunes the in-Obsidian review register, NOT the final
+	 * compiled PDF / ODT / DOCX output (those go through pdfmake /
+	 * docx generators on a different rendering pipeline). Writers
+	 * wanting to verify the final compile should compile to disk
+	 * and open the file.
+	 */
+	--dbench-tab-active-accent: var(--interactive-accent);
+	--dbench-preview-font-family: var(--font-text);
+	--dbench-preview-font-size: var(--font-text-size);
+	--dbench-preview-line-height: var(--line-height-normal);
+	--dbench-preview-max-width: none;
+	--dbench-preview-paragraph-spacing: 1em;
+	--dbench-preview-text-align: left;
 }

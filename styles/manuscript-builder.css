@@ -152,8 +152,8 @@
 }
 
 .dbench-manuscript-builder__tab--active {
-	color: var(--dbench-tab-active-accent, var(--interactive-accent));
-	border-bottom-color: var(--dbench-tab-active-accent, var(--interactive-accent));
+	color: var(--dbench-tab-active-accent);
+	border-bottom-color: var(--dbench-tab-active-accent);
 }
 
 .dbench-manuscript-builder__tab-body {
@@ -164,14 +164,31 @@
 
 /*
  * Preview tab body container. The class hook lets theme authors
- * target Preview-rendered prose (e.g., serif font, justified text,
- * narrower reading column) without affecting the Build tab's form
- * fields. Style Settings variables that tune Preview typography
- * land in a later step.
+ * target Preview-rendered prose (serif font, justified text,
+ * narrower reading column, etc.) without affecting the Build tab's
+ * form fields. Typography is tuned via the --dbench-preview-* vars
+ * exposed through Style Settings (declared in variables.css, UI
+ * surface in style-settings.css). Per § 8 of the planning doc.
+ *
+ * Reminder: these variables tune Preview *display*, not the final
+ * compiled PDF / ODT / DOCX output. The compile pipelines run
+ * through pdfmake / docx generators on a different rendering path.
  */
 .dbench-manuscript-builder__preview {
 	display: flex;
 	flex-direction: column;
+	max-width: var(--dbench-preview-max-width);
+	margin-left: auto;
+	margin-right: auto;
+	width: 100%;
+	font-family: var(--dbench-preview-font-family);
+	font-size: var(--dbench-preview-font-size);
+	line-height: var(--dbench-preview-line-height);
+	text-align: var(--dbench-preview-text-align);
+}
+
+.dbench-manuscript-builder__preview .markdown-rendered p {
+	margin-block-end: var(--dbench-preview-paragraph-spacing);
 }
 
 /*

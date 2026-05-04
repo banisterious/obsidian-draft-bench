@@ -727,7 +727,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-VIEW.CSS  (1039 lines, 27.71 KB)
+   MANUSCRIPT-VIEW.CSS  (1031 lines, 27.59 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1308,12 +1308,13 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 }
 
 /*
- * Status chip — small pill with colored dot + label. Rendered on
- * each scene row (grid column 2, row 2, below the scene title) and
- * on chapter card headers (flex layout). Foreground color comes from
- * the per-status variable; background is derived from the same color
- * via `color-mix` so overriding the foreground shifts the background
- * too, no mismatch.
+ * Status chip — small pill carrying the status label. Rendered on
+ * each scene row (grid column 2, row 2, below the scene title), on
+ * sub-scene rows, and on chapter card headers (flex layout).
+ * Foreground color comes from the per-status variable; background is
+ * derived from the same color via `color-mix` so overriding the
+ * foreground shifts the background too, no mismatch. Background
+ * alone encodes status; no separate dot affordance.
  *
  * Visual rules live on the bare class. Layout (grid placement) lives
  * on context-scoped selectors so the chip travels cleanly between
@@ -1322,8 +1323,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-manuscript-view__status-chip {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--dbench-spacing-xs);
-	padding: 2px var(--dbench-spacing-sm) 2px var(--dbench-spacing-xs);
+	padding: 2px var(--dbench-spacing-sm);
 	border-radius: 999px;
 	color: var(--dbench-status-default);
 	background: color-mix(in srgb, currentcolor 12%, transparent);
@@ -1336,14 +1336,6 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	grid-row: 2;
 	align-self: start;
 	justify-self: start;
-}
-
-.dbench-manuscript-view__status-chip-dot {
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: currentcolor;
-	flex-shrink: 0;
 }
 
 .dbench-manuscript-view__status-chip-label {
@@ -2003,7 +1995,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 9
-   Total:      1925 lines, 51.88 KB
+   Total:      1917 lines, 51.77 KB
    - variables.css: 87 lines, 2.99 KB
    - style-settings.css: 133 lines, 4.65 KB
    - base.css: 40 lines, 0.75 KB
@@ -2011,7 +2003,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - manuscript-builder.css: 137 lines, 3.35 KB
    - welcome-modal.css: 94 lines, 2.21 KB
    - reorder-modal.css: 103 lines, 2.31 KB
-   - manuscript-view.css: 1039 lines, 27.71 KB
+   - manuscript-view.css: 1031 lines, 27.59 KB
    - settings-tab.css: 219 lines, 5.53 KB
 */
 

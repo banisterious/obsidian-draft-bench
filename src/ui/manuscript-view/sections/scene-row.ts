@@ -101,7 +101,9 @@ function readSubtitle(scene: SceneNote): string {
 }
 
 /**
- * Render a status chip — a small pill with a colored dot + label.
+ * Render a status chip — a small pill carrying the status label. The
+ * pill background and text both derive from the same per-status color
+ * variable, so the background alone is sufficient to encode status.
  * The `data-status` attribute carries the status value lowercased so
  * CSS selectors can assign per-status color via
  * `[data-status="brainstorm"]` etc. Label text preserves the writer's
@@ -114,10 +116,6 @@ export function renderStatusChip(container: HTMLElement, status: string): void {
 	const chip = container.createSpan({
 		cls: 'dbench-manuscript-view__status-chip',
 		attr: { 'data-status': status.toLowerCase() },
-	});
-	chip.createSpan({
-		cls: 'dbench-manuscript-view__status-chip-dot',
-		attr: { 'aria-hidden': 'true' },
 	});
 	chip.createSpan({
 		cls: 'dbench-manuscript-view__status-chip-label',

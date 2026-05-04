@@ -576,12 +576,13 @@
 }
 
 /*
- * Status chip — small pill with colored dot + label. Rendered on
- * each scene row (grid column 2, row 2, below the scene title) and
- * on chapter card headers (flex layout). Foreground color comes from
- * the per-status variable; background is derived from the same color
- * via `color-mix` so overriding the foreground shifts the background
- * too, no mismatch.
+ * Status chip — small pill carrying the status label. Rendered on
+ * each scene row (grid column 2, row 2, below the scene title), on
+ * sub-scene rows, and on chapter card headers (flex layout).
+ * Foreground color comes from the per-status variable; background is
+ * derived from the same color via `color-mix` so overriding the
+ * foreground shifts the background too, no mismatch. Background
+ * alone encodes status; no separate dot affordance.
  *
  * Visual rules live on the bare class. Layout (grid placement) lives
  * on context-scoped selectors so the chip travels cleanly between
@@ -590,8 +591,7 @@
 .dbench-manuscript-view__status-chip {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--dbench-spacing-xs);
-	padding: 2px var(--dbench-spacing-sm) 2px var(--dbench-spacing-xs);
+	padding: 2px var(--dbench-spacing-sm);
 	border-radius: 999px;
 	color: var(--dbench-status-default);
 	background: color-mix(in srgb, currentcolor 12%, transparent);
@@ -604,14 +604,6 @@
 	grid-row: 2;
 	align-self: start;
 	justify-self: start;
-}
-
-.dbench-manuscript-view__status-chip-dot {
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: currentcolor;
-	flex-shrink: 0;
 }
 
 .dbench-manuscript-view__status-chip-label {

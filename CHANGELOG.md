@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- **Manuscript view status chip drops the redundant colored dot.** The chip's small colored dot and pill background were both derived from the same `--dbench-status-<status>` variable, encoding status twice. The dot is gone; the pill background is now the sole visual carrier of status color. Pill padding rebalanced to symmetric horizontal (`var(--dbench-spacing-sm)` on both sides) since the previous left-tight padding was specifically tuned for the dot-then-label flex layout. Affects scene rows, sub-scene rows, and chapter card headers (all share the same chip helper). Refs #23.
+
 ## [0.2.3] - 2026-05-04
 
 Third hot patch of the day. Defensive fixes against latent issues in the linker -> sort chain that surfaced as mispaired reverse arrays during sequential sub-scene retrofits.

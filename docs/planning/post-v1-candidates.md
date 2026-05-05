@@ -17,7 +17,8 @@
 
 Items that started as candidates here and have since graduated to their own planning docs (with implementation sequences, ratification sections, and a target release):
 
-- **Manuscript Builder Preview tab** — promoted 2026-05-04, target 0.3.0. Adds a Preview tab to the Manuscript Builder modal that renders the current preset's compile output as a continuous read-only document, alongside today's Build tab (the existing collapsible-section content). Complementary with [#3 (Scrivenings-style continuous Manuscript view)](#3-scrivenings-style-continuous-manuscript-view-alternate-mode) below: two distinct use cases, two independent ship paths. See [manuscript-builder-preview.md](manuscript-builder-preview.md).
+- **Manuscript Builder Preview tab** — promoted 2026-05-04, target 0.3.0. Adds a Preview tab to the Manuscript Builder modal that renders the current preset's compile output as a continuous read-only document, alongside today's Build tab (the existing collapsible-section content). Complementary with [#2 (Scrivenings-style continuous Manuscript view)](#2-scrivenings-style-continuous-manuscript-view-alternate-mode) below: two distinct use cases, two independent ship paths. See [manuscript-builder-preview.md](manuscript-builder-preview.md).
+- **Scrivener `.scriv` import** — promoted 2026-05-05, target pre-1.0 (specific minor TBD). Reads a Scrivener 3 project (`.scrivx` index + per-document RTF/RTFD bodies) and produces a Draft Bench project: project / chapters / scenes / sub-scenes mapped from the binder hierarchy, RTF bodies converted to markdown, inspector metadata preserved, snapshots optionally imported as drafts. DB's first wizard. See [scrivener-import.md](scrivener-import.md).
 
 ---
 
@@ -34,21 +35,7 @@ The following appeared as candidates and have since landed in main during the pr
 
 ## Strong candidates (ranked)
 
-### 1. Scrivener `.scriv` import
-
-**Scope.** Read a Scrivener 2 / 3 project (`.scrivx` XML + per-document RTF/RTFD bodies) and produce a Draft Bench project: project note, chapter notes (from binder folders), scene notes (from binder documents), with metadata mapping where it cleanly translates (synopsis -> `dbench-synopsis`, status -> `dbench-status` if the writer's Scrivener statuses overlap the configured vocabulary, label/POV -> custom frontmatter writers can keep). Images extracted to a `Research/` folder. Snapshots imported as `dbench-type: draft` files where possible.
-
-**Rationale.** Scrivener is the dominant prior tool for fiction writers Draft Bench targets. Without an importer, a Scrivener user has to manually rebuild their project structure scene by scene; that's enough friction to send them to StoryLine (which has an importer) or to give up. The presence of an importer is a marketing-tier feature: it's the answer to "but I have ten years of Scrivener projects."
-
-**Effort.** Substantial. Three sub-problems: (a) parse the Scrivener XML format (well-documented but versioned), (b) convert RTF/RTFD body content to markdown without losing italics / bold / footnotes / inline images, (c) map the binder hierarchy to project / chapter / scene with sensible defaults the writer can review. Probably 2-3 weeks of focused work plus QA against several real `.scriv` projects. Worth a dedicated milestone.
-
-**Dependencies.** Chapter-type implementation complete (Steps 1-15) — chapters are required for binder-folder mapping. Drafts feature complete. Compile not required.
-
-**References.** StoryLine has this; their import path is the marketing comparison. Open-source RTF parsers exist in JS (e.g., `rtf-parser`, `rtf-stream-parser`). Apple Pages and other tools also import `.scriv`; their behavior is reference material.
-
----
-
-### 2. Project-level full-manuscript snapshots
+### 1. Project-level full-manuscript snapshots
 
 **Scope.** A "First Draft / Second Draft" snapshot model in the Longform sense: capture the entire project's prose state at a moment in time, distinct from per-scene `dbench-type: draft` files. New `dbench-type: project-snapshot` (or similar). Snapshot file is a single concatenated markdown manuscript with a frontmatter pointer back to the project plus a timestamp + name. Restore action: branch a new project from a snapshot for a parallel revision.
 
@@ -62,7 +49,7 @@ The following appeared as candidates and have since landed in main during the pr
 
 ---
 
-### 3. Scrivenings-style continuous Manuscript view (alternate mode)
+### 2. Scrivenings-style continuous Manuscript view (alternate mode)
 
 **Scope.** A second view mode on the Manuscript leaf: in addition to today's chapter-cards-and-scene-rows, a "continuous read" mode that renders the entire manuscript as one scrollable read-only document. Descends into sub-scenes the way compile does. Click any heading to open the underlying note in the active leaf for editing. Toggle between modes via a button on the leaf header.
 

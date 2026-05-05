@@ -23,10 +23,11 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
 - **Versioned per-scene drafts.** Each "new draft" command snapshots a scene's current prose into its own file, carries the working draft forward, and lets you keep revising. Every prior draft remains a real file, openable in split panes for side-by-side comparison.
 - **Flexible folder structure.** Scenes can live anywhere in your vault; the plugin identifies them by frontmatter, not folder location. Organize by status, POV, date, or any other scheme; nothing breaks.
 - **Obsidian Bases compatible.** Every property is Bases-queryable out of the box. Build manuscript tables, status queues, and corkboards without custom configuration.
-- **Compile without JavaScript.** A form-based Book Builder supports compile presets, scene selection, and multi-format export (Markdown, ODT, PDF, DOCX).
+- **Compile without JavaScript.** A form-based Manuscript Builder handles compile presets, scene selection, and multi-format export (Markdown, ODT, PDF, DOCX).
+- **Compile preview, in-place.** A Preview tab renders the current preset's output as continuous read-only prose, no real export file needed. Dock the Builder as a workspace tab to keep Preview pinned next to a scene you're editing; Preview re-renders as you save.
 
 <p align="center">
-  <img src="https://draftbench.io/img/dbench-bases-projects.png"
+  <img src="docs/images/dbench-bases-projects.png"
        alt="A starter Bases view in Draft Bench showing the projects table — title, status, scene count, target word count, and progress bar columns — populated with three example projects."
        width="800">
 </p>

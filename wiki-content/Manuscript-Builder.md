@@ -80,7 +80,7 @@ The default is auto-selected when the preset is created based on the project's s
 A compile preset is itself a note in the vault. Its content-handling rules live in the note's frontmatter, editable from the Properties panel as well as from the Manuscript Builder modal:
 
 <p align="center">
-  <img src="https://draftbench.io/img/dbench-compile-preset-properties.png"
+  <img src="https://raw.githubusercontent.com/banisterious/obsidian-draft-bench/main/docs/images/dbench-compile-preset-properties.png"
        alt="A Draft Bench compile preset note open in Obsidian's Properties panel, showing the dbench-compile-* fields for output format, heading scope, frontmatter handling, embeds, dinkuses, and other content-handling rules."
        width="800">
 </p>

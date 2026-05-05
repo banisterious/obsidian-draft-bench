@@ -294,7 +294,7 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 
 **Outputs**
 
-- [x] Raw at `docs/images/raw/dbench-compile-preset-properties.png` (full-res, tracked)
+- [x] Raw at `docs/images/dbench-compile-preset-properties.png` (full-res, tracked; doc-source for README + wiki)
 - [x] Optimized in website repo `static/img/dbench-compile-preset-properties.png`
 
 ---
@@ -323,7 +323,7 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 
 **Outputs**
 
-- [x] Raw at `docs/images/raw/dbench-bases-projects.png`
+- [x] Raw at `docs/images/dbench-bases-projects.png` (doc-source for README + wiki)
 - [x] Optimized in website repo `static/img/dbench-bases-projects.png`
 
 ---
@@ -351,7 +351,7 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 
 **Outputs**
 
-- [x] Raw at `docs/images/raw/dbench-style-settings.png`
+- [x] Raw at `docs/images/dbench-style-settings.png` (doc-source for README + wiki)
 - [x] Optimized in website repo `static/img/dbench-style-settings.png`
 
 ## Format and size targets
@@ -378,8 +378,9 @@ Requires `markup.goldmark.renderer.unsafe = true` in `hugo.toml`. The website se
 
 Per § 5.6:
 
-- **Raw captures** live in this plugin repo at `docs/images/raw/`. Full resolution, untouched. Gitignore `*.webm` and `*.mp4` here (large files; only the optimized versions ship).
-- **Site-ready optimized** versions live in the website repo at `static/img/`. Smaller, scaled, format-finalized.
+- **Stills** live in this plugin repo at `docs/images/*.png`. Full resolution, untouched. Doc-source for README + wiki (referenced directly via repo-relative paths and `raw.githubusercontent.com` URLs); also copied to the website repo's `static/img/` for the public CDN.
+- **Motion source files** live in this plugin repo at `docs/images/raw/`. Gitignored (`*.webm`, `*.mp4`, `*.mov`, `*.mkv`); only the optimized versions ship from the website CDN.
+- **Site-ready optimized** versions of motion captures (and any post-tweaks of stills) live in the website repo at `static/img/`. Smaller, scaled, format-finalized.
 
 This split is established convention from chartedroots.com; mirroring it for Draft Bench keeps regenerate-at-different-size workflows simple.
 

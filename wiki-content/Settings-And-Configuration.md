@@ -43,7 +43,7 @@ If the [Style Settings plugin](https://github.com/mgmeyers/obsidian-style-settin
 - **Manuscript Builder Preview**: tab active accent, plus Preview-tab typography (font family, size, line height, max width, paragraph spacing, text alignment). The in-modal [Preview typography toolbar](Manuscript-Builder#typography-toolbar) covers the most common knobs without needing Style Settings; the variables here are for power users wanting custom font stacks, line-height, paragraph spacing, or accent-color overrides.
 
 <p align="center">
-  <img src="https://draftbench.io/img/dbench-style-settings.png"
+  <img src="https://raw.githubusercontent.com/banisterious/obsidian-draft-bench/main/docs/images/dbench-style-settings.png"
        alt="The Style Settings panel in Obsidian, showing the Draft Bench section expanded with sliders and color pickers for scene-leaf typography (font family, size, line height, max width) and draft-leaf archival cue (border, background, text color)."
        width="800">
 </p>

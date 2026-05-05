@@ -174,7 +174,7 @@ Highlights:
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.1.0)
 
 <p align="center">
-  <img src="https://draftbench.io/img/dbench-bases-projects.png"
+  <img src="https://raw.githubusercontent.com/banisterious/obsidian-draft-bench/main/docs/images/dbench-bases-projects.png"
        alt="A Draft Bench Bases view listing projects with their type, status, target word count, and other dbench- frontmatter columns."
        width="800">
 </p>

@@ -1,6 +1,6 @@
 # Manuscript Builder
 
-The Manuscript Builder is Draft Bench's compile surface — a focused modal for editing a project's compile presets and running a compile.
+The Manuscript Builder is Draft Bench's compile surface for editing a project's compile presets and running a compile. It opens as a focused modal by default; you can also dock it as a workspace tab to keep Preview pinned next to a scene you're editing.
 
 It pairs with the **[Manuscript view](#manuscript-view)** (a dockable workspace pane), which is where day-to-day writing work happens. The Manuscript view shows your ordered scene list, status breakdown, and word-count progress; the Manuscript Builder is where you turn that material into a finished output (Markdown, ODT, PDF, or DOCX) when you're ready to share.
 
@@ -8,19 +8,37 @@ It pairs with the **[Manuscript view](#manuscript-view)** (a dockable workspace 
 
 ## Opening the Manuscript Builder
 
+**As a modal (default):**
+
 - **Compile button** in the Manuscript view's toolbar (most common — opens the modal scoped to the active project).
 - Command palette: **Draft Bench: Build manuscript**.
 - Right-click a project note in the file explorer -> **Build manuscript**.
 
-If no compile preset exists yet for the active project, the modal opens with a **+ New preset** button so you can create one in place.
+**As a workspace leaf:**
+
+- **Dock button** in the modal's sticky header (top-right, next to the close button — a small `panel-right` icon). Closes the modal and reopens the same content as a workspace tab with the same project, preset, and tab state.
+- Command palette: **Draft Bench: Show Manuscript Builder leaf**. Opens the leaf directly. Useful for binding a hotkey if you prefer leaf form as your default.
+
+If no compile preset exists yet for the active project, the Builder opens with a **+ New preset** button so you can create one in place.
+
+## Modal vs workspace leaf
+
+Same Build / Preview UI in both forms. The differences:
+
+- **The modal blocks the rest of the workspace.** Open it, do your compile-tuning, run compile, close it. You can't edit a scene in another pane while the modal is up.
+- **The leaf doesn't block.** Dock it in a side pane and you can edit a scene in the main pane while watching Preview update as you save (file-save reactivity, debounced ~400ms; only fires while the Preview tab is active and only for project member files).
+- **Single-leaf only.** Opening the Builder when a leaf already exists focuses the existing one — you can't have two Builder leaves open at the same time.
+- **One-way docking.** The leaf doesn't have a "convert back to modal" button. To return to modal form, close the leaf and reopen via the palette command or the Compile CTA in the Manuscript view.
+
+Pick the modal for "tweak preset, run compile, done" — it's a tighter focused-task surface. Pick the leaf when you want Preview pinned during a longer editing session.
 
 ## Header
 
-A sticky region at the top of the modal that stays pinned to view as content below scrolls. Three pieces:
+A sticky region at the top of the Builder (modal or leaf) that stays pinned to view as content below scrolls. Three pieces (plus the dock button on the modal):
 
-- **Project picker** — a dropdown listing every project in the vault. Switching here updates the modal in place (presets, selected preset, last-active tab) and routes through plugin selection so the [Manuscript view](#manuscript-view) re-renders to match.
-- **Preset picker + New preset** — a dropdown listing the active project's compile presets, plus a button to create a new one inline.
-- **Run compile** — the modal's primary verb. Runs the active preset end to end. Reachable from both the Build and Preview tabs since it lives in the sticky header.
+- **Project picker** — a dropdown listing every project in the vault. Switching here updates the Builder in place (presets, selected preset, last-active tab) and routes through plugin selection so the [Manuscript view](#manuscript-view) re-renders to match.
+- **Preset picker + New preset** — a dropdown listing the active project's compile presets, plus a button to create a new one inline. The selected preset persists per project across reload.
+- **Run compile** — the Builder's primary verb. Runs the active preset end to end. Reachable from both the Build and Preview tabs since it lives in the sticky header.
 
 Below the header, two tabs swap the body: **Build** (form fields) and **Preview** (rendered prose).
 
@@ -75,16 +93,20 @@ Read-only display of when the preset last compiled, where the output landed, and
 
 The Preview tab renders the current preset's compile output as continuous read-only prose, in place. Tweak settings on Build, flip to Preview, see the impact, iterate — without writing a real output file each time.
 
-Preview re-renders on three triggers: tab activation, preset-selector change, and project-selector change. External edits to source notes mid-session do not auto-refresh; flip Build -> Preview to re-trigger.
+Preview re-renders on three triggers in both forms: tab activation, preset-selector change, and project-selector change.
+
+**In the leaf form (only)**, Preview also re-renders on **file-save reactivity**: when you save a project member file (project / chapter / scene / sub-scene with a matching `dbench-project-id`), Preview re-renders ~400ms after the last save event. The debounce batches rapid saves (autosaves, sync drops) into a single re-render. Drafts (archival snapshots) and compile presets (config) don't trigger. Scroll position is preserved across file-save re-renders so deep reading isn't reset to the top; tab / preset / project changes still land at the top (those are "fresh entry" re-renders).
+
+The modal form doesn't auto-refresh on external edits, since Obsidian modals block interaction with the rest of the workspace anyway. Flip Build -> Preview to re-trigger if needed.
 
 > **Preview is for in-Obsidian review, not WYSIWYG of the compiled file.** The actual PDF / ODT / DOCX outputs run through different rendering pipelines (pdfmake / docx generators), so Preview's typography won't match exactly. Compile to disk and open the file to verify the final exported result.
 
 ### Typography toolbar
 
-Above the rendered prose, a toolbar lets the writer tune Preview's reading register without leaving the modal. Choices persist globally (these are reading-register preferences, not project-specific).
+Above the rendered prose, a toolbar lets the writer tune Preview's reading register without leaving the Builder. Choices persist globally (these are reading-register preferences, not project-specific).
 
 - **Text alignment** — Left / Justify.
-- **Reading width** — Full (modal width), Med (~50em), Narrow (~40em).
+- **Reading width** — Full (Builder width), Med (~50em), Narrow (~40em).
 - **Font size** — `−` and `+` buttons step the body font size between 12px and 24px.
 - **Font family** — Theme default (matches Obsidian's `--font-text`), Serif (Georgia stack), Sans-serif (system stack), Monospace (matches Obsidian's `--font-monospace`).
 

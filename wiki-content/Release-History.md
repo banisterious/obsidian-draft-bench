@@ -4,6 +4,25 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.3.1: 2026-05-05 — Dockable Manuscript Builder leaf
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.3.1)
+
+The 0.3.0 Manuscript Builder modal gains a **dockable leaf form** so writers can pin Preview next to a scene they're editing in another pane. The modal stays as the default entry point; a "dock to leaf" icon button in the modal's sticky header (next to the close button) closes the modal and reopens the same content as a workspace tab. The leaf form adds **debounced file-save reactivity** that the modal couldn't support — Preview re-renders ~400ms after a project member is saved, batching rapid saves into a single update.
+
+### Added
+
+- **Dockable Manuscript Builder workspace leaf** ([#27](https://github.com/banisterious/obsidian-draft-bench/issues/27)). A "dock to leaf" icon button in the modal's sticky header opens a workspace-tab version of the same Build / Preview UI. With the leaf open in a side pane, you can edit a scene in the main pane and watch Preview update as you save. File-save reactivity is debounced (400ms), filtered to project members (drafts and compile presets don't trigger), and only fires while the Preview tab is active. Single-leaf only: opening the Builder when a leaf already exists focuses the existing one. The leaf is one-way (no "convert back to modal" button); to return to modal form, close the leaf and reopen via the palette command or the Manuscript view's Compile CTA.
+- **`Draft Bench: Show Manuscript Builder leaf` palette command.** Opens the leaf directly (focuses existing if present).
+- **Preview scroll position preserved across file-save re-renders.** When you're reading deep in Preview and save a paragraph in another pane, Preview re-renders without snapping the scroll back to the top. Tab / preset / project changes still land at the top (those are "fresh entry" re-renders where you'd expect to start from the beginning).
+- **Last-selected preset persists per project** (`manuscriptBuilderSelectedPresetId` in plugin settings). The leaf restores your last-tuned preset across Obsidian reload; the modal also benefits — close + reopen now restores the last-selected preset instead of always defaulting to the first one.
+
+### Changed
+
+- **Manuscript Builder rendering core extracted into a host-agnostic shell** so the modal and the new leaf share the same code. Internal refactor only; no behavior change for modal users.
+
+1102 unit + integration tests, all green. Desktop-only.
+
 ## 0.3.0: 2026-05-04 — Manuscript Builder Preview tab
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.3.0)

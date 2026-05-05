@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-05-05
+
 Dockable Manuscript Builder leaf — the 0.3.0 Builder modal gains a leaf form so writers can pin Preview next to a scene they're editing in another pane. The 0.3.0 modal stays as the default entry point; a dock button on the modal opens the leaf, and the leaf adds debounced file-save reactivity that the modal couldn't support.
 
 ### Added

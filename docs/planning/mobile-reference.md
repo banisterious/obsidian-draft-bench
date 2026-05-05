@@ -1,6 +1,6 @@
 # Mobile support reference: Charted Roots patterns
 
-**Status:** Reference material. **Not** a design spec for Draft Bench's mobile support.
+**Status:** Reference material. **Not** a design spec for Draft Bench's mobile support. Implementation tracking lives at [#29](https://github.com/banisterious/obsidian-draft-bench/issues/29).
 
 **Purpose.** Captures Charted Roots' (CR) mobile-support approach (label taxonomy, triage path, implementation patterns, verification workflow) so that when DB elevates mobile readiness from "desktop-only" to "mobile-supported pre-1.0," the design starts from a concrete, well-understood prior art rather than a blank page. The summary below was drafted in a parallel CR session and ported here on 2026-05-05; the patterns are general-purpose Obsidian-mobile knowledge derived from CR's lived experience, not CR-specific code structure.
 
@@ -240,7 +240,7 @@ The alternative (defer mobile claims entirely until iOS coverage is acquired) wa
 
 ### Ratified 2026-05-05: mobile elevation precedes Scrivener importer
 
-Mobile readiness ships before the Scrivener importer ([#28](https://github.com/banisterious/obsidian-draft-bench/issues/28)). The audit pass + `Platform.isDesktopApp` gating infrastructure needs to land first so the importer's commands and Manuscript view button can register their gates against a stable mobile-aware codebase. Reversing the order (importer first, mobile after) would mean retrofitting gates into already-shipped code.
+Mobile readiness ships before the Scrivener importer ([#28](https://github.com/banisterious/obsidian-draft-bench/issues/28)). Tracking issue: [#29](https://github.com/banisterious/obsidian-draft-bench/issues/29). The audit pass + `Platform.isDesktopApp` gating infrastructure needs to land first so the importer's commands and Manuscript view button can register their gates against a stable mobile-aware codebase. Reversing the order (importer first, mobile after) would mean retrofitting gates into already-shipped code.
 
 This shapes the pre-1.0 sequencing: mobile readiness as the next minor (likely 0.4.0), Scrivener importer as a later minor (0.5.0 or beyond) once the corpus + RTF spike are in hand.
 

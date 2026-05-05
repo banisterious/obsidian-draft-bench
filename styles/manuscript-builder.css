@@ -72,6 +72,46 @@
 	background: var(--background-primary);
 }
 
+/*
+ * Dock-to-leaf button. Top-right of the sticky header, visually
+ * adjacent to the modal's close button. Only rendered when the
+ * host (currently only the modal) provides a dock handler — the
+ * leaf doesn't show a "convert to modal" affordance (passive
+ * reverse path per the #27 design ratification). `position: sticky`
+ * on the parent already establishes a containing block for the
+ * absolute positioning here.
+ *
+ * The sticky header's z-index 1 keeps the dock button above
+ * scrolled content; the modal close button at z-index 2 stays
+ * above this when scrolled to the very top.
+ */
+.dbench-manuscript-builder__dock-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	color: var(--text-muted);
+	background: transparent;
+	border: none;
+	border-radius: var(--dbench-radius-sm);
+	cursor: pointer;
+}
+
+.dbench-manuscript-builder__dock-button:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.dbench-manuscript-builder__dock-button:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 1px;
+}
+
 .dbench-manuscript-builder__header {
 	display: flex;
 	flex-direction: column;

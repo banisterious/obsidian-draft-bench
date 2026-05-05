@@ -450,7 +450,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-BUILDER.CSS  (480 lines, 14.19 KB)
+   MANUSCRIPT-BUILDER.CSS  (520 lines, 15.34 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -525,6 +525,46 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	top: 0;
 	z-index: 1;
 	background: var(--background-primary);
+}
+
+/*
+ * Dock-to-leaf button. Top-right of the sticky header, visually
+ * adjacent to the modal's close button. Only rendered when the
+ * host (currently only the modal) provides a dock handler — the
+ * leaf doesn't show a "convert to modal" affordance (passive
+ * reverse path per the #27 design ratification). `position: sticky`
+ * on the parent already establishes a containing block for the
+ * absolute positioning here.
+ *
+ * The sticky header's z-index 1 keeps the dock button above
+ * scrolled content; the modal close button at z-index 2 stays
+ * above this when scrolled to the very top.
+ */
+.dbench-manuscript-builder__dock-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	color: var(--text-muted);
+	background: transparent;
+	border: none;
+	border-radius: var(--dbench-radius-sm);
+	cursor: pointer;
+}
+
+.dbench-manuscript-builder__dock-button:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.dbench-manuscript-builder__dock-button:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 1px;
 }
 
 .dbench-manuscript-builder__header {
@@ -2416,12 +2456,12 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 9
-   Total:      2338 lines, 66.09 KB
+   Total:      2378 lines, 67.25 KB
    - variables.css: 108 lines, 3.85 KB
    - style-settings.css: 190 lines, 7.27 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - manuscript-builder.css: 480 lines, 14.19 KB
+   - manuscript-builder.css: 520 lines, 15.34 KB
    - welcome-modal.css: 94 lines, 2.21 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 1031 lines, 27.59 KB

@@ -258,6 +258,23 @@ export interface DraftBenchSettings {
 	manuscriptBuilderTabState: Record<string, ManuscriptBuilderTab>;
 
 	/**
+	 * Per-project last-selected compile preset in the Manuscript
+	 * Builder. Keyed by the project's `dbench-id`. Missing entries
+	 * default to the project's first preset, so a writer who has
+	 * never opened the Builder lands on a sensible default.
+	 *
+	 * Persistence rationale: matches the pattern used by
+	 * `manuscriptBuilderTabState`, `chapterCollapseState`, and
+	 * `sceneCollapseState`. Required by the dock-to-leaf work
+	 * ([#27](https://github.com/banisterious/obsidian-draft-bench/issues/27))
+	 * so the leaf can restore the writer's last-tuned preset across
+	 * Obsidian reload; also a small UX win for the modal (close +
+	 * reopen restores the last-selected preset instead of always
+	 * snapping to the first one).
+	 */
+	manuscriptBuilderSelectedPresetId: Record<string, string>;
+
+	/**
 	 * Preview tab typography preferences. Tunes the in-modal
 	 * Preview toolbar's controls (text alignment, reading width,
 	 * font size, font family). Globally scoped — these are
@@ -313,6 +330,7 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	chapterCollapseState: {},
 	sceneCollapseState: {},
 	manuscriptBuilderTabState: {},
+	manuscriptBuilderSelectedPresetId: {},
 	previewTypography: {
 		textAlign: 'left',
 		readingWidth: 'full',

@@ -94,11 +94,20 @@ export class ManuscriptBuilder {
 	private previewComponent: Component | null = null;
 	private previewRenderToken = 0;
 
+	/**
+	 * @param dockHandler  Optional callback invoked when the dock-to-
+	 *   leaf button in the sticky header is clicked. The button is
+	 *   only rendered when this handler is provided; the modal passes
+	 *   it (closes modal + opens leaf), the leaf doesn't (no
+	 *   dock-to-leaf affordance from the leaf form, per the design
+	 *   ratification's passive reverse-path resolution).
+	 */
 	constructor(
 		private app: App,
 		private plugin: DraftBenchPlugin,
 		private linker: DraftBenchLinker,
-		private contentEl: HTMLElement
+		private contentEl: HTMLElement,
+		private dockHandler?: () => void
 	) {}
 
 	/** Initialize state from plugin settings + render the UI. */
@@ -135,11 +144,32 @@ export class ManuscriptBuilder {
 					this.project.frontmatter['dbench-id']
 				)
 			: [];
-		this.selectedPresetId =
-			this.presets.length > 0
-				? this.presets[0].frontmatter['dbench-id']
-				: null;
+		this.selectedPresetId = this.loadSelectedPresetId();
 		this.activeTab = this.loadActiveTab();
+	}
+
+	private loadSelectedPresetId(): string | null {
+		if (this.presets.length === 0) return null;
+		if (this.project) {
+			const projectId = this.project.frontmatter['dbench-id'];
+			const saved =
+				this.plugin.settings.manuscriptBuilderSelectedPresetId[projectId];
+			if (
+				saved &&
+				this.presets.some((p) => p.frontmatter['dbench-id'] === saved)
+			) {
+				return saved;
+			}
+		}
+		return this.presets[0].frontmatter['dbench-id'];
+	}
+
+	private persistSelectedPresetId(): void {
+		if (!this.project || !this.selectedPresetId) return;
+		const projectId = this.project.frontmatter['dbench-id'];
+		this.plugin.settings.manuscriptBuilderSelectedPresetId[projectId] =
+			this.selectedPresetId;
+		void this.plugin.saveSettings();
 	}
 
 	private loadActiveTab(): ManuscriptBuilderTab {
@@ -176,6 +206,22 @@ export class ManuscriptBuilder {
 			// eslint-disable-next-line obsidianmd/ui/sentence-case -- branded surface name (parallel to "Manuscript view")
 			text: 'Manuscript Builder',
 		});
+
+		// Optional dock-to-leaf button. Only rendered when the host
+		// (currently only the modal) provides a handler; the leaf
+		// itself doesn't show one (passive reverse path per #27's
+		// design ratification).
+		if (this.dockHandler) {
+			const dockBtn = sticky.createEl('button', {
+				cls: 'dbench-manuscript-builder__dock-button clickable-icon',
+				attr: {
+					type: 'button',
+					'aria-label': 'Open as workspace tab',
+				},
+			});
+			setIcon(dockBtn, 'panel-right');
+			dockBtn.addEventListener('click', () => this.dockHandler?.());
+		}
 
 		if (this.project === null) {
 			this.renderEmptyNoProject();
@@ -470,6 +516,7 @@ export class ManuscriptBuilder {
 			}
 			select.addEventListener('change', () => {
 				this.selectedPresetId = select.value;
+				this.persistSelectedPresetId();
 				this.renderActiveTab();
 			});
 		}
@@ -876,6 +923,7 @@ export class ManuscriptBuilder {
 		);
 		if (created) {
 			this.selectedPresetId = created.frontmatter['dbench-id'];
+			this.persistSelectedPresetId();
 		}
 		this.renderAll();
 	}

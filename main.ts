@@ -8,6 +8,11 @@ import { ProjectSelection } from './src/core/selection';
 import { WordCountCache } from './src/core/word-count-cache';
 import { DraftBenchSettingTab } from './src/settings/settings-tab';
 import { LeafStyles } from './src/ui/leaf-styles';
+import { activateManuscriptBuilderView } from './src/ui/manuscript-builder/activate';
+import {
+	ManuscriptBuilderView,
+	VIEW_TYPE_MANUSCRIPT_BUILDER,
+} from './src/ui/manuscript-builder/manuscript-builder-view';
 import { activateManuscriptView } from './src/ui/manuscript-view/activate';
 import {
 	ManuscriptView,
@@ -55,6 +60,20 @@ export default class DraftBenchPlugin extends Plugin {
 			VIEW_TYPE_MANUSCRIPT,
 			(leaf) => new ManuscriptView(leaf, this)
 		);
+
+		this.registerView(
+			VIEW_TYPE_MANUSCRIPT_BUILDER,
+			(leaf) => new ManuscriptBuilderView(leaf, this, this.linker)
+		);
+
+		this.addCommand({
+			id: 'show-manuscript-builder-leaf',
+			// eslint-disable-next-line obsidianmd/ui/sentence-case -- branded surface name (parallel to "Manuscript view")
+			name: 'Show Manuscript Builder leaf',
+			callback: () => {
+				void activateManuscriptBuilderView(this.app);
+			},
+		});
 
 		registerCommands(this, () => this.settings, this.linker);
 		registerContextMenu(this, this.linker);

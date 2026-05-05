@@ -32,6 +32,12 @@ Same Build / Preview UI in both forms. The differences:
 
 Pick the modal for "tweak preset, run compile, done" — it's a tighter focused-task surface. Pick the leaf when you want Preview pinned during a longer editing session.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/banisterious/obsidian-draft-bench/main/docs/images/dbench-manuscript-builder-leaf.png"
+       alt="A three-pane Obsidian workspace: Manuscript view in the left sidebar, a scene file open in the middle pane (source mode showing dbench-* frontmatter), and the Manuscript Builder docked as a workspace leaf in the right pane with the Preview tab rendering the same project's compile output."
+       width="800">
+</p>
+
 ## Header
 
 A sticky region at the top of the Builder (modal or leaf) that stays pinned to view as content below scrolls. Three pieces (plus the dock button on the modal):
@@ -92,6 +98,12 @@ Read-only display of when the preset last compiled, where the output landed, and
 ## Preview tab
 
 The Preview tab renders the current preset's compile output as continuous read-only prose, in place. Tweak settings on Build, flip to Preview, see the impact, iterate — without writing a real output file each time.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/banisterious/obsidian-draft-bench/main/docs/images/dbench-manuscript-builder-preview.png"
+       alt="The Manuscript Builder modal with the Preview tab active. The sticky header shows the project picker, preset picker, and Run compile button. A typography toolbar above the rendered prose shows text-alignment, reading-width (Med selected), font-size stepper, and font-family dropdown (Serif). Below, three chapter-style headings render as continuous prose."
+       width="800">
+</p>
 
 Preview re-renders on three triggers in both forms: tab activation, preset-selector change, and project-selector change.
 

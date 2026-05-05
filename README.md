@@ -27,6 +27,12 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
 - **Compile preview, in-place.** A Preview tab renders the current preset's output as continuous read-only prose, no real export file needed. Dock the Builder as a workspace tab to keep Preview pinned next to a scene you're editing; Preview re-renders as you save.
 
 <p align="center">
+  <img src="docs/images/dbench-manuscript-builder-preview.png"
+       alt="The Manuscript Builder modal with the Preview tab active. The sticky header shows the project picker, preset picker (Workshop · MD), New preset button, and Run compile button. A typography toolbar above the rendered prose shows text-alignment, reading-width (Med selected), font-size stepper (16px), and font-family dropdown (Serif). Below, three chapter-style headings render as continuous prose with the manuscript's content."
+       width="800">
+</p>
+
+<p align="center">
   <img src="docs/images/dbench-bases-projects.png"
        alt="A starter Bases view in Draft Bench showing the projects table — title, status, scene count, target word count, and progress bar columns — populated with three example projects."
        width="800">

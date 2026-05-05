@@ -1,4 +1,4 @@
-import { Component, MarkdownRenderer, setIcon, type App } from 'obsidian';
+import { Component, MarkdownRenderer, setIcon, TFile, type App } from 'obsidian';
 import type DraftBenchPlugin from '../../../main';
 import { CompileService } from '../../core/compile-service';
 import {
@@ -59,6 +59,18 @@ const PREVIEW_FONT_FAMILY_VALUE: Record<PreviewFontFamily, string> = {
 const PREVIEW_FONT_SIZE_MIN = 12;
 const PREVIEW_FONT_SIZE_MAX = 24;
 
+/*
+ * File-save reactivity debounce window (Phase 3 of #27). Vault
+ * modify events for project members trigger a Preview re-render
+ * after this many milliseconds of quiescence. 400ms batches a typical
+ * autosave / save-bunch (Obsidian autosaves a few hundred ms after
+ * keystrokes; sync-driven file landings can come in bursts) into a
+ * single re-render rather than re-rendering per event. Tunable; the
+ * 100k+ word perf-test target from the FR's resolved design will
+ * tell us whether 400ms is the right value.
+ */
+const FILE_SAVE_DEBOUNCE_MS = 400;
+
 /**
  * Manuscript Builder shell — host-agnostic core that renders the
  * full Builder UI (header with project + preset pickers, Run
@@ -93,6 +105,18 @@ export class ManuscriptBuilder {
 	private activeTab: ManuscriptBuilderTab = 'build';
 	private previewComponent: Component | null = null;
 	private previewRenderToken = 0;
+	private eventsComponent: Component | null = null;
+	private fileSaveDebounceTimer: number | null = null;
+	/*
+	 * Captured scroll position to restore on the next Preview re-
+	 * render. Set by the file-save reactivity path *before*
+	 * `renderActiveTab` (which empties tabBodyEl and resets
+	 * contentEl.scrollTop), then read-and-cleared inside
+	 * `renderPreviewAsync` after MarkdownRenderer finishes laying
+	 * out the new content. `null` for tab / preset / project
+	 * changes so those re-renders land at the top.
+	 */
+	private nextRenderScrollTop: number | null = null;
 
 	/**
 	 * @param dockHandler  Optional callback invoked when the dock-to-
@@ -113,13 +137,89 @@ export class ManuscriptBuilder {
 	/** Initialize state from plugin settings + render the UI. */
 	mount(): void {
 		this.initState();
+		this.subscribeToVaultEvents();
 		this.renderAll();
 	}
 
 	/** Tear down preview-rendered children and clear the host element. */
 	unmount(): void {
+		this.unsubscribeFromVaultEvents();
 		this.tearDownPreview();
 		this.contentEl.empty();
+	}
+
+	/*
+	 * File-save reactivity (Phase 3 of #27). Subscribes to vault
+	 * `modify` events; when a file in the active project's manuscript
+	 * is saved while the writer is on the Preview tab, debounces by
+	 * FILE_SAVE_DEBOUNCE_MS and then re-renders Preview. Build-tab
+	 * activity and modify events for files outside the active project
+	 * are ignored — the listener stays subscribed in both cases (cheap)
+	 * but is a no-op.
+	 *
+	 * Useful only in the leaf form of the Builder (the modal blocks
+	 * the vault, so writers can't edit source notes while it's open).
+	 * The same listener runs in both contexts for code simplicity;
+	 * inside the modal it just never fires.
+	 */
+	private subscribeToVaultEvents(): void {
+		this.eventsComponent = new Component();
+		this.eventsComponent.load();
+		this.eventsComponent.registerEvent(
+			this.app.vault.on('modify', (file) => {
+				if (file instanceof TFile) this.onVaultModify(file);
+			})
+		);
+	}
+
+	private unsubscribeFromVaultEvents(): void {
+		if (this.fileSaveDebounceTimer !== null) {
+			window.clearTimeout(this.fileSaveDebounceTimer);
+			this.fileSaveDebounceTimer = null;
+		}
+		if (this.eventsComponent) {
+			this.eventsComponent.unload();
+			this.eventsComponent = null;
+		}
+	}
+
+	private onVaultModify(file: TFile): void {
+		if (this.activeTab !== 'preview') return;
+		if (!this.isFileInActiveProject(file)) return;
+
+		if (this.fileSaveDebounceTimer !== null) {
+			window.clearTimeout(this.fileSaveDebounceTimer);
+		}
+		this.fileSaveDebounceTimer = window.setTimeout(() => {
+			this.fileSaveDebounceTimer = null;
+			// Tab might have switched during the debounce window.
+			if (this.activeTab !== 'preview') return;
+			// Capture scroll position *before* renderActiveTab, since
+			// it empties tabBodyEl which resets contentEl.scrollTop.
+			this.nextRenderScrollTop = this.contentEl.scrollTop;
+			this.renderActiveTab();
+		}, FILE_SAVE_DEBOUNCE_MS);
+	}
+
+	private isFileInActiveProject(file: TFile): boolean {
+		if (!this.project) return false;
+		const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+		if (!fm) return false;
+		const type = fm['dbench-type'];
+		// Only manuscript-shape types count: project / chapter / scene
+		// / sub-scene. Drafts (archival snapshots) and compile presets
+		// (config) shouldn't trigger a Preview re-render.
+		if (
+			type !== 'project' &&
+			type !== 'chapter' &&
+			type !== 'scene' &&
+			type !== 'sub-scene'
+		) {
+			return false;
+		}
+		const projectId = this.project.frontmatter['dbench-id'];
+		if (type === 'project') return fm['dbench-id'] === projectId;
+		return fm['dbench-project-id'] === projectId;
 	}
 
 	private tearDownPreview(): void {
@@ -735,6 +835,13 @@ export class ManuscriptBuilder {
 	private async renderPreviewAsync(body: HTMLElement): Promise<void> {
 		const token = ++this.previewRenderToken;
 
+		// Read-and-clear scroll preservation. Only the file-save
+		// reactivity path sets this (capturing scrollTop *before*
+		// renderActiveTab empties the body); tab / preset / project
+		// changes leave it null so those re-renders land at the top.
+		const savedScrollTop = this.nextRenderScrollTop;
+		this.nextRenderScrollTop = null;
+
 		// Empty state: no compile presets configured. Mirrors the
 		// Build tab's parallel state so flipping into Preview from a
 		// presets-less project doesn't drop the writer into an
@@ -831,6 +938,19 @@ export class ManuscriptBuilder {
 				sourcePath,
 				component
 			);
+			// Restore scroll position on file-save re-renders so the
+			// writer doesn't lose their place. rAF lets the new DOM
+			// finish initial layout before we set scrollTop; embeds
+			// that load lazily can still drift the position slightly,
+			// but the typical case (paragraph edit, no embed change)
+			// lands the writer back where they were.
+			if (savedScrollTop !== null && token === this.previewRenderToken) {
+				window.requestAnimationFrame(() => {
+					if (token === this.previewRenderToken) {
+						this.contentEl.scrollTop = savedScrollTop;
+					}
+				});
+			}
 		} catch (err) {
 			if (token !== this.previewRenderToken) return;
 			console.error('[DraftBench] preview render failed:', err);

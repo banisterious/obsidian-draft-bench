@@ -80,7 +80,7 @@ The "do nothing" alternative is also a reasonable choice. Obsidian without a wri
 What Draft Bench adds over plain Obsidian:
 
 - **Convention enforcement.** A scene is a `dbench-type: scene` note with a `dbench-project` link and a `dbench-order` integer. The plugin maintains the conventions; you don't have to remember them.
-- **Manuscript Builder.** A workspace view that shows your manuscript in order with word-count rollups and status chips — instead of a Bases table you have to set up and maintain.
+- **Manuscript view + Manuscript Builder.** A workspace view that shows your manuscript in order with word-count rollups and status chips, plus a Builder surface for tuning compile presets and previewing output — instead of a Bases table you have to set up and maintain and a manual compile script.
 - **Reverse arrays.** When you link a scene to a project, the project's `dbench-scenes` array updates automatically. Maintaining bidirectional links by hand is the kind of vault chore that drifts within a week.
 - **Compile.** Concatenating 60 scene files into one manuscript with frontmatter stripped, footnotes renumbered, embeds handled, and section breaks normalized — possible by hand, painful in practice.
 - **Drafts.** A snapshot system that lives as queryable notes rather than git-history blobs you only retrieve when something goes wrong.

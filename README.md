@@ -15,7 +15,7 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
   </video>
 </p>
 
-> **Status:** 0.3.0 — current release. The full V1 feature set has shipped, plus the sub-scene note type (0.2.0) and the Manuscript Builder Preview tab (0.3.0). API and data shape may still adjust between minor versions during the 0.x phase. See [VERSIONING.md](VERSIONING.md), the [CHANGELOG](CHANGELOG.md), or the [Release History wiki page](https://github.com/banisterious/obsidian-draft-bench/wiki/Release-History) for full detail.
+> **Status:** 0.3.1 — current release. The full V1 feature set has shipped, plus the sub-scene note type (0.2.0), the Manuscript Builder Preview tab (0.3.0), and the dockable Manuscript Builder leaf (0.3.1). API and data shape may still adjust between minor versions during the 0.x phase. See [VERSIONING.md](VERSIONING.md), the [CHANGELOG](CHANGELOG.md), or the [Release History wiki page](https://github.com/banisterious/obsidian-draft-bench/wiki/Release-History) for full detail.
 
 ## What it is
 

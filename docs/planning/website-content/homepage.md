@@ -17,6 +17,12 @@ The plugin stays narrow on purpose. Plot grids, character databases, beat-sheet 
 - **Bases-native discovery.** Starter `.base` views for projects, scenes, and drafts. Filter, group, and surface your manuscript with the same Bases setup you use for everything else in your vault.
 - **Theme-respectful styling.** Class hooks and minimum defaults, opt-in via Style Settings. The plugin doesn't impose chrome on writers who customize their vault's appearance.
 
+<p align="center">
+  <img src="/img/dbench-manuscript-builder-preview.png"
+       alt="The Manuscript Builder modal with the Preview tab active. The sticky header shows the project picker, preset picker, and Run compile button. A typography toolbar above the rendered prose shows text-alignment, reading-width, font-size stepper, and font-family dropdown. Below, three chapter-style headings render as continuous prose."
+       width="800">
+</p>
+
 ## See it in action
 
 Five short loops on the [features page](/features/) walk through new projects, the Manuscript view, versioned drafts, compile, and the integrity service — captured from a real vault.

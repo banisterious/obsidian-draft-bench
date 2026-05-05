@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+Dockable Manuscript Builder leaf — the 0.3.0 Builder modal gains a leaf form so writers can pin Preview next to a scene they're editing in another pane. The 0.3.0 modal stays as the default entry point; a dock button on the modal opens the leaf, and the leaf adds debounced file-save reactivity that the modal couldn't support.
+
+### Added
+
+- **Dockable Manuscript Builder workspace leaf** ([#27](https://github.com/banisterious/obsidian-draft-bench/issues/27)). A "dock to leaf" icon button in the Manuscript Builder modal's sticky header (next to the close button) closes the modal and reopens the same content as a workspace tab. The leaf form lets writers leave Preview pinned next to a scene they're editing in another pane and watch the rendered output update as they save (file-save reactivity, debounced 400ms; only fires while Preview is active and only for project member files — drafts and compile presets don't trigger). Single-leaf only: opening the Builder when a leaf already exists focuses the existing one. The dock-to-leaf path is one-way (passive reverse): the leaf doesn't show a "convert to modal" button. Writers who prefer modal close the leaf and reopen via existing affordances (`Draft Bench: Build manuscript` palette command, Compile CTA in the Manuscript view).
+- **`Draft Bench: Show Manuscript Builder leaf` palette command.** Opens the Builder leaf directly (focuses existing if present).
+- **Last-selected preset persists per project** (`manuscriptBuilderSelectedPresetId` in plugin settings). The leaf restores the writer's last-tuned preset across Obsidian reload; the modal also benefits — close + reopen now restores the last-selected preset instead of always defaulting to the first one.
+- **Preview scroll position preserved across file-save re-renders.** Editing a project member while reading deep in Preview no longer snaps the scroll back to the top.
+
+### Changed
+
+- **Manuscript Builder rendering core extracted into a host-agnostic shell** (`src/ui/manuscript-builder/manuscript-builder.ts`). `ManuscriptBuilderModal` becomes a thin Modal subclass that delegates to the shell; the new `ManuscriptBuilderView` (workspace leaf) uses the same shell against its own `contentEl`. Internal refactor only; no behavior change for modal users.
+
 ## [0.3.0] - 2026-05-04
 
 Manuscript Builder Preview tab marquee. The Builder modal gains a Preview tab alongside the existing form stack (now Build tab), letting writers tune compile presets and read the rendered output without writing a real export file. Several maintainer-facing improvements ride along: an in-modal project switcher, a sticky header that keeps controls reachable during long Preview scroll, and per-project tab persistence.

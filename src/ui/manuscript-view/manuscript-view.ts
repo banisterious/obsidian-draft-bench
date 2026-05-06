@@ -229,6 +229,15 @@ export class ManuscriptView extends ItemView {
 		// Invalidate word-count cache for the touched file regardless;
 		// the re-render reads the fresh count.
 		this.plugin.wordCounts.invalidate(file.path);
+
+		// In Continuous mode the body owns its own debounced file-save
+		// reactivity — re-firing the leaf-level scheduleRefresh would
+		// rebuild the whole leaf, destroy the in-place prose container,
+		// and lose scroll preservation. Structure-changing events
+		// (metadataCache changed/resolved/deleted) still go through
+		// scheduleRefresh and force a full re-render.
+		if (this.getActiveMode(projectId) === 'continuous') return;
+
 		this.scheduleRefresh();
 	}
 

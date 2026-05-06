@@ -1,4 +1,4 @@
-import { Component, MarkdownRenderer, setIcon, type App } from 'obsidian';
+import { Component, MarkdownRenderer, setIcon, TFile, type App } from 'obsidian';
 import type DraftBenchPlugin from '../../../../main';
 import { CompileService } from '../../../core/compile-service';
 import { HEADING_MARKER_CLASS } from '../../../core/compile/content-rules';
@@ -14,6 +14,15 @@ import {
 } from '../../shared/preview-toolbar';
 
 const SPINNER_THRESHOLD_MS = 250;
+
+/*
+ * File-save reactivity debounce window (per [docs/planning/manuscript-view-continuous-mode.md § 4](../../../../docs/planning/manuscript-view-continuous-mode.md)).
+ * Vault modify events for project members trigger a Continuous re-
+ * render after this many milliseconds of quiescence. 400ms matches
+ * the Manuscript Builder leaf's debounce so writers experience a
+ * consistent reactivity cadence across both surfaces.
+ */
+const FILE_SAVE_DEBOUNCE_MS = 400;
 
 /**
  * Handle returned by `renderContinuousBody` so the host can release
@@ -60,6 +69,9 @@ export function renderContinuousBody(
 
 	let renderToken = 0;
 	let component: Component | null = null;
+	let fileSaveDebounceTimer: number | null = null;
+	const eventsComponent = new Component();
+	eventsComponent.load();
 
 	const startRender = async (): Promise<void> => {
 		const token = ++renderToken;
@@ -145,15 +157,68 @@ export function renderContinuousBody(
 
 	void startRender();
 
+	// File-save reactivity. Re-fires the compile + MarkdownRenderer
+	// pass when a project-member file is saved (debounced 400ms).
+	// Body edits update the rendered prose without tearing down the
+	// surrounding tab strip / toolbar; the leaf-level listener in
+	// `manuscript-view.ts` skips its full re-render when Continuous
+	// is active so we don't double-fire.
+	eventsComponent.registerEvent(
+		plugin.app.vault.on('modify', (file) => {
+			if (!(file instanceof TFile)) return;
+			if (!isFileInProject(plugin.app, project, file)) return;
+			if (fileSaveDebounceTimer !== null) {
+				window.clearTimeout(fileSaveDebounceTimer);
+			}
+			fileSaveDebounceTimer = window.setTimeout(() => {
+				fileSaveDebounceTimer = null;
+				void startRender();
+			}, FILE_SAVE_DEBOUNCE_MS);
+		})
+	);
+
 	return {
 		dispose() {
 			renderToken++;
+			if (fileSaveDebounceTimer !== null) {
+				window.clearTimeout(fileSaveDebounceTimer);
+				fileSaveDebounceTimer = null;
+			}
+			eventsComponent.unload();
 			if (component) {
 				component.unload();
 				component = null;
 			}
 		},
 	};
+}
+
+/**
+ * Cheap project-member predicate used by the file-save listener.
+ * Checks the file's frontmatter via metadataCache rather than walking
+ * the project's discovery results on every modify event. Drafts and
+ * compile presets don't trigger Continuous re-renders — only manuscript-
+ * shape types (project / chapter / scene / sub-scene).
+ */
+function isFileInProject(
+	app: App,
+	project: ProjectNote,
+	file: TFile
+): boolean {
+	const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+	if (!fm) return false;
+	const type = fm['dbench-type'];
+	if (
+		type !== 'project' &&
+		type !== 'chapter' &&
+		type !== 'scene' &&
+		type !== 'sub-scene'
+	) {
+		return false;
+	}
+	const projectId = project.frontmatter['dbench-id'];
+	if (type === 'project') return fm['dbench-id'] === projectId;
+	return fm['dbench-project-id'] === projectId;
 }
 
 /**

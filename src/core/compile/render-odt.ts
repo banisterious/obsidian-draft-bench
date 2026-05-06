@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
+import type { App } from 'obsidian';
 import type { CompileResult } from '../compile-service';
-import type { CompilePresetNote } from '../discovery';
+import type { CompilePresetNote, ProjectNote } from '../discovery';
 import { getElectron, getNodeFs } from './disk-deps';
 import { parseMarkdownForOdt } from './odt/parser';
 import {
@@ -9,15 +10,23 @@ import {
 	ODT_MIMETYPE,
 	ODT_STYLES_XML,
 } from './odt/xml';
+import { type RenderVaultResult, writeCompiledFile } from './vault-output';
 
 /**
  * ODT output renderer for the compile pipeline.
  *
- * Per [D-06 § Output format](../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md),
- * ODT output is disk-only (no vault path) and always goes through the
- * OS save dialog. The archive contains the four required ODT
- * entries: `mimetype` (stored uncompressed, first in the archive per
- * spec), `META-INF/manifest.xml`, `styles.xml`, `content.xml`.
+ * Per [D-06 § Output format](../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md):
+ *
+ * - `format: odt` + `output: vault` -> `renderOdtToVault` writes to
+ *   `<project folder>/Compiled/<preset name>.odt` inside the vault via
+ *   the shared `writeCompiledFile` helper (mobile-compatible).
+ * - `format: odt` + `output: disk` -> `renderOdtToDisk` prompts with
+ *   the OS save dialog and writes outside the vault. Desktop-only by
+ *   construction (Electron's `remote.dialog` + Node `fs`).
+ *
+ * The archive contains the four required ODT entries: `mimetype`
+ * (stored uncompressed, first in the archive per spec),
+ * `META-INF/manifest.xml`, `styles.xml`, `content.xml`.
  *
  * V1 renders a capped subset of markdown: headings, paragraphs,
  * bullet + numbered lists, bold + italic inline runs. Blockquotes,
@@ -32,6 +41,21 @@ import {
  * esbuild's default non-split configuration inlines dynamic imports
  * anyway. Revisit if bundle size becomes a real concern.
  */
+
+/**
+ * Build the ODT archive from the compile result and write it to the
+ * preset's canonical vault location. Thin orchestrator over
+ * `buildOdtArchive` + `writeCompiledFile`.
+ */
+export async function renderOdtToVault(
+	app: App,
+	project: ProjectNote,
+	preset: CompilePresetNote,
+	result: CompileResult
+): Promise<RenderVaultResult> {
+	const bytes = await buildOdtArchive(result.markdown);
+	return await writeCompiledFile(app, project, preset, 'odt', bytes);
+}
 
 export interface OdtDiskDeps {
 	/** Prompt the user for a save-to path; `null` = cancel. */

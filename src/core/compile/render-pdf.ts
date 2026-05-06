@@ -1,19 +1,27 @@
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
+import type { App } from 'obsidian';
 import type { CompileResult } from '../compile-service';
-import type { CompilePresetNote } from '../discovery';
+import type { CompilePresetNote, ProjectNote } from '../discovery';
 import { getElectron, getNodeFs } from './disk-deps';
 import { parseMarkdown } from './md-ast';
 import { buildPdfDocDefinition } from './pdf/doc-definition';
+import { type RenderVaultResult, writeCompiledFile } from './vault-output';
 
 /**
  * PDF output renderer for the compile pipeline.
  *
- * Per [D-06 § Output format](../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md),
- * PDF output is disk-only (no vault path) and always goes through
- * the OS save dialog. Rendering is delegated to pdfmake with its
- * bundled Roboto VFS; fonts register once per plugin session on
- * first compile.
+ * Per [D-06 § Output format](../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md):
+ *
+ * - `format: pdf` + `output: vault` -> `renderPdfToVault` writes to
+ *   `<project folder>/Compiled/<preset name>.pdf` inside the vault via
+ *   the shared `writeCompiledFile` helper (mobile-compatible).
+ * - `format: pdf` + `output: disk` -> `renderPdfToDisk` prompts with
+ *   the OS save dialog and writes outside the vault. Desktop-only by
+ *   construction (Electron's `remote.dialog` + Node `fs`).
+ *
+ * Rendering is delegated to pdfmake with its bundled Roboto VFS;
+ * fonts register once per plugin session on first compile.
  *
  * V1 scope matches the ODT renderer: headings, paragraphs, bullet +
  * numbered lists, bold + italic. Blockquotes, code blocks, tables,
@@ -23,6 +31,21 @@ import { buildPdfDocDefinition } from './pdf/doc-definition';
  * this module is reachable from the plugin entry (i.e., when a P3.E
  * command imports it). Until then, main.js stays lean.
  */
+
+/**
+ * Build PDF bytes from the compile result and write them to the
+ * preset's canonical vault location. Thin orchestrator over
+ * `buildPdfBytes` + `writeCompiledFile`.
+ */
+export async function renderPdfToVault(
+	app: App,
+	project: ProjectNote,
+	preset: CompilePresetNote,
+	result: CompileResult
+): Promise<RenderVaultResult> {
+	const bytes = await buildPdfBytes(result.markdown, preset.frontmatter);
+	return await writeCompiledFile(app, project, preset, 'pdf', bytes);
+}
 
 export interface PdfDiskDeps {
 	/** Prompt the user for a save-to path; `null` = cancel. */

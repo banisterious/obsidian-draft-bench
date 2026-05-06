@@ -60,6 +60,8 @@ export async function ensureCompiledFolder(
  * overwrites an existing compiled file if present. Routes through
  * `app.vault.create` / `modify` for string content and
  * `app.vault.createBinary` / `modifyBinary` for binary content.
+ * `Uint8Array` input is normalized to the underlying `ArrayBuffer`
+ * slice so renderers can pass `buildXxxBytes` output directly.
  *
  * Returns the written path plus whether an existing file was
  * overwritten (for the compile-completion notice). Throws if the path
@@ -71,19 +73,20 @@ export async function writeCompiledFile(
 	project: ProjectNote,
 	preset: CompilePresetNote,
 	extension: string,
-	content: string | ArrayBuffer
+	content: string | ArrayBuffer | Uint8Array
 ): Promise<RenderVaultResult> {
 	const folder = compiledFolderFor(project);
 	await ensureCompiledFolder(app, folder);
 
 	const path = `${folder}/${preset.file.basename}.${extension}`;
 	const existing = app.vault.getAbstractFileByPath(path);
+	const normalized = typeof content === 'string' ? content : toArrayBuffer(content);
 
 	if (existing === null) {
-		if (typeof content === 'string') {
-			await app.vault.create(path, content);
+		if (typeof normalized === 'string') {
+			await app.vault.create(path, normalized);
 		} else {
-			await app.vault.createBinary(path, content);
+			await app.vault.createBinary(path, normalized);
 		}
 		return { path, overwritten: false };
 	}
@@ -94,10 +97,27 @@ export async function writeCompiledFile(
 		);
 	}
 
-	if (typeof content === 'string') {
-		await app.vault.modify(existing, content);
+	if (typeof normalized === 'string') {
+		await app.vault.modify(existing, normalized);
 	} else {
-		await app.vault.modifyBinary(existing, content);
+		await app.vault.modifyBinary(existing, normalized);
 	}
 	return { path, overwritten: true };
+}
+
+/**
+ * Normalize a `Uint8Array` view to a freshly-sliced `ArrayBuffer`
+ * containing exactly the view's bytes. Pass-through for `ArrayBuffer`
+ * input. Avoids handing Obsidian a buffer that includes unrelated
+ * bytes when the caller's `Uint8Array` is a partial view (common with
+ * Node `Buffer` outputs from pdfmake / docx Packer / JSZip).
+ */
+function toArrayBuffer(content: ArrayBuffer | Uint8Array): ArrayBuffer {
+	if (content instanceof Uint8Array) {
+		return content.buffer.slice(
+			content.byteOffset,
+			content.byteOffset + content.byteLength
+		) as ArrayBuffer;
+	}
+	return content;
 }

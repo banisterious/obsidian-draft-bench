@@ -1,18 +1,26 @@
 import { Packer } from 'docx';
+import type { App } from 'obsidian';
 import type { CompileResult } from '../compile-service';
-import type { CompilePresetNote } from '../discovery';
+import type { CompilePresetNote, ProjectNote } from '../discovery';
 import { getElectron, getNodeFs } from './disk-deps';
 import { parseMarkdown } from './md-ast';
 import { buildDocxDocument, type DocxPageSize } from './docx/doc-definition';
+import { type RenderVaultResult, writeCompiledFile } from './vault-output';
 
 /**
  * DOCX output renderer for the compile pipeline.
  *
- * Per [D-06 § Output format](../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md),
- * DOCX output is disk-only (no vault path) and always goes through
- * the OS save dialog. Bytes are produced by the `docx` library
- * (Dolan Miu / docx.js); the pure translator at
- * `docx/doc-definition.ts` is the testable seam.
+ * Per [D-06 § Output format](../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md):
+ *
+ * - `format: docx` + `output: vault` -> `renderDocxToVault` writes to
+ *   `<project folder>/Compiled/<preset name>.docx` inside the vault
+ *   via the shared `writeCompiledFile` helper (mobile-compatible).
+ * - `format: docx` + `output: disk` -> `renderDocxToDisk` prompts
+ *   with the OS save dialog and writes outside the vault. Desktop-only
+ *   by construction (Electron's `remote.dialog` + Node `fs`).
+ *
+ * Bytes are produced by the `docx` library (Dolan Miu / docx.js); the
+ * pure translator at `docx/doc-definition.ts` is the testable seam.
  *
  * V1 scope mirrors ODT + PDF: headings, paragraphs, bullet +
  * numbered lists, bold + italic. Blockquotes, code blocks, tables,
@@ -24,6 +32,21 @@ import { buildDocxDocument, type DocxPageSize } from './docx/doc-definition';
  * JSZip and pdfmake; lazy-loading is the post-V1 lever per the
  * pdf-bundling-reference.
  */
+
+/**
+ * Build DOCX bytes from the compile result and write them to the
+ * preset's canonical vault location. Thin orchestrator over
+ * `buildDocxBytes` + `writeCompiledFile`.
+ */
+export async function renderDocxToVault(
+	app: App,
+	project: ProjectNote,
+	preset: CompilePresetNote,
+	result: CompileResult
+): Promise<RenderVaultResult> {
+	const bytes = await buildDocxBytes(result.markdown, preset.frontmatter);
+	return await writeCompiledFile(app, project, preset, 'docx', bytes);
+}
 
 export interface DocxDiskDeps {
 	/** Prompt the user for a save-to path; `null` = cancel. */

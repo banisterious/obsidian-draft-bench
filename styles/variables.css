@@ -69,13 +69,14 @@ body {
 	--dbench-draft-border-left: 3px solid var(--text-faint);
 
 	/*
-	 * Status color palette for the Manuscript leaf (Direction B —
-	 * Ulysses warm). One foreground color per default-vocabulary
-	 * status; the chip background is derived at paint time via
-	 * `color-mix` so overriding the foreground via Style Settings
-	 * also shifts the background (no mismatch). Muted tones so status
-	 * reads as supporting metadata, not shouting. Out-of-vocabulary
-	 * statuses inherit `--dbench-status-default`.
+	 * Status color palette. The D3 leaf restyle (#30) dropped per-
+	 * status colors from the Manuscript view; these variables remain
+	 * because the Manuscript Builder's status filter pills (#25) still
+	 * use them to indicate the toggle state per status. The Style
+	 * Settings exposures for the four named statuses were dropped
+	 * alongside the leaf restyle; theme authors override these only
+	 * by editing the CSS directly. `--dbench-status-default` is the
+	 * fallback for out-of-vocabulary status values.
 	 */
 	--dbench-status-brainstorm: #5b8cd6;
 	--dbench-status-idea: #5b8cd6;

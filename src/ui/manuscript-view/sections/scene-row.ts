@@ -9,10 +9,11 @@ import {
 /**
  * Reusable scene-row primitive shared by the flat manuscript list
  * (chapter-less projects) and the chapter-card body (chapter-aware
- * projects). Renders one `<li>` row with order capsule, clickable
- * title, status chip, async word-count badge, and draft count, then
- * fires its own async word-count fill — the row is self-contained so
- * callers don't need to thread word-badge collections.
+ * projects). Renders one `<li>` row in a single-row 4-column grid
+ * (order · title · status · count), with the row flipping to a
+ * 2-row layout only when the writer has set a `dbench-subtitle`. The
+ * D3 restyle (#30) dropped the per-row draft-count column; writers
+ * see drafts on the scene file itself.
  */
 export function renderSceneRow(
 	parent: HTMLElement,
@@ -43,9 +44,8 @@ export function renderSceneRow(
 	attachWikilinkOpenAffordances(titleEl, (spec) => onOpen(scene, spec));
 
 	// Optional subtitle (`dbench-subtitle`) shown as muted text below
-	// the title. The modifier class flips the row to a 3-row grid;
-	// rows without a subtitle keep the original 2-row layout so they
-	// don't reserve vertical space.
+	// the title. The modifier class flips the row to a 2-row grid;
+	// rows without a subtitle keep the default single-row layout.
 	const subtitle = readSubtitle(scene);
 	if (subtitle !== '') {
 		item.addClass('dbench-manuscript-view__scene-row--has-subtitle');
@@ -61,12 +61,6 @@ export function renderSceneRow(
 		cls: 'dbench-manuscript-view__scene-words',
 	});
 	wordEl.setText('...');
-
-	const draftCount = scene.frontmatter['dbench-drafts']?.length ?? 0;
-	item.createSpan({
-		cls: 'dbench-manuscript-view__scene-drafts',
-		text: draftCount === 1 ? '1 draft' : `${draftCount} drafts`,
-	});
 
 	void wordCountCache
 		.countForScene(scene)

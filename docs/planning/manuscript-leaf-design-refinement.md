@@ -1,15 +1,30 @@
 # Manuscript leaf design refinement
 
-Planning doc for a deliberate design pass on the Manuscript leaf — the dockable right-sidebar view that writers see every session. Two goals: fix consistency / information-architecture issues that accumulated as the leaf grew feature-by-feature, and move the visual identity from "functional" toward "attractive."
+Planning doc for a deliberate design pass on the Manuscript leaf — the dockable right-sidebar view that writers see every session. Two goals: fix consistency / information-architecture issues that accumulated as the leaf grew feature-by-feature, and move the visual identity to harmonize with the rest of the plugin.
 
-**Status:** Direction locked 2026-04-24. Implementation starting with observation 1 (Compile button placement). Mockups used to make the call live gitignored at [docs/mockups/](../mockups/).
+**Status:** Direction revised 2026-05-05 to **D3 (single-row inline status, Builder-aligned)**, superseding the 2026-04-24 lock on Direction B (Ulysses warm). Mockups for both passes live gitignored at [docs/mockups/](../mockups/).
 
-## Locked decisions (2026-04-24)
+## Locked decisions (2026-05-05 — current)
 
-- **Aesthetic direction: B — Ulysses warm.** Semantic status colors (muted palette), status chips on scene rows + colored dots in breakdown, rounded corners, gradient progress fills, warmer background tint, small-caps section heads. Compile button promoted to a primary CTA above the 3-button toolbar with a soft shadow.
-- **Status colors: on by default, Style Settings exposure.** Each default-vocabulary status ships with a muted color (brainstorm/idea = muted blue, draft = neutral gray, revision = amber, final = green). Out-of-vocabulary statuses fall back to `--text-muted`. Style Settings exposes each color as a tunable variable so writers who dislike the palette (or have custom vocabulary values) can override.
-- **Ordering: design pass before onboarding.** Phase 3 onboarding is the next Phase 3 item after this refinement; onboarding lands on a polished leaf rather than one mid-redesign.
-- **Empty state: brand-mark variant, option 2 (accent-tinted).** Uses [draft-bench-favicon-mark.svg](../assets/branding/draft-bench-favicon-mark.svg) inlined with `stroke="currentColor"` tinted via `color: var(--text-accent)`. Copy: "Your manuscript begins here" + "Create your first project to start tracking scenes, drafts, and compile presets." Primary "Create project" button + secondary "Learn more" button. Applies to the Manuscript leaf's empty state when no project is selected. No custom illustration work; the brand mark was already designed.
+- **Aesthetic direction: D3 — single-row inline status, Builder-aligned.** No semantic status colors anywhere. No status chips, no status dots, no per-scene progress bars, no hero gradient on the project section. Scene rows are single-row (number · title · status · count) with status as inline small-caps muted text and right-aligned tabular numerics for the count column. Section headings rendered as 11px small-caps `--text-muted`, matching the Manuscript Builder's section-divider style. Compile button uses Obsidian's stock `.mod-cta` (no gradient override). Hairline 1px borders define rhythm throughout.
+- **Status colors: removed.** The semantic-status palette (brainstorm/idea = blue, draft = gray, revision = amber, final = green) is dropped. Every status reads in the same `--text-muted` color. The five `--dbench-status-*` Style Settings variables are removed; theme authors no longer override per-status colors. Trade-off: writers lose at-a-glance status differentiation; gain a leaf that doesn't fight the rest of the plugin's visual language.
+- **Tab strip placeholder.** The mockups include a `List / Continuous` tab strip below the project picker, anticipating the upcoming Scrivenings-style continuous-view milestone (separate FR; see [post-v1-candidates.md § 2](post-v1-candidates.md)). The strip is **not** added in this restyle milestone — single-tab UI reads as broken. The Continuous-mode work introduces the strip when it ships, alongside the second tab.
+- **Ordering: design pass before onboarding.** Phase 3 onboarding still lands on a polished leaf; the polish is just D3-flavored now.
+- **Empty state: brand-mark variant unchanged.** The 2026-04-24 lock on the brand-mark accent-tinted empty state stays. Pure visual change; no D3-specific tweaks needed.
+
+## Why revised (2026-05-05)
+
+The 2026-04-24 lock on Direction B (Ulysses warm) shipped through 0.3.x. Two things changed since:
+
+1. **The Manuscript Builder marquee shipped (0.3.0 / 0.3.1).** The Builder's aesthetic register — minimal form-and-prose surfaces, no semantic chrome, hairline rhythm, stock `.mod-cta` — set DB's de-facto visual language.
+2. **The leaf in production read as visually busier than its sibling.** The maintainer used both surfaces in real workflow and consistently preferred the Builder's restraint.
+
+D3 is the spirit-of-A revisit aligned to the Builder, not a return to A. Mockups built 2026-05-05 at [docs/mockups/Manuscript View 20260505/](../mockups/Manuscript%20View%2020260505/) compared three D candidates (D1 strict quiet, D2 Builder-pill status, D3 single-row inline-text status). D3 won on the trade-off of scannability + vertical density + visual quietness without introducing pill chrome.
+
+## Superseded decisions (2026-04-24, kept for record)
+
+- ~~**Aesthetic direction: B — Ulysses warm.** Semantic status colors (muted palette), status chips on scene rows + colored dots in breakdown, rounded corners, gradient progress fills, warmer background tint, small-caps section heads. Compile button promoted to a primary CTA above the 3-button toolbar with a soft shadow.~~ Superseded by D3 lock on 2026-05-05.
+- ~~**Status colors: on by default, Style Settings exposure.**~~ Superseded by D3's "status colors removed" decision. The five `--dbench-status-*` variables are removed in the restyle implementation.
 
 **Scope:** The Manuscript leaf only. The Manuscript Builder modal (which replaced the retired Control Center, see [control-center-reference.md § Draft Bench's current direction](control-center-reference.md#draft-benchs-current-direction)) and the settings tab are explicitly out of scope for this pass — they get their own design reviews when they grow enough content to warrant it.
 
@@ -162,24 +177,39 @@ Current icons are lucide: `square-pen` / `copy-plus` / `arrow-up-down` / `book-o
 
 ---
 
-## Implementation sequence (once direction is picked)
+## Implementation sequence (D3, 2026-05-05)
 
-Small commits, bisectable. One commit per observation / opportunity:
+Small reversible commits. Most of this is CSS-only; the scene-row layout change is the only TypeScript touch (and a small one).
 
-1. Consistency fixes first (observations 1-6). Each commit is small and reversible.
-2. Aesthetic opportunities, picked from the direction section. Each commit adds one deliberate element (status chips, progress-bar treatment, typography scale).
-3. Style Settings manifest update consolidating new variables. Shipped as a separate doc-update commit.
+1. **Drop the `.mod-cta` gradient override.** Compile button uses Obsidian's stock solid-accent fill. CSS only.
+2. **Drop the project-section hero gradient.** Section reads as plain section heading + meta. CSS only.
+3. **Flatten the project progress bar to 2px hairline solid accent.** Remove the gradient fill. CSS only.
+4. **Remove status chips and dots from scene rows + breakdown.** No `.dbench-status-chip` rendering, no `.dbench-status-dot` markup. TypeScript: remove the chip/dot DOM nodes from scene-row builders. CSS: delete the chip/dot rules.
+5. **Remove per-scene mini progress bars.** Per-scene `dbench-target-words` no longer surfaces in the leaf; targets stay in scene frontmatter and the writer can see them in the Properties panel or via Bases. TypeScript: remove the bar DOM nodes. CSS: delete the bar rules.
+6. **Switch scene rows to single-row layout: num · title · status (small-caps muted) · count.** TypeScript: rebuild the scene-row DOM to the new shape. CSS: grid-template-columns matching the mockup; tabular-numerics for the count column; ellipsis truncation on overflow.
+7. **Section-head treatment to 11px small-caps `--text-muted`.** CSS only.
+8. **Remove the `--dbench-status-*` Style Settings variables.** Update [styles/style-settings.css](../../styles/style-settings.css) to drop the five status-color knobs.
+9. **Address the IA observations** that haven't already been fixed (likely #2 technical-metadata disclosure, #3 duplicate-word-count consolidation, #5 heading hierarchy in narrow column). Each its own commit.
+10. **CHANGELOG entry under [Unreleased].** Headline: "Manuscript leaf restyle (D3)."
+11. **Release prep.** Cut [Unreleased] -> [0.3.3] in CHANGELOG, add Release-History entry, version bump, README Status update. Same release-prep pattern as 0.3.2.
 
-Manual dev-vault walkthroughs at each step; screenshots checked against the reference aesthetics. No automated visual regression tests (DB doesn't have that harness yet).
+Manual dev-vault walkthroughs at each step; screenshots checked against the D3 mockup. No automated visual regression tests.
+
+Estimated effort: 1-2 days of focused work plus dogfood pass.
 
 ---
 
-## Alternatives considered (not picked)
+## Alternatives considered (not picked, 2026-05-05)
 
-Preserved for future-context; the reasoning behind the lock.
+D3 won the second-pass mockup comparison over D1 and D2:
 
-- **Direction A — iA Writer quiet.** Monochrome + single accent. Rejected: aesthetically restrained to the point of not reading as "designed" to writers expecting visual warmth from a writing tool. Good reference for typography rhythm; its whitespace and hierarchy discipline carry into B.
-- **Direction C — polish only.** Fix IA, stop there. Rejected: addresses the consistency observations but doesn't answer the "I want the leaf to feel more attractive" brief. Fine as a fallback if Direction B produces unforeseen theme-compatibility issues.
+- **D1 — strict quiet.** Most minimal of the three. Rejected: two-row scene layout costs vertical density and trades scannability for purity. Good reference for "no chrome at all" but D3 hits a better trade-off.
+- **D2 — Builder-pill status.** Single-row layout with status as a small pill literally borrowing the Builder's status filter pill (#25). Rejected: pill chrome adds visual mass that the leaf doesn't need; status-pill-as-display-affordance is a slightly different role from status-pill-as-toggle-control, so the literal reuse is less load-bearing than it looks. Good reference if writer feedback says D3's small-caps status is too quiet.
+
+Original 2026-04-24 alternatives (preserved):
+
+- **Direction A — iA Writer quiet.** Monochrome + single accent. Rejected at the time as too restrained; D3 is essentially A's spirit re-aligned to Builder tokens.
+- **Direction C — polish only.** Fix IA, stop there. Rejected at the time; the D3 implementation sequence does pick up the IA observations as part of its scope.
 
 ## Open questions still
 

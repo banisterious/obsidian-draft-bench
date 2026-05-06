@@ -4,6 +4,25 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.3.2: 2026-05-05 — Mobile support
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.3.2)
+
+Draft Bench now loads on **Obsidian Mobile**. The desktop-only restriction is lifted in `manifest.json`; the audit pass found the plugin's surfaces work cleanly on touch devices without code-level breakage. **Vault output for PDF / ODT / DOCX** rides along so the binary compile formats produce a working result on mobile (the existing disk-output paths require Electron's save dialog and stay desktop-only).
+
+Verified on Android via on-device walkthrough across Manuscript view, Manuscript Builder modal + leaf, scene / chapter / sub-scene / draft creation, the compile pipeline (including PDF + ODT + DOCX vault output), Style Settings, and Bases integration. iOS / iPadOS will ship **untested** until a Mac-equipped contributor with iOS access surfaces; bug reports are welcome and triaged via the `mobile-ios` label.
+
+### Added
+
+- **Mobile support** ([#29](https://github.com/banisterious/obsidian-draft-bench/issues/29)). `isDesktopOnly: false` in `manifest.json`. Every existing feature works on mobile except the disk-output side of the compile pipeline (desktop-only by construction; vault output is the mobile path).
+- **Vault output for PDF / ODT / DOCX compile.** Presets configured for `format: pdf | odt | docx` plus `output: vault` now write the compiled binary to `<project>/Compiled/<preset>.<ext>` via Obsidian's `createBinary` / `modifyBinary`. Mobile-compatible. Supersedes the original D-06 clause that restricted binary formats to disk output.
+
+### Notes
+
+- The Scrivener `.scriv` importer ([#28](https://github.com/banisterious/obsidian-draft-bench/issues/28)) is not yet shipped. When it lands, its command and Manuscript view button will gate to desktop via `Platform.isDesktopApp` (RTF parsing and large-file ops make it a structurally desktop-only feature).
+
+1112 unit + integration tests, all green. Mobile-supported (Android verified; iOS / iPadOS untested).
+
 ## 0.3.1: 2026-05-05 — Dockable Manuscript Builder leaf
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.3.1)

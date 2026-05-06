@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-05-05
+
+Mobile support. Draft Bench now loads on Obsidian Mobile (Android verified; iOS / iPadOS untested). Vault output rides along for the binary compile formats so PDF / ODT / DOCX work on mobile without the desktop-only Electron save dialog.
+
 ### Added
 
 - **Mobile support (Android verified; iOS / iPadOS untested)** ([#29](https://github.com/banisterious/obsidian-draft-bench/issues/29)). Draft Bench now loads on Obsidian Mobile. Manuscript view, Manuscript Builder modal + leaf, scene / chapter / sub-scene / draft creation, retrofit, integrity, the compile pipeline, Bases integration, and Style Settings are all mobile-supported. Verified on Android via on-device walkthrough. iOS / iPadOS will ship untested until a Mac-equipped contributor with iOS access surfaces; bug reports are welcome and triaged via the `mobile-ios` label.

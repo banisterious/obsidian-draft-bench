@@ -70,11 +70,25 @@ export function renderContinuousBody(
 	let renderToken = 0;
 	let component: Component | null = null;
 	let fileSaveDebounceTimer: number | null = null;
+	// Set by the file-save listener *before* startRender empties the
+	// body; consumed (and cleared to null) on the next successful
+	// render. Tab / project changes leave it null so those re-renders
+	// land at the top of the prose. The leaf's own scroll-container
+	// (containerEl.children[1]) is what scrolls; the parent of `parent`
+	// is that container in the manuscript-view layout.
+	const scrollContainer = parent.parentElement;
+	let nextRenderScrollTop: number | null = null;
 	const eventsComponent = new Component();
 	eventsComponent.load();
 
 	const startRender = async (): Promise<void> => {
 		const token = ++renderToken;
+
+		// Read-and-clear the captured scroll position. Only the file-
+		// save reactivity path sets this; tab / project changes leave
+		// it null so those re-renders land at the top.
+		const savedScrollTop = nextRenderScrollTop;
+		nextRenderScrollTop = null;
 
 		const spinnerTimer = window.setTimeout(() => {
 			if (token !== renderToken) return;
@@ -148,6 +162,23 @@ export function renderContinuousBody(
 			if (token !== renderToken) return;
 			liftHeadingMarkers(proseEl);
 			attachHeadingAffordances(proseEl, plugin.app, project.file.path);
+			// Restore scroll position on file-save re-renders so the
+			// writer doesn't lose their place. rAF lets the new DOM
+			// finish initial layout before we set scrollTop; embeds
+			// or other lazily-loading content can still drift the
+			// position slightly, but the typical edit (one paragraph,
+			// no embed change) lands the writer back where they were.
+			if (
+				savedScrollTop !== null &&
+				scrollContainer &&
+				token === renderToken
+			) {
+				window.requestAnimationFrame(() => {
+					if (token === renderToken) {
+						scrollContainer.scrollTop = savedScrollTop;
+					}
+				});
+			}
 		} catch (err) {
 			if (token !== renderToken) return;
 			console.error('[DraftBench] continuous render failed:', err);
@@ -172,6 +203,13 @@ export function renderContinuousBody(
 			}
 			fileSaveDebounceTimer = window.setTimeout(() => {
 				fileSaveDebounceTimer = null;
+				// Capture scroll *before* startRender empties the body
+				// (the empty + refill cycle clamps scrollTop to 0 mid-
+				// way through). startRender restores after the new
+				// DOM has laid out via rAF.
+				if (scrollContainer) {
+					nextRenderScrollTop = scrollContainer.scrollTop;
+				}
 				void startRender();
 			}, FILE_SAVE_DEBOUNCE_MS);
 		})

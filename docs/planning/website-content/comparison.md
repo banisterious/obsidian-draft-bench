@@ -40,10 +40,12 @@ Concrete differences:
 | Sub-scenes (per-unit narrative blocks within a scene) | ✓ (first-class type) | — |
 | Drafts as snapshots | ✓ (first-class type) | Limited |
 | Compile to MD / PDF / ODT / DOCX | ✓ | ✓ (six formats) |
+| Continuous read-through view (Scrivenings-style) | ✓ (Manuscript view Continuous tab, 0.4.0) | ✓ (Manuscript view) |
 | Plotting (corkboard, plotgrid, timeline) | — | ✓ |
 | Character / location / entity management | — | ✓ |
 | Analytics (pacing, plot-hole, prose) | — | ✓ |
 | Scrivener `.scriv` import | Post-V1 candidate | ✓ |
+| Mobile (Android / iOS) | ✓ (Android verified, iOS untested) | Untested |
 | Bases-native discovery | ✓ | — |
 | Frontmatter properties | ✓ (`dbench-` namespaced) | ✓ (un-prefixed keys) |
 | Bidirectional-link integrity service | ✓ | — |

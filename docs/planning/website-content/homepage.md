@@ -9,7 +9,7 @@ The plugin stays narrow on purpose. Plot grids, character databases, beat-sheet 
 ## What it does
 
 - **Projects, chapters, scenes, sub-scenes, drafts, and compile presets are notes.** Every Draft Bench artifact is a regular markdown file with `dbench-` frontmatter properties. A vault opened without the plugin still reads cleanly: scenes are notes, drafts are notes, presets are notes. Nothing is locked behind plugin-only state.
-- **Manuscript view.** A workspace pane that lists chapters and scenes for a selected project, in `dbench-order`. Word-count rollups per chapter and per project. Status chips per scene. Reorder via the Reorder Scenes / Reorder Chapters modals. Click a scene title to open the file; collapse a chapter to focus elsewhere.
+- **Manuscript view, two ways to read.** A workspace pane with a **List / Continuous** tab strip. *List* shows chapters and scenes for a selected project in `dbench-order`, with word-count rollups, inline status, draft counts, and reorder modals. *Continuous* (added in 0.4.0) renders the entire manuscript as one scrollable read-only document — chapters, scenes, sub-scenes, full bodies — with click-heading-to-source and live updates as you write. Switch modes in the leaf header; preference persists per project.
 - **Manuscript Builder.** A compile surface where you tune presets and run compile, with a Build tab (form fields for metadata, inclusion filters, output format, content handling) and a Preview tab that renders the current preset's output as continuous read-only prose. Opens as a focused modal by default; dock to a workspace tab to leave Preview pinned next to a scene you're editing — Preview re-renders as you save (debounced).
 - **Drafts as a first-class type.** Snapshots of scenes, chapters, or single-scene projects, stored in a configurable `Drafts/` folder. Capture the state of the work at any moment — before a major revision, after a workshop session, when a beat finally lands. Drafts are notes, so they're searchable, taggable, and Bases-queryable like everything else.
 - **Compile presets are notes too.** A preset is a `dbench-type: compile-preset` note in your vault, with content-handling rules (frontmatter strip, heading scope, footnote renumbering, embed handling, dinkus normalization) editable in the Properties panel or the Compile tab. Multiple presets per project — one for workshop submission, one for the agent draft, one for the final manuscript file.
@@ -37,18 +37,19 @@ For a longer comparison, see [How Draft Bench compares](comparison.md).
 
 ## Status
 
-The current release is **0.3.1** (2026-05-05). The first BRAT-public release shipped 0.1.0 on 2026-04-29; subsequent 0.1.x and 0.2.x releases hardened the integrity service, added chapter-aware folder defaults, reorganized the settings tab, and shipped the sub-scene note type. The 0.3.x line introduced the Manuscript Builder Preview tab (0.3.0) and the dockable Manuscript Builder workspace leaf (0.3.1). Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin; community-plugin directory submission follows after the 0.x phase stabilizes.
+The current release is **0.4.0** (2026-05-06). The first BRAT-public release shipped 0.1.0 on 2026-04-29; subsequent 0.1.x and 0.2.x releases hardened the integrity service, added chapter-aware folder defaults, reorganized the settings tab, and shipped the sub-scene note type. The 0.3.x line introduced the Manuscript Builder Preview tab (0.3.0), the dockable Manuscript Builder workspace leaf (0.3.1), mobile support (0.3.2; Android verified, iOS / iPadOS untested), and the Builder-aligned Manuscript leaf restyle (0.3.3). 0.4.0 adds the Manuscript view Continuous mode. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin; community-plugin directory submission follows after the 0.x phase stabilizes.
 
 What's in the plugin today:
 
 - Project, chapter, scene, sub-scene, draft, and compile-preset note types
-- Manuscript view with chapter and scene cards, word-count rollups, status chips, and collapsible sub-scene cards
-- Manuscript Builder with Build / Preview tabs, in-modal Preview typography toolbar (text alignment, reading width, font size, font family), and a dockable workspace-leaf form with debounced file-save reactivity
+- Manuscript view with **List / Continuous tabs**: chapter and scene cards with word-count rollups in List mode; full-manuscript scrollable read-through with click-heading-to-source in Continuous mode (0.4.0)
+- Manuscript Builder with Build / Preview tabs, shared typography toolbar (text alignment, reading width, font size, font family), and a dockable workspace-leaf form with debounced file-save reactivity
 - Drafts as snapshots of scenes, chapters, sub-scenes, or single-scene projects
 - Compile to Markdown, PDF, ODT, and DOCX with per-preset content-handling overrides; the pipeline descends into sub-scenes in narrative order
 - Bidirectional linking + integrity service with batch repair, length-mismatch convergence, and pairing-preserving splice
 - Chapter-aware folder defaults: scenes nest under their chapter folder, sub-scenes nest under their scene folder
 - Bases-native starter views for projects, scenes, and drafts
+- **Mobile-supported** (Android verified; iOS / iPadOS untested) — vault-output compile works on mobile for all four formats
 - Style Settings integration for opt-in theming
 
 For the full release history, see the [Release History wiki page](https://github.com/banisterious/obsidian-draft-bench/wiki/Release-History) or the [CHANGELOG](https://github.com/banisterious/obsidian-draft-bench/blob/main/CHANGELOG.md).

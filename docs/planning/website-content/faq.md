@@ -16,7 +16,7 @@ If you're looking for a plotting tool with character databases, plot grids, and 
 
 ### When can I install it?
 
-Now. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin, then enabling Draft Bench in **Settings -> Community plugins**. The current release is **0.3.1** (2026-05-05); the first BRAT-public release was 0.1.0 on 2026-04-29. Community-plugin directory submission follows after the 0.x phase stabilizes.
+Now. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin, then enabling Draft Bench in **Settings -> Community plugins**. The current release is **0.4.0** (2026-05-06); the first BRAT-public release was 0.1.0 on 2026-04-29. Community-plugin directory submission follows after the 0.x phase stabilizes.
 
 ### Is it free?
 
@@ -50,7 +50,15 @@ Yes. The Manuscript Builder has a Preview tab that renders the current preset's 
 
 Yes, in the Manuscript Builder's leaf form (shipped in 0.3.1). The default modal blocks the rest of the workspace, so you can't edit a scene while it's up; the leaf form (opened via the dock-to-leaf button in the modal's sticky header, or the **Draft Bench: Show Manuscript Builder leaf** palette command) doesn't block. Drag the leaf to a side pane, edit a scene in the main pane, save — Preview re-renders ~400ms after the last save event. Useful for read-throughs where you want to fix a paragraph and see the effect immediately.
 
+### Can I read the whole manuscript top-to-bottom without opening the Builder?
+
+Yes. The Manuscript view's **Continuous** tab (shipped in 0.4.0) renders the entire project as one scrollable read-only document — chapters, scenes, sub-scenes, full bodies. No preset filters apply: it's always-everything by design, for revision read-throughs where the per-scene List view is noise. Click any title heading to jump to its source file (cmd/ctrl-click for new tab, +shift for split, +alt for window; right-click for the same options). Editing any scene re-renders the prose with scroll position preserved. Builder Preview is preset-scoped (filters / scope / transforms apply); Continuous is full-manuscript-scoped — different surfaces, different jobs.
+
 ## Scope and compatibility
+
+### Does it work on Obsidian Mobile?
+
+Yes — Draft Bench supports Obsidian Mobile as of 0.3.2. **Android is verified** via on-device walkthrough; **iOS and iPadOS ship untested** until a Mac-equipped contributor surfaces. All the surfaces work on mobile (Manuscript view, Manuscript Builder, scene / chapter / sub-scene / draft creation, retrofit, integrity, the compile pipeline, Bases, Style Settings). Compile to disk is desktop-only by construction (depends on Electron's native save dialog); compile to vault works on both desktop and mobile across all four formats (Markdown, PDF, ODT, DOCX). iOS bug reports are welcome and triaged via the `mobile-ios` label.
 
 ### Does Draft Bench manage characters or locations?
 

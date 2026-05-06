@@ -249,6 +249,31 @@
 }
 
 /*
+ * Continuous mode container. Holds the shared preview-typography
+ * toolbar and the rendered prose body. The continuous body itself
+ * inherits the `--dbench-preview-*` CSS variables applied inline by
+ * `applyPreviewTypography()`; the actual prose rendering lands in
+ * step 6 of docs/planning/manuscript-view-continuous-mode.md.
+ */
+.dbench-manuscript-view__continuous {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-md);
+}
+
+.dbench-manuscript-view__continuous-body {
+	display: flex;
+	flex-direction: column;
+	max-width: var(--dbench-preview-max-width);
+	margin-left: auto;
+	margin-right: auto;
+	width: 100%;
+	font-family: var(--dbench-preview-font-family);
+	font-size: var(--dbench-preview-font-size);
+	text-align: var(--dbench-preview-text-align);
+}
+
+/*
  * Compile CTA — primary project action, promoted out of the 3-button
  * toolbar row so it reads as the "finish line" action. `.mod-cta`
  * supplies Obsidian's native accent treatment; the row here just

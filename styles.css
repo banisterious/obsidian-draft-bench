@@ -1171,7 +1171,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-VIEW.CSS  (892 lines, 23.72 KB)
+   MANUSCRIPT-VIEW.CSS  (917 lines, 24.48 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1422,6 +1422,31 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-manuscript-view__tab--active {
 	color: var(--dbench-tab-active-accent);
 	border-bottom-color: var(--dbench-tab-active-accent);
+}
+
+/*
+ * Continuous mode container. Holds the shared preview-typography
+ * toolbar and the rendered prose body. The continuous body itself
+ * inherits the `--dbench-preview-*` CSS variables applied inline by
+ * `applyPreviewTypography()`; the actual prose rendering lands in
+ * step 6 of docs/planning/manuscript-view-continuous-mode.md.
+ */
+.dbench-manuscript-view__continuous {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-md);
+}
+
+.dbench-manuscript-view__continuous-body {
+	display: flex;
+	flex-direction: column;
+	max-width: var(--dbench-preview-max-width);
+	margin-left: auto;
+	margin-right: auto;
+	width: 100%;
+	font-family: var(--dbench-preview-font-family);
+	font-size: var(--dbench-preview-font-size);
+	text-align: var(--dbench-preview-text-align);
 }
 
 /*
@@ -2300,7 +2325,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 10
-   Total:      2215 lines, 62.56 KB
+   Total:      2240 lines, 63.32 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
@@ -2309,7 +2334,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - preview-toolbar.css: 94 lines, 2.54 KB
    - welcome-modal.css: 94 lines, 2.21 KB
    - reorder-modal.css: 103 lines, 2.31 KB
-   - manuscript-view.css: 892 lines, 23.72 KB
+   - manuscript-view.css: 917 lines, 24.48 KB
    - settings-tab.css: 219 lines, 5.53 KB
 */
 

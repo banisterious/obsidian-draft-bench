@@ -24,6 +24,7 @@ import { renderSection } from './sections/section-base';
 import { renderProjectSummaryBody } from './sections/project-summary-section';
 import { renderManuscriptListBody } from './sections/manuscript-list-section';
 import { renderChapterListBody } from './sections/chapter-card-section';
+import { renderContinuousBody } from './sections/continuous';
 import { renderCompileCta, renderToolbar } from './sections/toolbar';
 import type { ManuscriptViewMode } from '../../model/settings';
 
@@ -272,7 +273,7 @@ export class ManuscriptView extends ItemView {
 		});
 
 		if (mode === 'continuous') {
-			this.renderContinuousBodyStub(content);
+			renderContinuousBody(content, this.plugin);
 			window.requestAnimationFrame(() => {
 				container.scrollTop = previousScroll;
 			});
@@ -449,15 +450,6 @@ export class ManuscriptView extends ItemView {
 			if (this.getActiveMode(projectId) === mode) return;
 			this.setActiveMode(projectId, mode);
 			this.render();
-		});
-	}
-
-	private renderContinuousBodyStub(container: HTMLElement): void {
-		// Placeholder pending step 4 (continuous body container module)
-		// per docs/planning/manuscript-view-continuous-mode.md.
-		container.createEl('p', {
-			cls: 'dbench-manuscript-view__placeholder',
-			text: 'Continuous mode is being built.',
 		});
 	}
 

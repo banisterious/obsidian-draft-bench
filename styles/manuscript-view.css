@@ -210,12 +210,11 @@
 }
 
 /*
- * Override `.mod-cta`'s solid accent fill with a softer gradient +
- * subtle shadow treatment. Still reads as the primary action;
- * doesn't dominate the sidebar. Shadow color derives from the
- * theme accent via `color-mix` so it stays theme-correct in any
- * theme. `.dbench-...&.mod-cta` selector raises specificity enough
- * to override Obsidian's `.mod-cta` background.
+ * Compile CTA layout — full-width inside its row, with a tiny gap
+ * between icon and label. Visual fill comes from Obsidian's stock
+ * `.mod-cta` (solid accent), unmodified. The earlier Direction B
+ * gradient + shadow override was removed in the D3 restyle (#30) to
+ * align the leaf with the Manuscript Builder's minimal aesthetic.
  */
 .dbench-manuscript-view__compile-cta.mod-cta {
 	display: flex;
@@ -225,29 +224,7 @@
 	width: 100%;
 	padding: var(--dbench-spacing-xs) var(--dbench-spacing-sm);
 	min-height: 30px;
-	border-radius: var(--dbench-radius-md);
-	background: linear-gradient(
-		135deg,
-		var(--interactive-accent-hover),
-		var(--interactive-accent)
-	);
-	box-shadow: 0 1px 3px
-		color-mix(in srgb, var(--interactive-accent) 35%, transparent);
-	font-size: var(--font-ui-medium);
-	font-weight: var(--font-normal);
 	cursor: pointer;
-	transition: box-shadow 120ms ease, transform 120ms ease;
-}
-
-.dbench-manuscript-view__compile-cta.mod-cta:hover {
-	box-shadow: 0 2px 6px
-		color-mix(in srgb, var(--interactive-accent) 45%, transparent);
-}
-
-.dbench-manuscript-view__compile-cta.mod-cta:active {
-	transform: translateY(1px);
-	box-shadow: 0 1px 2px
-		color-mix(in srgb, var(--interactive-accent) 25%, transparent);
 }
 
 .dbench-manuscript-view__compile-cta-icon {

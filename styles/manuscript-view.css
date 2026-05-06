@@ -280,6 +280,23 @@
 }
 
 /*
+ * Heading affordance: pipeline-emitted title headings (chapter /
+ * scene / sub-scene) carry `data-source-path` and a click-handler.
+ * The cursor + hover treatment signals that they're navigation,
+ * matching the wikilink convention writers already know. Writer-
+ * authored H2/H3s inside scene bodies don't carry the attribute
+ * and stay inert.
+ */
+.dbench-manuscript-view__continuous-heading--clickable {
+	cursor: pointer;
+	transition: color 0.12s;
+}
+
+.dbench-manuscript-view__continuous-heading--clickable:hover {
+	color: var(--text-accent);
+}
+
+/*
  * Rendering-state spinner. Per
  * docs/planning/manuscript-view-continuous-mode.md § 5, the spinner
  * appears only when the compile + render takes longer than 250ms,

@@ -1171,7 +1171,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-VIEW.CSS  (971 lines, 25.93 KB)
+   MANUSCRIPT-VIEW.CSS  (988 lines, 26.47 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1453,6 +1453,23 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	display: flex;
 	flex-direction: column;
 	gap: var(--dbench-spacing-md);
+}
+
+/*
+ * Heading affordance: pipeline-emitted title headings (chapter /
+ * scene / sub-scene) carry `data-source-path` and a click-handler.
+ * The cursor + hover treatment signals that they're navigation,
+ * matching the wikilink convention writers already know. Writer-
+ * authored H2/H3s inside scene bodies don't carry the attribute
+ * and stay inert.
+ */
+.dbench-manuscript-view__continuous-heading--clickable {
+	cursor: pointer;
+	transition: color 0.12s;
+}
+
+.dbench-manuscript-view__continuous-heading--clickable:hover {
+	color: var(--text-accent);
 }
 
 /*
@@ -2379,7 +2396,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 10
-   Total:      2294 lines, 64.77 KB
+   Total:      2311 lines, 65.31 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
@@ -2388,7 +2405,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - preview-toolbar.css: 94 lines, 2.54 KB
    - welcome-modal.css: 94 lines, 2.21 KB
    - reorder-modal.css: 103 lines, 2.31 KB
-   - manuscript-view.css: 971 lines, 25.93 KB
+   - manuscript-view.css: 988 lines, 26.47 KB
    - settings-tab.css: 219 lines, 5.53 KB
 */
 

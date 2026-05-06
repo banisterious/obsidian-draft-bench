@@ -1,4 +1,4 @@
-import { Component, MarkdownRenderer, setIcon } from 'obsidian';
+import { Component, MarkdownRenderer, setIcon, type App } from 'obsidian';
 import type DraftBenchPlugin from '../../../../main';
 import { CompileService } from '../../../core/compile-service';
 import { HEADING_MARKER_CLASS } from '../../../core/compile/content-rules';
@@ -7,6 +7,7 @@ import {
 	findScenesInProject,
 	type ProjectNote,
 } from '../../../core/discovery';
+import { attachWikilinkOpenAffordances } from './open-affordances';
 import {
 	applyPreviewTypography,
 	renderPreviewToolbar,
@@ -134,6 +135,7 @@ export function renderContinuousBody(
 			);
 			if (token !== renderToken) return;
 			liftHeadingMarkers(proseEl);
+			attachHeadingAffordances(proseEl, plugin.app, project.file.path);
 		} catch (err) {
 			if (token !== renderToken) return;
 			console.error('[DraftBench] continuous render failed:', err);
@@ -177,6 +179,37 @@ function liftHeadingMarkers(root: HTMLElement): void {
 			heading.setAttribute('data-source-path', sourcePath);
 		}
 		marker.remove();
+	});
+}
+
+/**
+ * Attach Obsidian-standard wikilink affordances to every heading
+ * carrying a `data-source-path` attribute. Tap opens the source file
+ * in the active leaf; ctrl/cmd-click opens a new tab; +shift = split;
+ * +alt = window; right-click / long-press surfaces the same options
+ * via the existing context menu (per
+ * [docs/planning/manuscript-view-continuous-mode.md § 3](../../../../docs/planning/manuscript-view-continuous-mode.md)).
+ *
+ * Writer-authored H2/H3s inside scene bodies are not attributed by
+ * the pipeline (only chapter / scene / sub-scene title headings get
+ * the `data-source-path`), so they're left untouched and remain
+ * inert prose structure.
+ */
+function attachHeadingAffordances(
+	root: HTMLElement,
+	app: App,
+	contextPath: string
+): void {
+	const headings = root.querySelectorAll<HTMLElement>(
+		'h1[data-source-path], h2[data-source-path], h3[data-source-path]'
+	);
+	headings.forEach((heading) => {
+		const target = heading.getAttribute('data-source-path');
+		if (!target) return;
+		heading.classList.add('dbench-manuscript-view__continuous-heading--clickable');
+		attachWikilinkOpenAffordances(heading, (spec) => {
+			void app.workspace.openLinkText(target, contextPath, spec);
+		});
 	});
 }
 

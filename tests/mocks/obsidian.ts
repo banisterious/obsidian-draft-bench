@@ -94,6 +94,7 @@ export class Vault {
 	files = new Map<string, TFile>();
 	folders = new Map<string, TFolder>();
 	private content = new Map<string, string>();
+	private binaryContent = new Map<string, ArrayBuffer>();
 	private cacheRef: MetadataCache | null = null;
 	private listeners = new Map<VaultEventName, Set<EventRef>>();
 
@@ -109,8 +110,17 @@ export class Vault {
 		return this.content.get(file.path) ?? '';
 	}
 
+	async readBinary(file: TFile): Promise<ArrayBuffer> {
+		return this.binaryContent.get(file.path) ?? new ArrayBuffer(0);
+	}
+
 	async modify(file: TFile, data: string): Promise<void> {
 		this.content.set(file.path, data);
+		this._fire('modify', file);
+	}
+
+	async modifyBinary(file: TFile, data: ArrayBuffer): Promise<void> {
+		this.binaryContent.set(file.path, data);
 		this._fire('modify', file);
 	}
 
@@ -128,6 +138,23 @@ export class Vault {
 		});
 		this.files.set(path, file);
 		this.content.set(path, data);
+		return file;
+	}
+
+	async createBinary(path: string, data: ArrayBuffer): Promise<TFile> {
+		if (this.files.has(path)) {
+			throw new Error(`File already exists: ${path}`);
+		}
+		const filename = path.split('/').pop() ?? path;
+		const dotIdx = filename.lastIndexOf('.');
+		const file = new TFile({
+			path,
+			basename: dotIdx > 0 ? filename.slice(0, dotIdx) : filename,
+			extension: dotIdx > 0 ? filename.slice(dotIdx + 1) : '',
+			stat: { mtime: Date.now(), ctime: Date.now(), size: data.byteLength },
+		});
+		this.files.set(path, file);
+		this.binaryContent.set(path, data);
 		return file;
 	}
 

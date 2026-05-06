@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App, TFile } from 'obsidian';
 import {
-	compiledFolderFor,
 	renderMdToDisk,
 	renderMdToVault,
 	type MdDiskDeps,
 } from '../../../src/core/compile/render-md';
+import { compiledFolderFor } from '../../../src/core/compile/vault-output';
 import type { CompileResult } from '../../../src/core/compile-service';
 import type {
 	CompilePresetNote,

@@ -1,7 +1,8 @@
-import { TFile, type App } from 'obsidian';
+import type { App } from 'obsidian';
 import type { CompilePresetNote, ProjectNote } from '../discovery';
 import type { CompileResult } from '../compile-service';
 import { getElectron, getNodeFs } from './disk-deps';
+import { type RenderVaultResult, writeCompiledFile } from './vault-output';
 
 /**
  * Markdown output renderer for the compile pipeline.
@@ -9,85 +10,30 @@ import { getElectron, getNodeFs } from './disk-deps';
  * Per [D-06 § Output format](../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md):
  *
  * - `format: md` + `output: vault` -> `renderMdToVault` writes to
- *   `<project folder>/Compiled/<preset name>.md` inside the vault.
- *   First compile creates the `Compiled/` subfolder; subsequent
- *   compiles overwrite silently so the preset's output stays at a
- *   stable vault path (writers use git / vault snapshots to track
- *   per-compile diffs).
+ *   `<project folder>/Compiled/<preset name>.md` inside the vault via
+ *   the shared `writeCompiledFile` helper. First compile creates the
+ *   `Compiled/` subfolder; subsequent compiles overwrite silently so
+ *   the preset's output stays at a stable vault path (writers use git
+ *   / vault snapshots to track per-compile diffs).
  * - `format: md` + `output: disk` -> `renderMdToDisk` prompts with
  *   the OS save dialog and writes outside the vault. Pure logic takes
  *   injected `pickPath` / `writeFile` dependencies so tests stay free
  *   of Electron; `createMdDiskDeps` wires the runtime implementations.
  */
 
-/** Outcome of a successful MD write. */
-export interface RenderMdVaultResult {
-	/** Vault-relative path the compiled markdown was written to. */
-	path: string;
-	/** `true` when an existing file was overwritten; `false` on first compile. */
-	overwritten: boolean;
-}
-
 /**
  * Write `result.markdown` to the preset's canonical vault location.
- * Creates the `Compiled/` subfolder if missing; overwrites an
- * existing compiled file if present.
- *
- * Returns the written path plus whether an existing file was
- * overwritten (for the compile-completion notice). Throws if the
- * path resolves to a non-file (e.g., a folder with the same name)
- * or if the write fails.
+ * Thin orchestrator over `writeCompiledFile`; the shared helper owns
+ * folder creation, the create-vs-modify branch, and the
+ * path-collision-with-folder error case.
  */
 export async function renderMdToVault(
 	app: App,
 	project: ProjectNote,
 	preset: CompilePresetNote,
 	result: CompileResult
-): Promise<RenderMdVaultResult> {
-	const folder = compiledFolderFor(project);
-	await ensureFolder(app, folder);
-
-	const path = `${folder}/${preset.file.basename}.md`;
-	const existing = app.vault.getAbstractFileByPath(path);
-
-	if (existing === null) {
-		await app.vault.create(path, result.markdown);
-		return { path, overwritten: false };
-	}
-
-	if (!(existing instanceof TFile)) {
-		throw new Error(
-			`Cannot write compiled output: "${path}" already exists and is not a file.`
-		);
-	}
-
-	await app.vault.modify(existing, result.markdown);
-	return { path, overwritten: true };
-}
-
-/**
- * Resolve `<project folder>/Compiled` for either project shape.
- *
- * For folder projects, `parent` is the project folder itself
- * (`Draft Bench/My Novel` -> `Draft Bench/My Novel/Compiled`). For
- * single-scene projects, `parent` is whichever folder holds the
- * project note (`Short Stories/Flash.md` -> `Short Stories/Compiled`).
- * Project notes at the vault root map to `Compiled` at the root.
- *
- * Parsed from `project.file.path` rather than read from
- * `TFile.parent` so the helper works against test fixtures that
- * don't populate `parent` automatically.
- */
-export function compiledFolderFor(project: ProjectNote): string {
-	const path = project.file.path;
-	const slash = path.lastIndexOf('/');
-	const parent = slash < 0 ? '' : path.slice(0, slash);
-	return parent.length === 0 ? 'Compiled' : `${parent}/Compiled`;
-}
-
-async function ensureFolder(app: App, folderPath: string): Promise<void> {
-	if (app.vault.getAbstractFileByPath(folderPath) !== null) return;
-	await app.vault.createFolder(folderPath);
+): Promise<RenderVaultResult> {
+	return await writeCompiledFile(app, project, preset, 'md', result.markdown);
 }
 
 // ---- Disk-save path --------------------------------------------------

@@ -15,7 +15,8 @@ import type { CompilePresetFrontmatter } from '../../../src/model/compile-preset
  *   `no-project` when the lookup fails.
  * - Short-circuits to `empty` when `CompileService.generate` produces
  *   no scenes (without touching state or any renderer).
- * - Routes md/vault, md/disk, odt/disk, pdf/disk to the right renderer.
+ * - Routes every {format, output} combination (md, pdf, odt, docx ×
+ *   vault, disk) to the right renderer.
  * - Persists compile state only on a successful write.
  * - Surfaces user-cancel as `canceled` with state intact.
  * - Wraps thrown errors as `error` outcomes.
@@ -478,8 +479,17 @@ describe('runCompile: pdf + disk', () => {
 		);
 	});
 
-	it('ignores output:vault for pdf (D-06 says pdf is disk-only)', async () => {
-		const project = await seedProject(app, 'Novel', 'prj-pdf-vault');
+});
+
+describe('runCompile: pdf + vault', () => {
+	let app: App;
+
+	beforeEach(() => {
+		app = new App();
+	});
+
+	it('routes to the PDF vault renderer and writes Compiled/<preset>.pdf', async () => {
+		await seedProject(app, 'Novel', 'prj-pdf-vault');
 		await seedScene(app, {
 			path: 'Draft Bench/Novel/A.md',
 			id: 'sc-a',
@@ -494,17 +504,108 @@ describe('runCompile: pdf + disk', () => {
 			output: 'vault',
 		});
 
-		const pickPath = vi.fn(async () => '/tmp/book.pdf');
-		const outcome = await runCompile(app, preset, {
-			pdfDiskDeps: {
-				pickPath,
-				writeFile: async () => {},
-				buildBytes: async () => new Uint8Array([1]),
-			},
-		});
+		const outcome = await runCompile(app, preset);
 
 		expect(outcome.kind).toBe('success');
-		expect(pickPath).toHaveBeenCalled();
+		if (outcome.kind === 'success') {
+			expect(outcome.outputPath).toBe(
+				'Draft Bench/Novel/Compiled/PDF.pdf'
+			);
+		}
+		const written = app.vault.getAbstractFileByPath(
+			'Draft Bench/Novel/Compiled/PDF.pdf'
+		);
+		expect(written).toBeInstanceOf(TFile);
+		const bytes = new Uint8Array(await app.vault.readBinary(written as TFile));
+		// PDF magic: %PDF
+		expect(bytes[0]).toBe(0x25);
+		expect(bytes[1]).toBe(0x50);
+		expect(bytes[2]).toBe(0x44);
+		expect(bytes[3]).toBe(0x46);
+	});
+});
+
+describe('runCompile: odt + vault', () => {
+	let app: App;
+
+	beforeEach(() => {
+		app = new App();
+	});
+
+	it('routes to the ODT vault renderer and writes Compiled/<preset>.odt', async () => {
+		await seedProject(app, 'Novel', 'prj-odt-vault');
+		await seedScene(app, {
+			path: 'Draft Bench/Novel/A.md',
+			id: 'sc-a',
+			projectId: 'prj-odt-vault',
+			projectTitle: 'Novel',
+			order: 1,
+			body: 'A.',
+		});
+		const preset = await seedPreset(app, 'ODT', {
+			projectId: 'prj-odt-vault',
+			format: 'odt',
+			output: 'vault',
+		});
+
+		const outcome = await runCompile(app, preset);
+
+		expect(outcome.kind).toBe('success');
+		if (outcome.kind === 'success') {
+			expect(outcome.outputPath).toBe(
+				'Draft Bench/Novel/Compiled/ODT.odt'
+			);
+		}
+		const written = app.vault.getAbstractFileByPath(
+			'Draft Bench/Novel/Compiled/ODT.odt'
+		);
+		expect(written).toBeInstanceOf(TFile);
+		const bytes = new Uint8Array(await app.vault.readBinary(written as TFile));
+		// ODT (zip) magic: PK\x03\x04
+		expect(bytes[0]).toBe(0x50);
+		expect(bytes[1]).toBe(0x4b);
+	});
+});
+
+describe('runCompile: docx + vault', () => {
+	let app: App;
+
+	beforeEach(() => {
+		app = new App();
+	});
+
+	it('routes to the DOCX vault renderer and writes Compiled/<preset>.docx', async () => {
+		await seedProject(app, 'Novel', 'prj-docx-vault');
+		await seedScene(app, {
+			path: 'Draft Bench/Novel/A.md',
+			id: 'sc-a',
+			projectId: 'prj-docx-vault',
+			projectTitle: 'Novel',
+			order: 1,
+			body: 'A.',
+		});
+		const preset = await seedPreset(app, 'DOCX', {
+			projectId: 'prj-docx-vault',
+			format: 'docx',
+			output: 'vault',
+		});
+
+		const outcome = await runCompile(app, preset);
+
+		expect(outcome.kind).toBe('success');
+		if (outcome.kind === 'success') {
+			expect(outcome.outputPath).toBe(
+				'Draft Bench/Novel/Compiled/DOCX.docx'
+			);
+		}
+		const written = app.vault.getAbstractFileByPath(
+			'Draft Bench/Novel/Compiled/DOCX.docx'
+		);
+		expect(written).toBeInstanceOf(TFile);
+		const bytes = new Uint8Array(await app.vault.readBinary(written as TFile));
+		// DOCX (zip) magic: PK\x03\x04
+		expect(bytes[0]).toBe(0x50);
+		expect(bytes[1]).toBe(0x4b);
 	});
 });
 

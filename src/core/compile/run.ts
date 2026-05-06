@@ -21,16 +21,19 @@ import {
 import {
 	createOdtDiskDeps,
 	renderOdtToDisk,
+	renderOdtToVault,
 	type OdtDiskDeps,
 } from './render-odt';
 import {
 	createPdfDiskDeps,
 	renderPdfToDisk,
+	renderPdfToVault,
 	type PdfDiskDeps,
 } from './render-pdf';
 import {
 	createDocxDiskDeps,
 	renderDocxToDisk,
+	renderDocxToVault,
 	type DocxDiskDeps,
 } from './render-docx';
 
@@ -43,9 +46,10 @@ import {
  * Per [D-06 § Output format](../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md),
  * the preset's `dbench-compile-format` (`md` | `pdf` | `odt` | `docx`) and
  * `dbench-compile-output` (`vault` | `disk`) together pick the
- * renderer. The matrix has five reachable cells: md+vault, md+disk,
- * odt+disk, pdf+disk, docx+disk (odt, pdf, and docx are disk-only
- * per D-06, so their `output` value is ignored).
+ * renderer. The matrix has all eight cells reachable: md / pdf / odt /
+ * docx, each with vault or disk output. Vault output landed for the
+ * binary formats via the mobile-elevation work (#29); the original
+ * D-06 "binary formats are disk-only" clause is superseded.
  *
  * Compile state (`dbench-last-*` fields on the preset) is written
  * only on a successful write. Cancellations preserve the previous
@@ -171,9 +175,10 @@ export async function runCompile(
  * on renderer failure (caught by `runCompile` and wrapped in an
  * `error` outcome).
  *
- * ODT, PDF, and DOCX ignore the `output` value — per D-06 they're
- * disk-only. A preset with `format: odt` + `output: vault` still
- * lands in the disk-save branch.
+ * Both vault and disk are valid output targets for every format. The
+ * vault path uses Obsidian's vault APIs (mobile-compatible); the disk
+ * path uses Electron's `remote.dialog` + Node `fs` (desktop-only by
+ * construction).
  */
 async function dispatch(
 	app: App,
@@ -199,6 +204,10 @@ async function dispatch(
 	}
 
 	if (format === 'odt') {
+		if (output === 'vault') {
+			const r = await renderOdtToVault(app, project, preset, result);
+			return r.path;
+		}
 		const r = await renderOdtToDisk(
 			preset,
 			result,
@@ -208,6 +217,10 @@ async function dispatch(
 	}
 
 	if (format === 'pdf') {
+		if (output === 'vault') {
+			const r = await renderPdfToVault(app, project, preset, result);
+			return r.path;
+		}
 		const r = await renderPdfToDisk(
 			preset,
 			result,
@@ -217,6 +230,10 @@ async function dispatch(
 	}
 
 	if (format === 'docx') {
+		if (output === 'vault') {
+			const r = await renderDocxToVault(app, project, preset, result);
+			return r.path;
+		}
 		const r = await renderDocxToDisk(
 			preset,
 			result,

@@ -6,7 +6,7 @@
    Do not edit directly. Edit the component files, then run:
      npm run build:css
 
-   Components: 11
+   Components: 12
 */
 
 
@@ -416,7 +416,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-BUILDER.CSS  (520 lines, 15.34 KB)
+   MANUSCRIPT-BUILDER.CSS  (436 lines, 13.11 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -636,94 +636,10 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 }
 
 /*
- * Preview typography toolbar. Sits inside the sticky header
- * region, only rendered when the Preview tab is active. Four
- * controls: text alignment (Left / Justify), reading width (Full /
- * Med / Narrow), font size (- N px +), font family dropdown. Each
- * writes to plugin.settings.previewTypography and applies via
- * inline `--dbench-preview-*` overrides on the modal contentEl.
+ * Preview typography toolbar styling lives in styles/preview-toolbar.css
+ * since it is shared between the Builder Preview tab and the Manuscript
+ * view's Continuous mode (per docs/planning/manuscript-view-continuous-mode.md § 6).
  */
-.dbench-manuscript-builder__preview-toolbar {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--dbench-spacing-md);
-	padding-top: var(--dbench-spacing-sm);
-	border-top: 1px solid var(--background-modifier-border-hover);
-}
-
-.dbench-manuscript-builder__toolbar-group {
-	display: inline-flex;
-	align-items: stretch;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--dbench-radius-md);
-	overflow: hidden;
-}
-
-.dbench-manuscript-builder__toolbar-button {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 32px;
-	height: 28px;
-	padding: 0 var(--dbench-spacing-sm);
-	margin: 0;
-	border: none;
-	border-radius: 0;
-	background: transparent;
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-	cursor: pointer;
-	box-shadow: none;
-	transition: color 0.12s, background 0.12s;
-}
-
-.dbench-manuscript-builder__toolbar-button + .dbench-manuscript-builder__toolbar-button {
-	border-left: 1px solid var(--background-modifier-border);
-}
-
-.dbench-manuscript-builder__toolbar-button:hover:not(:disabled) {
-	color: var(--text-normal);
-	background: var(--background-modifier-hover);
-}
-
-.dbench-manuscript-builder__toolbar-button:focus-visible {
-	outline: 2px solid var(--interactive-accent);
-	outline-offset: -2px;
-}
-
-.dbench-manuscript-builder__toolbar-button:disabled {
-	opacity: 0.4;
-	cursor: not-allowed;
-}
-
-.dbench-manuscript-builder__toolbar-button--active {
-	color: var(--text-on-accent);
-	background: var(--interactive-accent);
-}
-
-.dbench-manuscript-builder__toolbar-button--active:hover:not(:disabled) {
-	color: var(--text-on-accent);
-	background: var(--interactive-accent-hover);
-}
-
-.dbench-manuscript-builder__toolbar-value {
-	display: inline-flex;
-	align-items: center;
-	min-width: 3.5em;
-	padding: 0 var(--dbench-spacing-sm);
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-	font-variant-numeric: tabular-nums;
-	border-left: 1px solid var(--background-modifier-border);
-	border-right: 1px solid var(--background-modifier-border);
-	justify-content: center;
-}
-
-.dbench-manuscript-builder__toolbar-select {
-	height: 28px;
-	min-width: 11em;
-}
 
 /*
  * Preview tab body container. The class hook lets theme authors
@@ -941,6 +857,107 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 
 
 /* End of manuscript-builder.css */
+
+/* --------------------------------------------------------------------------
+   PREVIEW-TOOLBAR.CSS  (94 lines, 2.54 KB)
+   -------------------------------------------------------------------------- */
+
+/*
+ * Preview typography toolbar — shared between the Manuscript Builder
+ * Preview tab and the Manuscript view's Continuous mode (per
+ * docs/planning/manuscript-view-continuous-mode.md § 6). Four controls:
+ * text alignment (Left / Justify), reading width (Full / Med / Narrow),
+ * font size (- N px +), font family dropdown. Each writes to
+ * plugin.settings.previewTypography and applies via inline
+ * `--dbench-preview-*` overrides on a host scope element.
+ *
+ * Class hooks use a neutral `dbench-preview-toolbar` block prefix so
+ * the same toolbar can mount in either surface without semantic drift.
+ */
+.dbench-preview-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--dbench-spacing-md);
+	padding-top: var(--dbench-spacing-sm);
+	border-top: 1px solid var(--background-modifier-border-hover);
+}
+
+.dbench-preview-toolbar__group {
+	display: inline-flex;
+	align-items: stretch;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	overflow: hidden;
+}
+
+.dbench-preview-toolbar__button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 32px;
+	height: 28px;
+	padding: 0 var(--dbench-spacing-sm);
+	margin: 0;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+	box-shadow: none;
+	transition: color 0.12s, background 0.12s;
+}
+
+.dbench-preview-toolbar__button + .dbench-preview-toolbar__button {
+	border-left: 1px solid var(--background-modifier-border);
+}
+
+.dbench-preview-toolbar__button:hover:not(:disabled) {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.dbench-preview-toolbar__button:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+}
+
+.dbench-preview-toolbar__button:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.dbench-preview-toolbar__button--active {
+	color: var(--text-on-accent);
+	background: var(--interactive-accent);
+}
+
+.dbench-preview-toolbar__button--active:hover:not(:disabled) {
+	color: var(--text-on-accent);
+	background: var(--interactive-accent-hover);
+}
+
+.dbench-preview-toolbar__value {
+	display: inline-flex;
+	align-items: center;
+	min-width: 3.5em;
+	padding: 0 var(--dbench-spacing-sm);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-variant-numeric: tabular-nums;
+	border-left: 1px solid var(--background-modifier-border);
+	border-right: 1px solid var(--background-modifier-border);
+	justify-content: center;
+}
+
+.dbench-preview-toolbar__select {
+	height: 28px;
+	min-width: 11em;
+}
+
+
+/* End of preview-toolbar.css */
 
 /* --------------------------------------------------------------------------
    WELCOME-MODAL.CSS  (94 lines, 2.21 KB)
@@ -2282,13 +2299,14 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    BUILD SUMMARY
    ==========================================================================
 
-   Components: 9
-   Total:      2205 lines, 62.24 KB
+   Components: 10
+   Total:      2215 lines, 62.56 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - manuscript-builder.css: 520 lines, 15.34 KB
+   - manuscript-builder.css: 436 lines, 13.11 KB
+   - preview-toolbar.css: 94 lines, 2.54 KB
    - welcome-modal.css: 94 lines, 2.21 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 892 lines, 23.72 KB

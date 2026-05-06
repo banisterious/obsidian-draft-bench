@@ -1,0 +1,93 @@
+/*
+ * Preview typography toolbar — shared between the Manuscript Builder
+ * Preview tab and the Manuscript view's Continuous mode (per
+ * docs/planning/manuscript-view-continuous-mode.md § 6). Four controls:
+ * text alignment (Left / Justify), reading width (Full / Med / Narrow),
+ * font size (- N px +), font family dropdown. Each writes to
+ * plugin.settings.previewTypography and applies via inline
+ * `--dbench-preview-*` overrides on a host scope element.
+ *
+ * Class hooks use a neutral `dbench-preview-toolbar` block prefix so
+ * the same toolbar can mount in either surface without semantic drift.
+ */
+.dbench-preview-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--dbench-spacing-md);
+	padding-top: var(--dbench-spacing-sm);
+	border-top: 1px solid var(--background-modifier-border-hover);
+}
+
+.dbench-preview-toolbar__group {
+	display: inline-flex;
+	align-items: stretch;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	overflow: hidden;
+}
+
+.dbench-preview-toolbar__button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 32px;
+	height: 28px;
+	padding: 0 var(--dbench-spacing-sm);
+	margin: 0;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+	box-shadow: none;
+	transition: color 0.12s, background 0.12s;
+}
+
+.dbench-preview-toolbar__button + .dbench-preview-toolbar__button {
+	border-left: 1px solid var(--background-modifier-border);
+}
+
+.dbench-preview-toolbar__button:hover:not(:disabled) {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.dbench-preview-toolbar__button:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+}
+
+.dbench-preview-toolbar__button:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.dbench-preview-toolbar__button--active {
+	color: var(--text-on-accent);
+	background: var(--interactive-accent);
+}
+
+.dbench-preview-toolbar__button--active:hover:not(:disabled) {
+	color: var(--text-on-accent);
+	background: var(--interactive-accent-hover);
+}
+
+.dbench-preview-toolbar__value {
+	display: inline-flex;
+	align-items: center;
+	min-width: 3.5em;
+	padding: 0 var(--dbench-spacing-sm);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-variant-numeric: tabular-nums;
+	border-left: 1px solid var(--background-modifier-border);
+	border-right: 1px solid var(--background-modifier-border);
+	justify-content: center;
+}
+
+.dbench-preview-toolbar__select {
+	height: 28px;
+	min-width: 11em;
+}

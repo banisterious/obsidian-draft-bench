@@ -1,6 +1,7 @@
 import { Component, MarkdownRenderer, setIcon } from 'obsidian';
 import type DraftBenchPlugin from '../../../../main';
 import { CompileService } from '../../../core/compile-service';
+import { HEADING_MARKER_CLASS } from '../../../core/compile/content-rules';
 import { buildContinuousPreset } from '../../../core/compile/continuous-preset';
 import {
 	findScenesInProject,
@@ -71,7 +72,9 @@ export function renderContinuousBody(
 		let markdown: string;
 		let scenesCompiled: number;
 		try {
-			const result = await new CompileService(plugin.app).generate(preset);
+			const result = await new CompileService(plugin.app).generate(preset, {
+				emitHeadingMarkers: true,
+			});
 			markdown = result.markdown;
 			scenesCompiled = result.scenesCompiled;
 		} catch (err) {
@@ -129,6 +132,8 @@ export function renderContinuousBody(
 				sourcePath,
 				renderComponent
 			);
+			if (token !== renderToken) return;
+			liftHeadingMarkers(proseEl);
 		} catch (err) {
 			if (token !== renderToken) return;
 			console.error('[DraftBench] continuous render failed:', err);
@@ -147,6 +152,32 @@ export function renderContinuousBody(
 			}
 		},
 	};
+}
+
+/**
+ * Walk the rendered prose, find each `span.dbench-mark[data-source]`
+ * marker the compile pipeline emitted inside title headings, and lift
+ * its `data-source` value onto the parent `h1`/`h2`/`h3` as
+ * `data-source-path`. The marker is removed after lifting so it
+ * doesn't leak into the visible DOM. Step 8 attaches click handlers
+ * keyed on the lifted attribute.
+ *
+ * Markers that aren't direct children of a recognized heading are
+ * left alone (defensive — shouldn't happen with the V1 pipeline, but
+ * harmless if a future content-rule wraps the heading).
+ */
+function liftHeadingMarkers(root: HTMLElement): void {
+	const markers = root.querySelectorAll<HTMLElement>(
+		`span.${HEADING_MARKER_CLASS}[data-source]`
+	);
+	markers.forEach((marker) => {
+		const heading = marker.closest('h1, h2, h3');
+		const sourcePath = marker.getAttribute('data-source');
+		if (heading && sourcePath) {
+			heading.setAttribute('data-source-path', sourcePath);
+		}
+		marker.remove();
+	});
 }
 
 function renderSpinner(body: HTMLElement): void {

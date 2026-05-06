@@ -90,4 +90,24 @@ describe('buildChapterHeading', () => {
 			)
 		).toBe('# Forced');
 	});
+
+	it('appends a source marker when both sourcePath and emitMarker are set', () => {
+		expect(
+			buildChapterHeading('Eastward', 2, makePresetFm(), {
+				sourcePath: 'Chapters/02 - Eastward.md',
+				emitMarker: true,
+			})
+		).toBe(
+			'# Eastward<span class="dbench-mark" data-source="Chapters/02 - Eastward.md"></span>'
+		);
+	});
+
+	it('omits the marker when emitMarker is false', () => {
+		expect(
+			buildChapterHeading('Eastward', 2, makePresetFm(), {
+				sourcePath: 'Chapters/02 - Eastward.md',
+				emitMarker: false,
+			})
+		).toBe('# Eastward');
+	});
 });

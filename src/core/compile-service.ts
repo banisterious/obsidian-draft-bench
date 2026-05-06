@@ -127,12 +127,37 @@ interface SceneAccumulator {
  * `src/core/compile/content-rules.ts`. Footnote renumbering, section
  * breaks, and djb2 hashing live in sibling modules.
  */
+/**
+ * Optional knobs on `CompileService.generate`. Always backwards
+ * compatible: omitting `opts` produces the V1 behavior every binary
+ * renderer already depends on.
+ */
+export interface GenerateOptions {
+	/**
+	 * When true, the compile pipeline appends a
+	 * `<span class="dbench-mark" data-source="..."></span>` marker
+	 * inside every pipeline-emitted title heading (chapter, flat scene,
+	 * hierarchical scene, sub-scene). The Manuscript view's Continuous
+	 * mode opts in to read these back during a post-render DOM walk
+	 * (per [docs/planning/manuscript-view-continuous-mode.md § 9](../../docs/planning/manuscript-view-continuous-mode.md)).
+	 *
+	 * Off by default — the marker is HTML-in-markdown that would
+	 * confuse the binary renderers (pdfmake / docx / odt) that consume
+	 * the same markdown intermediate.
+	 */
+	emitHeadingMarkers?: boolean;
+}
+
 export class CompileService {
 	constructor(private app: App) {}
 
-	async generate(preset: CompilePresetNote): Promise<CompileResult> {
+	async generate(
+		preset: CompilePresetNote,
+		opts: GenerateOptions = {}
+	): Promise<CompileResult> {
 		const warnings: string[] = [];
 		const errors: CompileError[] = [];
+		const emitHeadingMarkers = opts.emitHeadingMarkers ?? false;
 
 		const projectId = preset.frontmatter['dbench-project-id'];
 		if (projectId === '') {
@@ -144,16 +169,29 @@ export class CompileService {
 
 		const chapters = findChaptersInProject(this.app, projectId);
 		if (chapters.length > 0) {
-			return this.walkChapterAware(preset, chapters, warnings, errors);
+			return this.walkChapterAware(
+				preset,
+				chapters,
+				warnings,
+				errors,
+				emitHeadingMarkers
+			);
 		}
-		return this.walkFlat(preset, projectId, warnings, errors);
+		return this.walkFlat(
+			preset,
+			projectId,
+			warnings,
+			errors,
+			emitHeadingMarkers
+		);
 	}
 
 	private async walkFlat(
 		preset: CompilePresetNote,
 		projectId: DbenchId,
 		warnings: string[],
-		errors: CompileError[]
+		errors: CompileError[],
+		emitHeadingMarkers: boolean
 	): Promise<CompileResult> {
 		const allScenes = sortScenesByOrder(findScenesInProject(this.app, projectId));
 		if (allScenes.length === 0) {
@@ -192,7 +230,9 @@ export class CompileService {
 				scene.frontmatter['dbench-id']
 			);
 			if (subScenes.length === 0) {
-				await this.processScene(scene, i + 1, preset, acc);
+				await this.processScene(scene, i + 1, preset, acc, {
+					emitHeadingMarkers,
+				});
 			} else {
 				await this.processHierarchicalScene(
 					scene,
@@ -200,7 +240,8 @@ export class CompileService {
 					i + 1,
 					preset,
 					acc,
-					excludeSet
+					excludeSet,
+					{ emitHeadingMarkers }
 				);
 			}
 		}
@@ -236,7 +277,8 @@ export class CompileService {
 		preset: CompilePresetNote,
 		chapters: ChapterNote[],
 		warnings: string[],
-		errors: CompileError[]
+		errors: CompileError[],
+		emitHeadingMarkers: boolean
 	): Promise<CompileResult> {
 		const sortedChapters = [...chapters].sort(
 			(a, b) =>
@@ -314,7 +356,11 @@ export class CompileService {
 					buildChapterHeading(
 						plan.chapter.file.basename,
 						chapterIndex,
-						preset.frontmatter
+						preset.frontmatter,
+						{
+							sourcePath: plan.chapter.file.path,
+							emitMarker: emitHeadingMarkers,
+						}
 					)
 				);
 				const intro = await this.processChapterIntro(plan.chapter, preset, acc);
@@ -331,6 +377,7 @@ export class CompileService {
 				if (subScenes.length === 0) {
 					await this.processScene(scene, sceneIndex, preset, acc, {
 						suppressSectionBreak,
+						emitHeadingMarkers,
 					});
 				} else {
 					await this.processHierarchicalScene(
@@ -340,7 +387,7 @@ export class CompileService {
 						preset,
 						acc,
 						excludeSet,
-						{ suppressSectionBreak }
+						{ suppressSectionBreak, emitHeadingMarkers }
 					);
 				}
 			}
@@ -362,7 +409,11 @@ export class CompileService {
 		compileIndex: number,
 		preset: CompilePresetNote,
 		acc: SceneAccumulator,
-		options: { suppressSectionBreak?: boolean; suppressHeading?: boolean } = {}
+		options: {
+			suppressSectionBreak?: boolean;
+			suppressHeading?: boolean;
+			emitHeadingMarkers?: boolean;
+		} = {}
 	): Promise<void> {
 		try {
 			const raw = await this.app.vault.read(scene.file);
@@ -375,6 +426,8 @@ export class CompileService {
 				compileIndex,
 				stripAccumulator: acc.stripAccumulator,
 				suppressHeading: options.suppressHeading,
+				sourcePath: scene.file.path,
+				emitHeadingMarkers: options.emitHeadingMarkers,
 			});
 			const renumbered = renumberFootnotes(transformed, acc.footnoteOffset);
 			acc.footnoteOffset += renumbered.consumedCount;
@@ -505,7 +558,10 @@ export class CompileService {
 		preset: CompilePresetNote,
 		acc: SceneAccumulator,
 		excludeSet: Set<string>,
-		options: { suppressSectionBreak?: boolean } = {}
+		options: {
+			suppressSectionBreak?: boolean;
+			emitHeadingMarkers?: boolean;
+		} = {}
 	): Promise<void> {
 		if (!options.suppressSectionBreak) {
 			const sectionBreak = buildSectionBreak(scene, preset.frontmatter);
@@ -514,7 +570,11 @@ export class CompileService {
 		const sceneHeading = buildHierarchicalSceneHeading(
 			scene.file.basename,
 			sceneIndex,
-			preset.frontmatter
+			preset.frontmatter,
+			{
+				sourcePath: scene.file.path,
+				emitMarker: options.emitHeadingMarkers,
+			}
 		);
 		acc.bodies.push(sceneHeading);
 
@@ -528,7 +588,11 @@ export class CompileService {
 			const subScene = sortedSubScenes[i];
 			const subSceneHeading = buildSubSceneHeading(
 				subScene.file.basename,
-				preset.frontmatter
+				preset.frontmatter,
+				{
+					sourcePath: subScene.file.path,
+					emitMarker: options.emitHeadingMarkers,
+				}
 			);
 			acc.bodies.push(subSceneHeading);
 			await this.processScene(subScene, sceneIndex, preset, acc, {

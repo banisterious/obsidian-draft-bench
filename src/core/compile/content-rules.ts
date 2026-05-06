@@ -40,6 +40,63 @@ export interface RuleContext {
 	 * the walker). Per [sub-scene-type.md § 7](../../../docs/planning/sub-scene-type.md).
 	 */
 	suppressHeading?: boolean;
+	/**
+	 * Vault-relative path of the source note. Threaded in only when
+	 * `emitHeadingMarkers` is true so the auto-prepended scene heading
+	 * can carry an inline marker pointing at the source file. Other
+	 * callers (binary compile renderers) leave both fields undefined
+	 * so the markdown stays clean.
+	 */
+	sourcePath?: string;
+	/**
+	 * When true, append a `<span class="dbench-mark" data-source="..."></span>`
+	 * marker inside each pipeline-emitted title heading. The Manuscript
+	 * view's Continuous mode walks this marker after rendering to
+	 * attribute headings back to their source file (per
+	 * [docs/planning/manuscript-view-continuous-mode.md § 9](../../../docs/planning/manuscript-view-continuous-mode.md)).
+	 * Off by default since the marker leaks into the markdown output
+	 * and would confuse the binary compile renderers.
+	 */
+	emitHeadingMarkers?: boolean;
+}
+
+/**
+ * Options shared across heading-builder helpers (`buildSceneHeading`,
+ * `buildHierarchicalSceneHeading`, `buildSubSceneHeading`,
+ * `buildChapterHeading`). Both fields must be set for a marker to
+ * actually be emitted; either one alone yields the unmarked heading.
+ */
+export interface HeadingBuilderOptions {
+	sourcePath?: string;
+	emitMarker?: boolean;
+}
+
+/** CSS class on the inline marker span emitted inside title headings. */
+export const HEADING_MARKER_CLASS = 'dbench-mark';
+
+/**
+ * Append the heading-source marker when both the source path and the
+ * emit-marker flag are present. The marker is HTML inside markdown so
+ * Obsidian's `MarkdownRenderer` carries it through unchanged; the
+ * Continuous body's post-render walker reads `data-source` and lifts
+ * it onto the parent heading.
+ *
+ * Empty headings are returned untouched so suppressed-heading branches
+ * (e.g., `buildSceneHeading` in chapter mode) don't gain spurious
+ * markup.
+ */
+export function appendHeadingMarker(
+	heading: string,
+	opts: HeadingBuilderOptions
+): string {
+	if (heading.length === 0) return heading;
+	if (!opts.emitMarker || !opts.sourcePath) return heading;
+	const escaped = opts.sourcePath
+		.replace(/&/g, '&amp;')
+		.replace(/"/g, '&quot;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;');
+	return `${heading}<span class="${HEADING_MARKER_CLASS}" data-source="${escaped}"></span>`;
 }
 
 /**
@@ -87,7 +144,10 @@ export function applyContentRules(rawContent: string, ctx: RuleContext): string 
 	body = shiftH1sInBody(body);
 	const heading = ctx.suppressHeading
 		? ''
-		: buildSceneHeading(ctx.sceneTitle, ctx.compileIndex, ctx.preset);
+		: buildSceneHeading(ctx.sceneTitle, ctx.compileIndex, ctx.preset, {
+				sourcePath: ctx.sourcePath,
+				emitMarker: ctx.emitHeadingMarkers,
+			});
 	body = [heading, body].filter((part) => part.length > 0).join('\n\n');
 
 	// Rules 10 + 11: line-level strip-by-filter / strip-by-regex.
@@ -214,16 +274,19 @@ export function shiftH1sInBody(body: string): string {
 export function buildSceneHeading(
 	title: string,
 	index: number,
-	preset: CompilePresetFrontmatter
+	preset: CompilePresetFrontmatter,
+	opts: HeadingBuilderOptions = {}
 ): string {
 	// Chapter heading-scope suppresses per-scene H1s entirely — the
 	// chapter walker emits one H1 per chapter and concatenates scene
 	// drafts as continuous prose beneath it (per chapter-type § 7).
 	if (preset['dbench-compile-heading-scope'] === 'chapter') return '';
 	const numbering = preset['dbench-compile-chapter-numbering'];
-	if (numbering === 'numeric') return `# ${index}. ${title}`;
-	if (numbering === 'roman') return `# ${toRoman(index)}. ${title}`;
-	return `# ${title}`;
+	let heading: string;
+	if (numbering === 'numeric') heading = `# ${index}. ${title}`;
+	else if (numbering === 'roman') heading = `# ${toRoman(index)}. ${title}`;
+	else heading = `# ${title}`;
+	return appendHeadingMarker(heading, opts);
 }
 
 /**
@@ -244,14 +307,19 @@ export function buildSceneHeading(
 export function buildHierarchicalSceneHeading(
 	title: string,
 	index: number,
-	preset: CompilePresetFrontmatter
+	preset: CompilePresetFrontmatter,
+	opts: HeadingBuilderOptions = {}
 ): string {
 	const isChapterMode = preset['dbench-compile-heading-scope'] === 'chapter';
-	if (isChapterMode) return `## ${title}`;
-	const numbering = preset['dbench-compile-chapter-numbering'];
-	if (numbering === 'numeric') return `# ${index}. ${title}`;
-	if (numbering === 'roman') return `# ${toRoman(index)}. ${title}`;
-	return `# ${title}`;
+	let heading: string;
+	if (isChapterMode) heading = `## ${title}`;
+	else {
+		const numbering = preset['dbench-compile-chapter-numbering'];
+		if (numbering === 'numeric') heading = `# ${index}. ${title}`;
+		else if (numbering === 'roman') heading = `# ${toRoman(index)}. ${title}`;
+		else heading = `# ${title}`;
+	}
+	return appendHeadingMarker(heading, opts);
 }
 
 /**
@@ -269,10 +337,12 @@ export function buildHierarchicalSceneHeading(
  */
 export function buildSubSceneHeading(
 	title: string,
-	preset: CompilePresetFrontmatter
+	preset: CompilePresetFrontmatter,
+	opts: HeadingBuilderOptions = {}
 ): string {
 	const isChapterMode = preset['dbench-compile-heading-scope'] === 'chapter';
-	return isChapterMode ? `### ${title}` : `## ${title}`;
+	const heading = isChapterMode ? `### ${title}` : `## ${title}`;
+	return appendHeadingMarker(heading, opts);
 }
 
 /**

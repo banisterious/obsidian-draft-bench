@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+	appendHeadingMarker,
 	applyBodyScopeRule,
 	applyContentRules,
 	applyDinkusRule,
 	applyFrontmatterRule,
 	applyWikilinkRule,
+	buildHierarchicalSceneHeading,
 	buildSceneHeading,
+	buildSubSceneHeading,
+	HEADING_MARKER_CLASS,
 	normalizeWhitespaceArtifacts,
 	shiftH1sInBody,
 	stripCalloutMarkers,
@@ -157,6 +161,120 @@ describe('buildSceneHeading', () => {
 				})
 			)
 		).toBe('');
+	});
+
+	it('appends a source marker when both sourcePath and emitMarker are set', () => {
+		expect(
+			buildSceneHeading('Opening', 1, makePresetFm(), {
+				sourcePath: 'Scenes/01 - Opening.md',
+				emitMarker: true,
+			})
+		).toBe(
+			'# Opening<span class="dbench-mark" data-source="Scenes/01 - Opening.md"></span>'
+		);
+	});
+
+	it('omits the marker when emitMarker is false', () => {
+		expect(
+			buildSceneHeading('Opening', 1, makePresetFm(), {
+				sourcePath: 'Scenes/01 - Opening.md',
+				emitMarker: false,
+			})
+		).toBe('# Opening');
+	});
+
+	it('omits the marker when sourcePath is empty', () => {
+		expect(
+			buildSceneHeading('Opening', 1, makePresetFm(), {
+				sourcePath: '',
+				emitMarker: true,
+			})
+		).toBe('# Opening');
+	});
+
+	it('skips the marker on suppressed (empty) headings in chapter mode', () => {
+		expect(
+			buildSceneHeading(
+				'Opening',
+				1,
+				makePresetFm({ 'dbench-compile-heading-scope': 'chapter' }),
+				{ sourcePath: 'Scenes/01 - Opening.md', emitMarker: true }
+			)
+		).toBe('');
+	});
+});
+
+describe('buildHierarchicalSceneHeading', () => {
+	it('appends a source marker on the H1 in draft mode', () => {
+		expect(
+			buildHierarchicalSceneHeading('The Bottom', 2, makePresetFm(), {
+				sourcePath: 'Scenes/03 - The Bottom.md',
+				emitMarker: true,
+			})
+		).toBe(
+			'# The Bottom<span class="dbench-mark" data-source="Scenes/03 - The Bottom.md"></span>'
+		);
+	});
+
+	it('appends a source marker on the H2 in chapter mode', () => {
+		expect(
+			buildHierarchicalSceneHeading(
+				'The Bottom',
+				2,
+				makePresetFm({ 'dbench-compile-heading-scope': 'chapter' }),
+				{
+					sourcePath: 'Scenes/03 - The Bottom.md',
+					emitMarker: true,
+				}
+			)
+		).toBe(
+			'## The Bottom<span class="dbench-mark" data-source="Scenes/03 - The Bottom.md"></span>'
+		);
+	});
+});
+
+describe('buildSubSceneHeading', () => {
+	it('appends a source marker on the H2 in draft mode', () => {
+		expect(
+			buildSubSceneHeading('Apartment', makePresetFm(), {
+				sourcePath: 'Scenes/03/05 - The Apartment.md',
+				emitMarker: true,
+			})
+		).toBe(
+			'## Apartment<span class="dbench-mark" data-source="Scenes/03/05 - The Apartment.md"></span>'
+		);
+	});
+
+	it('appends a source marker on the H3 in chapter mode', () => {
+		expect(
+			buildSubSceneHeading(
+				'Apartment',
+				makePresetFm({ 'dbench-compile-heading-scope': 'chapter' }),
+				{
+					sourcePath: 'Scenes/03/05 - The Apartment.md',
+					emitMarker: true,
+				}
+			)
+		).toBe(
+			'### Apartment<span class="dbench-mark" data-source="Scenes/03/05 - The Apartment.md"></span>'
+		);
+	});
+});
+
+describe('appendHeadingMarker', () => {
+	it('escapes HTML special characters in the source path', () => {
+		expect(
+			appendHeadingMarker('# Test', {
+				sourcePath: 'a"b<c>d&e.md',
+				emitMarker: true,
+			})
+		).toBe(
+			'# Test<span class="dbench-mark" data-source="a&quot;b&lt;c&gt;d&amp;e.md"></span>'
+		);
+	});
+
+	it('exports HEADING_MARKER_CLASS so consumers can target the span', () => {
+		expect(HEADING_MARKER_CLASS).toBe('dbench-mark');
 	});
 });
 
@@ -456,6 +574,29 @@ describe('applyContentRules', () => {
 		const raw = '---\ntitle: X\n---\n## Draft\n';
 		const result = applyContentRules(raw, baseCtx());
 		expect(result).toBe('# Opening');
+	});
+
+	it('threads the source marker into the auto-prepended heading', () => {
+		const raw = '## Draft\nThe prose.';
+		const result = applyContentRules(
+			raw,
+			baseCtx({
+				sourcePath: 'Scenes/01 - Opening.md',
+				emitHeadingMarkers: true,
+			})
+		);
+		expect(result).toBe(
+			'# Opening<span class="dbench-mark" data-source="Scenes/01 - Opening.md"></span>\n\nThe prose.'
+		);
+	});
+
+	it('does not emit a marker when emitHeadingMarkers is unset', () => {
+		const raw = '## Draft\nThe prose.';
+		const result = applyContentRules(
+			raw,
+			baseCtx({ sourcePath: 'Scenes/01 - Opening.md' })
+		);
+		expect(result).toBe('# Opening\n\nThe prose.');
 	});
 
 	it('emits the body without any heading in chapter mode', () => {

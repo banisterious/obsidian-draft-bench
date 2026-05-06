@@ -1,5 +1,9 @@
 import type { CompilePresetFrontmatter } from '../../model/compile-preset';
-import { toRoman } from './content-rules';
+import {
+	appendHeadingMarker,
+	toRoman,
+	type HeadingBuilderOptions,
+} from './content-rules';
 
 /**
  * Build the chapter heading emitted in chapter heading-scope mode.
@@ -16,10 +20,13 @@ import { toRoman } from './content-rules';
 export function buildChapterHeading(
 	title: string,
 	index: number,
-	preset: CompilePresetFrontmatter
+	preset: CompilePresetFrontmatter,
+	opts: HeadingBuilderOptions = {}
 ): string {
 	const numbering = preset['dbench-compile-chapter-numbering'];
-	if (numbering === 'numeric') return `# ${index}. ${title}`;
-	if (numbering === 'roman') return `# ${toRoman(index)}. ${title}`;
-	return `# ${title}`;
+	let heading: string;
+	if (numbering === 'numeric') heading = `# ${index}. ${title}`;
+	else if (numbering === 'roman') heading = `# ${toRoman(index)}. ${title}`;
+	else heading = `# ${title}`;
+	return appendHeadingMarker(heading, opts);
 }

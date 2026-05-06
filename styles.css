@@ -1171,7 +1171,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-VIEW.CSS  (917 lines, 24.48 KB)
+   MANUSCRIPT-VIEW.CSS  (971 lines, 25.93 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1447,6 +1447,60 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	font-family: var(--dbench-preview-font-family);
 	font-size: var(--dbench-preview-font-size);
 	text-align: var(--dbench-preview-text-align);
+}
+
+.dbench-manuscript-view__continuous-prose {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-md);
+}
+
+/*
+ * Rendering-state spinner. Per
+ * docs/planning/manuscript-view-continuous-mode.md § 5, the spinner
+ * appears only when the compile + render takes longer than 250ms,
+ * implemented via a setTimeout cleared on completion. The icon
+ * reuses the shared `dbench-spinner` utility from base.css.
+ */
+.dbench-manuscript-view__continuous-spinner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--dbench-spacing-sm);
+	padding: var(--dbench-spacing-xl) var(--dbench-spacing-lg);
+	color: var(--text-muted);
+}
+
+.dbench-manuscript-view__continuous-spinner-icon {
+	display: inline-flex;
+	align-items: center;
+}
+
+/*
+ * Continuous-mode empty / error states. Mirrors the parent `__empty`
+ * block's tone (centered, muted) but uses dedicated class hooks so
+ * theme authors can tune Continuous-specific empties without
+ * affecting the no-projects welcome state.
+ */
+.dbench-manuscript-view__continuous-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--dbench-spacing-xs);
+	padding: var(--dbench-spacing-xl) var(--dbench-spacing-lg);
+	color: var(--text-muted);
+	text-align: center;
+}
+
+.dbench-manuscript-view__continuous-empty-message {
+	margin: 0;
+	color: var(--text-normal);
+	font-size: var(--font-ui-medium);
+}
+
+.dbench-manuscript-view__continuous-empty-hint {
+	margin: 0;
+	font-size: var(--font-ui-small);
 }
 
 /*
@@ -2325,7 +2379,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 10
-   Total:      2240 lines, 63.32 KB
+   Total:      2294 lines, 64.77 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
@@ -2334,7 +2388,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - preview-toolbar.css: 94 lines, 2.54 KB
    - welcome-modal.css: 94 lines, 2.21 KB
    - reorder-modal.css: 103 lines, 2.31 KB
-   - manuscript-view.css: 917 lines, 24.48 KB
+   - manuscript-view.css: 971 lines, 25.93 KB
    - settings-tab.css: 219 lines, 5.53 KB
 */
 

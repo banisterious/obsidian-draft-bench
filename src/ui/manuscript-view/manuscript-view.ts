@@ -24,7 +24,10 @@ import { renderSection } from './sections/section-base';
 import { renderProjectSummaryBody } from './sections/project-summary-section';
 import { renderManuscriptListBody } from './sections/manuscript-list-section';
 import { renderChapterListBody } from './sections/chapter-card-section';
-import { renderContinuousBody } from './sections/continuous';
+import {
+	renderContinuousBody,
+	type ContinuousBodyHandle,
+} from './sections/continuous';
 import { renderCompileCta, renderToolbar } from './sections/toolbar';
 import type { ManuscriptViewMode } from '../../model/settings';
 
@@ -70,6 +73,7 @@ export class ManuscriptView extends ItemView {
 	private viewState: ManuscriptViewState = { ...EMPTY_STATE };
 	private unsubscribeSelection: (() => void) | null = null;
 	private modifyDebounce: number | null = null;
+	private continuousHandle: ContinuousBodyHandle | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: DraftBenchPlugin) {
 		super(leaf);
@@ -161,7 +165,13 @@ export class ManuscriptView extends ItemView {
 			window.clearTimeout(this.modifyDebounce);
 			this.modifyDebounce = null;
 		}
+		this.disposeContinuous();
 		return Promise.resolve();
+	}
+
+	private disposeContinuous(): void {
+		this.continuousHandle?.dispose();
+		this.continuousHandle = null;
 	}
 
 	getState(): Record<string, unknown> {
@@ -240,6 +250,7 @@ export class ManuscriptView extends ItemView {
 		const container = this.containerEl.children[1] as HTMLElement;
 		const previousScroll = container.scrollTop;
 
+		this.disposeContinuous();
 		container.empty();
 		// `dbench-scope` unlocks the plugin's spacing / radius /
 		// transition custom properties defined in variables.css;
@@ -273,7 +284,11 @@ export class ManuscriptView extends ItemView {
 		});
 
 		if (mode === 'continuous') {
-			renderContinuousBody(content, this.plugin);
+			this.continuousHandle = renderContinuousBody(
+				content,
+				this.plugin,
+				project
+			);
 			window.requestAnimationFrame(() => {
 				container.scrollTop = previousScroll;
 			});

@@ -25,6 +25,7 @@ import { renderProjectSummaryBody } from './sections/project-summary-section';
 import { renderManuscriptListBody } from './sections/manuscript-list-section';
 import { renderChapterListBody } from './sections/chapter-card-section';
 import { renderCompileCta, renderToolbar } from './sections/toolbar';
+import type { ManuscriptViewMode } from '../../model/settings';
 
 /**
  * The Manuscript workspace-leaf view.
@@ -262,14 +263,25 @@ export class ManuscriptView extends ItemView {
 			return;
 		}
 
+		const projectId = project.frontmatter['dbench-id'];
+		const mode = this.getActiveMode(projectId);
+		this.renderTabs(container, projectId, mode);
+
 		const content = container.createDiv({
 			cls: 'dbench-manuscript-view__content',
 		});
 
+		if (mode === 'continuous') {
+			this.renderContinuousBodyStub(content);
+			window.requestAnimationFrame(() => {
+				container.scrollTop = previousScroll;
+			});
+			return;
+		}
+
 		renderCompileCta(content, this.plugin);
 		renderToolbar(content, this.plugin, project);
 
-		const projectId = project.frontmatter['dbench-id'];
 		const chapters = findChaptersInProject(this.plugin.app, projectId).sort(
 			(a, b) =>
 				(a.frontmatter['dbench-order'] ?? 0) -
@@ -381,6 +393,71 @@ export class ManuscriptView extends ItemView {
 		setIcon(newProjectButton, 'plus');
 		newProjectButton.addEventListener('click', () => {
 			this.openCreateProjectCommand();
+		});
+	}
+
+	private getActiveMode(projectId: string): ManuscriptViewMode {
+		const stored = this.plugin.settings.manuscriptViewMode[projectId];
+		return stored === 'continuous' ? 'continuous' : 'list';
+	}
+
+	private setActiveMode(projectId: string, mode: ManuscriptViewMode): void {
+		this.plugin.settings.manuscriptViewMode[projectId] = mode;
+		void this.plugin.saveSettings();
+	}
+
+	private renderTabs(
+		container: HTMLElement,
+		projectId: string,
+		activeMode: ManuscriptViewMode
+	): void {
+		const tabs = container.createDiv({
+			cls: 'dbench-manuscript-view__tabs',
+			attr: { role: 'tablist' },
+		});
+		this.renderTabButton(tabs, projectId, 'list', 'List', activeMode);
+		this.renderTabButton(
+			tabs,
+			projectId,
+			'continuous',
+			'Continuous',
+			activeMode
+		);
+	}
+
+	private renderTabButton(
+		tabs: HTMLElement,
+		projectId: string,
+		mode: ManuscriptViewMode,
+		label: string,
+		activeMode: ManuscriptViewMode
+	): void {
+		const isActive = activeMode === mode;
+		const button = tabs.createEl('button', {
+			cls: isActive
+				? 'dbench-manuscript-view__tab dbench-manuscript-view__tab--active'
+				: 'dbench-manuscript-view__tab',
+			text: label,
+			attr: {
+				type: 'button',
+				role: 'tab',
+				'data-tab': mode,
+				'aria-selected': isActive ? 'true' : 'false',
+			},
+		});
+		button.addEventListener('click', () => {
+			if (this.getActiveMode(projectId) === mode) return;
+			this.setActiveMode(projectId, mode);
+			this.render();
+		});
+	}
+
+	private renderContinuousBodyStub(container: HTMLElement): void {
+		// Placeholder pending step 4 (continuous body container module)
+		// per docs/planning/manuscript-view-continuous-mode.md.
+		container.createEl('p', {
+			cls: 'dbench-manuscript-view__placeholder',
+			text: 'Continuous mode is being built.',
 		});
 	}
 

@@ -201,6 +201,54 @@
 }
 
 /*
+ * Tab strip (List / Continuous). Mirrors the Manuscript Builder tab
+ * pattern (see styles/manuscript-builder.css) so writers experience
+ * one consistent affordance across the two surfaces. Reuses the
+ * --dbench-tab-active-accent Style Settings hook from the Builder.
+ *
+ * Per docs/planning/manuscript-view-continuous-mode.md § 1: plain text
+ * labels with a 2px accent-colored underline beneath the active tab;
+ * the strip's 1px bottom border is overlapped by 1px (negative margin
+ * on the active underline) so the active tab visually punches through
+ * the strip's border.
+ */
+.dbench-manuscript-view__tabs {
+	display: flex;
+	gap: var(--dbench-spacing-md);
+	margin-bottom: var(--dbench-spacing-sm);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.dbench-manuscript-view__tab {
+	margin: 0;
+	padding: 8px 14px;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	color: var(--text-muted);
+	font-size: var(--font-ui-medium);
+	cursor: pointer;
+	transition: color 0.12s, border-color 0.12s;
+}
+
+.dbench-manuscript-view__tab:hover:not(.dbench-manuscript-view__tab--active) {
+	color: var(--text-normal);
+}
+
+.dbench-manuscript-view__tab:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+}
+
+.dbench-manuscript-view__tab--active {
+	color: var(--dbench-tab-active-accent);
+	border-bottom-color: var(--dbench-tab-active-accent);
+}
+
+/*
  * Compile CTA — primary project action, promoted out of the 3-button
  * toolbar row so it reads as the "finish line" action. `.mod-cta`
  * supplies Obsidian's native accent treatment; the row here just

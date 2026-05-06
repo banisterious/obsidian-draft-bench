@@ -1154,7 +1154,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-VIEW.CSS  (844 lines, 22.28 KB)
+   MANUSCRIPT-VIEW.CSS  (892 lines, 23.72 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1357,6 +1357,54 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-manuscript-view__header-button:hover {
 	background: var(--interactive-hover);
 	color: var(--text-normal);
+}
+
+/*
+ * Tab strip (List / Continuous). Mirrors the Manuscript Builder tab
+ * pattern (see styles/manuscript-builder.css) so writers experience
+ * one consistent affordance across the two surfaces. Reuses the
+ * --dbench-tab-active-accent Style Settings hook from the Builder.
+ *
+ * Per docs/planning/manuscript-view-continuous-mode.md § 1: plain text
+ * labels with a 2px accent-colored underline beneath the active tab;
+ * the strip's 1px bottom border is overlapped by 1px (negative margin
+ * on the active underline) so the active tab visually punches through
+ * the strip's border.
+ */
+.dbench-manuscript-view__tabs {
+	display: flex;
+	gap: var(--dbench-spacing-md);
+	margin-bottom: var(--dbench-spacing-sm);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.dbench-manuscript-view__tab {
+	margin: 0;
+	padding: 8px 14px;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	color: var(--text-muted);
+	font-size: var(--font-ui-medium);
+	cursor: pointer;
+	transition: color 0.12s, border-color 0.12s;
+}
+
+.dbench-manuscript-view__tab:hover:not(.dbench-manuscript-view__tab--active) {
+	color: var(--text-normal);
+}
+
+.dbench-manuscript-view__tab:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+}
+
+.dbench-manuscript-view__tab--active {
+	color: var(--dbench-tab-active-accent);
+	border-bottom-color: var(--dbench-tab-active-accent);
 }
 
 /*
@@ -2235,7 +2283,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 9
-   Total:      2157 lines, 60.8 KB
+   Total:      2205 lines, 62.24 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
@@ -2243,7 +2291,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - manuscript-builder.css: 520 lines, 15.34 KB
    - welcome-modal.css: 94 lines, 2.21 KB
    - reorder-modal.css: 103 lines, 2.31 KB
-   - manuscript-view.css: 844 lines, 22.28 KB
+   - manuscript-view.css: 892 lines, 23.72 KB
    - settings-tab.css: 219 lines, 5.53 KB
 */
 

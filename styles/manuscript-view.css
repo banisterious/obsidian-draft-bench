@@ -389,43 +389,9 @@
 	margin: 0;
 }
 
-.dbench-manuscript-view__status-label {
-	display: flex;
-	align-items: center;
-	gap: var(--dbench-spacing-xs);
+.dbench-manuscript-view__breakdown-status {
 	color: var(--text-muted);
 	text-transform: capitalize;
-}
-
-/*
- * Colored dot prefix on breakdown labels. Same color variable the
- * scene-row chip uses, so a writer overriding one value matches both
- * surfaces. Out-of-vocabulary statuses get the default-neutral color.
- */
-.dbench-manuscript-view__status-label::before {
-	content: "";
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: var(--dbench-status-default);
-	flex-shrink: 0;
-}
-
-.dbench-manuscript-view__status-label[data-status="brainstorm"]::before,
-.dbench-manuscript-view__status-label[data-status="idea"]::before {
-	background: var(--dbench-status-brainstorm);
-}
-
-.dbench-manuscript-view__status-label[data-status="draft"]::before {
-	background: var(--dbench-status-draft);
-}
-
-.dbench-manuscript-view__status-label[data-status="revision"]::before {
-	background: var(--dbench-status-revision);
-}
-
-.dbench-manuscript-view__status-label[data-status="final"]::before {
-	background: var(--dbench-status-final);
 }
 
 .dbench-manuscript-view__status-value {
@@ -544,56 +510,30 @@
 }
 
 /*
- * Status chip — small pill carrying the status label. Rendered on
- * each scene row (grid column 2, row 2, below the scene title), on
- * sub-scene rows, and on chapter card headers (flex layout).
- * Foreground color comes from the per-status variable; background is
- * derived from the same color via `color-mix` so overriding the
- * foreground shifts the background too, no mismatch. Background
- * alone encodes status; no separate dot affordance.
+ * Status label — inline small-caps muted text rendered on each scene
+ * row, sub-scene row, and chapter card header. The D3 restyle (#30)
+ * dropped the Direction B chip-pill treatment with semantic-status
+ * colors in favor of a single muted-text rendering. The
+ * `data-status` attribute is preserved on the element for forward-
+ * compat queries but no longer drives any color rule.
  *
- * Visual rules live on the bare class. Layout (grid placement) lives
- * on context-scoped selectors so the chip travels cleanly between
- * scene rows and other surfaces.
+ * Layout (grid placement on scene rows) lives on context-scoped
+ * selectors so the label travels cleanly between scene rows and
+ * other surfaces.
  */
-.dbench-manuscript-view__status-chip {
-	display: inline-flex;
-	align-items: center;
-	padding: 2px var(--dbench-spacing-sm);
-	border-radius: 999px;
-	color: var(--dbench-status-default);
-	background: color-mix(in srgb, currentcolor 12%, transparent);
+.dbench-manuscript-view__status-label {
 	font-size: var(--font-smallest);
-	line-height: 1.4;
+	font-variant: small-caps;
+	letter-spacing: 0.06em;
+	color: var(--text-muted);
+	white-space: nowrap;
 }
 
-.dbench-manuscript-view__scene-row .dbench-manuscript-view__status-chip {
+.dbench-manuscript-view__scene-row .dbench-manuscript-view__status-label {
 	grid-column: 2;
 	grid-row: 2;
 	align-self: start;
 	justify-self: start;
-}
-
-.dbench-manuscript-view__status-chip-label {
-	text-transform: lowercase;
-	letter-spacing: 0.02em;
-}
-
-.dbench-manuscript-view__status-chip[data-status="brainstorm"],
-.dbench-manuscript-view__status-chip[data-status="idea"] {
-	color: var(--dbench-status-brainstorm);
-}
-
-.dbench-manuscript-view__status-chip[data-status="draft"] {
-	color: var(--dbench-status-draft);
-}
-
-.dbench-manuscript-view__status-chip[data-status="revision"] {
-	color: var(--dbench-status-revision);
-}
-
-.dbench-manuscript-view__status-chip[data-status="final"] {
-	color: var(--dbench-status-final);
 }
 
 .dbench-manuscript-view__scene-drafts {
@@ -616,7 +556,7 @@
 	grid-row: 1 / 4;
 }
 
-.dbench-manuscript-view__scene-row--has-subtitle .dbench-manuscript-view__status-chip,
+.dbench-manuscript-view__scene-row--has-subtitle .dbench-manuscript-view__status-label,
 .dbench-manuscript-view__scene-row--has-subtitle .dbench-manuscript-view__scene-drafts {
 	grid-row: 3;
 }
@@ -643,7 +583,7 @@
  *       dbench-manuscript-view__chapter-card[--expanded]
  *         dbench-manuscript-view__chapter-header  (clickable toggle)
  *           __chapter-chevron / __chapter-order / __chapter-title /
- *           __status-chip / __chapter-words
+ *           __status-label / __chapter-words
  *         dbench-manuscript-view__chapter-body[--collapsed]
  *           dbench-manuscript-view__scene-list
  *             dbench-manuscript-view__scene-row * N
@@ -794,7 +734,7 @@
  *     dbench-manuscript-view__scene-card[--expanded]
  *       dbench-manuscript-view__scene-card-header  (clickable toggle)
  *         __scene-card-chevron / __scene-card-order /
- *         __scene-card-title / __status-chip /
+ *         __scene-card-title / __status-label /
  *         __scene-card-words / __scene-card-action
  *       dbench-manuscript-view__scene-card-body[--collapsed]
  *         dbench-manuscript-view__sub-scene-list

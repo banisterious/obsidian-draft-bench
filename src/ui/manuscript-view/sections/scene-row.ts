@@ -55,7 +55,7 @@ export function renderSceneRow(
 		});
 	}
 
-	renderStatusChip(item, scene.frontmatter['dbench-status']);
+	renderStatusLabel(item, scene.frontmatter['dbench-status']);
 
 	const wordEl = item.createDiv({
 		cls: 'dbench-manuscript-view__scene-words',
@@ -101,25 +101,22 @@ function readSubtitle(scene: SceneNote): string {
 }
 
 /**
- * Render a status chip — a small pill carrying the status label. The
- * pill background and text both derive from the same per-status color
- * variable, so the background alone is sufficient to encode status.
+ * Render the scene's status as inline small-caps muted text. Reused
+ * across scene rows, sub-scene rows, chapter cards, and scene cards.
  * The `data-status` attribute carries the status value lowercased so
- * CSS selectors can assign per-status color via
- * `[data-status="brainstorm"]` etc. Label text preserves the writer's
- * configured casing. Out-of-vocabulary values inherit the
- * default-neutral color.
+ * future selectors / queries can target it; current CSS doesn't use
+ * per-status color rules (D3 restyle dropped semantic-status palette
+ * in #30). Label text preserves the writer's configured casing — the
+ * small-caps treatment comes from `font-variant`, not from
+ * `text-transform`.
  *
- * Exported for chapter-card headers, which also use a chip.
+ * Exported for chapter / scene / sub-scene callers.
  */
-export function renderStatusChip(container: HTMLElement, status: string): void {
-	const chip = container.createSpan({
-		cls: 'dbench-manuscript-view__status-chip',
-		attr: { 'data-status': status.toLowerCase() },
-	});
-	chip.createSpan({
-		cls: 'dbench-manuscript-view__status-chip-label',
+export function renderStatusLabel(container: HTMLElement, status: string): void {
+	container.createSpan({
+		cls: 'dbench-manuscript-view__status-label',
 		text: status,
+		attr: { 'data-status': status.toLowerCase() },
 	});
 }
 

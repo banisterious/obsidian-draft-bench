@@ -184,11 +184,11 @@ function appendStatusRow(
 	scenes: number,
 	chapters: number
 ): void {
-	// `data-status` drives the ::before colored-dot style in
-	// manuscript-view.css; lowercased so CSS selectors match
-	// regardless of vocabulary casing.
+	// `data-status` is preserved on the breakdown DT for forward-compat
+	// queries; the D3 restyle (#30) dropped per-status color rules in
+	// CSS, so the attribute no longer affects visual rendering today.
 	dl.createEl('dt', {
-		cls: 'dbench-manuscript-view__status-label',
+		cls: 'dbench-manuscript-view__breakdown-status',
 		text: status,
 		attr: { 'data-status': status.toLowerCase() },
 	});

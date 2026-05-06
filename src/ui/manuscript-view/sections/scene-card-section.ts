@@ -14,7 +14,7 @@ import {
 	attachWikilinkOpenAffordances,
 	type OpenSpec,
 } from './open-affordances';
-import { renderStatusChip, renderWordsAndProgress } from './scene-row';
+import { renderStatusLabel, renderWordsAndProgress } from './scene-row';
 import { renderSubSceneRow } from './sub-scene-row';
 
 /**
@@ -89,7 +89,7 @@ export function renderSceneCard(
 	});
 	attachWikilinkOpenAffordances(titleEl, (spec) => onOpenScene(scene, spec));
 
-	renderStatusChip(header, scene.frontmatter['dbench-status']);
+	renderStatusLabel(header, scene.frontmatter['dbench-status']);
 
 	const wordEl = header.createDiv({
 		cls: 'dbench-manuscript-view__scene-card-words',

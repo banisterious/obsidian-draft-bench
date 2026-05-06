@@ -22,7 +22,7 @@ import {
 import { renderSceneCard } from './scene-card-section';
 import {
 	renderSceneRow,
-	renderStatusChip,
+	renderStatusLabel,
 	renderWordsAndProgress,
 } from './scene-row';
 
@@ -145,7 +145,7 @@ function renderChapterCard(
 	// don't fire alongside the open.
 	attachWikilinkOpenAffordances(titleEl, (spec) => onOpenChapter(chapter, spec));
 
-	renderStatusChip(header, chapter.frontmatter['dbench-status']);
+	renderStatusLabel(header, chapter.frontmatter['dbench-status']);
 
 	const wordEl = header.createDiv({
 		cls: 'dbench-manuscript-view__chapter-words',

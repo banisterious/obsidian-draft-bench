@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-05-05
+
+Manuscript leaf restyle. The leaf moves from Direction B (Ulysses warm — chips, semantic status colors, gradient progress fills) to Direction D3, a Builder-aligned minimal aesthetic that harmonizes with the Manuscript Builder modal + leaf shipped in 0.3.0 / 0.3.1.
+
+### Changed
+
+- **Manuscript leaf restyle: Direction D3** ([#30](https://github.com/banisterious/obsidian-draft-bench/issues/30)). Status chips with semantic per-status background colors are replaced with inline small-caps muted text. Status dots in the project breakdown are dropped. Per-scene mini progress bars are dropped (writers see progress as text in the count label format; the project-level bar remains the canonical visual signal). Scene rows flatten from a 2-row grid to a single-row 4-column layout (order · title · status · count) with subtitle support flipping to 2 rows. The order capsule's pill background drops to plain tabular-numeric text. The Compile button's gradient + soft-shadow override drops to Obsidian's stock `.mod-cta` solid accent. The project progress bar shrinks from 8px gradient to 2px hairline solid accent. Section heads shift from `--text-normal` semibold to `--text-muted` small-caps to match the Builder's section dividers.
+- **Drafts column dropped from scene rows.** The "0 drafts" / "1 draft" / "N drafts" column on each scene / sub-scene row is removed. Writers see drafts on the scene file itself; the leaf is for navigation and the per-row clutter wasn't earning its real estate.
+
+### Removed
+
+- **Per-status Style Settings exposures.** The four `--dbench-status-*` variable-color knobs (brainstorm/idea, draft, revision, final) are removed from the Style Settings UI. The underlying CSS variables stay in `variables.css` because the Manuscript Builder's status filter pills (#25) still use them.
+
 ## [0.3.2] - 2026-05-05
 
 Mobile support. Draft Bench now loads on Obsidian Mobile (Android verified; iOS / iPadOS untested). Vault output rides along for the binary compile formats so PDF / ODT / DOCX work on mobile without the desktop-only Electron save dialog.

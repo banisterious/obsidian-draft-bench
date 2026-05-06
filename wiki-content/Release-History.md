@@ -4,6 +4,23 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.3.3: 2026-05-05 — Manuscript leaf restyle
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.3.3)
+
+The Manuscript leaf moves from Direction B (Ulysses warm — chips, semantic status colors, gradient progress) to **Direction D3**, a Builder-aligned minimal aesthetic. Now harmonizes with the Manuscript Builder modal + leaf that shipped in 0.3.0 / 0.3.1: hairline rhythm, no semantic-status chrome, stock `.mod-cta` for the Compile button, section heads as small-caps muted text. Pure visual / IA polish; no API or data-shape change.
+
+### Changed
+
+- **Manuscript leaf restyle (Direction D3)** ([#30](https://github.com/banisterious/obsidian-draft-bench/issues/30)). Status chips replaced with inline small-caps muted text. Status dots in the project breakdown dropped. Per-scene mini progress bars dropped (writers read progress as text; the project-level bar is the canonical visual signal). Scene rows flatten to a single-row 4-column grid (order · title · status · count). Order capsule pill drops to plain tabular-numeric text. Compile button's gradient + shadow override drops to Obsidian's stock `.mod-cta` solid accent. Project progress bar shrinks from 8px gradient to 2px hairline solid accent. Section heads to `--text-muted` small-caps, matching the Builder.
+- **Drafts column dropped from scene rows.** The "N drafts" column on each row is removed. Writers see drafts on the scene file itself; the leaf is for navigation.
+
+### Removed
+
+- **Per-status Style Settings exposures.** The four `--dbench-status-*` variable-color knobs are removed from the Style Settings UI. The CSS variables stay in `variables.css` because the Manuscript Builder's status filter pills (#25) still use them.
+
+1112 unit + integration tests, all green. Mobile-supported (Android verified; iOS / iPadOS untested) — same as 0.3.2.
+
 ## 0.3.2: 2026-05-05 — Mobile support
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.3.2)

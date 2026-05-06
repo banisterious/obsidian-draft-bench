@@ -6,6 +6,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+Manuscript view Continuous mode marquee. The Manuscript leaf gains a List / Continuous tab strip; the new Continuous tab renders the entire project as one scrollable read-only document — chapters, scenes, sub-scenes, full bodies — for revision read-throughs that the per-scene List view isn't shaped for.
+
+### Added
+
+- **Manuscript view Continuous mode** ([#31](https://github.com/banisterious/obsidian-draft-bench/issues/31)). A new tab strip below the project picker toggles between **List** (today's navigation surface) and **Continuous** (read-through). Continuous mode renders the full manuscript in `dbench-order`, top to bottom, no preset filters applied — always-everything by design. Click any chapter / scene / sub-scene heading to jump to its source file (cmd/ctrl-click = new tab; +shift = split; +alt = window; right-click for the same options via context menu). Writer-authored H2/H3s inside scene bodies stay inert. File-save reactivity re-renders the prose on a 400 ms debounce with scroll position preserved across the re-render. The same four-control typography toolbar from the Manuscript Builder Preview tab (text alignment, reading width, font size, font family) sits above the prose; preferences persist globally. Active mode persists per project; new projects default to List.
+- **`manuscriptViewMode` settings field** (`Record<projectId, 'list' | 'continuous'>`). Mirrors the existing `manuscriptBuilderTabState` pattern.
+- **Opt-in heading source markers in `CompileService.generate(preset, opts)`.** New `GenerateOptions.emitHeadingMarkers` flag. When set, the compile pipeline appends a `<span class="dbench-mark" data-source="<vault-path>"></span>` marker inside every pipeline-emitted title heading so a post-render DOM walker can attribute headings back to their source files. Off by default — Continuous mode opts in; binary renderers don't.
+- **Shared preview-typography toolbar module** (`src/ui/shared/preview-toolbar.ts` + `styles/preview-toolbar.css`). Class hooks renamed from `dbench-manuscript-builder__*-toolbar*` to a neutral `dbench-preview-toolbar` block prefix. The Manuscript Builder Preview tab and the Manuscript view's Continuous mode mount the same toolbar.
+
+### Notes
+
+- **Embeds are stripped from the Continuous render in V1.** The compile pipeline's `stripEmbeds` always strips regardless of preset configuration, so embeds (`![[...]]`) won't render inline in Continuous mode. Tracked as the "Embed handling" open question in [docs/planning/manuscript-view-continuous-mode.md](docs/planning/manuscript-view-continuous-mode.md); writers with heavy-embed projects should flag the friction in #31.
+- **Mobile compatibility.** Continuous mode is mobile-supported on the same surface as the rest of the leaf (Android verified via the 0.3.2 elevation; iOS / iPadOS untested).
+
 ## [0.3.3] - 2026-05-05
 
 Manuscript leaf restyle. The leaf moves from Direction B (Ulysses warm — chips, semantic status colors, gradient progress fills) to Direction D3, a Builder-aligned minimal aesthetic that harmonizes with the Manuscript Builder modal + leaf shipped in 0.3.0 / 0.3.1.

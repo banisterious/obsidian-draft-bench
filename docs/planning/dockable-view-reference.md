@@ -310,7 +310,7 @@ Dockable views work on mobile but the UX is different — mobile shows one pane 
 
 Obsidian's mobile app honors the same `ItemView` lifecycle; the registration code is identical.
 
-**DB mapping.** V1 is desktop-only (`isDesktopOnly: true` in `manifest.json`), so mobile is out of scope. But: don't actively fight mobile compatibility in the leaf's code. Prefer tap-friendly hit targets and `overflow-y: auto` even though nothing depends on them today.
+**DB mapping.** Mobile-supported as of 0.3.2 (`isDesktopOnly: false`; Android verified, iOS / iPadOS untested). The Manuscript leaf and the Manuscript Builder leaf both work on phone form-factor in the audited surfaces. Continue to prefer tap-friendly hit targets, `overflow-y: auto` on scroll containers, and no hover-only interactions when adding leaf surfaces; file `mobile-android` / `mobile-ios` issues if a specific layout case surfaces breakage.
 
 ## Multiple leaves of the same view type
 

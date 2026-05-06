@@ -52,7 +52,9 @@ All three share the same `Drafts/` folder; their frontmatter parent ref (`dbench
 
 ## Does it work on mobile?
 
-V1 is desktop-only. Mobile support is under post-V1 evaluation — the primary UX (Manuscript view, Manuscript Builder, reorder modal, Style Settings integration) was designed for a desktop form factor.
+Yes, as of 0.3.2. Verified on **Android** via on-device walkthrough (Manuscript view, Manuscript Builder modal + leaf, scene / chapter / sub-scene / draft creation, the compile pipeline, Style Settings, Bases integration). **iOS / iPadOS are untested** — bug reports are welcome and triaged via the `mobile-ios` label.
+
+Compile-to-disk (the OS save dialog flow) stays desktop-only because it depends on Electron APIs that don't exist on mobile. Compile-to-vault works on every supported platform; configure your preset's `dbench-compile-output` to `vault` if you want to compile from mobile.
 
 ## Can I use existing notes?
 

@@ -12,7 +12,7 @@ Checklist for reviewing Draft Bench's deferred forward-compat items once the Pha
 
 **Audit, not implementation sprint.** The deliverable is a set of promote / keep-deferred / needs-more-data recommendations with evidence, plus a bundle-size measurement. Any actual implementation work is a follow-up.
 
-Not covered by this audit: new Phase 3 items that haven't been captured in a reference doc yet (if any surfaced during real use), Phase 5+ work (`chapter` type, auxiliary content, mobile support), or anything in `Post-V1 questions queued` in `.session-restore.md`. Those get their own audit if warranted.
+Not covered by this audit: new Phase 3 items that haven't been captured in a reference doc yet (if any surfaced during real use), Phase 5+ work (`chapter` type, auxiliary content), or anything in `Post-V1 questions queued` in `.session-restore.md`. Mobile support shipped in 0.3.2 and is no longer a deferred item. Those get their own audit if warranted.
 
 ---
 

@@ -1,21 +1,20 @@
 # Mobile support reference: Charted Roots patterns
 
-**Status:** Reference material. **Not** a design spec for Draft Bench's mobile support. Implementation tracking lives at [#29](https://github.com/banisterious/obsidian-draft-bench/issues/29).
+**Status:** Reference material. **Not** a design spec for Draft Bench's mobile support. The mobile elevation shipped in 0.3.2 (Android verified; iOS / iPadOS untested); see [#29](https://github.com/banisterious/obsidian-draft-bench/issues/29). The patterns and DB commitments below remain authoritative for ongoing mobile work.
 
 **Purpose.** Captures Charted Roots' (CR) mobile-support approach (label taxonomy, triage path, implementation patterns, verification workflow) so that when DB elevates mobile readiness from "desktop-only" to "mobile-supported pre-1.0," the design starts from a concrete, well-understood prior art rather than a blank page. The summary below was drafted in a parallel CR session and ported here on 2026-05-05; the patterns are general-purpose Obsidian-mobile knowledge derived from CR's lived experience, not CR-specific code structure.
 
 **How to use this document.**
 
-- **DB is currently desktop-only** (`manifest.json` declares `isDesktopOnly: true`). No mobile-readiness work has been done; the patterns below are reference for the elevation pass when it happens.
-- **This document is for the later pass**, when DB actually flips the desktop-only flag and audits its surfaces for mobile compatibility. The CR patterns are context for that design pass, not a commitment that DB must track CR one-for-one.
-- **Fresh eyes intended.** Mobile support in DB might adopt CR's patterns as-is, reshape them for the writing-workflow context (different surfaces are mobile-relevant: Manuscript view vs Manuscript Builder vs editing scene bodies), or take a different approach for some surfaces (e.g., gating the Scrivener importer entirely off mobile). Those decisions belong to the implementation task, not to this document.
+- **DB is mobile-supported as of 0.3.2** (`manifest.json` declares `isDesktopOnly: false`). The initial elevation pass landed under #29 with Android verification; iOS / iPadOS ship untested. The patterns below are the reference for ongoing mobile work (audit follow-ups, new mobile-related issues, future feature gating).
+- **CR patterns shaped DB's choices**, not all of them mechanically. The label taxonomy, triage 3-step, Platform-API patterns, and verification workflow are adopted near-verbatim. The DB Commitments section at the end records where DB diverged or made specific calls.
 - **Verbatim portions.** The label taxonomy, triage 3-step, Platform-API patterns, and verification workflow below come almost verbatim from the CR session summary; they're general enough that they apply to any Obsidian plugin contemplating mobile support.
 
 **Related docs.**
 
-- [specification.md](specification.md): authoritative DB spec. Currently treats mobile support as a non-goal by default; an elevation decision would change that.
+- [specification.md § Platform](specification.md): authoritative DB spec; the Platform section captures the post-0.3.2 mobile-supported state.
 - [coding-standards.md](../developer/coding-standards.md): TypeScript and CSS standards. The `Platform.isMobile` / `Platform.isPhone` patterns below would slot under § "Platform-conditional rendering" if DB adopts them.
-- [post-v1-forward-compat-audit.md](post-v1-forward-compat-audit.md): the mobile elevation decision is the kind of thing that benefits from a forward-compat audit pass first to surface latent desktop assumptions in the codebase.
+- [post-v1-forward-compat-audit.md](post-v1-forward-compat-audit.md): the original audit listed mobile as deferred; the 0.3.2 elevation moved it out of that bucket. Future mobile-related decisions still benefit from auditing the codebase for latent desktop assumptions.
 
 ---
 

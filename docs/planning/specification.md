@@ -867,7 +867,7 @@ The data model and UI accommodate these features without architectural changes.
 
 ### Platform
 
-V1 is desktop-only (`isDesktopOnly: true` in `manifest.json`). Mobile compatibility is a post-V1 evaluation — mobile Obsidian restricts some API surface and imposes bundle-size constraints, and the primary UX (Manuscript view, Manuscript Builder, reorder modal, Style Settings integration) is designed around a desktop form factor.
+Mobile-supported as of 0.3.2 (`isDesktopOnly: false` in `manifest.json`). Verified on Android via on-device walkthrough across Manuscript view, Manuscript Builder modal + leaf, scene / chapter / sub-scene / draft creation, the compile pipeline, Style Settings, and Bases integration. iOS / iPadOS ship untested; bug reports are welcome and triaged via the `mobile-ios` label. The compile pipeline's disk-output paths (Electron save dialog plus Node `fs`) are desktop-only by construction; vault-output works on both platforms for every supported format. See [mobile-reference.md](mobile-reference.md) for the patterns and DB commitments.
 
 ### Dependencies
 
@@ -927,7 +927,7 @@ These decisions are deferred and will be resolved as development progresses:
 - **Beat granularity**: V1 default is beats-as-headings inside scene notes. The `beat` type remains on the post-V1 type list for writers who need per-beat word counts or Bases queryability, but it stays "available if you want it, not first-class UI." No V1 modal or template support.
 - **Custom Bases views**: The plugin does not register a custom Bases view type. The property schema is sufficient: every `dbench-*` property is Bases-queryable, and writers build manuscript tables, status queues, and corkboards with vanilla Bases. Phase 2 ships template `.base` files as starters.
 - **Templater integration depth**: Pass-through behavior shipped in Phase 2 (P2.A.4). Scene templates route through Templater when installed; see § Templater Integration. Deeper integration (plugin-aware Templater commands, e.g., `tp.draftBench.previousScene()`) remains deferred until a writer requests it.
-- **Mobile support**: V1 is desktop-only (`isDesktopOnly: true` in `manifest.json`). Post-V1 re-evaluation of mobile compatibility is deferred; the decision depends on whether mobile becomes a meaningful portion of the user base once V1 ships.
+- **Mobile support**: shipped in 0.3.2 (Android verified; iOS / iPadOS untested). See § Platform.
 
 ## Documentation
 
@@ -1004,7 +1004,6 @@ Promoted from "Architected For (Post-V1)" to pre-1.0 on 2026-05-02 after live-va
 - Additional note types (character, location, research, etc.), bounded by the [Charted Roots cross-plugin scope](branding.md#positioning-relative-to-adjacent-obsidian-plugins): DB owns narrative, CR owns world. Auxiliary content stays user-managed in V1.
 - Optional folder filter: scoped vault scanning for mixed-purpose vaults. Off by default; writers with large or diverse vaults can restrict Draft Bench's discovery to include/exclude folder lists. Matches Charted Roots' `FolderFilterService` pattern.
 - Templater integration (deeper than pass-through, if warranted).
-- Mobile support (if warranted).
 
 ### Post-V1 candidates
 

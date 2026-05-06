@@ -18,7 +18,7 @@ Draft Bench is an Obsidian plugin for writers. It manages projects, chapters (op
 
 - Obsidian v1.7.2 or later.
 - Draft Bench plugin installed and enabled.
-- Desktop Obsidian. V1 is desktop-only; mobile support is under post-V1 evaluation.
+- Desktop Obsidian (Windows / macOS / Linux) **or** Obsidian Mobile on Android. iOS / iPadOS are untested as of 0.3.2; reports welcome. Compile-to-disk (the OS save dialog flow) is desktop-only; compile-to-vault works on every supported platform.
 
 ## Installation
 

@@ -165,7 +165,7 @@ Scrivener stores document bodies as RTF (`.rtf`) or RTFD (`.rtfd`, an RTF-with-a
 - **Comments:** per § 5 above.
 - **Cross-document Scrivener Links:** Scrivener documents can link to each other internally via UUID-tagged markers. Pass 1 of the import builds a `scrivener-uuid -> dbench-file-path` map; pass 2 walks scene bodies and rewrites the link markers as Obsidian wikilinks pointing at the imported equivalents. Unresolvable links (target document was excluded from import or not found) become `[broken: <original-title>]` text with an entry in the import error log.
 
-**RTF library spike (Step 4 of implementation):** evaluate `rtf-parser`, `rtf-stream-parser`, and a roll-your-own minimal subset against representative real-scene RTF bodies. Decision criteria: italics / bold / footnotes / inline images all working, bundle-size impact acceptable for a desktop-only plugin, cleanly licensed for distribution. Output of the spike: a chosen library (or rolled subset) and a small wrapper at `src/import/scrivener/rtf-to-markdown.ts`.
+**RTF library spike (Step 4 of implementation):** evaluate `rtf-parser`, `rtf-stream-parser`, and a roll-your-own minimal subset against representative real-scene RTF bodies. Decision criteria: italics / bold / footnotes / inline images all working, bundle-size impact acceptable for a desktop-only feature inside an otherwise mobile-supported plugin, cleanly licensed for distribution. Output of the spike: a chosen library (or rolled subset) and a small wrapper at `src/import/scrivener/rtf-to-markdown.ts`.
 
 **Considered and not chosen:**
 

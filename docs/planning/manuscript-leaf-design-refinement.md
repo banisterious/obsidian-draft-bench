@@ -183,7 +183,7 @@ Preserved for future-context; the reasoning behind the lock.
 
 ## Open questions still
 
-- **Mobile prep.** V1 is desktop-only, but any aesthetic choices baked in now will carry to mobile if/when it lands. Worth a pass on scene-list readability at ~320px when implementation is done.
+- **Mobile prep.** Mobile-supported as of 0.3.2 (Android verified). Aesthetic choices baked in now apply on phone form-factor too; worth a pass on scene-list readability at ~320px when implementation is done.
 
 ---
 

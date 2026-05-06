@@ -724,14 +724,15 @@ V1 ships four formats. Format and destination are encoded as two orthogonal pres
 
 ```yaml
 dbench-compile-format: md           # md | pdf | odt | docx
-dbench-compile-output: vault        # vault | disk (vault meaningful only when format=md)
+dbench-compile-output: vault        # vault | disk (both valid for every format)
 ```
 
-- **Markdown to vault** (`format: md`, `output: vault`): compiled manuscript as a new note at `<project folder>/Compiled/<preset name>.md`. Re-compile overwrites. Default for new presets.
-- **Markdown to disk** (`format: md`, `output: disk`): markdown file saved outside the vault via Obsidian's native save dialog.
-- **PDF** (`format: pdf`): direct export via [pdfmake](https://pdfmake.github.io/docs/) with lazy-loaded VFS fonts (Roboto + DejaVu Sans Mono). Dynamically imported on first compile so the ~200KB library and ~1.5MB font VFS don't affect plugin load time. Save dialog for destination.
-- **ODT** (`format: odt`): OpenDocument Text via a JSZip-built archive (mimetype + manifest + styles.xml + content.xml subset). System fonts, no bundling. Save dialog for destination.
-- **DOCX** (`format: docx`): Microsoft Word format via the [docx](https://docx.js.org/) library (a self-contained DOCX writer that needs no external Pandoc dependency). Shares the same MD-AST intermediate as ODT and PDF (parser at `src/core/compile/md-ast.ts`); a `render-docx.ts` orchestrator and a pure `docx/doc-definition.ts` translator emit the DOCX archive. System fonts, no bundling. Save dialog for destination. V1 scope matches ODT and PDF's capped subset (headings, paragraphs, bullet + numbered lists, bold + italic; blockquotes, code blocks, tables, and footnotes degrade to plain paragraphs). Honors `dbench-compile-page-size` (LETTER / A4). Targeted because most agents and editors expect Word-format submissions, so producing a DOCX from MD or ODT outside the plugin is friction every submission cycle.
+Format and destination are orthogonal: every combination is reachable. Vault output writes to `<project folder>/Compiled/<preset name>.<extension>` and re-compile overwrites silently. Disk output prompts via Obsidian's native save dialog. Disk output is desktop-only by construction (depends on Electron's `remote.dialog` and Node `fs`); vault output works on desktop and mobile.
+
+- **Markdown** (`format: md`): compiled manuscript as a new note (vault) or an arbitrary path via the save dialog (disk).
+- **PDF** (`format: pdf`): direct export via [pdfmake](https://pdfmake.github.io/docs/) with lazy-loaded VFS fonts (Roboto + DejaVu Sans Mono). Dynamically imported on first compile so the ~200KB library and ~1.5MB font VFS don't affect plugin load time.
+- **ODT** (`format: odt`): OpenDocument Text via a JSZip-built archive (mimetype + manifest + styles.xml + content.xml subset). System fonts, no bundling.
+- **DOCX** (`format: docx`): Microsoft Word format via the [docx](https://docx.js.org/) library (a self-contained DOCX writer that needs no external Pandoc dependency). Shares the same MD-AST intermediate as ODT and PDF (parser at `src/core/compile/md-ast.ts`); a `render-docx.ts` orchestrator and a pure `docx/doc-definition.ts` translator emit the DOCX archive. System fonts, no bundling. V1 scope matches ODT and PDF's capped subset (headings, paragraphs, bullet + numbered lists, bold + italic; blockquotes, code blocks, tables, and footnotes degrade to plain paragraphs). Honors `dbench-compile-page-size` (LETTER / A4). Targeted because most agents and editors expect Word-format submissions, so producing a DOCX from MD or ODT outside the plugin is friction every submission cycle.
 
 One preset, one output. Writers wanting multiple formats (e.g., MD for vault records + DOCX for submission) create two presets; cheap under the compile-as-artifact model.
 

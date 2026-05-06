@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- **Mobile support (Android verified; iOS / iPadOS untested)** ([#29](https://github.com/banisterious/obsidian-draft-bench/issues/29)). Draft Bench now loads on Obsidian Mobile. Manuscript view, Manuscript Builder modal + leaf, scene / chapter / sub-scene / draft creation, retrofit, integrity, the compile pipeline, Bases integration, and Style Settings are all mobile-supported. Verified on Android via on-device walkthrough. iOS / iPadOS will ship untested until a Mac-equipped contributor with iOS access surfaces; bug reports are welcome and triaged via the `mobile-ios` label.
+- **Vault output for PDF / ODT / DOCX compile.** Presets configured for `format: pdf | odt | docx` plus `output: vault` now write the compiled binary to `<project>/Compiled/<preset>.<ext>` via Obsidian's vault API (`createBinary` / `modifyBinary`). Vault output works on both desktop and mobile. The disk-output paths are unchanged and remain desktop-only by construction (depend on Electron's save dialog and Node `fs`). Supersedes the original D-06 "binary formats are disk-only" clause.
+
+### Changed
+
+- **`isDesktopOnly: false` in `manifest.json`.** Plugin loads on Obsidian Mobile.
+
+### Notes
+
+- The Scrivener `.scriv` importer ([#28](https://github.com/banisterious/obsidian-draft-bench/issues/28)) is not yet shipped, but its commands and Manuscript view button will gate to desktop via `Platform.isDesktopApp` when they land. RTF parsing and large-file ops make it a structurally desktop-only feature.
+
 ## [0.3.1] - 2026-05-05
 
 Dockable Manuscript Builder leaf — the 0.3.0 Builder modal gains a leaf form so writers can pin Preview next to a scene they're editing in another pane. The 0.3.0 modal stays as the default entry point; a dock button on the modal opens the leaf, and the leaf adds debounced file-save reactivity that the modal couldn't support.

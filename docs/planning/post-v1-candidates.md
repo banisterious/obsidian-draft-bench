@@ -17,8 +17,9 @@
 
 Items that started as candidates here and have since graduated to their own planning docs (with implementation sequences, ratification sections, and a target release):
 
-- **Manuscript Builder Preview tab** — promoted 2026-05-04, target 0.3.0. Adds a Preview tab to the Manuscript Builder modal that renders the current preset's compile output as a continuous read-only document, alongside today's Build tab (the existing collapsible-section content). Complementary with [#2 (Scrivenings-style continuous Manuscript view)](#2-scrivenings-style-continuous-manuscript-view-alternate-mode) below: two distinct use cases, two independent ship paths. See [manuscript-builder-preview.md](manuscript-builder-preview.md).
+- **Manuscript Builder Preview tab** — promoted 2026-05-04, target 0.3.0. Adds a Preview tab to the Manuscript Builder modal that renders the current preset's compile output as a continuous read-only document, alongside today's Build tab (the existing collapsible-section content). Complementary with the Manuscript view continuous mode below: two distinct use cases, two independent ship paths. See [manuscript-builder-preview.md](manuscript-builder-preview.md).
 - **Scrivener `.scriv` import** — promoted 2026-05-05, target pre-1.0 (specific minor TBD). Reads a Scrivener 3 project (`.scrivx` index + per-document RTF/RTFD bodies) and produces a Draft Bench project: project / chapters / scenes / sub-scenes mapped from the binder hierarchy, RTF bodies converted to markdown, inspector metadata preserved, snapshots optionally imported as drafts. DB's first wizard. See [scrivener-import.md](scrivener-import.md).
+- **Manuscript view continuous mode** — promoted 2026-05-05, target 0.4.0. Adds a Continuous view mode to the Manuscript leaf (alongside today's List view) rendering the entire manuscript as scrollable read-only prose. Complementary with the Manuscript Builder Preview tab: Builder Preview is preset-scoped (filters, scope, transforms applied) and Builder-shaped, while Continuous is always-everything and Manuscript-leaf-shaped. See [manuscript-view-continuous-mode.md](manuscript-view-continuous-mode.md).
 
 ---
 
@@ -46,22 +47,6 @@ The following appeared as candidates and have since landed in main during the pr
 **Dependencies.** Compile pipeline complete (it produces the snapshot bytes). Probably wants chapter-type complete too, since snapshots of chapter-aware projects need to capture chapter bodies + scenes correctly.
 
 **References.** [specification.md § Writing Sessions, Goals, and Revision Snapshots](specification.md). Longform's draft-management model is the obvious prior art.
-
----
-
-### 2. Scrivenings-style continuous Manuscript view (alternate mode)
-
-**Scope.** A second view mode on the Manuscript leaf: in addition to today's chapter-cards-and-scene-rows, a "continuous read" mode that renders the entire manuscript as one scrollable read-only document. Descends into sub-scenes the way compile does. Click any heading to open the underlying note in the active leaf for editing. Toggle between modes via a button on the leaf header.
-
-**Rationale.** Scrivener's "Scrivenings" is a beloved feature for read-throughs. Writers want to see their manuscript as a continuous flow during revision passes (catch repetition, pacing problems, voice drift). The chapter-card view is great for navigation and progress; it's not great for reading. StoryLine has this (with embedded Live Preview editors, which is heavier than necessary).
-
-**Effort.** Moderate. The compile pipeline already produces continuous markdown; the new mode renders that markdown in the leaf via Obsidian's `MarkdownRenderer`. Click handlers on rendered headings to open source notes. Toggle persistence in the same plumbing as chapter collapse state. Estimate 1 week.
-
-**Dependencies.** Chapter-type implementation complete. Compile pipeline complete (or at least the markdown intermediate from `CompileService`).
-
-**References.** Scrivener's Scrivenings mode. StoryLine's Manuscript view. Obsidian's `MarkdownRenderer.render` API.
-
-**Relationship to the modal-based Preview tab (promoted, target 0.3.0).** The [Manuscript Builder Preview tab](manuscript-builder-preview.md) ships the same continuous-render machinery inside the Manuscript Builder modal as a "preview before compile" task surface. Because Obsidian modals block interaction with the rest of the workspace, that implementation explicitly defers external-edit reactivity (file-save reactivity, debounced live-update, manual refresh button) per [its § 5](manuscript-builder-preview.md). This leaf-mode candidate is where that reactivity would naturally live, since a leaf can stay open while writers edit source notes in another pane — making the two surfaces complementary rather than redundant.
 
 ---
 

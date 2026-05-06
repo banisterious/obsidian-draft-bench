@@ -10,17 +10,19 @@ import { renderStatusLabel, renderWordCount } from './scene-row';
 /**
  * Sub-scene-row primitive used inside scene-card bodies (per
  * [sub-scene-type.md § 6](../../../docs/planning/sub-scene-type.md)).
- * Mirrors `renderSceneRow` (scene-row.ts) one structural level deeper:
- * order capsule + clickable title + optional subtitle + status chip +
- * async word-count badge + draft count.
+ * Mirrors `renderSceneRow` (scene-row.ts) one structural level deeper.
+ * Single-row 4-column grid: order · title · status · count, with the
+ * row flipping to 2 rows only when the writer has set a
+ * `dbench-subtitle`. The D3 restyle (#30) dropped the per-row
+ * draft-count column.
  *
  * Self-contained: fires its own async word-count fill so callers don't
  * need to thread word-badge collections.
  *
- * Shares the status-chip and progress helpers from scene-row.ts; the
- * BEM root differs (`__sub-scene-row` vs. `__scene-row`) so styles can
- * tune the deeper level (smaller order capsule, tighter padding) without
- * affecting scenes.
+ * Shares the status-label and word-count helpers from scene-row.ts;
+ * the BEM root differs (`__sub-scene-row` vs. `__scene-row`) so styles
+ * can tune the deeper level (tighter padding, indented order column)
+ * without affecting scenes.
  */
 export function renderSubSceneRow(
 	parent: HTMLElement,
@@ -59,12 +61,6 @@ export function renderSubSceneRow(
 		cls: 'dbench-manuscript-view__sub-scene-words',
 	});
 	wordEl.setText('...');
-
-	const draftCount = subScene.frontmatter['dbench-drafts']?.length ?? 0;
-	item.createSpan({
-		cls: 'dbench-manuscript-view__sub-scene-drafts',
-		text: draftCount === 1 ? '1 draft' : `${draftCount} drafts`,
-	});
 
 	void wordCountCache
 		.countForSubScene(subScene)

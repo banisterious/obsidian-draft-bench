@@ -477,36 +477,8 @@
 	text-align: right;
 }
 
-.dbench-manuscript-view__scene-progress-label {
+.dbench-manuscript-view__scene-words-label {
 	font-size: var(--font-smallest);
-}
-
-.dbench-manuscript-view__scene-progress-track {
-	width: 100%;
-	background-color: var(--background-modifier-border);
-	border-radius: var(--dbench-radius-sm);
-	height: 3px;
-	overflow: hidden;
-}
-
-.dbench-manuscript-view__scene-progress-fill {
-	/* Matches the project-hero gradient treatment (Direction B). */
-	background: linear-gradient(
-		90deg,
-		color-mix(in srgb, var(--interactive-accent) 70%, transparent),
-		var(--interactive-accent)
-	);
-	height: 100%;
-	border-radius: inherit;
-	transition: width 120ms ease;
-}
-
-.dbench-manuscript-view__scene-words--overage .dbench-manuscript-view__scene-progress-fill {
-	background: linear-gradient(
-		90deg,
-		color-mix(in srgb, var(--color-orange, #e0800c) 70%, transparent),
-		var(--color-orange, #e0800c)
-	);
 }
 
 /*
@@ -660,14 +632,6 @@
 	text-align: right;
 }
 
-.dbench-manuscript-view__chapter-words--overage .dbench-manuscript-view__scene-progress-fill {
-	background: linear-gradient(
-		90deg,
-		color-mix(in srgb, var(--color-orange, #e0800c) 70%, transparent),
-		var(--color-orange, #e0800c)
-	);
-}
-
 .dbench-manuscript-view__chapter-action {
 	flex: 0 0 auto;
 	padding: var(--size-2-1, 2px);
@@ -806,14 +770,6 @@
 	text-align: right;
 }
 
-.dbench-manuscript-view__scene-card-words--overage .dbench-manuscript-view__scene-progress-fill {
-	background: linear-gradient(
-		90deg,
-		color-mix(in srgb, var(--color-orange, #e0800c) 70%, transparent),
-		var(--color-orange, #e0800c)
-	);
-}
-
 .dbench-manuscript-view__scene-card-action {
 	flex: 0 0 auto;
 	padding: var(--size-2-1, 2px);
@@ -915,14 +871,6 @@
 	font-size: var(--font-smallest);
 	font-variant-numeric: tabular-nums;
 	text-align: right;
-}
-
-.dbench-manuscript-view__sub-scene-words--overage .dbench-manuscript-view__scene-progress-fill {
-	background: linear-gradient(
-		90deg,
-		color-mix(in srgb, var(--color-orange, #e0800c) 70%, transparent),
-		var(--color-orange, #e0800c)
-	);
 }
 
 .dbench-manuscript-view__sub-scene-drafts {

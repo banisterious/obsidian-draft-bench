@@ -23,7 +23,7 @@ import { renderSceneCard } from './scene-card-section';
 import {
 	renderSceneRow,
 	renderStatusLabel,
-	renderWordsAndProgress,
+	renderWordCount,
 } from './scene-row';
 
 /**
@@ -251,12 +251,7 @@ function renderChapterCard(
 			const target = readTargetWords(
 				chapter.frontmatter as unknown as Record<string, unknown>
 			);
-			renderWordsAndProgress(
-				wordEl,
-				count,
-				target,
-				'dbench-manuscript-view__chapter-words--overage'
-			);
+			renderWordCount(wordEl, count, target);
 		})
 		.catch(() => {
 			if (!wordEl.isConnected) return;

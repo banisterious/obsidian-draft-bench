@@ -75,12 +75,7 @@ export function renderSceneRow(
 			const target = readTargetWords(
 				scene.frontmatter as unknown as Record<string, unknown>
 			);
-			renderWordsAndProgress(
-				wordEl,
-				count,
-				target,
-				'dbench-manuscript-view__scene-words--overage'
-			);
+			renderWordCount(wordEl, count, target);
 		})
 		.catch(() => {
 			if (!wordEl.isConnected) return;
@@ -121,25 +116,25 @@ export function renderStatusLabel(container: HTMLElement, status: string): void 
 }
 
 /**
- * Render a word count + optional target progress into `container`.
- * Used by both scene rows and chapter cards; `overageClass` is the
- * caller's BEM modifier added when the count exceeds the target so
- * each context can tint its own track.
+ * Render a word count (with optional target-progress label) as inline
+ * text into `container`. Used by scene rows, sub-scene rows, scene
+ * cards, and chapter cards. The D3 restyle (#30) dropped the
+ * mini progress bar that previously rendered alongside the label;
+ * the writer reads progress as text ("820 / 1,000 (82%)") rather
+ * than a visualized bar. Overage state is no longer surfaced
+ * per-row; the project-level progress bar is the canonical signal.
  */
-export function renderWordsAndProgress(
+export function renderWordCount(
 	container: HTMLElement,
 	count: number,
-	target: number | null,
-	overageClass: string
+	target: number | null
 ): void {
 	container.empty();
-	container.removeClass(overageClass);
 
 	const label = container.createEl('span', {
-		cls: 'dbench-manuscript-view__scene-progress-label',
+		cls: 'dbench-manuscript-view__scene-words-label',
 	});
 
-	let percent = 0;
 	if (target === null) {
 		label.setText(
 			`${count.toLocaleString()} ${count === 1 ? 'word' : 'words'}`
@@ -147,17 +142,5 @@ export function renderWordsAndProgress(
 	} else {
 		const view = formatProgress(count, target);
 		label.setText(view.label);
-		percent = view.percent;
-		if (view.overage) {
-			container.addClass(overageClass);
-		}
 	}
-
-	const track = container.createDiv({
-		cls: 'dbench-manuscript-view__scene-progress-track',
-	});
-	const fill = track.createDiv({
-		cls: 'dbench-manuscript-view__scene-progress-fill',
-	});
-	fill.style.width = `${percent}%`;
 }

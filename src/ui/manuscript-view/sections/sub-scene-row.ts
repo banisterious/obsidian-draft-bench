@@ -5,7 +5,7 @@ import {
 	attachWikilinkOpenAffordances,
 	type OpenSpec,
 } from './open-affordances';
-import { renderStatusLabel, renderWordsAndProgress } from './scene-row';
+import { renderStatusLabel, renderWordCount } from './scene-row';
 
 /**
  * Sub-scene-row primitive used inside scene-card bodies (per
@@ -73,12 +73,7 @@ export function renderSubSceneRow(
 			const target = readTargetWords(
 				subScene.frontmatter as unknown as Record<string, unknown>
 			);
-			renderWordsAndProgress(
-				wordEl,
-				count,
-				target,
-				'dbench-manuscript-view__sub-scene-words--overage'
-			);
+			renderWordCount(wordEl, count, target);
 		})
 		.catch(() => {
 			if (!wordEl.isConnected) return;

@@ -417,10 +417,11 @@ This section describes what the UI surfaces do. For **how** to build them — co
 
 Draft Bench's UI has two primary surfaces, split per [D-07](decisions/D-07-control-center-split.md) to match the shape of what each surface hosts. (The split was originally Manuscript view + Control Center; the Control Center concept was deferred for V1 — see [control-center-reference.md](control-center-reference.md) — and replaced by a focused Manuscript Builder modal that owns the compile workflow.)
 
-**Manuscript view (dockable workspace leaf).** The ambient writing companion. Lives in the right sidebar by default; can be dragged to the left sidebar, the main pane, or detached to a popout window. Hosts:
+**Manuscript view (dockable workspace leaf).** The ambient writing companion. Lives in the right sidebar by default; can be dragged to the left sidebar, the main pane, or detached to a popout window. Below the project picker sits a **List / Continuous** tab strip (added in 0.4.0); each tab presents a different read of the same project. Active mode persists per project via `manuscriptViewMode` in plugin settings; new projects default to List. Hosts:
 
 - **Project picker** at the top — dropdown of all discoverable projects. Selection persists across reloads.
-- **Compile CTA** above the toolbar (primary action, opens the Manuscript Builder for the active project's preset workflow).
+- **List / Continuous tab strip** below the picker. List is the navigation surface (everything below); Continuous is a full-manuscript read-through (described in [manuscript-view-continuous-mode.md](archive/manuscript-view-continuous-mode.md), shipped 0.4.0): renders the entire project as one scrollable read-only document, click-heading to open the source file, file-save reactivity with scroll preservation, shared typography toolbar with the Builder Preview tab.
+- **Compile CTA** above the toolbar (primary action, opens the Manuscript Builder for the active project's preset workflow). List tab only.
 - **Toolbar** with three buttons: **New scene**, **New draft of current scene**, **Reorder scenes**. Buttons invoke the existing commands / dedicated modals; the leaf stays open.
 - **Project summary** section (collapsible): status, shape, identifier, total word count, hero progress bar when `dbench-target-words` is set on the project, per-status word/scene-and-chapter breakdown. For chapter-aware projects, the project total includes chapter bodies as well as scenes (per [chapter-type.md § 5](chapter-type.md) ratification).
 - **Manuscript list** section (collapsible). The body shape switches on whether the active project has any chapters and whether any of its scenes have sub-scenes:
@@ -1007,8 +1008,7 @@ Promoted from "Architected For (Post-V1)" to pre-1.0 on 2026-05-02 after live-va
 
 ### Post-V1 candidates
 
-Features under consideration but not committed to a specific version. See [post-v1-candidates.md](post-v1-candidates.md) for the ranked list with scope sketches, rationale, effort estimates, and dependencies. Strongest candidates as of 2026-04-26:
+Features under consideration but not committed to a specific version. See [post-v1-candidates.md](post-v1-candidates.md) for the ranked list with scope sketches, rationale, effort estimates, and dependencies. Strongest candidates as of 2026-05-06:
 
-1. **Scrivener `.scriv` import** — migration path from the dominant prior tool.
+1. **Scrivener `.scriv` import** — migration path from the dominant prior tool. Planning doc complete at [scrivener-import.md](scrivener-import.md); implementation gated on RTF library spike.
 2. **Project-level full-manuscript snapshots** — already promised under § Writing Sessions; the "First Draft / Second Draft" sense in the Longform model.
-3. **Scrivenings-style continuous Manuscript view (alternate mode)** — read/scan the entire manuscript inline as one scrollable read.

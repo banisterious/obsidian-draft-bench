@@ -2,9 +2,9 @@
 
 Planning doc for adding a Continuous view mode to the Manuscript leaf, alongside today's List view. Originally captured as candidate #2 in [post-v1-candidates.md](post-v1-candidates.md), promoted to its own planning doc on 2026-05-05 with a 0.4.0 target.
 
-**Status:** Drafted 2026-05-05. Sections below mirror [manuscript-builder-preview.md](manuscript-builder-preview.md)'s template. Implementation tracked via [#31](https://github.com/banisterious/obsidian-draft-bench/issues/31).
+**Status:** ✅ Complete. Drafted 2026-05-05; shipped in 0.4.0 (2026-05-06) per the 14-step implementation sequence below. Implementation tracked via [#31](https://github.com/banisterious/obsidian-draft-bench/issues/31).
 
-**Target release:** 0.4.0. Sequenced after the Manuscript leaf restyle ([#30](https://github.com/banisterious/obsidian-draft-bench/issues/30), targeting 0.3.3) so the new tab strip lands on the D3-aligned visual base.
+**Target release:** 0.4.0 (shipped). Sequenced after the Manuscript leaf restyle ([#30](https://github.com/banisterious/obsidian-draft-bench/issues/30), shipped 0.3.3) so the new tab strip landed on the D3-aligned visual base.
 
 **One-line scope.** Add a Continuous view mode to the Manuscript leaf that renders the entire manuscript as one scrollable read-only document, alongside today's List view. Toggle via a `List / Continuous` tab strip in the leaf header. Reuses the Manuscript Builder Preview's renderer machinery (`MarkdownRenderer.render`, 250ms spinner threshold, typography toolbar, Style Settings vars).
 

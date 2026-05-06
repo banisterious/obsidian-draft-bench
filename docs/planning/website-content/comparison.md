@@ -50,7 +50,7 @@ Concrete differences:
 | Frontmatter properties | ✓ (`dbench-` namespaced) | ✓ (un-prefixed keys) |
 | Bidirectional-link integrity service | ✓ | — |
 
-If you want one plugin that does everything, StoryLine is the right choice. If you want a focused tool that handles the manuscript spine and leaves the rest to Bases queries, plain notes, or sibling plugins like [Charted Roots](https://github.com/banisterious/charted-roots), Draft Bench is built for that.
+If you want one plugin that does everything, StoryLine is the right choice. If you want a focused tool that handles the manuscript spine and leaves the rest to Bases queries, plain notes, or sibling plugins like [Charted Roots](https://chartedroots.com/), Draft Bench is built for that.
 
 ---
 
@@ -68,7 +68,7 @@ Where Draft Bench fits Scrivener users:
 
 Where it doesn't:
 
-- **Corkboard plotting, character sheets, research-folder management, label/keyword cross-referencing, name-generator, project-statistics dashboards.** None of these are V1 scope. Some are post-V1 candidates; some are explicitly out of scope (entity management belongs to [Charted Roots](https://github.com/banisterious/charted-roots) or to user-managed plain notes).
+- **Corkboard plotting, character sheets, research-folder management, label/keyword cross-referencing, name-generator, project-statistics dashboards.** None of these are V1 scope. Some are post-V1 candidates; some are explicitly out of scope (entity management belongs to [Charted Roots](https://chartedroots.com/) or to user-managed plain notes).
 - **Scrivener `.scriv` import.** Post-V1 candidate, not V1.
 
 Some writers will run both: Scrivener for the writing-room work, Obsidian + Draft Bench for everything else. Some will move fully into Obsidian. Both are reasonable.
@@ -95,4 +95,4 @@ If you're a one-novel writer who prefers minimal tooling and doesn't mind hand-r
 
 Draft Bench's `dbench-` frontmatter prefix is namespaced so it doesn't collide with other plugins' properties. Coexisting with Longform or StoryLine in the same vault is technically possible — nothing in Draft Bench fights them — but the manuscript-spine scope overlaps, and most writers will pick one tool to drive the manuscript.
 
-The exception: [Charted Roots](https://github.com/banisterious/charted-roots) is the sibling plugin, designed to coexist with Draft Bench by design. Charted Roots owns world-building (entities, relationships, characters, locations, timelines); Draft Bench owns the narrative spine (projects, chapters, scenes, sub-scenes, drafts, compile). Two focused plugins, one shared vault, no overlap.
+The exception: [Charted Roots](https://chartedroots.com/) is the sibling plugin, designed to coexist with Draft Bench by design. Charted Roots owns world-building (entities, relationships, characters, locations, timelines); Draft Bench owns the narrative spine (projects, chapters, scenes, sub-scenes, drafts, compile). Two focused plugins, one shared vault, no overlap.

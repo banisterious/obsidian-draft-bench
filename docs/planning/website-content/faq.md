@@ -34,7 +34,7 @@ Draft Bench extends that model with chapter as a first-class note type, drafts a
 
 [StoryLine](https://github.com/PixeroJan/obsidian-storyline) is much broader — a Scrivener-in-Obsidian that handles plotting (corkboard, kanban, plotgrid, subway map, timeline), entity management (characters, locations, codex), beat-sheet templates, plot-hole detection, pacing analysis, and Scrivener `.scriv` import.
 
-Draft Bench is narrow on purpose. It handles the manuscript spine and stays out of the rest. If you want one plugin that covers the whole writing-tool surface, StoryLine is excellent at that. If you want a focused tool for the structural editing of a manuscript with everything else in plain notes or in [Charted Roots](https://github.com/banisterious/charted-roots), Draft Bench is built for that.
+Draft Bench is narrow on purpose. It handles the manuscript spine and stays out of the rest. If you want one plugin that covers the whole writing-tool surface, StoryLine is excellent at that. If you want a focused tool for the structural editing of a manuscript with everything else in plain notes or in [Charted Roots](https://chartedroots.com/), Draft Bench is built for that.
 
 ### Can it replace Scrivener?
 
@@ -62,7 +62,7 @@ Yes — Draft Bench supports Obsidian Mobile as of 0.3.2. **Android is verified*
 
 ### Does Draft Bench manage characters or locations?
 
-No. Auxiliary content — characters, locations, research, worldbuilding — stays user-managed in plain markdown notes, or moves to [Charted Roots](https://github.com/banisterious/charted-roots), the sibling plugin that owns world-building. Two focused plugins in one shared vault.
+No. Auxiliary content — characters, locations, research, worldbuilding — stays user-managed in plain markdown notes, or moves to [Charted Roots](https://chartedroots.com/), the sibling plugin that owns world-building. Two focused plugins in one shared vault.
 
 This is a design commitment, not an unfinished scope. Writers who want everything in one plugin should look at StoryLine.
 
@@ -78,7 +78,7 @@ No. Every Draft Bench artifact is a regular markdown file with `dbench-` frontma
 
 Generally yes. Draft Bench's `dbench-` frontmatter prefix is namespaced so it doesn't collide with other plugins' properties, and the plugin opts in to standard Obsidian APIs (FileManager, Bases, Style Settings) rather than parallel mechanisms.
 
-Specific compatibility: Draft Bench is built to coexist with [Charted Roots](https://github.com/banisterious/charted-roots) (sibling plugin, no overlap by design). Coexistence with Longform or StoryLine in the same vault is technically possible but not a tested configuration — those plugins overlap with Draft Bench's manuscript-spine scope, so most writers will pick one.
+Specific compatibility: Draft Bench is built to coexist with [Charted Roots](https://chartedroots.com/) (sibling plugin, no overlap by design). Coexistence with Longform or StoryLine in the same vault is technically possible but not a tested configuration — those plugins overlap with Draft Bench's manuscript-spine scope, so most writers will pick one.
 
 ## Getting help
 

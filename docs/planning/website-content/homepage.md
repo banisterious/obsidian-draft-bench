@@ -31,7 +31,7 @@ Five short loops on the [features page](/features/) walk through new projects, t
 
 Draft Bench is one of several Obsidian writing plugins. The closest spiritual ancestor is [Longform](https://github.com/kevboh/longform); the plugin's `Drafts/` and compile concepts owe a real debt to Longform's prior art. The closest contemporary is [StoryLine](https://github.com/PixeroJan/obsidian-storyline), a much broader Scrivener-in-Obsidian that handles plotting, characters, locations, timelines, and analytics in addition to the manuscript.
 
-Draft Bench's scope is deliberately smaller. The narrative spine, well, and nothing else. Auxiliary content — characters, locations, research notes — stays user-managed in plain markdown, or moves to the sibling [Charted Roots](https://github.com/banisterious/charted-roots) plugin which owns world-building. Two focused plugins, one shared vault.
+Draft Bench's scope is deliberately smaller. The narrative spine, well, and nothing else. Auxiliary content — characters, locations, research notes — stays user-managed in plain markdown, or moves to the sibling [Charted Roots](https://chartedroots.com/) plugin which owns world-building. Two focused plugins, one shared vault.
 
 For a longer comparison, see [How Draft Bench compares](comparison.md).
 

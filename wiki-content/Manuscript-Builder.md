@@ -159,7 +159,13 @@ The same compile flow is reachable from:
 
 ## Manuscript view
 
-The Manuscript view is the dockable companion to the Manuscript Builder. It opens in the right sidebar by default and shows:
+The Manuscript view is the dockable companion to the Manuscript Builder. It opens in the right sidebar by default. Below the project picker sits a **List / Continuous** tab strip (added in 0.4.0); each tab presents a different read of the same project.
+
+Open it via the ribbon icon, the **Draft Bench: Show manuscript view** palette command, or by right-clicking a project note.
+
+### List tab
+
+The List tab is the navigation surface — the ordered scene list, progress chrome, and structural actions. It shows:
 
 - The active project + a picker for switching projects.
 - A **Project summary** section: status, identifier, total word count, hero progress bar (when `dbench-target-words` is set), per-status word/scene-and-chapter breakdown.
@@ -168,7 +174,18 @@ The Manuscript view is the dockable companion to the Manuscript Builder. It open
   - **Chapter-aware projects** show stacked **chapter cards**. Each card has a clickable header (chevron + order capsule + chapter title link + status chip + chapter word-count rollup + a "New draft of this chapter" icon button on the right) and a body listing the chapter's scenes via the same scene-row primitive used by the flat list. Cards are individually collapsible — collapse state persists per chapter across reloads. Click the chapter title to open the chapter note; click anywhere else on the header to toggle.
 - A toolbar with **New scene**, **New draft**, **Reorder scenes**, and a primary **Compile** button.
 
-Open it via the ribbon icon, the **Draft Bench: Show manuscript view** palette command, or by right-clicking a project note.
+### Continuous tab
+
+The Continuous tab renders the entire manuscript top-to-bottom as one scrollable read-only document — chapters, scenes, sub-scenes, full bodies. Useful for revision passes (catch repetition, pacing problems, voice drift) where the List tab's per-scene affordances are noise.
+
+- **Always-everything scope.** No status filters or scene exclusions — the full manuscript renders regardless of the active compile preset's settings. Filtering is a Builder concern; Continuous mode is for reading.
+- **Click any chapter / scene / sub-scene heading to jump to its source file.** Plain click opens in the active leaf; cmd/ctrl-click = new tab; +shift = split; +alt = new window; right-click (or long-press on mobile) surfaces the same options via the standard context menu. Writer-authored H2/H3s inside scene bodies are inert — they're prose structure, not navigation.
+- **Live updates as you write.** Editing any project file (project note, chapter, scene, sub-scene) re-renders the prose after a 400 ms debounce, with scroll position preserved across the re-render. Typing rapidly batches into a single re-render rather than thrashing.
+- **Typography toolbar.** The same four controls from the Manuscript Builder Preview tab (text alignment, reading width, font size, font family) sit above the prose. Changes apply instantly and persist globally — flipping between the Builder Preview and Continuous mode shouldn't reset your reading preferences.
+
+The active mode persists per project. A new project opens in List by default; flip to Continuous on a project and next time you open it, Continuous restores.
+
+Embeds are stripped from the Continuous render in V1 (the underlying compile pipeline strips them); planning + footnote content renders inline. Heavy-embed projects may surface this as missing media; flag it in the FR thread for [#31](https://github.com/banisterious/obsidian-draft-bench/issues/31) if it bites your workflow.
 
 ## Plugin settings
 

@@ -30,6 +30,17 @@ export type DraftsFolderPlacement = 'project-local' | 'per-scene' | 'vault-wide'
 export type ManuscriptBuilderTab = 'build' | 'preview';
 
 /**
+ * The two view modes on the Manuscript leaf. `list` (default) is the
+ * navigation surface introduced in V1: project picker, project summary,
+ * scene / chapter cards, drafts, status. `continuous` (added in 0.4.0)
+ * renders the entire manuscript top-to-bottom as one scrollable read-
+ * only document, sharing the renderer + typography toolbar with the
+ * Manuscript Builder Preview tab. See
+ * [docs/planning/manuscript-view-continuous-mode.md](../../docs/planning/manuscript-view-continuous-mode.md).
+ */
+export type ManuscriptViewMode = 'list' | 'continuous';
+
+/**
  * Preview tab typography preferences. Surfaced as an in-modal
  * toolbar above the rendered prose; tunes the `--dbench-preview-*`
  * CSS variables consumed by the Preview tab (declared in
@@ -275,6 +286,20 @@ export interface DraftBenchSettings {
 	manuscriptBuilderSelectedPresetId: Record<string, string>;
 
 	/**
+	 * Per-project last-active view mode on the Manuscript leaf. Keyed
+	 * by the project's `dbench-id`. Missing entries default to `'list'`,
+	 * so a writer who has never opened Continuous mode lands on the
+	 * familiar List view on first open of a project.
+	 *
+	 * Persistence rationale mirrors `manuscriptBuilderTabState`,
+	 * `chapterCollapseState`, and `sceneCollapseState`: route through
+	 * `saveSettings()` so late-session flips survive reload (per
+	 * [docs/planning/manuscript-view-continuous-mode.md § 8](../../docs/planning/manuscript-view-continuous-mode.md)).
+	 * Empty `{}` on first install.
+	 */
+	manuscriptViewMode: Record<string, ManuscriptViewMode>;
+
+	/**
 	 * Preview tab typography preferences. Tunes the in-modal
 	 * Preview toolbar's controls (text alignment, reading width,
 	 * font size, font family). Globally scoped — these are
@@ -331,6 +356,7 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	sceneCollapseState: {},
 	manuscriptBuilderTabState: {},
 	manuscriptBuilderSelectedPresetId: {},
+	manuscriptViewMode: {},
 	previewTypography: {
 		textAlign: 'left',
 		readingWidth: 'full',

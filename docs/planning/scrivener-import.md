@@ -109,17 +109,51 @@ Scrivener attaches several writer-defined metadata axes to each document:
 
 **Ratified 2026-05-05: opt-in toggle in Step 5 (Options), default off; per-scene cap dropdown (1 / 3 / 5 / all) when on.**
 
+**Amended 2026-05-06:** filename template field surfaces in Step 5 when snapshot import is on. Default template matches native DB drafts; writers can edit to surface Scrivener titles. Per-snapshot title preserved in `scrivener-snapshot-title` frontmatter regardless of whether the template references it.
+
 Scrivener snapshots are per-document RTF copies with a title (often empty / auto-named with timestamp) and a creation timestamp. A heavy-snapshot user can have hundreds across a project.
 
 - **Default: opt-in off.** Most first-time importers want a clean slate; their Scrivener snapshot history is a backup safety net rather than active material.
-- **When on:** per-scene cap defaults to "Most recent 3" with options 1 / 3 / 5 / all. Imported snapshots become `dbench-type: draft` files in the standard DB drafts location for the parent scene, with the original Scrivener snapshot title and timestamp preserved (`dbench-created-at` set to the snapshot timestamp; original title to the file name).
+- **When on:** per-scene cap defaults to "Most recent 3" with options 1 / 3 / 5 / all. Imported snapshots become `dbench-type: draft` files in the standard DB drafts location for the parent scene; `dbench-created-at` is set to the snapshot's creation timestamp; the original Scrivener title is preserved as `scrivener-snapshot-title` frontmatter (empty string when the snapshot was untitled).
 - **Snapshot bodies use the same RTF -> markdown conversion path** as primary scene bodies (per § 6).
+
+#### Filename template
+
+When snapshot import is on, Step 5 surfaces a single text field that controls how each imported snapshot's filename is built. Default template:
+
+```
+{scene} - Draft {n} ({date_compact})
+```
+
+Resolved against a typical scene this produces `01 - Opening - Draft 2 (20240315).md` — bit-identical to what `resolveDraftFilename` produces for natively-created drafts (per [src/core/drafts.ts:113-125](../../src/core/drafts.ts#L113-L125)). Imported snapshots sit indistinguishably alongside drafts the writer creates natively after the import. Writers who want their Scrivener snapshot titles surfaced in the filename can edit to `{scene} - {title} ({date_compact})` or similar; the help text below the field lists the available variables.
+
+**Available variables:**
+
+| Variable | Resolves to | Example |
+|---|---|---|
+| `{scene}` | Parent scene's basename | `01 - Opening` |
+| `{title}` | Scrivener snapshot title; `Untitled` when empty | `before edit` |
+| `{date}` | Snapshot creation date (`YYYY-MM-DD`) | `2024-03-15` |
+| `{date_compact}` | Snapshot creation date (`YYYYMMDD`); matches native pattern | `20240315` |
+| `{time}` | Snapshot creation time (`HHMM`, 24-hour) | `1430` |
+| `{n}` | 1-based per-scene counter in chronological order | `2` |
+
+**Resolution + safety rules:**
+
+- Empty `{title}` resolves to the literal `Untitled` rather than producing awkward double spaces or empty segments in the output.
+- After full substitution, filesystem-unsafe characters (`/ \ : * ? " < > |`) in the result are replaced with `-`. Applies to both literal template content and resolved variable values, so a Scrivener title containing `/` or a writer-typed template that introduces a path separator both get flattened.
+- If two snapshots resolve to the same filename (writer's template doesn't disambiguate, e.g., bare `{title}`), append ` 2`, ` 3`, ... in import order, matching Obsidian's native "Untitled" / "Untitled 1" / "Untitled 2" pattern. Last-resort safety net only; well-formed templates won't trigger it.
+- The Scrivener title is preserved in `scrivener-snapshot-title` frontmatter regardless of whether `{title}` appears in the template. Filename is presentation; frontmatter is source of truth. Writers who edit the template later (via post-import rename, scripts, etc.) don't lose the Scrivener provenance.
 
 **Considered and not chosen:**
 
 - **Always import all snapshots.** File-explosion risk (a project with 80 scenes and 5 snapshots each is 400 extra draft files). Bad default.
 - **Skip snapshots in V1 entirely.** Would lose provenance for writers who really value their revision history. Opt-in covers the case without forcing the file count on writers who don't want it.
 - **Time-bucket the cap** (last 30 days vs last N). More complex with marginal benefit; per-scene cap is the lever writers actually understand.
+- **Hardcoded native filename pattern with no override.** Loses Scrivener title visibility for writers who genuinely use manually-titled snapshots (workshop submissions, agent revisions, named milestones). Exposing the template lets that subset opt in without forcing the choice on others.
+- **Binary radio (native pattern / Scrivener title).** Decision-fatigue at import; a radio implies "pick one of two" when writers may actually want a third arrangement. Template field with variable help-text is more expressive without being harder to use, and it matches the template-string idiom DB already uses for `scenesFolder` / `chaptersFolder` / `subScenesFolder`.
+- **Disambiguator only on collision.** Writer scans the drafts folder, sees a sudden suffix appear on some files but not others — reads as a bug. Always-disambiguating templates (those including `{n}` or `{date_compact}` etc.) make the pattern consistent; collision suffix stays as a safety net for malformed templates only.
+- **Use original Scrivener title verbatim as filename (the pre-amendment behavior).** Collides on duplicate manual titles (two snapshots both named "before edit"); produces awkward filenames for Scrivener-default timestamp-titles like `Untitled - Mar 15, 2024 at 3:42:01 PM.md`. The template default sidesteps both.
 
 ### 5. Inspector content mapping
 
@@ -264,7 +298,7 @@ Numbered steps to ship the milestone. Each step is committable independently.
 6. **Parse step (step 2).** Async parse — invoke the `.scrivx` parser, walk RTF bodies, count documents / snapshots / images. Render summary + editable destination project name with real-time conflict validation against `settings.defaultProjectFolder`. Next gates on parse success + non-empty + non-conflicting destination.
 7. **Hierarchy mapping step (step 3).** Render the binder tree with auto-detected mapping per row (chapter / scene / sub-scene / extras-above / extras-below). Per-row override dropdown. Count badges for collapsed-into-parent documents per § 2. Next gates on every leaf having a target type.
 8. **Metadata mapping step (step 4).** Three sub-tables per § 3: status mapping (with auto-add), label mapping (target frontmatter key picker), custom metadata mapping (per-field target). Always-passes Next.
-9. **Options step (step 5).** Toggles per the meta-level locks: import Research folder; import snapshots + per-scene cap; comment style (always Obsidian `%%` for V1, but exposed for future flexibility); image extraction folder (default `Research/Images/`); create stub default compile preset. Always-passes Next.
+9. **Options step (step 5).** Toggles per the meta-level locks: import Research folder; import snapshots + per-scene cap + filename template (per § 4); comment style (always Obsidian `%%` for V1, but exposed for future flexibility); image extraction folder (default `Research/Images/`); create stub default compile preset. Always-passes Next. The filename-template field is conditionally rendered (only when the snapshot toggle is on) and includes inline help-text listing the variables.
 10. **Preview step (step 6).** Tree of files about to be created with paths. Image asset list. Counts. Warnings ("3 documents will be merged into parents"). Always-passes Next.
 11. **Import write pass (step 7).** Async write with progress indicator. Two-pass approach: pass 1 creates project folder, walks binder in order, writes notes via `FileManager.processFrontMatter` (per CLAUDE.md hard rule), extracts images, integrates with the linker for reverse arrays per § 9, and builds the UUID -> dbench-path map; pass 2 walks scene bodies and rewrites cross-document Scrivener Links to wikilinks per § 6. Errors collected; continue on per-file failures (don't abort whole import).
 12. **Complete step (step 8).** Summary: counts of files created, list of warnings / errors with link to the import error log file (written as `Import errors.md` in the new project folder if any). Done button + "Import another." On Done, focus the new project in the Manuscript view.
@@ -316,6 +350,7 @@ Track ratifications and reversals here as work proceeds.
 - **2026-05-05** — § 2 (Hierarchy mapping) ratified: auto-detect with per-row override; parts-above as `scrivener-part` frontmatter; sub-sub-scenes as nested headings.
 - **2026-05-05** — § 3 (Status / Label / Custom metadata) ratified: interactive mapping dialog with auto-add for missing statuses; `scrivener-*` prefix for non-managed provenance keys.
 - **2026-05-05** — § 4 (Snapshots) ratified: opt-in toggle, default off; per-scene cap (1 / 3 / 5 / all).
+- **2026-05-06** — § 4 amendment (Snapshot filenames): expose a filename-template text field in Step 5 when snapshot import is on. Default `{scene} - Draft {n} ({date_compact})` matches native DB drafts. Variables: `{scene}` `{title}` `{date}` `{date_compact}` `{time}` `{n}`. Empty-`{title}` resolves to `Untitled`; filesystem-unsafe characters sanitized to `-`; last-resort ` 2` / ` 3` suffix on un-disambiguated collisions. Scrivener title preserved in `scrivener-snapshot-title` frontmatter regardless of whether `{title}` appears in the template.
 - **2026-05-05** — § 5 (Inspector content) ratified: synopsis to `dbench-synopsis`; document notes to `## Notes`; comments to Obsidian `%% %%`; footnotes to standard markdown footnotes; project notes to project body `## Notes`; keywords to `tags:` frontmatter.
 - **2026-05-05** — § 6 (Body conversion) ratified in shape; specific RTF library deferred to Step 4 spike. Cross-document Scrivener Links rewritten via two-pass UUID -> path map.
 - **2026-05-05** — § 7 (Non-Draft folders) ratified: Research opt-in; Templates / Trash always skipped.

@@ -219,11 +219,13 @@ If DB elevates mobile support pre-1.0, the **minimum viable kernel** to adopt wo
 
 DB-specific decisions captured here so they survive session ends. Ratifications dated below.
 
-### Ratified 2026-05-05: feature-gating scope
+### Ratified 2026-05-05; amended 2026-05-06: feature-gating scope
 
-Only the **Scrivener `.scriv` importer** is desktop-gated for V1 mobile support. Every other DB feature (Manuscript view, Manuscript Builder modal + leaf, scene / chapter / sub-scene / draft creation, retrofit, integrity, compile pipeline, Bases integration, Style Settings) ships mobile-supported and is verified case-by-case during the audit pass.
+**Original 2026-05-05 ratification**: only the Scrivener `.scriv` importer was desktop-gated for V1 mobile support; importer command + Manuscript view import button wrapped in `Platform.isDesktopApp` checks.
 
-Implication: the importer command (`Draft Bench: Import from Scrivener`) and the Manuscript view import button (per [scrivener-import.md § 13](scrivener-import.md)) are wrapped in `Platform.isDesktopApp` checks; on mobile, neither registers / renders. The wizard surface itself never loads on mobile.
+**2026-05-06 amendment**: the Scrivener importer's desktop-only gate is removed. The importer's architecture shifted to read `.scriv` bundles from inside the vault via `app.vault.adapter` (writer copies the bundle into the vault before importing) rather than from arbitrary OS paths via Electron + Node `fs`. Cross-platform by construction; no `Platform.isDesktopApp` gate needed. See [scrivener-import.md § What's locked](scrivener-import.md) and § Implementation step 13.
+
+**Net result as of 2026-05-06**: **no DB feature is desktop-gated.** The only desktop-only paths in the codebase are the *disk-output* side of the compile pipeline (`renderXxxToDisk`, depending on Electron's save dialog) and the corresponding `disk-deps.ts` helpers; these are gated by their dependencies, not by an explicit `Platform` check, and writers route around them by configuring `output: vault` on their compile presets.
 
 For features that turn out to need work to function reasonably on mobile (e.g., Manuscript Builder layout in phone form-factor), the audit pass surfaces the issue as a `mobile` or `mobile-<platform>` labeled bug for follow-up; default ship-state is "mobile-attempted." Don't pre-emptively gate features that haven't been smoke-tested as broken.
 
@@ -239,9 +241,11 @@ The alternative (defer mobile claims entirely until iOS coverage is acquired) wa
 
 ### Ratified 2026-05-05: mobile elevation precedes Scrivener importer
 
-Mobile readiness ships before the Scrivener importer ([#28](https://github.com/banisterious/obsidian-draft-bench/issues/28)). Tracking issue: [#29](https://github.com/banisterious/obsidian-draft-bench/issues/29). The audit pass + `Platform.isDesktopApp` gating infrastructure needs to land first so the importer's commands and Manuscript view button can register their gates against a stable mobile-aware codebase. Reversing the order (importer first, mobile after) would mean retrofitting gates into already-shipped code.
+Mobile readiness ships before the Scrivener importer ([#28](https://github.com/banisterious/obsidian-draft-bench/issues/28)). Tracking issue: [#29](https://github.com/banisterious/obsidian-draft-bench/issues/29).
 
-This shapes the pre-1.0 sequencing: mobile readiness as the next minor (likely 0.4.0), Scrivener importer as a later minor (0.5.0 or beyond) once the corpus + RTF spike are in hand.
+**Original rationale (2026-05-05)**: gate infrastructure had to land first so the importer's commands + button could register their `Platform.isDesktopApp` gates against a mobile-aware codebase.
+
+**Revised rationale (2026-05-06)**: the gating infrastructure rationale dissolved when the importer expanded to cross-platform (no gates needed). The sequencing still stands for a different reason: the mobile elevation was a smaller, well-bounded scope that could ship cleanly while the importer was still in planning. Mobile-supported codebase first, mobile-supported feature second; both ship as cross-platform from the start.
 
 ### Ratified 2026-05-05: label taxonomy
 

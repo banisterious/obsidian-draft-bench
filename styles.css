@@ -1061,7 +1061,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of welcome-modal.css */
 
 /* --------------------------------------------------------------------------
-   IMPORT-WIZARD.CSS  (340 lines, 7.25 KB)
+   IMPORT-WIZARD.CSS  (397 lines, 8.63 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1370,6 +1370,63 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-import-wizard__meta-target {
 	font-size: var(--font-ui-small);
 	min-width: 12rem;
+}
+
+/* ---- Preview step ---- */
+
+.dbench-import-wizard__preview-section-title {
+	margin: var(--dbench-spacing-md) 0 var(--dbench-spacing-xs);
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.dbench-import-wizard__preview-section-title:first-child {
+	margin-top: 0;
+}
+
+.dbench-import-wizard__warning-row {
+	font-size: var(--font-ui-small);
+	color: var(--text-accent);
+	line-height: 1.5;
+}
+
+.dbench-import-wizard__preview-tree {
+	max-height: 360px;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	padding: var(--dbench-spacing-sm);
+	background: var(--background-secondary);
+	font-family: var(--font-monospace);
+	font-size: var(--font-smallest);
+}
+
+.dbench-import-wizard__preview-row {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: var(--dbench-spacing-sm);
+	align-items: baseline;
+	padding: 1px 0;
+	color: var(--text-muted);
+}
+
+.dbench-import-wizard__preview-icon {
+	color: var(--text-faint);
+	font-variant-numeric: tabular-nums;
+	min-width: 2.5rem;
+}
+
+.dbench-import-wizard__preview-row--folder .dbench-import-wizard__preview-icon,
+.dbench-import-wizard__preview-row--project-note .dbench-import-wizard__preview-icon {
+	color: var(--text-normal);
+}
+
+.dbench-import-wizard__preview-path {
+	color: var(--text-normal);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 /* ---- Footer ---- */
@@ -2792,7 +2849,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 11
-   Total:      2700 lines, 74.87 KB
+   Total:      2757 lines, 76.25 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
@@ -2800,7 +2857,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - manuscript-builder.css: 436 lines, 13.11 KB
    - preview-toolbar.css: 94 lines, 2.54 KB
    - welcome-modal.css: 94 lines, 2.21 KB
-   - import-wizard.css: 340 lines, 7.25 KB
+   - import-wizard.css: 397 lines, 8.63 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 1037 lines, 28.78 KB
    - settings-tab.css: 219 lines, 5.53 KB

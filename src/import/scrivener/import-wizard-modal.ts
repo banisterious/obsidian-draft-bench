@@ -26,6 +26,11 @@ import {
 	type MetadataMapping,
 	type StatusTarget,
 } from './metadata-mapping';
+import {
+	buildImportPlan,
+	type ImportPlan,
+	type PlanEntry,
+} from './import-plan';
 
 /**
  * Scrivener `.scriv` import wizard. DB's first wizard, built standalone
@@ -1096,11 +1101,127 @@ export class ScrivenerImportWizardModal extends Modal {
 			);
 	}
 
+	/**
+	 * Preview step. Builds an `ImportPlan` from accumulated form data
+	 * and renders three sections: a count summary, a warnings list,
+	 * and the tree of vault files / folders that the Import write
+	 * pass will create. Validation gate trivially passes per § 1
+	 * (review-only step).
+	 */
 	private renderPreviewStep(body: HTMLElement): void {
-		body.createEl('p', {
-			cls: 'dbench-import-wizard__placeholder',
-			text: 'Preview — file tree, image asset list, counts, warnings. (Skeleton placeholder.)',
+		const fd = this.formData;
+		if (!fd.parsedBundle) {
+			body.createEl('p', {
+				cls: 'dbench-import-wizard__hint',
+				text: 'No parsed bundle yet — go back to the previous step.',
+			});
+			return;
+		}
+
+		const auto = autoDetectHierarchy(
+			fd.parsedBundle.project.binder.find(
+				(b) => b.type === 'DraftFolder'
+			) ?? {
+				id: '',
+				type: 'DraftFolder',
+				title: '',
+				keywords: [],
+				statusId: null,
+				labelId: null,
+				includeInCompile: true,
+				customMetaData: new Map(),
+				created: '',
+				modified: '',
+				children: [],
+			}
+		);
+		const plan = buildImportPlan(
+			fd.parsedBundle.project,
+			auto,
+			fd.hierarchyOverrides,
+			fd.destinationName,
+			this.settings,
+			fd.options
+		);
+
+		this.renderPreviewCounts(body, plan);
+		if (plan.warnings.length > 0) {
+			this.renderPreviewWarnings(body, plan.warnings);
+		}
+		this.renderPreviewTree(body, plan.entries);
+	}
+
+	private renderPreviewCounts(body: HTMLElement, plan: ImportPlan): void {
+		body.createEl('h3', {
+			cls: 'dbench-import-wizard__preview-section-title',
+			text: 'Counts',
 		});
+		const list = body.createEl('ul', {
+			cls: 'dbench-import-wizard__summary-list',
+		});
+		const c = plan.counts;
+		const rows: Array<[string, number]> = [
+			['Chapters', c.chapters],
+			['Scenes', c.scenes],
+			['Sub-scenes', c.subScenes],
+			['Parts / extras above', c.extrasAbove],
+			['Items merged into parents', c.extrasBelow],
+			['Skipped', c.skipped],
+			['Images', c.images],
+		];
+		for (const [name, n] of rows) {
+			if (n === 0) continue;
+			list.createEl('li', {
+				cls: 'dbench-import-wizard__summary-row',
+				text: `${name}: ${n}`,
+			});
+		}
+	}
+
+	private renderPreviewWarnings(
+		body: HTMLElement,
+		warnings: string[]
+	): void {
+		body.createEl('h3', {
+			cls: 'dbench-import-wizard__preview-section-title',
+			text: 'Warnings',
+		});
+		const list = body.createEl('ul', {
+			cls: 'dbench-import-wizard__summary-list',
+		});
+		for (const w of warnings) {
+			list.createEl('li', {
+				cls: 'dbench-import-wizard__warning-row',
+				text: w,
+			});
+		}
+	}
+
+	private renderPreviewTree(
+		body: HTMLElement,
+		entries: PlanEntry[]
+	): void {
+		body.createEl('h3', {
+			cls: 'dbench-import-wizard__preview-section-title',
+			text: 'Files to be created',
+		});
+		const tree = body.createDiv({
+			cls: 'dbench-import-wizard__preview-tree',
+		});
+		for (const entry of entries) {
+			const row = tree.createDiv({
+				cls: `dbench-import-wizard__preview-row dbench-import-wizard__preview-row--${entry.kind}`,
+			});
+			row.style.paddingLeft = `${entry.depth * 1.25}rem`;
+			row.createSpan({
+				cls: 'dbench-import-wizard__preview-icon',
+				text: previewIcon(entry.kind),
+			});
+			row.createSpan({
+				cls: 'dbench-import-wizard__preview-path',
+				text: entry.path,
+			});
+		}
 	}
 
 	private renderImportStep(body: HTMLElement): void {
@@ -1377,6 +1498,23 @@ function decodeStatusOption(value: string): StatusTarget {
 		return { kind: 'new', statusName: '' };
 	}
 	return { kind: 'drop' };
+}
+
+/** Short text tag rendered next to each preview row indicating what
+ *  kind of entry it is. Keeps the tree readable without emoji. */
+function previewIcon(kind: PlanEntry['kind']): string {
+	switch (kind) {
+		case 'folder':
+			return 'dir';
+		case 'project-note':
+			return 'proj';
+		case 'chapter-note':
+			return 'chap';
+		case 'scene-note':
+			return 'scn';
+		case 'sub-scene-note':
+			return 'sub';
+	}
 }
 
 /** Decode the snapshot-cap dropdown value back to its typed form.

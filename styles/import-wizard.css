@@ -306,6 +306,63 @@
 	min-width: 12rem;
 }
 
+/* ---- Preview step ---- */
+
+.dbench-import-wizard__preview-section-title {
+	margin: var(--dbench-spacing-md) 0 var(--dbench-spacing-xs);
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.dbench-import-wizard__preview-section-title:first-child {
+	margin-top: 0;
+}
+
+.dbench-import-wizard__warning-row {
+	font-size: var(--font-ui-small);
+	color: var(--text-accent);
+	line-height: 1.5;
+}
+
+.dbench-import-wizard__preview-tree {
+	max-height: 360px;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	padding: var(--dbench-spacing-sm);
+	background: var(--background-secondary);
+	font-family: var(--font-monospace);
+	font-size: var(--font-smallest);
+}
+
+.dbench-import-wizard__preview-row {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: var(--dbench-spacing-sm);
+	align-items: baseline;
+	padding: 1px 0;
+	color: var(--text-muted);
+}
+
+.dbench-import-wizard__preview-icon {
+	color: var(--text-faint);
+	font-variant-numeric: tabular-nums;
+	min-width: 2.5rem;
+}
+
+.dbench-import-wizard__preview-row--folder .dbench-import-wizard__preview-icon,
+.dbench-import-wizard__preview-row--project-note .dbench-import-wizard__preview-icon {
+	color: var(--text-normal);
+}
+
+.dbench-import-wizard__preview-path {
+	color: var(--text-normal);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 /* ---- Footer ---- */
 
 .dbench-import-wizard__footer {

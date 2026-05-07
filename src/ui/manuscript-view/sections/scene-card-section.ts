@@ -14,7 +14,11 @@ import {
 	attachWikilinkOpenAffordances,
 	type OpenSpec,
 } from './open-affordances';
-import { renderStatusLabel, renderWordCount } from './scene-row';
+import {
+	readOptionalString,
+	renderStatusLabel,
+	renderWordCount,
+} from './scene-row';
 import { renderSubSceneRow } from './sub-scene-row';
 
 /**
@@ -116,6 +120,17 @@ export function renderSceneCard(
 			scene
 		).open();
 	});
+
+	// Optional synopsis (`dbench-synopsis`) renders between the header
+	// and the body so it stays visible whether the card is collapsed
+	// or expanded — same rationale as chapter-card-section.
+	const sceneSynopsis = readOptionalString(scene, 'dbench-synopsis');
+	if (sceneSynopsis !== '') {
+		card.createDiv({
+			cls: 'dbench-manuscript-view__scene-card-synopsis',
+			text: sceneSynopsis,
+		});
+	}
 
 	const cardBody = card.createDiv({
 		cls: 'dbench-manuscript-view__scene-card-body',

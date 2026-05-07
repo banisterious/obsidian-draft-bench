@@ -10,10 +10,11 @@ import {
  * Reusable scene-row primitive shared by the flat manuscript list
  * (chapter-less projects) and the chapter-card body (chapter-aware
  * projects). Renders one `<li>` row in a single-row 4-column grid
- * (order · title · status · count), with the row flipping to a
- * 2-row layout only when the writer has set a `dbench-subtitle`. The
- * D3 restyle (#30) dropped the per-row draft-count column; writers
- * see drafts on the scene file itself.
+ * (order · title · status · count). The row flips to multi-row
+ * layout when the writer has set a `dbench-subtitle` (italic muted
+ * tagline) or `dbench-synopsis` (regular muted description); both
+ * can render together with subtitle stacked above synopsis. The D3
+ * restyle (#30) dropped the per-row draft-count column.
  */
 export function renderSceneRow(
 	parent: HTMLElement,
@@ -43,15 +44,26 @@ export function renderSceneRow(
 	});
 	attachWikilinkOpenAffordances(titleEl, (spec) => onOpen(scene, spec));
 
-	// Optional subtitle (`dbench-subtitle`) shown as muted text below
-	// the title. The modifier class flips the row to a 2-row grid;
-	// rows without a subtitle keep the default single-row layout.
-	const subtitle = readSubtitle(scene);
+	// Optional subtitle (`dbench-subtitle`) and synopsis (`dbench-
+	// synopsis`) render as muted text below the title. Subtitle is the
+	// italic tagline register; synopsis is the regular description
+	// register (Scrivener corkboard text). Modifier classes flip the
+	// row to a multi-row grid.
+	const subtitle = readOptionalString(scene, 'dbench-subtitle');
 	if (subtitle !== '') {
 		item.addClass('dbench-manuscript-view__scene-row--has-subtitle');
 		item.createSpan({
 			cls: 'dbench-manuscript-view__scene-subtitle',
 			text: subtitle,
+		});
+	}
+
+	const synopsis = readOptionalString(scene, 'dbench-synopsis');
+	if (synopsis !== '') {
+		item.addClass('dbench-manuscript-view__scene-row--has-synopsis');
+		item.createSpan({
+			cls: 'dbench-manuscript-view__scene-synopsis',
+			text: synopsis,
 		});
 	}
 
@@ -78,14 +90,20 @@ export function renderSceneRow(
 }
 
 /**
- * Read the optional `dbench-subtitle` value off a scene's frontmatter,
- * trimming whitespace. Returns `''` when absent, blank, or non-string
- * (defensive — frontmatter values arrive as `unknown` per Obsidian's
- * cache shape).
+ * Read an optional string-typed frontmatter field from any of the
+ * note types this module renders, trimming whitespace. Returns `''`
+ * when absent, blank, or non-string (defensive — frontmatter values
+ * arrive as `unknown` per Obsidian's cache shape).
+ *
+ * Exported for sibling renderers (sub-scene-row, chapter-card,
+ * scene-card) so the same coercion logic applies across surfaces.
  */
-function readSubtitle(scene: SceneNote): string {
-	const fm = scene.frontmatter as unknown as Record<string, unknown>;
-	const raw = fm['dbench-subtitle'];
+export function readOptionalString(
+	note: { frontmatter: unknown },
+	key: string
+): string {
+	const fm = note.frontmatter as Record<string, unknown>;
+	const raw = fm[key];
 	return typeof raw === 'string' ? raw.trim() : '';
 }
 

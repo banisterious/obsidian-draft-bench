@@ -21,6 +21,7 @@ import {
 } from './open-affordances';
 import { renderSceneCard } from './scene-card-section';
 import {
+	readOptionalString,
 	renderSceneRow,
 	renderStatusLabel,
 	renderWordCount,
@@ -172,6 +173,18 @@ function renderChapterCard(
 			chapter
 		).open();
 	});
+
+	// Optional synopsis (`dbench-synopsis`) renders between the header
+	// and the body so it stays visible whether the card is collapsed or
+	// expanded — synopsis is corkboard-style annotation, the writer
+	// wants the gist even when scene-list details are hidden.
+	const chapterSynopsis = readOptionalString(chapter, 'dbench-synopsis');
+	if (chapterSynopsis !== '') {
+		card.createDiv({
+			cls: 'dbench-manuscript-view__chapter-synopsis',
+			text: chapterSynopsis,
+		});
+	}
 
 	const cardBody = card.createDiv({
 		cls: 'dbench-manuscript-view__chapter-body',

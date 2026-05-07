@@ -133,6 +133,11 @@ export function stampChapterEssentials(
  * (high default so the scene sorts at the end), `dbench-status`,
  * and the empty `dbench-drafts` / `dbench-draft-ids` reverse arrays.
  *
+ * Optional `dbench-target-words`, `dbench-subtitle`, and
+ * `dbench-synopsis` are NOT stamped; writers set them via the
+ * Properties panel when desired (or the Scrivener importer (#28)
+ * sets `dbench-synopsis` from corkboard text).
+ *
  * `context.defaultStatus` seeds `dbench-status` when absent; callers
  * should pass `settings.statusVocabulary[0]`. Idempotent.
  */

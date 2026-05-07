@@ -635,28 +635,44 @@
 	grid-row: 1;
 }
 
-/* Optional `dbench-subtitle` second-line text under the scene title.
-   The row flips to 2 rows when the writer set a subtitle; rows
-   without keep the default single-row layout. Order spans both rows
-   and aligns to the title baseline. */
-.dbench-manuscript-view__scene-row--has-subtitle {
+/* Optional second-line content under the scene title. Two independent
+   fields can render: `dbench-subtitle` (italic tagline register) and
+   `dbench-synopsis` (regular description register, Scrivener corkboard
+   text). The row flips to multi-row layout via the corresponding
+   modifier classes; both can apply together (subtitle row 2, synopsis
+   row 3). Order capsule spans all rows via `grid-row: 1 / -1` so
+   `grid-template-rows` count drives the span automatically. */
+.dbench-manuscript-view__scene-row--has-subtitle,
+.dbench-manuscript-view__scene-row--has-synopsis {
 	grid-template-rows: auto auto;
 }
 
-.dbench-manuscript-view__scene-row--has-subtitle .dbench-manuscript-view__scene-order {
-	grid-row: 1 / 3;
+.dbench-manuscript-view__scene-row--has-subtitle.dbench-manuscript-view__scene-row--has-synopsis {
+	grid-template-rows: auto auto auto;
+}
+
+.dbench-manuscript-view__scene-row--has-subtitle .dbench-manuscript-view__scene-order,
+.dbench-manuscript-view__scene-row--has-synopsis .dbench-manuscript-view__scene-order {
+	grid-row: 1 / -1;
 	align-self: baseline;
 }
 
-.dbench-manuscript-view__scene-subtitle {
+.dbench-manuscript-view__scene-subtitle,
+.dbench-manuscript-view__scene-synopsis {
 	grid-column: 2 / 5;
-	grid-row: 2;
 	color: var(--text-muted);
 	font-size: var(--font-smaller);
-	font-style: italic;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+/* Subtitle is the italic tagline register; synopsis is regular weight
+   so the two read as distinct registers when both apply. Auto-placed
+   into rows 2 / 3 in DOM order: subtitle is appended first by the
+   row builder, so it lands in row 2 when present. */
+.dbench-manuscript-view__scene-subtitle {
+	font-style: italic;
 }
 
 /*
@@ -745,6 +761,19 @@
 
 .dbench-manuscript-view__chapter-action:hover {
 	color: var(--text-normal);
+}
+
+/* Optional `dbench-synopsis` rendered between the chapter header and
+   body. Visible whether the card is collapsed or expanded — synopsis
+   is corkboard-style annotation, the writer wants the gist even when
+   scene-list details are hidden. Description register: regular
+   weight muted text (distinct from `dbench-subtitle`'s italic
+   tagline register on scene rows; chapter cards don't currently
+   render subtitle so no italic counterpart needed here). */
+.dbench-manuscript-view__chapter-synopsis {
+	padding: 0 var(--dbench-spacing-md) var(--dbench-spacing-sm);
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
 }
 
 .dbench-manuscript-view__chapter-body {
@@ -875,6 +904,14 @@
 	color: var(--text-normal);
 }
 
+/* Optional `dbench-synopsis` rendered between the scene-card header
+   and body — same rationale as `__chapter-synopsis`. */
+.dbench-manuscript-view__scene-card-synopsis {
+	padding: 0 var(--dbench-spacing-md) var(--dbench-spacing-sm);
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+}
+
 .dbench-manuscript-view__scene-card-body {
 	padding: 0 var(--dbench-spacing-md) var(--dbench-spacing-sm);
 	border-top: 1px solid var(--background-modifier-border);
@@ -927,12 +964,18 @@
 	border-top: none;
 }
 
-.dbench-manuscript-view__sub-scene-row--has-subtitle {
+.dbench-manuscript-view__sub-scene-row--has-subtitle,
+.dbench-manuscript-view__sub-scene-row--has-synopsis {
 	grid-template-rows: auto auto;
 }
 
-.dbench-manuscript-view__sub-scene-row--has-subtitle .dbench-manuscript-view__sub-scene-order {
-	grid-row: 1 / 3;
+.dbench-manuscript-view__sub-scene-row--has-subtitle.dbench-manuscript-view__sub-scene-row--has-synopsis {
+	grid-template-rows: auto auto auto;
+}
+
+.dbench-manuscript-view__sub-scene-row--has-subtitle .dbench-manuscript-view__sub-scene-order,
+.dbench-manuscript-view__sub-scene-row--has-synopsis .dbench-manuscript-view__sub-scene-order {
+	grid-row: 1 / -1;
 	align-self: baseline;
 }
 
@@ -968,15 +1011,21 @@
 	text-align: right;
 }
 
-.dbench-manuscript-view__sub-scene-subtitle {
+.dbench-manuscript-view__sub-scene-subtitle,
+.dbench-manuscript-view__sub-scene-synopsis {
 	grid-column: 2 / 5;
-	grid-row: 2;
 	color: var(--text-muted);
 	font-size: var(--font-smallest);
-	font-style: italic;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+/* Subtitle is the italic tagline register; synopsis is regular weight.
+   Auto-placed into rows 2 / 3 in DOM order: subtitle is appended first
+   by the row builder, so it lands in row 2 when present. */
+.dbench-manuscript-view__sub-scene-subtitle {
+	font-style: italic;
 }
 
 /* Scene cards nested inside a chapter card lose the top-rule between

@@ -5,24 +5,25 @@ import {
 	attachWikilinkOpenAffordances,
 	type OpenSpec,
 } from './open-affordances';
-import { renderStatusLabel, renderWordCount } from './scene-row';
+import { readOptionalString, renderStatusLabel, renderWordCount } from './scene-row';
 
 /**
  * Sub-scene-row primitive used inside scene-card bodies (per
  * [sub-scene-type.md § 6](../../../docs/planning/sub-scene-type.md)).
  * Mirrors `renderSceneRow` (scene-row.ts) one structural level deeper.
- * Single-row 4-column grid: order · title · status · count, with the
- * row flipping to 2 rows only when the writer has set a
- * `dbench-subtitle`. The D3 restyle (#30) dropped the per-row
- * draft-count column.
+ * Single-row 4-column grid: order · title · status · count. The row
+ * flips to multi-row layout when the writer has set a
+ * `dbench-subtitle` (italic tagline) or `dbench-synopsis` (regular
+ * description); both can apply together. The D3 restyle (#30)
+ * dropped the per-row draft-count column.
  *
  * Self-contained: fires its own async word-count fill so callers don't
  * need to thread word-badge collections.
  *
- * Shares the status-label and word-count helpers from scene-row.ts;
- * the BEM root differs (`__sub-scene-row` vs. `__scene-row`) so styles
- * can tune the deeper level (tighter padding, indented order column)
- * without affecting scenes.
+ * Shares the status-label, word-count, and `readOptionalString`
+ * helpers from scene-row.ts; the BEM root differs (`__sub-scene-row`
+ * vs. `__scene-row`) so styles can tune the deeper level (tighter
+ * padding, indented order column) without affecting scenes.
  */
 export function renderSubSceneRow(
 	parent: HTMLElement,
@@ -46,12 +47,21 @@ export function renderSubSceneRow(
 	});
 	attachWikilinkOpenAffordances(titleEl, (spec) => onOpen(subScene, spec));
 
-	const subtitle = readSubtitle(subScene);
+	const subtitle = readOptionalString(subScene, 'dbench-subtitle');
 	if (subtitle !== '') {
 		item.addClass('dbench-manuscript-view__sub-scene-row--has-subtitle');
 		item.createSpan({
 			cls: 'dbench-manuscript-view__sub-scene-subtitle',
 			text: subtitle,
+		});
+	}
+
+	const synopsis = readOptionalString(subScene, 'dbench-synopsis');
+	if (synopsis !== '') {
+		item.addClass('dbench-manuscript-view__sub-scene-row--has-synopsis');
+		item.createSpan({
+			cls: 'dbench-manuscript-view__sub-scene-synopsis',
+			text: synopsis,
 		});
 	}
 
@@ -77,8 +87,3 @@ export function renderSubSceneRow(
 		});
 }
 
-function readSubtitle(subScene: SubSceneNote): string {
-	const fm = subScene.frontmatter as unknown as Record<string, unknown>;
-	const raw = fm['dbench-subtitle'];
-	return typeof raw === 'string' ? raw.trim() : '';
-}

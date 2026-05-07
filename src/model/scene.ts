@@ -60,6 +60,16 @@ export interface SceneFrontmatter {
 	 */
 	'dbench-subtitle'?: string;
 	/**
+	 * Optional one-line synopsis (Scrivener corkboard register), surfaced
+	 * under any subtitle in the Manuscript view's scene row. Distinct
+	 * from `dbench-subtitle` — subtitle is the tagline / quick-tag
+	 * register; synopsis is the description register (a sentence or two
+	 * about what happens in the scene). Writer-set via the Properties
+	 * panel; populated automatically by the Scrivener importer (#28)
+	 * from per-document corkboard text.
+	 */
+	'dbench-synopsis'?: string;
+	/**
 	 * Optional section-break title shown before this scene at compile
 	 * time (D-06 rule extended). Absence means no break; presence
 	 * triggers the break (preset-level

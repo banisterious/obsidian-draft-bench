@@ -32,6 +32,7 @@ const CONFIG = {
 		'manuscript-builder.css',  // Manuscript Builder modal (compile preset editor)
 		'preview-toolbar.css',     // Shared preview-typography toolbar (Builder + Manuscript Continuous)
 		'welcome-modal.css',       // Onboarding welcome modal (first-run)
+		'import-wizard.css',       // Scrivener import wizard (multi-step modal)
 		'modals.css',              // Shared modal base styles
 		'reorder-modal.css',       // Scene reordering modal (keyboard-first)
 		'manuscript-view.css',     // Manuscript workspace-leaf view (dockable)

@@ -1,0 +1,130 @@
+/*
+ * Scrivener import wizard (multi-step modal).
+ *
+ * BEM root: `dbench-import-wizard`. Per the wizards-reference doc:
+ * header + step indicator + body + footer as the four persistent
+ * regions; only the body changes between steps. DB's first wizard;
+ * styled standalone (no shared wizard chrome yet).
+ */
+
+.dbench-import-wizard .modal-content {
+	padding: 0;
+}
+
+.dbench-import-wizard__content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-md);
+	padding: var(--dbench-spacing-lg);
+	min-width: min(640px, 92vw);
+	min-height: 400px;
+}
+
+/* ---- Header ---- */
+
+.dbench-import-wizard__header {
+	display: flex;
+	align-items: baseline;
+	gap: var(--dbench-spacing-sm);
+}
+
+.dbench-import-wizard__title {
+	margin: 0;
+	font-size: var(--font-ui-large);
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+/* ---- Step indicator ---- */
+
+.dbench-import-wizard__step-indicator {
+	display: flex;
+	align-items: center;
+	gap: 0;
+}
+
+.dbench-import-wizard__step {
+	display: grid;
+	place-items: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: var(--background-modifier-border);
+	color: var(--text-muted);
+	font-size: var(--font-smallest);
+	font-weight: var(--font-semibold);
+	font-variant-numeric: tabular-nums;
+	flex-shrink: 0;
+	transition: background-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.dbench-import-wizard__step--active {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	transform: scale(1.1);
+}
+
+.dbench-import-wizard__step--completed {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.dbench-import-wizard__step-connector {
+	flex: 1 1 auto;
+	height: 2px;
+	background: var(--background-modifier-border);
+	margin: 0 4px;
+	transition: background-color 120ms ease;
+}
+
+.dbench-import-wizard__step-connector--completed {
+	background: var(--interactive-accent);
+}
+
+/* ---- Body (step content area) ---- */
+
+.dbench-import-wizard__body {
+	flex: 1 1 auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-md);
+	min-height: 240px;
+}
+
+.dbench-import-wizard__placeholder {
+	color: var(--text-faint);
+	font-style: italic;
+	padding: var(--dbench-spacing-md) 0;
+}
+
+/* ---- Footer ---- */
+
+.dbench-import-wizard__footer {
+	display: flex;
+	align-items: center;
+	gap: var(--dbench-spacing-sm);
+	padding-top: var(--dbench-spacing-sm);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.dbench-import-wizard__footer-left {
+	display: flex;
+	gap: var(--dbench-spacing-xs);
+}
+
+.dbench-import-wizard__footer-right {
+	display: flex;
+	gap: var(--dbench-spacing-xs);
+	margin-left: auto;
+}
+
+.dbench-import-wizard__btn {
+	padding: 6px 14px;
+	font-size: var(--font-ui-medium);
+	cursor: pointer;
+}
+
+.dbench-import-wizard__btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}

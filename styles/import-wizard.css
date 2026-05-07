@@ -204,6 +204,58 @@
 	color: var(--text-error);
 }
 
+/* ---- Hierarchy step ---- */
+
+.dbench-import-wizard__hier-summary {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--dbench-spacing-xs);
+}
+
+.dbench-import-wizard__hier-badge {
+	font-size: var(--font-smallest);
+	color: var(--text-muted);
+	background: var(--background-modifier-border);
+	border-radius: var(--dbench-radius-sm);
+	padding: 2px var(--dbench-spacing-xs);
+	font-variant-numeric: tabular-nums;
+}
+
+.dbench-import-wizard__hier-tree {
+	max-height: 360px;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	padding: var(--dbench-spacing-sm);
+	background: var(--background-secondary);
+}
+
+.dbench-import-wizard__hier-row {
+	display: grid;
+	grid-template-columns: 1fr auto auto;
+	gap: var(--dbench-spacing-sm);
+	align-items: center;
+	padding: var(--dbench-spacing-xs) 0;
+	font-size: var(--font-ui-small);
+}
+
+.dbench-import-wizard__hier-title {
+	color: var(--text-normal);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dbench-import-wizard__hier-itemtype {
+	color: var(--text-faint);
+	font-family: var(--font-monospace);
+	font-size: var(--font-smallest);
+}
+
+.dbench-import-wizard__hier-target {
+	font-size: var(--font-ui-small);
+}
+
 /* ---- Footer ---- */
 
 .dbench-import-wizard__footer {

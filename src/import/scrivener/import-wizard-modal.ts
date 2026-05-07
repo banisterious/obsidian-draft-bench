@@ -4,6 +4,7 @@ import { resolveProjectPaths } from '../../core/projects';
 import {
 	parseScrivx,
 	ScrivxParseError,
+	type BinderItem,
 	type ScrivProject,
 } from './scrivx-parser';
 import {
@@ -11,6 +12,13 @@ import {
 	summarizeProject,
 	type ProjectSummary,
 } from './scriv-summary';
+import {
+	autoDetectHierarchy,
+	effectiveTarget,
+	HIERARCHY_TARGETS,
+	type HierarchyMapping,
+	type HierarchyTarget,
+} from './hierarchy-mapping';
 
 /**
  * Scrivener `.scriv` import wizard. DB's first wizard, built standalone
@@ -91,6 +99,12 @@ interface ScrivenerImportFormData {
 	 *  (writer went back to Source and picked a different bundle),
 	 *  the cache is invalidated and the Parse step re-reads. */
 	parsedSourcePath: string;
+	/** Per-binder-item hierarchy target overrides. Empty until the
+	 *  Hierarchy step (3) has been touched. Effective target =
+	 *  override ?? auto-detected (see `effectiveTarget` helper).
+	 *  Cleared alongside `parsedBundle` when the source bundle
+	 *  changes — the auto-detect re-runs from scratch. */
+	hierarchyOverrides: Map<string, HierarchyTarget>;
 }
 
 function getDefaultFormData(): ScrivenerImportFormData {
@@ -100,6 +114,7 @@ function getDefaultFormData(): ScrivenerImportFormData {
 		parsedBundle: null,
 		parseError: null,
 		parsedSourcePath: '',
+		hierarchyOverrides: new Map(),
 	};
 }
 
@@ -417,6 +432,7 @@ export class ScrivenerImportWizardModal extends Modal {
 		if (fd.parsedSourcePath !== fd.sourcePath) {
 			fd.parsedBundle = null;
 			fd.parseError = null;
+			fd.hierarchyOverrides.clear();
 		}
 
 		if (fd.parsedBundle !== null) {
@@ -579,10 +595,119 @@ export class ScrivenerImportWizardModal extends Modal {
 		this.nextButtonEl.disabled = !this.canProceedToNextStep();
 	}
 
+	/**
+	 * Hierarchy mapping step. Renders the DraftFolder subtree with
+	 * the auto-detected DB target per row and a per-row override
+	 * dropdown. Items outside the Draft (Research / Trash / custom
+	 * roots) aren't shown here — they're handled by the Options
+	 * step (step 9). Non-Folder / non-Text items inside the Draft
+	 * (Image / PDF / etc.) are filtered out: they auto-map to `skip`
+	 * and the media-extraction pass handles them separately.
+	 *
+	 * Validation gate is trivially true (auto-detect fills every
+	 * item); the writer can override but can't unset.
+	 */
 	private renderHierarchyStep(body: HTMLElement): void {
+		const fd = this.formData;
+		if (!fd.parsedBundle) {
+			body.createEl('p', {
+				cls: 'dbench-import-wizard__hint',
+				text: 'No parsed bundle yet — go back to the previous step.',
+			});
+			return;
+		}
+		const draftRoot = fd.parsedBundle.project.binder.find(
+			(b) => b.type === 'DraftFolder'
+		);
+		if (!draftRoot) {
+			body.createEl('p', {
+				cls: 'dbench-import-wizard__error',
+				text: 'No manuscript folder found in this bundle. Nothing narrative to import.',
+			});
+			return;
+		}
+
+		const auto = autoDetectHierarchy(draftRoot);
+
 		body.createEl('p', {
-			cls: 'dbench-import-wizard__placeholder',
-			text: 'Hierarchy mapping — binder tree with per-row type override. (Skeleton placeholder.)',
+			cls: 'dbench-import-wizard__help-text',
+			text:
+				auto.sceneDepth === 0
+					? 'No scenes auto-detected. Override individual rows below if you want to import them.'
+					: `Auto-detected scene depth: ${auto.sceneDepth}. Override any row whose mapping looks wrong.`,
+		});
+
+		const summaryEl = body.createDiv({
+			cls: 'dbench-import-wizard__hier-summary',
+		});
+		const treeEl = body.createDiv({
+			cls: 'dbench-import-wizard__hier-tree',
+		});
+		this.renderHierarchyTree(treeEl, draftRoot.children, 1, auto, () => {
+			renderHierarchyCounts(summaryEl, auto, fd.hierarchyOverrides);
+		});
+		renderHierarchyCounts(summaryEl, auto, fd.hierarchyOverrides);
+	}
+
+	private renderHierarchyTree(
+		parent: HTMLElement,
+		items: BinderItem[],
+		depth: number,
+		auto: HierarchyMapping,
+		onChange: () => void
+	): void {
+		for (const item of items) {
+			if (item.type === 'Folder' || item.type === 'Text') {
+				this.renderHierarchyRow(parent, item, depth, auto, onChange);
+			}
+			if (item.children.length > 0) {
+				this.renderHierarchyTree(
+					parent,
+					item.children,
+					depth + 1,
+					auto,
+					onChange
+				);
+			}
+		}
+	}
+
+	private renderHierarchyRow(
+		parent: HTMLElement,
+		item: BinderItem,
+		depth: number,
+		auto: HierarchyMapping,
+		onChange: () => void
+	): void {
+		const fd = this.formData;
+		const row = parent.createDiv({
+			cls: 'dbench-import-wizard__hier-row',
+		});
+		row.style.paddingLeft = `${(depth - 1) * 1.25}rem`;
+
+		row.createSpan({
+			cls: 'dbench-import-wizard__hier-title',
+			text: item.title === '' ? '(untitled)' : item.title,
+		});
+		row.createSpan({
+			cls: 'dbench-import-wizard__hier-itemtype',
+			text: item.type,
+		});
+
+		const select = row.createEl('select', {
+			cls: 'dbench-import-wizard__hier-target',
+		});
+		const current = effectiveTarget(item.id, auto, fd.hierarchyOverrides);
+		for (const t of HIERARCHY_TARGETS) {
+			const option = select.createEl('option', {
+				value: t,
+				text: targetLabel(t),
+			});
+			if (t === current) option.selected = true;
+		}
+		select.addEventListener('change', () => {
+			fd.hierarchyOverrides.set(item.id, select.value as HierarchyTarget);
+			onChange();
 		});
 	}
 
@@ -806,4 +931,55 @@ function appendSummaryRow(list: HTMLElement, text: string): void {
 
 function pluralize(word: string, n: number): string {
 	return n === 1 ? word : `${word}s`;
+}
+
+/**
+ * Per-target counts rendered into the Hierarchy step's summary
+ * region. Computed by combining the auto-detect mapping with current
+ * overrides so the badge tracks live edits. Re-rendered (full empty +
+ * fill) on every dropdown change since the count totals shift; cheap
+ * since the maps are small.
+ */
+function renderHierarchyCounts(
+	parent: HTMLElement,
+	auto: HierarchyMapping,
+	overrides: Map<string, HierarchyTarget>
+): void {
+	parent.empty();
+	const counts: Record<HierarchyTarget, number> = {
+		chapter: 0,
+		scene: 0,
+		'sub-scene': 0,
+		'extras-above': 0,
+		'extras-below': 0,
+		skip: 0,
+	};
+	for (const id of auto.byId.keys()) {
+		counts[effectiveTarget(id, auto, overrides)] += 1;
+	}
+	for (const target of HIERARCHY_TARGETS) {
+		const n = counts[target];
+		if (n === 0) continue;
+		parent.createEl('span', {
+			cls: `dbench-import-wizard__hier-badge dbench-import-wizard__hier-badge--${target}`,
+			text: `${targetLabel(target)}: ${n}`,
+		});
+	}
+}
+
+function targetLabel(target: HierarchyTarget): string {
+	switch (target) {
+		case 'chapter':
+			return 'Chapter';
+		case 'scene':
+			return 'Scene';
+		case 'sub-scene':
+			return 'Sub-scene';
+		case 'extras-above':
+			return 'Part / Book (frontmatter)';
+		case 'extras-below':
+			return 'Merge into parent';
+		case 'skip':
+			return 'Skip';
+	}
 }

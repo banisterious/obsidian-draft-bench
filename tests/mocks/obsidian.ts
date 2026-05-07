@@ -110,6 +110,14 @@ export class Vault {
 		return this.files.get(path) ?? this.folders.get(path) ?? null;
 	}
 
+	getFileByPath(path: string): TFile | null {
+		return this.files.get(path) ?? null;
+	}
+
+	getFolderByPath(path: string): TFolder | null {
+		return this.folders.get(path) ?? null;
+	}
+
 	async read(file: TFile): Promise<string> {
 		return this.content.get(file.path) ?? '';
 	}

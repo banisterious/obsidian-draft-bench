@@ -1,4 +1,16 @@
-import { App, FuzzySuggestModal, Modal, TFolder } from 'obsidian';
+import { App, FuzzySuggestModal, Modal, Setting, TFile, TFolder } from 'obsidian';
+import type { DraftBenchSettings } from '../../model/settings';
+import { resolveProjectPaths } from '../../core/projects';
+import {
+	parseScrivx,
+	ScrivxParseError,
+	type ScrivProject,
+} from './scrivx-parser';
+import {
+	countSnapshots,
+	summarizeProject,
+	type ProjectSummary,
+} from './scriv-summary';
 
 /**
  * Scrivener `.scriv` import wizard. DB's first wizard, built standalone
@@ -25,10 +37,9 @@ import { App, FuzzySuggestModal, Modal, TFolder } from 'obsidian';
  * "Step 1 of 6" etc. add 1 in render.
  *
  * In-session form-data persistence only (no cross-session resume per
- * meta-level lock). The shell is desktop-only by construction (the
- * importer reads external `.scriv` bundles via Electron + Node `fs`,
- * gated to desktop in the discoverability surfaces per scrivener-
- * import.md § 13).
+ * meta-level lock). Cross-platform: reads `.scriv` bundles from
+ * inside the vault via `app.vault.adapter` per the 2026-05-06
+ * cross-platform expansion in scrivener-import.md.
  */
 
 /** 0-based step index into the 8-step layout. */
@@ -41,37 +52,68 @@ type StepIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 const VISIBLE_INDICATOR_STEPS = 6;
 
 /**
+ * Cached parse output for the Parse step. Computed once per source
+ * pick; survives Back/Next navigation as long as `sourcePath` doesn't
+ * change. Cleared and recomputed when the writer goes back to Source
+ * and picks a different bundle.
+ */
+interface ParsedBundle {
+	project: ScrivProject;
+	summary: ProjectSummary;
+	snapshotCount: number;
+}
+
+/**
  * Cross-step form data, kept on the modal instance. Each step reads
  * + mutates the relevant slice; render functions populate controls
  * from this state on each render so back-navigation preserves prior
  * input.
  *
  * Fields are added incrementally as steps land in the implementation
- * sequence; the skeleton starts with just source + destination so the
- * gating in `canProceedToNextStep` has something to read.
+ * sequence.
  */
 interface ScrivenerImportFormData {
-	/** Absolute filesystem path to the `.scriv` folder bundle. Set
-	 *  by the Source step (0). Empty until the writer picks one. */
+	/** Vault path to the `.scriv` folder bundle. Set by the Source
+	 *  step (0). Empty until the writer picks one. */
 	sourcePath: string;
 	/** Destination project name (becomes the project folder name +
-	 *  project-note basename). Prefilled from the parsed `.scrivx`
-	 *  project title in the Parse step (1); writer can edit there. */
+	 *  project-note basename). Prefilled from the source bundle's
+	 *  basename when the Parse step first runs; writer can edit. */
 	destinationName: string;
+	/** Parse-step cache. Null until the Parse step has read +
+	 *  successfully parsed the source bundle. */
+	parsedBundle: ParsedBundle | null;
+	/** Parse-step error message. Non-null when the most recent parse
+	 *  attempt failed; mutually exclusive with `parsedBundle`. */
+	parseError: string | null;
+	/** The `sourcePath` value that produced `parsedBundle` /
+	 *  `parseError`. When this drifts from the current `sourcePath`
+	 *  (writer went back to Source and picked a different bundle),
+	 *  the cache is invalidated and the Parse step re-reads. */
+	parsedSourcePath: string;
 }
 
 function getDefaultFormData(): ScrivenerImportFormData {
 	return {
 		sourcePath: '',
 		destinationName: '',
+		parsedBundle: null,
+		parseError: null,
+		parsedSourcePath: '',
 	};
 }
 
 export class ScrivenerImportWizardModal extends Modal {
 	private currentStep: StepIndex = 0;
 	private formData: ScrivenerImportFormData = getDefaultFormData();
+	/** Reference to the Next button so input handlers can flip its
+	 *  disabled state in place without re-rendering the whole step. */
+	private nextButtonEl: HTMLButtonElement | null = null;
 
-	constructor(app: App) {
+	constructor(
+		app: App,
+		private settings: DraftBenchSettings
+	) {
 		super(app);
 		this.modalEl.addClass('dbench-import-wizard');
 	}
@@ -217,6 +259,7 @@ export class ScrivenerImportWizardModal extends Modal {
 		}
 
 		// Right side: Next / Import / Done depending on step.
+		this.nextButtonEl = null;
 		if (this.currentStep < 5) {
 			const nextBtn = right.createEl('button', {
 				cls: 'dbench-import-wizard__btn mod-cta',
@@ -230,6 +273,7 @@ export class ScrivenerImportWizardModal extends Modal {
 					this.renderCurrentStep();
 				}
 			});
+			this.nextButtonEl = nextBtn;
 		} else if (this.currentStep === 5) {
 			const importBtn = right.createEl('button', {
 				cls: 'dbench-import-wizard__btn mod-cta',
@@ -267,7 +311,14 @@ export class ScrivenerImportWizardModal extends Modal {
 			case 0:
 				return this.formData.sourcePath !== '';
 			case 1:
-				return this.formData.destinationName !== '';
+				return (
+					this.formData.parsedBundle !== null &&
+					validateDestinationName(
+						this.app,
+						this.settings,
+						this.formData.destinationName
+					).ok
+				);
 			case 2:
 			case 3:
 			case 4:
@@ -345,11 +396,187 @@ export class ScrivenerImportWizardModal extends Modal {
 		}
 	}
 
+	/**
+	 * Parse step. Three states cycle here:
+	 *
+	 * - **Cache miss / source changed:** kick off the async parse,
+	 *   render a "Reading bundle..." placeholder until it resolves.
+	 * - **Parsed:** render the summary (counts) + destination name
+	 *   input with real-time conflict validation.
+	 * - **Errored:** render the error message + a hint to go back to
+	 *   Source.
+	 *
+	 * The cache lives on `formData.parsedBundle` (and its sibling
+	 * `parseError`) so back-and-forth navigation doesn't re-parse;
+	 * `parsedSourcePath` invalidates the cache when the writer goes
+	 * back to Source and picks a different bundle.
+	 */
 	private renderParseStep(body: HTMLElement): void {
+		const fd = this.formData;
+
+		if (fd.parsedSourcePath !== fd.sourcePath) {
+			fd.parsedBundle = null;
+			fd.parseError = null;
+		}
+
+		if (fd.parsedBundle !== null) {
+			this.renderParseSummary(body, fd.parsedBundle);
+			return;
+		}
+		if (fd.parseError !== null) {
+			this.renderParseError(body, fd.parseError);
+			return;
+		}
+
 		body.createEl('p', {
-			cls: 'dbench-import-wizard__placeholder',
-			text: 'Parse step — async parse + destination name. (Skeleton placeholder.)',
+			cls: 'dbench-import-wizard__progress',
+			text: 'Reading bundle…',
 		});
+
+		void this.runParse();
+	}
+
+	private async runParse(): Promise<void> {
+		const fd = this.formData;
+		const sourceAtStart = fd.sourcePath;
+		try {
+			const bundle = await loadAndParseBundle(this.app, sourceAtStart);
+			// Discard the result if the writer navigated away or
+			// changed source while we were parsing.
+			if (this.currentStep !== 1 || fd.sourcePath !== sourceAtStart) {
+				return;
+			}
+			fd.parsedBundle = bundle;
+			fd.parseError = null;
+			fd.parsedSourcePath = sourceAtStart;
+			if (fd.destinationName === '') {
+				fd.destinationName = defaultDestinationName(sourceAtStart);
+			}
+		} catch (err) {
+			if (this.currentStep !== 1 || fd.sourcePath !== sourceAtStart) {
+				return;
+			}
+			fd.parsedBundle = null;
+			fd.parseError = err instanceof Error ? err.message : String(err);
+			fd.parsedSourcePath = sourceAtStart;
+		}
+		this.renderCurrentStep();
+	}
+
+	private renderParseError(body: HTMLElement, message: string): void {
+		body.createEl('p', {
+			cls: 'dbench-import-wizard__error',
+			text: `Could not parse bundle: ${message}`,
+		});
+		body.createEl('p', {
+			cls: 'dbench-import-wizard__hint',
+			text: 'Go back and pick a different folder, or check that the .scriv bundle contains a readable .scrivx file.',
+		});
+	}
+
+	private renderParseSummary(
+		body: HTMLElement,
+		bundle: ParsedBundle
+	): void {
+		const summaryEl = body.createDiv({
+			cls: 'dbench-import-wizard__summary',
+		});
+		summaryEl.createEl('h3', {
+			cls: 'dbench-import-wizard__summary-title',
+			text: 'What’s in this bundle',
+		});
+		const list = summaryEl.createEl('ul', {
+			cls: 'dbench-import-wizard__summary-list',
+		});
+		const summary = bundle.summary;
+		appendSummaryRow(
+			list,
+			`Manuscript: ${summary.draftFolders} ${pluralize('folder', summary.draftFolders)}, ${summary.draftDocuments} ${pluralize('document', summary.draftDocuments)}`
+		);
+		if (summary.researchItems > 0) {
+			appendSummaryRow(
+				list,
+				`Research: ${summary.researchItems} ${pluralize('item', summary.researchItems)} (optional in Options)`
+			);
+		}
+		if (summary.customRootItems > 0) {
+			appendSummaryRow(
+				list,
+				`Other top-level folders: ${summary.customRootItems} ${pluralize('item', summary.customRootItems)} (optional in Options)`
+			);
+		}
+		if (summary.trashItems > 0) {
+			appendSummaryRow(
+				list,
+				`Trash: ${summary.trashItems} ${pluralize('item', summary.trashItems)} (always skipped)`
+			);
+		}
+		if (summary.images > 0 || summary.pdfs > 0) {
+			const parts: string[] = [];
+			if (summary.images > 0) {
+				parts.push(`${summary.images} ${pluralize('image', summary.images)}`);
+			}
+			if (summary.pdfs > 0) {
+				parts.push(`${summary.pdfs} ${pluralize('PDF', summary.pdfs)}`);
+			}
+			appendSummaryRow(list, `Media: ${parts.join(', ')}`);
+		}
+		if (bundle.snapshotCount > 0) {
+			appendSummaryRow(
+				list,
+				`Snapshots: ${bundle.snapshotCount} (off by default; toggle in Options)`
+			);
+		}
+
+		this.renderDestinationField(body);
+	}
+
+	private renderDestinationField(body: HTMLElement): void {
+		const fd = this.formData;
+
+		new Setting(body)
+			.setName('Destination project name')
+			.setDesc(
+				'The folder + project note name created in this vault. Edit if you want a different name from the source bundle.'
+			)
+			.addText((text) => {
+				text.setPlaceholder('My novel')
+					.setValue(fd.destinationName)
+					.onChange((value) => {
+						fd.destinationName = value;
+						refreshValidationMessage();
+						this.refreshNextButtonEnabled();
+					});
+			});
+
+		const messageEl = body.createEl('p', {
+			cls: 'dbench-import-wizard__validation',
+		});
+
+		const refreshValidationMessage = (): void => {
+			const v = validateDestinationName(
+				this.app,
+				this.settings,
+				fd.destinationName
+			);
+			messageEl.setText(v.message);
+			messageEl.removeClass('dbench-import-wizard__validation--ok');
+			messageEl.removeClass('dbench-import-wizard__validation--error');
+			messageEl.addClass(
+				v.ok
+					? 'dbench-import-wizard__validation--ok'
+					: 'dbench-import-wizard__validation--error'
+			);
+		};
+		refreshValidationMessage();
+	}
+
+	/** Update the Next button's disabled state based on the current
+	 *  step's gating without re-rendering the whole step. Called by
+	 *  in-place input handlers (e.g., the destination name field). */
+	private refreshNextButtonEnabled(): void {
+		if (!this.nextButtonEl) return;
+		this.nextButtonEl.disabled = !this.canProceedToNextStep();
 	}
 
 	private renderHierarchyStep(body: HTMLElement): void {
@@ -450,4 +677,133 @@ class ScrivFolderSuggestModal extends FuzzySuggestModal<TFolder> {
 	onChooseItem(folder: TFolder): void {
 		this.onChoose(folder);
 	}
+}
+
+/**
+ * Read + parse + summarize a `.scriv` bundle from inside the vault.
+ * Locates the bundle's `.scrivx` file via `TFolder.children` (so a
+ * non-`.scriv` suffix on the bundle folder name still works, matching
+ * the discovery rule in `findScrivProjectFolders`), reads it via
+ * `app.vault.read`, parses via `parseScrivx`, runs `summarizeProject`,
+ * and tallies snapshots via `countSnapshots`. All steps run via the
+ * vault adapter — cross-platform.
+ */
+export async function loadAndParseBundle(
+	app: App,
+	bundlePath: string
+): Promise<ParsedBundle> {
+	const folder = app.vault.getFolderByPath(bundlePath);
+	if (!folder) {
+		throw new Error(
+			`Bundle folder not found at ${bundlePath}. Re-pick from the Source step.`
+		);
+	}
+	const scrivxFile = folder.children.find(
+		(c): c is TFile => c instanceof TFile && c.extension === 'scrivx'
+	);
+	if (!scrivxFile) {
+		throw new Error(
+			`No .scrivx file found in ${bundlePath}. Bundle may be corrupted.`
+		);
+	}
+
+	const xml = await app.vault.read(scrivxFile);
+	let project: ScrivProject;
+	try {
+		project = parseScrivx(xml);
+	} catch (err) {
+		if (err instanceof ScrivxParseError) {
+			throw new Error(err.message);
+		}
+		throw err;
+	}
+
+	const summary = summarizeProject(project);
+	const snapshotCount = await countSnapshots(app.vault.adapter, bundlePath);
+
+	return { project, summary, snapshotCount };
+}
+
+/** Strip the conventional `.scriv` suffix from a bundle folder path
+ *  to produce a default destination project name. Matches the writer's
+ *  expectation that "My Novel.scriv" imports as "My Novel". */
+export function defaultDestinationName(sourcePath: string): string {
+	const slash = sourcePath.lastIndexOf('/');
+	const folderName = slash < 0 ? sourcePath : sourcePath.slice(slash + 1);
+	return folderName.endsWith('.scriv')
+		? folderName.slice(0, -'.scriv'.length)
+		: folderName;
+}
+
+export interface DestinationValidation {
+	ok: boolean;
+	message: string;
+}
+
+/**
+ * Real-time conflict + format validation for the destination project
+ * name. Wraps `resolveProjectPaths` with try/catch (the resolver
+ * throws on forbidden chars or empty title) and adds vault-existence
+ * checks against both the resolved folder path and project-note path.
+ *
+ * Pure-ish: no mutations, but reads from `app.vault` so it can't be
+ * a pure function in the strict sense. Cheap enough to call on every
+ * keystroke (no I/O; just metadata lookups).
+ */
+export function validateDestinationName(
+	app: App,
+	settings: DraftBenchSettings,
+	name: string
+): DestinationValidation {
+	const trimmed = name.trim();
+	if (trimmed === '') {
+		return { ok: false, message: 'Name cannot be empty.' };
+	}
+	let folderPath: string;
+	let filePath: string;
+	try {
+		const resolved = resolveProjectPaths(settings, {
+			title: trimmed,
+			shape: 'folder',
+		});
+		folderPath = resolved.folderPath;
+		filePath = resolved.filePath;
+	} catch (err) {
+		return {
+			ok: false,
+			message: err instanceof Error ? err.message : String(err),
+		};
+	}
+
+	if (
+		folderPath !== '' &&
+		app.vault.getAbstractFileByPath(folderPath) !== null
+	) {
+		return {
+			ok: false,
+			message: `A folder already exists at ${folderPath}. Try a different name.`,
+		};
+	}
+	if (app.vault.getAbstractFileByPath(filePath) !== null) {
+		return {
+			ok: false,
+			message: `A file already exists at ${filePath}. Try a different name.`,
+		};
+	}
+	return {
+		ok: true,
+		message: `Will create at ${folderPath === '' ? filePath : folderPath}.`,
+	};
+}
+
+/** Append a single bullet to the Parse step's summary list. */
+function appendSummaryRow(list: HTMLElement, text: string): void {
+	list.createEl('li', {
+		cls: 'dbench-import-wizard__summary-row',
+		text,
+	});
+}
+
+function pluralize(word: string, n: number): string {
+	return n === 1 ? word : `${word}s`;
 }

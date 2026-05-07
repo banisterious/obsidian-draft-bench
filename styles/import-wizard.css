@@ -97,6 +97,61 @@
 	padding: var(--dbench-spacing-md) 0;
 }
 
+/* ---- Source step ---- */
+
+.dbench-import-wizard__help-text {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+	margin: 0;
+}
+
+.dbench-import-wizard__empty-state {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-style: italic;
+	padding: var(--dbench-spacing-md);
+	border: 1px dashed var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	margin: 0;
+}
+
+.dbench-import-wizard__selection {
+	display: flex;
+	align-items: center;
+	gap: var(--dbench-spacing-sm);
+	padding: var(--dbench-spacing-sm) var(--dbench-spacing-md);
+	background: var(--background-secondary);
+	border-radius: var(--dbench-radius-md);
+	min-height: 40px;
+}
+
+.dbench-import-wizard__selection-icon {
+	color: var(--interactive-accent);
+	font-weight: var(--font-semibold);
+	flex-shrink: 0;
+}
+
+.dbench-import-wizard__selection-path {
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-small);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dbench-import-wizard__selection-empty {
+	color: var(--text-faint);
+	font-style: italic;
+}
+
+.dbench-import-wizard__hint {
+	color: var(--text-faint);
+	font-size: var(--font-ui-small);
+	margin: 0;
+}
+
 /* ---- Footer ---- */
 
 .dbench-import-wizard__footer {

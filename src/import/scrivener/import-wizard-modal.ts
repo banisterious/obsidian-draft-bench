@@ -1,4 +1,4 @@
-import { App, Modal } from 'obsidian';
+import { App, FuzzySuggestModal, Modal, TFolder } from 'obsidian';
 
 /**
  * Scrivener `.scriv` import wizard. DB's first wizard, built standalone
@@ -287,9 +287,62 @@ export class ScrivenerImportWizardModal extends Modal {
 
 	private renderSourceStep(body: HTMLElement): void {
 		body.createEl('p', {
-			cls: 'dbench-import-wizard__placeholder',
-			text: 'Source step — pick the .scriv folder. (Skeleton placeholder; folder picker lands in a follow-up commit.)',
+			cls: 'dbench-import-wizard__help-text',
+			text: 'Your .scriv folder must be inside the vault first. Copy it in via your file manager, share sheet, or sync — then pick it here.',
 		});
+
+		const candidates = findScrivProjectFolders(this.app);
+
+		if (candidates.length === 0) {
+			body.createEl('p', {
+				cls: 'dbench-import-wizard__empty-state',
+				text: 'No .scriv folders found in the vault yet. Copy one in, then reopen this wizard.',
+			});
+			return;
+		}
+
+		// Current selection display
+		const selection = body.createDiv({
+			cls: 'dbench-import-wizard__selection',
+		});
+		if (this.formData.sourcePath !== '') {
+			selection.createSpan({
+				cls: 'dbench-import-wizard__selection-icon',
+				text: '✓',
+			});
+			selection.createSpan({
+				cls: 'dbench-import-wizard__selection-path',
+				text: this.formData.sourcePath,
+			});
+		} else {
+			selection.createSpan({
+				cls: 'dbench-import-wizard__selection-empty',
+				text: 'No folder selected.',
+			});
+		}
+
+		// Pick button
+		const pickBtn = body.createEl('button', {
+			cls: 'dbench-import-wizard__btn',
+			text:
+				this.formData.sourcePath !== ''
+					? 'Choose a different folder'
+					: 'Choose .scriv folder',
+		});
+		pickBtn.addEventListener('click', () => {
+			new ScrivFolderSuggestModal(this.app, candidates, (folder) => {
+				this.formData.sourcePath = folder.path;
+				this.renderCurrentStep();
+			}).open();
+		});
+
+		// Candidate count hint when there's more than one
+		if (candidates.length > 1) {
+			body.createEl('p', {
+				cls: 'dbench-import-wizard__hint',
+				text: `${candidates.length} .scriv folders available in this vault.`,
+			});
+		}
 	}
 
 	private renderParseStep(body: HTMLElement): void {
@@ -339,5 +392,62 @@ export class ScrivenerImportWizardModal extends Modal {
 			cls: 'dbench-import-wizard__placeholder',
 			text: 'Complete — summary + Done + Import another. (Skeleton placeholder.)',
 		});
+	}
+}
+
+/**
+ * Walk the vault for `.scriv` bundle roots. A Scrivener project is a
+ * folder bundle whose root contains a single `.scrivx` index file (the
+ * binder XML); the folder itself is conventionally named with a
+ * `.scriv` suffix but the suffix isn't load-bearing — we detect by
+ * `.scrivx` presence so writers who renamed the folder still get
+ * matched.
+ *
+ * Multiple `.scrivx` files in one folder would mean a corrupted
+ * project; the dedup-by-folder-path map drops duplicates safely.
+ *
+ * Cross-platform: uses `app.vault.getFiles()` which returns all
+ * TFile instances regardless of extension. No Node `fs` or Electron
+ * dependency — runs identically on desktop and mobile.
+ */
+export function findScrivProjectFolders(app: App): TFolder[] {
+	const folders = new Map<string, TFolder>();
+	for (const file of app.vault.getFiles()) {
+		if (file.extension === 'scrivx' && file.parent) {
+			folders.set(file.parent.path, file.parent);
+		}
+	}
+	return Array.from(folders.values()).sort((a, b) =>
+		a.path.localeCompare(b.path)
+	);
+}
+
+/**
+ * Obsidian-native suggester for picking a `.scriv` bundle root from
+ * the candidates `findScrivProjectFolders` returns. Standard
+ * `FuzzySuggestModal` shape: items rendered as their path strings;
+ * fuzzy-search lets the writer narrow large vaults to the right
+ * folder by typing.
+ */
+class ScrivFolderSuggestModal extends FuzzySuggestModal<TFolder> {
+	constructor(
+		app: App,
+		private folders: TFolder[],
+		private onChoose: (folder: TFolder) => void
+	) {
+		super(app);
+		this.setPlaceholder('Pick a .scriv folder...');
+	}
+
+	getItems(): TFolder[] {
+		return this.folders;
+	}
+
+	getItemText(folder: TFolder): string {
+		return folder.path;
+	}
+
+	onChooseItem(folder: TFolder): void {
+		this.onChoose(folder);
 	}
 }

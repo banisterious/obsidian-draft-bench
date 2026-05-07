@@ -102,6 +102,10 @@ export class Vault {
 		return [...this.files.values()].filter((f) => f.extension === 'md');
 	}
 
+	getFiles(): TFile[] {
+		return [...this.files.values()];
+	}
+
 	getAbstractFileByPath(path: string): TFile | TFolder | null {
 		return this.files.get(path) ?? this.folders.get(path) ?? null;
 	}

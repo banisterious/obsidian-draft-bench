@@ -256,6 +256,56 @@
 	font-size: var(--font-ui-small);
 }
 
+/* ---- Metadata step ---- */
+
+.dbench-import-wizard__meta-section-title {
+	margin: var(--dbench-spacing-md) 0 var(--dbench-spacing-xs);
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.dbench-import-wizard__meta-section-title:first-child {
+	margin-top: 0;
+}
+
+.dbench-import-wizard__meta-table {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-xs);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	padding: var(--dbench-spacing-sm);
+	background: var(--background-secondary);
+}
+
+.dbench-import-wizard__meta-row {
+	display: grid;
+	grid-template-columns: 1fr auto auto;
+	gap: var(--dbench-spacing-sm);
+	align-items: center;
+	font-size: var(--font-ui-small);
+}
+
+.dbench-import-wizard__meta-row-name {
+	color: var(--text-normal);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dbench-import-wizard__meta-row-count {
+	color: var(--text-faint);
+	font-family: var(--font-monospace);
+	font-size: var(--font-smallest);
+	font-variant-numeric: tabular-nums;
+}
+
+.dbench-import-wizard__meta-target {
+	font-size: var(--font-ui-small);
+	min-width: 12rem;
+}
+
 /* ---- Footer ---- */
 
 .dbench-import-wizard__footer {

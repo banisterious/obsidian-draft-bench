@@ -19,6 +19,13 @@ import {
 	type HierarchyMapping,
 	type HierarchyTarget,
 } from './hierarchy-mapping';
+import {
+	countDocumentsByStatus,
+	initialMetadataMapping,
+	type CustomFieldTarget,
+	type MetadataMapping,
+	type StatusTarget,
+} from './metadata-mapping';
 
 /**
  * Scrivener `.scriv` import wizard. DB's first wizard, built standalone
@@ -105,6 +112,12 @@ interface ScrivenerImportFormData {
 	 *  Cleared alongside `parsedBundle` when the source bundle
 	 *  changes — the auto-detect re-runs from scratch. */
 	hierarchyOverrides: Map<string, HierarchyTarget>;
+	/** Resolved metadata mapping for the Metadata step (4). Null
+	 *  until first entry to that step; populated via
+	 *  `initialMetadataMapping` and mutated in place by writer
+	 *  edits to the dropdowns / label-key field. Cleared on source
+	 *  change. */
+	metadataMapping: MetadataMapping | null;
 }
 
 function getDefaultFormData(): ScrivenerImportFormData {
@@ -115,6 +128,7 @@ function getDefaultFormData(): ScrivenerImportFormData {
 		parseError: null,
 		parsedSourcePath: '',
 		hierarchyOverrides: new Map(),
+		metadataMapping: null,
 	};
 }
 
@@ -433,6 +447,7 @@ export class ScrivenerImportWizardModal extends Modal {
 			fd.parsedBundle = null;
 			fd.parseError = null;
 			fd.hierarchyOverrides.clear();
+			fd.metadataMapping = null;
 		}
 
 		if (fd.parsedBundle !== null) {
@@ -711,11 +726,221 @@ export class ScrivenerImportWizardModal extends Modal {
 		});
 	}
 
+	/**
+	 * Metadata mapping step. Three sub-tables per § 3 of
+	 * scrivener-import.md:
+	 *
+	 * 1. Status mapping — one row per Scrivener status (with
+	 *    document count) and a dropdown picking an existing DB
+	 *    status, "Add as new", or "Drop".
+	 * 2. Label frontmatter key — a single text input. Default
+	 *    `scrivener-label`.
+	 * 3. Custom metadata mapping — one row per Scrivener custom
+	 *    field with a dropdown picking the target frontmatter key
+	 *    (`scrivener-<id>`, `dbench-<id>`, or drop).
+	 *
+	 * Validation: always passes (defaults are safe). Always-passes
+	 * matches the planning doc's § 1 gate for this step.
+	 */
 	private renderMetadataStep(body: HTMLElement): void {
-		body.createEl('p', {
-			cls: 'dbench-import-wizard__placeholder',
-			text: 'Metadata mapping — status / labels / custom fields. (Skeleton placeholder.)',
+		const fd = this.formData;
+		if (!fd.parsedBundle) {
+			body.createEl('p', {
+				cls: 'dbench-import-wizard__hint',
+				text: 'No parsed bundle yet — go back to the previous step.',
+			});
+			return;
+		}
+		if (fd.metadataMapping === null) {
+			fd.metadataMapping = initialMetadataMapping(
+				fd.parsedBundle.project,
+				this.settings.statusVocabulary
+			);
+		}
+		const mapping = fd.metadataMapping;
+		const project = fd.parsedBundle.project;
+		const docCounts = countDocumentsByStatus(project);
+
+		this.renderStatusMappingTable(body, project, mapping, docCounts);
+		this.renderLabelKeyField(body, mapping);
+		this.renderCustomFieldsTable(body, project, mapping);
+	}
+
+	private renderStatusMappingTable(
+		body: HTMLElement,
+		project: ScrivProject,
+		mapping: MetadataMapping,
+		docCounts: Map<string, number>
+	): void {
+		body.createEl('h3', {
+			cls: 'dbench-import-wizard__meta-section-title',
+			text: 'Statuses',
 		});
+		if (project.statuses.size === 0) {
+			body.createEl('p', {
+				cls: 'dbench-import-wizard__hint',
+				text: 'No statuses defined in this project.',
+			});
+			return;
+		}
+		body.createEl('p', {
+			cls: 'dbench-import-wizard__help-text',
+			text: 'Pick a target for each source status.',
+		});
+
+		const table = body.createDiv({
+			cls: 'dbench-import-wizard__meta-table',
+		});
+		for (const [scrivId, scrivTitle] of project.statuses) {
+			const row = table.createDiv({
+				cls: 'dbench-import-wizard__meta-row',
+			});
+			row.createSpan({
+				cls: 'dbench-import-wizard__meta-row-name',
+				text: scrivTitle === '' ? '(unnamed)' : scrivTitle,
+			});
+			const count = docCounts.get(scrivId) ?? 0;
+			row.createSpan({
+				cls: 'dbench-import-wizard__meta-row-count',
+				text: `${count} ${pluralize('doc', count)}`,
+			});
+			this.renderStatusDropdown(row, scrivId, mapping);
+		}
+	}
+
+	private renderStatusDropdown(
+		parent: HTMLElement,
+		scrivId: string,
+		mapping: MetadataMapping
+	): void {
+		const select = parent.createEl('select', {
+			cls: 'dbench-import-wizard__meta-target',
+		});
+		const current = mapping.statuses.get(scrivId) ?? { kind: 'drop' };
+
+		// Existing DB statuses
+		for (const dbStatus of this.settings.statusVocabulary) {
+			const option = select.createEl('option', {
+				value: encodeStatusOption({ kind: 'existing', dbStatus }),
+				text: dbStatus,
+			});
+			if (
+				current.kind === 'existing' &&
+				current.dbStatus === dbStatus
+			) {
+				option.selected = true;
+			}
+		}
+
+		// Add as new
+		const addNewValue = encodeStatusOption({
+			kind: 'new',
+			statusName: '',
+		});
+		const addNewOption = select.createEl('option', {
+			value: addNewValue,
+			text: 'Add as new status',
+		});
+		if (current.kind === 'new') {
+			addNewOption.selected = true;
+			// Display the new-status name in the option label so the
+			// writer sees what would be added without re-rendering.
+			addNewOption.textContent = `Add as new: ${current.statusName}`;
+		}
+
+		// Drop
+		const dropValue = encodeStatusOption({ kind: 'drop' });
+		const dropOption = select.createEl('option', {
+			value: dropValue,
+			text: 'Drop (use default)',
+		});
+		if (current.kind === 'drop') dropOption.selected = true;
+
+		select.addEventListener('change', () => {
+			const decoded = decodeStatusOption(select.value);
+			// For 'new', preserve the auto-detected statusName from the
+			// previous mapping (writer's choice was "add this scriv
+			// status as new" — name comes from the Scrivener title).
+			if (decoded.kind === 'new') {
+				const existing = mapping.statuses.get(scrivId);
+				if (existing && existing.kind === 'new') {
+					mapping.statuses.set(scrivId, existing);
+				} else {
+					// Fall back to the Scrivener title verbatim.
+					const project = this.formData.parsedBundle?.project;
+					const title = project?.statuses.get(scrivId) ?? '';
+					mapping.statuses.set(scrivId, {
+						kind: 'new',
+						statusName: title,
+					});
+				}
+			} else {
+				mapping.statuses.set(scrivId, decoded);
+			}
+		});
+	}
+
+	private renderLabelKeyField(
+		body: HTMLElement,
+		mapping: MetadataMapping
+	): void {
+		body.createEl('h3', {
+			cls: 'dbench-import-wizard__meta-section-title',
+			text: 'Labels',
+		});
+		new Setting(body)
+			.setName('Label frontmatter key')
+			.setDesc(
+				'Label values from the source bundle are written to this frontmatter key on each scene at import.'
+			)
+			.addText((text) => {
+				text.setValue(mapping.labelKey).onChange((value) => {
+					mapping.labelKey = value;
+				});
+			});
+	}
+
+	private renderCustomFieldsTable(
+		body: HTMLElement,
+		project: ScrivProject,
+		mapping: MetadataMapping
+	): void {
+		body.createEl('h3', {
+			cls: 'dbench-import-wizard__meta-section-title',
+			text: 'Custom metadata',
+		});
+		if (project.customMetaDataFields.size === 0) {
+			body.createEl('p', {
+				cls: 'dbench-import-wizard__hint',
+				text: 'No custom metadata fields defined in this project.',
+			});
+			return;
+		}
+		body.createEl('p', {
+			cls: 'dbench-import-wizard__help-text',
+			text: 'Pick the frontmatter key for each custom field, or drop the field at import.',
+		});
+
+		const table = body.createDiv({
+			cls: 'dbench-import-wizard__meta-table',
+		});
+		for (const [
+			fieldId,
+			field,
+		] of project.customMetaDataFields) {
+			const row = table.createDiv({
+				cls: 'dbench-import-wizard__meta-row',
+			});
+			row.createSpan({
+				cls: 'dbench-import-wizard__meta-row-name',
+				text: field.title === '' ? fieldId : field.title,
+			});
+			row.createSpan({
+				cls: 'dbench-import-wizard__meta-row-count',
+				text: field.fieldType,
+			});
+			renderCustomFieldDropdown(row, fieldId, mapping);
+		}
 	}
 
 	private renderOptionsStep(body: HTMLElement): void {
@@ -982,4 +1207,68 @@ function targetLabel(target: HierarchyTarget): string {
 		case 'skip':
 			return 'Skip';
 	}
+}
+
+/**
+ * Encode a `StatusTarget` as a `<select>` option value. The encoding
+ * uses a discriminator prefix (`e:` / `n:` / `d:`) followed by the
+ * payload string; this is safe even when DB status names contain `:`
+ * because we split on the FIRST colon only.
+ */
+function encodeStatusOption(target: StatusTarget): string {
+	if (target.kind === 'existing') return `e:${target.dbStatus}`;
+	if (target.kind === 'new') return 'n:';
+	return 'd:';
+}
+
+function decodeStatusOption(value: string): StatusTarget {
+	if (value.startsWith('e:')) {
+		return { kind: 'existing', dbStatus: value.slice(2) };
+	}
+	if (value === 'n:') {
+		// `statusName` is filled in by the caller using the Scrivener
+		// status title verbatim (the writer doesn't pick it).
+		return { kind: 'new', statusName: '' };
+	}
+	return { kind: 'drop' };
+}
+
+/** Per-row custom-field dropdown for the Metadata step. Three options:
+ *  `scrivener-<id>` (default), `dbench-<id>` (uncommon), or drop. */
+function renderCustomFieldDropdown(
+	parent: HTMLElement,
+	fieldId: string,
+	mapping: MetadataMapping
+): void {
+	const select = parent.createEl('select', {
+		cls: 'dbench-import-wizard__meta-target',
+	});
+	const scrivKey = `scrivener-${fieldId}`;
+	const dbenchKey = `dbench-${fieldId}`;
+	const current = mapping.customFields.get(fieldId);
+
+	const optScriv = select.createEl('option', {
+		value: scrivKey,
+		text: scrivKey,
+	});
+	if (current === scrivKey) optScriv.selected = true;
+
+	const optDbench = select.createEl('option', {
+		value: dbenchKey,
+		text: dbenchKey,
+	});
+	if (current === dbenchKey) optDbench.selected = true;
+
+	const dropSentinel = '__drop__';
+	const optDrop = select.createEl('option', {
+		value: dropSentinel,
+		text: 'Drop',
+	});
+	if (current === null) optDrop.selected = true;
+
+	select.addEventListener('change', () => {
+		const value: CustomFieldTarget =
+			select.value === dropSentinel ? null : select.value;
+		mapping.customFields.set(fieldId, value);
+	});
 }

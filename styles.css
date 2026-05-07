@@ -1061,7 +1061,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of welcome-modal.css */
 
 /* --------------------------------------------------------------------------
-   IMPORT-WIZARD.CSS  (290 lines, 6.09 KB)
+   IMPORT-WIZARD.CSS  (340 lines, 7.25 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1320,6 +1320,56 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 
 .dbench-import-wizard__hier-target {
 	font-size: var(--font-ui-small);
+}
+
+/* ---- Metadata step ---- */
+
+.dbench-import-wizard__meta-section-title {
+	margin: var(--dbench-spacing-md) 0 var(--dbench-spacing-xs);
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.dbench-import-wizard__meta-section-title:first-child {
+	margin-top: 0;
+}
+
+.dbench-import-wizard__meta-table {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-xs);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	padding: var(--dbench-spacing-sm);
+	background: var(--background-secondary);
+}
+
+.dbench-import-wizard__meta-row {
+	display: grid;
+	grid-template-columns: 1fr auto auto;
+	gap: var(--dbench-spacing-sm);
+	align-items: center;
+	font-size: var(--font-ui-small);
+}
+
+.dbench-import-wizard__meta-row-name {
+	color: var(--text-normal);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dbench-import-wizard__meta-row-count {
+	color: var(--text-faint);
+	font-family: var(--font-monospace);
+	font-size: var(--font-smallest);
+	font-variant-numeric: tabular-nums;
+}
+
+.dbench-import-wizard__meta-target {
+	font-size: var(--font-ui-small);
+	min-width: 12rem;
 }
 
 /* ---- Footer ---- */
@@ -2742,7 +2792,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 11
-   Total:      2650 lines, 73.71 KB
+   Total:      2700 lines, 74.87 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
@@ -2750,7 +2800,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - manuscript-builder.css: 436 lines, 13.11 KB
    - preview-toolbar.css: 94 lines, 2.54 KB
    - welcome-modal.css: 94 lines, 2.21 KB
-   - import-wizard.css: 290 lines, 6.09 KB
+   - import-wizard.css: 340 lines, 7.25 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 1037 lines, 28.78 KB
    - settings-tab.css: 219 lines, 5.53 KB

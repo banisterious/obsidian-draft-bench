@@ -118,6 +118,59 @@ interface ScrivenerImportFormData {
 	 *  edits to the dropdowns / label-key field. Cleared on source
 	 *  change. */
 	metadataMapping: MetadataMapping | null;
+	/** Writer-driven import options from step 5. Independent of the
+	 *  source bundle (not reset on source change). Defaults match
+	 *  the meta-level locks in scrivener-import.md (Research off,
+	 *  snapshots off, etc.). */
+	options: ImportOptions;
+}
+
+/**
+ * Per-import writer options surfaced in the Options step (5). Defaults
+ * track the planning doc's safe-default principle (off-by-default for
+ * anything that produces additional vault content like snapshots or
+ * Research-folder bulk).
+ */
+export interface ImportOptions {
+	/** Import the bundle's Research folder + custom-root folders
+	 *  (Characters / Places / Front Matter / etc.). Default off
+	 *  per § 7. */
+	importResearch: boolean;
+	/** Import per-document snapshots as DB drafts. Default off per
+	 *  § 4 (avoids bulk vault material on first import). */
+	importSnapshots: boolean;
+	/** Snapshot cap per scene when importSnapshots is on. Per § 4:
+	 *  options 1 / 3 / 5 / "all"; default 3. */
+	snapshotCap: SnapshotCap;
+	/** Filename template for imported snapshots. Variables: `{scene}`
+	 *  `{title}` `{date}` `{date_compact}` `{time}` `{n}` (per § 4
+	 *  amendment 2026-05-06). Default matches native DB drafts. */
+	snapshotFilenameTemplate: string;
+	/** Vault folder where inline images get extracted (per § 6).
+	 *  Relative to the new project's folder. */
+	imageExtractionFolder: string;
+	/** When on, create an "Imported defaults" compile preset stub so
+	 *  the writer has a starting point. Default off per § "compile
+	 *  settings: skipped entirely" — opt-in convenience. */
+	createDefaultCompilePreset: boolean;
+}
+
+export type SnapshotCap = 1 | 3 | 5 | 'all';
+
+export const DEFAULT_SNAPSHOT_FILENAME_TEMPLATE =
+	'{scene} - Draft {n} ({date_compact})';
+
+export const DEFAULT_IMAGE_EXTRACTION_FOLDER = 'Research/Images/';
+
+function getDefaultImportOptions(): ImportOptions {
+	return {
+		importResearch: false,
+		importSnapshots: false,
+		snapshotCap: 3,
+		snapshotFilenameTemplate: DEFAULT_SNAPSHOT_FILENAME_TEMPLATE,
+		imageExtractionFolder: DEFAULT_IMAGE_EXTRACTION_FOLDER,
+		createDefaultCompilePreset: false,
+	};
 }
 
 function getDefaultFormData(): ScrivenerImportFormData {
@@ -129,6 +182,7 @@ function getDefaultFormData(): ScrivenerImportFormData {
 		parsedSourcePath: '',
 		hierarchyOverrides: new Map(),
 		metadataMapping: null,
+		options: getDefaultImportOptions(),
 	};
 }
 
@@ -943,11 +997,103 @@ export class ScrivenerImportWizardModal extends Modal {
 		}
 	}
 
+	/**
+	 * Options step. Toggles + inputs for writer-driven import
+	 * preferences: Research / custom-root inclusion, snapshot import
+	 * (cap + filename template), image extraction folder, default
+	 * compile preset stub. Validation gate trivially passes per § 1.
+	 *
+	 * The snapshot filename-template field is conditionally rendered
+	 * (only when the snapshot toggle is on); toggling re-renders the
+	 * step so the field appears / disappears in place.
+	 */
 	private renderOptionsStep(body: HTMLElement): void {
-		body.createEl('p', {
-			cls: 'dbench-import-wizard__placeholder',
-			text: 'Options — research import, snapshots, snapshot template, etc. (Skeleton placeholder.)',
-		});
+		const opts = this.formData.options;
+
+		new Setting(body)
+			.setName('Import research')
+			.setDesc(
+				'Bring in the research folder and other non-manuscript top-level folders alongside the manuscript.'
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(opts.importResearch)
+					.onChange((value) => {
+						opts.importResearch = value;
+					})
+			);
+
+		new Setting(body)
+			.setName('Import snapshots')
+			.setDesc(
+				'Bring in per-document snapshots as draft files alongside each scene.'
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(opts.importSnapshots).onChange((value) => {
+					opts.importSnapshots = value;
+					this.renderCurrentStep();
+				})
+			);
+
+		if (opts.importSnapshots) {
+			new Setting(body)
+				.setName('Snapshots per scene')
+				.setDesc(
+					'Cap how many snapshots to import per scene (most recent first).'
+				)
+				.addDropdown((dropdown) =>
+					dropdown
+						.addOption('1', 'Most recent 1')
+						.addOption('3', 'Most recent 3')
+						.addOption('5', 'Most recent 5')
+						.addOption('all', 'All')
+						.setValue(String(opts.snapshotCap))
+						.onChange((value) => {
+							opts.snapshotCap = decodeSnapshotCap(value);
+						})
+				);
+
+			new Setting(body)
+				.setName('Snapshot filename template')
+				.setDesc(
+					'Variables: {scene} {title} {date} {date_compact} {time} {n}. Default matches native draft files.'
+				)
+				.addText((text) =>
+					text
+						.setPlaceholder(DEFAULT_SNAPSHOT_FILENAME_TEMPLATE)
+						.setValue(opts.snapshotFilenameTemplate)
+						.onChange((value) => {
+							opts.snapshotFilenameTemplate = value;
+						})
+				);
+		}
+
+		new Setting(body)
+			.setName('Image extraction folder')
+			.setDesc(
+				'Vault folder under the new project where inline images get extracted.'
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder(DEFAULT_IMAGE_EXTRACTION_FOLDER)
+					.setValue(opts.imageExtractionFolder)
+					.onChange((value) => {
+						opts.imageExtractionFolder = value;
+					})
+			);
+
+		new Setting(body)
+			.setName('Create default compile preset')
+			.setDesc(
+				'Add a starter compile preset so the project has somewhere to begin.'
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(opts.createDefaultCompilePreset)
+					.onChange((value) => {
+						opts.createDefaultCompilePreset = value;
+					})
+			);
 	}
 
 	private renderPreviewStep(body: HTMLElement): void {
@@ -1231,6 +1377,16 @@ function decodeStatusOption(value: string): StatusTarget {
 		return { kind: 'new', statusName: '' };
 	}
 	return { kind: 'drop' };
+}
+
+/** Decode the snapshot-cap dropdown value back to its typed form.
+ *  The dropdown stores cap as a string; numeric-string values become
+ *  numbers, "all" stays as the literal sentinel. */
+function decodeSnapshotCap(value: string): SnapshotCap {
+	if (value === 'all') return 'all';
+	const n = parseInt(value, 10);
+	if (n === 1 || n === 3 || n === 5) return n;
+	return 3;
 }
 
 /** Per-row custom-field dropdown for the Metadata step. Three options:

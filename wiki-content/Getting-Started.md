@@ -43,12 +43,13 @@ Draft Bench is an Obsidian plugin for writers. It manages projects, chapters (op
 ## Your First Project
 
 <p align="center">
-  <video controls width="800"
-         src="https://draftbench.io/img/dbench-create-project.webm"
-         aria-label="Creating a new Draft Bench project from an empty Obsidian vault: the command palette opens, the New Project modal collects a title and shape, the project folder appears in the file explorer, and the Manuscript view auto-reveals.">
-    Your browser doesn't support embedded video.
-    <a href="https://draftbench.io/img/dbench-create-project.webm">Watch the loop on draftbench.io</a>.
-  </video>
+  <a href="https://draftbench.io/img/dbench-create-project.webm">
+    <img src="https://raw.githubusercontent.com/banisterious/obsidian-draft-bench/main/docs/images/dbench-manuscript-builder-preview.png"
+         alt="Click to watch creating a new Draft Bench project from an empty Obsidian vault on draftbench.io: the command palette opens, the New Project modal collects a title and shape, the project folder appears in the file explorer, and the Manuscript view auto-reveals."
+         width="800">
+  </a>
+  <br>
+  <em>▶ Click to watch the create-project flow on draftbench.io</em>
 </p>
 
 ### 1. Create a project

@@ -140,12 +140,13 @@ The current implementation renders the whole preset markdown in one pass, using 
 ## Run compile
 
 <p align="center">
-  <video controls width="800"
-         src="https://draftbench.io/img/dbench-compile-flow.webm"
-         aria-label="The compile flow: clicking Compile in the Manuscript view opens the Manuscript Builder modal, the Run compile action runs the preset, and the resulting markdown manuscript opens in the vault.">
-    Your browser doesn't support embedded video.
-    <a href="https://draftbench.io/img/dbench-compile-flow.webm">Watch the loop on draftbench.io</a>.
-  </video>
+  <a href="https://draftbench.io/img/dbench-compile-flow.webm">
+    <img src="https://raw.githubusercontent.com/banisterious/obsidian-draft-bench/main/docs/images/dbench-manuscript-builder-preview.png"
+         alt="Click to watch the compile flow on draftbench.io: clicking Compile in the Manuscript view opens the Manuscript Builder modal, the Run compile action runs the preset, and the resulting markdown manuscript opens in the vault."
+         width="800">
+  </a>
+  <br>
+  <em>▶ Click to watch the compile flow on draftbench.io</em>
 </p>
 
 The **Run compile** button at the top of the modal runs the active preset end to end: walks scenes in order, applies content-handling rules, renders the chosen format, writes the output. A success notice surfaces the output path; if any embeds were stripped from the output (images, audio, video, base files, note embeds), a second notice line summarizes counts by category.

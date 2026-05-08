@@ -24,12 +24,13 @@ Full-manuscript parallel versions are planned as a separate feature under **Revi
 ## Scene drafts
 
 <p align="center">
-  <video controls width="800"
-         src="https://draftbench.io/img/dbench-new-draft.webm"
-         aria-label="Taking a new draft of a scene: the right-click context menu opens, the New draft of this scene action is selected, a preview modal confirms the snapshot path, and the new draft note opens with stamped frontmatter.">
-    Your browser doesn't support embedded video.
-    <a href="https://draftbench.io/img/dbench-new-draft.webm">Watch the loop on draftbench.io</a>.
-  </video>
+  <a href="https://draftbench.io/img/dbench-new-draft.webm">
+    <img src="https://raw.githubusercontent.com/banisterious/obsidian-draft-bench/main/docs/images/dbench-bases-projects.png"
+         alt="Click to watch the new-draft flow on draftbench.io: the right-click context menu opens, the New draft of this scene action is selected, a preview modal confirms the snapshot path, and the new draft note opens with stamped frontmatter."
+         width="800">
+  </a>
+  <br>
+  <em>▶ Click to watch the new-draft flow on draftbench.io</em>
 </p>
 
 Use **New draft of this scene** via:

@@ -1061,7 +1061,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of welcome-modal.css */
 
 /* --------------------------------------------------------------------------
-   IMPORT-WIZARD.CSS  (438 lines, 9.61 KB)
+   IMPORT-WIZARD.CSS  (471 lines, 10.4 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1080,10 +1080,10 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-import-wizard__content {
 	display: flex;
 	flex-direction: column;
-	gap: var(--dbench-spacing-md);
+	gap: var(--dbench-spacing-xl);
 	padding: var(--dbench-spacing-lg);
-	min-width: min(640px, 92vw);
-	min-height: 400px;
+	min-width: min(480px, 92vw);
+	max-width: min(720px, 92vw);
 }
 
 /* ---- Header ---- */
@@ -1106,7 +1106,11 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-import-wizard__step-indicator {
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	gap: 0;
+	padding: var(--dbench-spacing-md) 0;
+	border-top: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .dbench-import-wizard__step {
@@ -1136,7 +1140,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 }
 
 .dbench-import-wizard__step-connector {
-	flex: 1 1 auto;
+	flex: 0 0 48px;
 	height: 2px;
 	background: var(--background-modifier-border);
 	margin: 0 4px;
@@ -1153,8 +1157,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	flex: 1 1 auto;
 	display: flex;
 	flex-direction: column;
-	gap: var(--dbench-spacing-md);
-	min-height: 240px;
+	gap: var(--dbench-spacing-lg);
 }
 
 .dbench-import-wizard__placeholder {
@@ -1221,29 +1224,55 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-import-wizard__dropzone {
 	display: grid;
 	place-items: center;
-	min-height: 80px;
-	padding: var(--dbench-spacing-md);
+	min-height: 200px;
+	padding: var(--dbench-spacing-xl);
 	border: 2px dashed var(--background-modifier-border);
 	border-radius: var(--dbench-radius-md);
-	background: var(--background-secondary);
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
+	background: var(--background-primary);
 	transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.dbench-import-wizard__dropzone--clickable {
+	cursor: pointer;
+}
+
+.dbench-import-wizard__dropzone--clickable:hover {
+	border-color: var(--interactive-accent);
+	background: var(--background-modifier-hover);
 }
 
 .dbench-import-wizard__dropzone--active {
 	border-color: var(--interactive-accent);
 	background: var(--background-modifier-hover);
-	color: var(--text-normal);
+}
+
+.dbench-import-wizard__dropzone-content {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--dbench-spacing-sm);
+	pointer-events: none;
+	text-align: center;
+}
+
+.dbench-import-wizard__dropzone-icon {
+	color: var(--text-muted);
+}
+
+.dbench-import-wizard__dropzone-icon .svg-icon {
+	width: 32px;
+	height: 32px;
 }
 
 .dbench-import-wizard__dropzone-text {
-	pointer-events: none;
+	color: var(--text-normal);
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
 }
 
-.dbench-import-wizard__source-picker {
-	display: flex;
-	align-items: center;
+.dbench-import-wizard__dropzone-subtext {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
 }
 
 .dbench-import-wizard__source-picker-input {
@@ -1373,6 +1402,10 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 }
 
 .dbench-import-wizard__meta-section-title:first-child {
+	margin-top: 0;
+}
+
+.setting-item + .dbench-import-wizard__meta-section-title {
 	margin-top: 0;
 }
 
@@ -2897,7 +2930,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 11
-   Total:      2805 lines, 77.36 KB
+   Total:      2838 lines, 78.15 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
@@ -2905,7 +2938,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - manuscript-builder.css: 436 lines, 13.11 KB
    - preview-toolbar.css: 94 lines, 2.54 KB
    - welcome-modal.css: 94 lines, 2.21 KB
-   - import-wizard.css: 438 lines, 9.61 KB
+   - import-wizard.css: 471 lines, 10.4 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 1044 lines, 28.92 KB
    - settings-tab.css: 219 lines, 5.53 KB

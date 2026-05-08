@@ -1,4 +1,14 @@
-import { App, FuzzySuggestModal, Modal, Notice, Platform, Setting, TFile, TFolder } from 'obsidian';
+import {
+	App,
+	FuzzySuggestModal,
+	Modal,
+	Notice,
+	Platform,
+	Setting,
+	setIcon,
+	TFile,
+	TFolder,
+} from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
 import { resolveProjectPaths } from '../../core/projects';
 import {
@@ -225,7 +235,7 @@ export class ScrivenerImportWizardModal extends Modal {
 		private saveSettings: () => Promise<void>
 	) {
 		super(app);
-		this.modalEl.addClass('dbench-import-wizard');
+		this.modalEl.addClass('dbench-import-wizard', 'dbench-scope');
 	}
 
 	onOpen(): void {
@@ -467,14 +477,11 @@ export class ScrivenerImportWizardModal extends Modal {
 		const candidates = findScrivProjectFolders(this.app);
 		const pickerSupported = supportsDirectoryInput();
 		const showDropZone = Platform.isDesktopApp;
+		const widgetVisible = showDropZone || pickerSupported;
 
-		body.createEl('p', {
-			cls: 'dbench-import-wizard__help-text',
-			text: this.composeSourceHelpText(pickerSupported, showDropZone),
-		});
-
-		if (showDropZone) this.renderDropZone(body);
-		if (pickerSupported) this.renderFolderPickerButton(body);
+		if (widgetVisible) {
+			this.renderDropPickWidget(body, showDropZone, pickerSupported);
+		}
 
 		if (candidates.length > 0) {
 			body.createEl('h4', {
@@ -482,7 +489,7 @@ export class ScrivenerImportWizardModal extends Modal {
 				text: 'Or pick from your vault',
 			});
 			this.renderInVaultPicker(body, candidates);
-		} else if (!pickerSupported && !showDropZone) {
+		} else if (!widgetVisible) {
 			body.createEl('p', {
 				cls: 'dbench-import-wizard__empty-state',
 				// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
@@ -491,64 +498,78 @@ export class ScrivenerImportWizardModal extends Modal {
 		}
 	}
 
-	private composeSourceHelpText(
-		pickerSupported: boolean,
-		showDropZone: boolean
-	): string {
-		if (showDropZone && pickerSupported) {
-			return 'Drop a .scriv folder onto this window, pick one from your device, or pick one already in your vault.';
-		}
-		if (pickerSupported) {
-			return 'Pick a .scriv folder from your device, or pick one already in your vault.';
-		}
-		return 'Copy a .scriv folder into your vault using your device\'s file manager, then pick it from the list below.';
-	}
-
-	private renderDropZone(parent: HTMLElement): void {
+	/**
+	 * Combined drop-or-pick widget. The whole zone is both a drop
+	 * target (when on desktop) and a click target that triggers a
+	 * hidden `<input type="file" webkitdirectory>` (when the picker is
+	 * supported). Visual layout: icon + main heading + subtext, all
+	 * `pointer-events: none` so clicks land on the zone itself.
+	 */
+	private renderDropPickWidget(
+		parent: HTMLElement,
+		showDropZone: boolean,
+		pickerSupported: boolean
+	): void {
 		const zone = parent.createDiv({
 			cls: 'dbench-import-wizard__dropzone',
 		});
-		zone.createSpan({
+		const content = zone.createDiv({
+			cls: 'dbench-import-wizard__dropzone-content',
+		});
+		const iconWrap = content.createDiv({
+			cls: 'dbench-import-wizard__dropzone-icon',
+		});
+		setIcon(iconWrap, 'upload');
+		const mainText = content.createDiv({
 			cls: 'dbench-import-wizard__dropzone-text',
-			text: 'Drop a .scriv folder here',
 		});
-		zone.addEventListener('dragover', (ev) => {
-			ev.preventDefault();
-			zone.addClass('dbench-import-wizard__dropzone--active');
+		const subText = content.createDiv({
+			cls: 'dbench-import-wizard__dropzone-subtext',
 		});
-		zone.addEventListener('dragleave', () => {
-			zone.removeClass('dbench-import-wizard__dropzone--active');
-		});
-		zone.addEventListener('drop', (ev) => {
-			ev.preventDefault();
-			zone.removeClass('dbench-import-wizard__dropzone--active');
-			if (!ev.dataTransfer) return;
-			void this.handleFolderDrop(ev.dataTransfer);
-		});
-	}
 
-	private renderFolderPickerButton(parent: HTMLElement): void {
-		const wrapper = parent.createDiv({
-			cls: 'dbench-import-wizard__source-picker',
-		});
-		const btn = wrapper.createEl('button', {
-			cls: 'dbench-import-wizard__btn',
-			text: 'Pick a .scriv folder from your device',
-		});
-		const input = wrapper.createEl('input', {
-			cls: 'dbench-import-wizard__source-picker-input',
-			attr: {
-				type: 'file',
-				multiple: 'true',
-			},
-		});
-		input.webkitdirectory = true;
-		btn.addEventListener('click', () => input.click());
-		input.addEventListener('change', () => {
-			if (input.files && input.files.length > 0) {
-				void this.handleFolderPick(input.files);
-			}
-		});
+		if (showDropZone && pickerSupported) {
+			mainText.setText('Drop a .scriv folder here');
+			subText.setText('or click to browse');
+		} else if (pickerSupported) {
+			mainText.setText('Tap to pick a .scriv folder');
+			subText.setText('Choose from your device');
+		} else {
+			// Drop-only (rare; desktop without webkitdirectory).
+			mainText.setText('Drop a .scriv folder here');
+			subText.setText('');
+		}
+
+		let input: HTMLInputElement | null = null;
+		if (pickerSupported) {
+			input = zone.createEl('input', {
+				cls: 'dbench-import-wizard__source-picker-input',
+				attr: { type: 'file', multiple: 'true' },
+			});
+			input.webkitdirectory = true;
+			input.addEventListener('change', () => {
+				if (input && input.files && input.files.length > 0) {
+					void this.handleFolderPick(input.files);
+				}
+			});
+			zone.addClass('dbench-import-wizard__dropzone--clickable');
+			zone.addEventListener('click', () => input?.click());
+		}
+
+		if (showDropZone) {
+			zone.addEventListener('dragover', (ev) => {
+				ev.preventDefault();
+				zone.addClass('dbench-import-wizard__dropzone--active');
+			});
+			zone.addEventListener('dragleave', () => {
+				zone.removeClass('dbench-import-wizard__dropzone--active');
+			});
+			zone.addEventListener('drop', (ev) => {
+				ev.preventDefault();
+				zone.removeClass('dbench-import-wizard__dropzone--active');
+				if (!ev.dataTransfer) return;
+				void this.handleFolderDrop(ev.dataTransfer);
+			});
+		}
 	}
 
 	private renderInVaultPicker(

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ScrivenerProject Template="No" Version="2.0" Identifier="C1CC4C75-4A12-4579-ADB5-479DFFD60702" Creator="SCRWIN-3.1.6.0" Device="Flitterwing" Modified="2026-05-07 10:43:30 -0700" ModID="98E7F714-ADDA-4174-A341-E76C88C0D97E">
+<ScrivenerProject Template="No" Version="2.0" Identifier="C1CC4C75-4A12-4579-ADB5-479DFFD60702" Creator="SCRWIN-3.1.6.0" Device="Flitterwing" Modified="2026-05-08 16:10:08 -0700" ModID="535CBC60-3A6C-417D-B0CB-2C9AF9A7EE12">
     <Binder>
         <BinderItem UUID="4A1D6B18-0952-42EB-A487-D17915DD3BA1" Type="DraftFolder" Created="2018-11-06 10:57:53 -0700" Modified="2018-11-06 10:57:53 -0700">
             <Title>Manuscript</Title>
             <MetaData/>
             <Children>
-                <BinderItem UUID="D5397FD6-99DB-4FED-B7A9-9F985D9A9FE2" Type="Folder" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 10:29:10 -0700">
-                    <Title>Part One: The Salt Road</Title>
+                <BinderItem UUID="B35BDAE0-9EE9-463F-8D85-656627E1A1E0" Type="Folder" Created="2026-05-08 07:18:49 -0700" Modified="2026-05-08 10:31:01 -0700">
+                    <Title>Volume 1</Title>
                     <MetaData>
                         <IncludeInCompile>Yes</IncludeInCompile>
                     </MetaData>
@@ -14,57 +14,148 @@
                         <TextSelection>0,0</TextSelection>
                     </TextSettings>
                     <Children>
-                        <BinderItem UUID="58D0189B-0507-4669-B129-4A392CF07F36" Type="Folder" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 10:34:33 -0700">
-                            <Title>Chapter1: Departure</Title>
+                        <BinderItem UUID="D5397FD6-99DB-4FED-B7A9-9F985D9A9FE2" Type="Folder" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-08 10:31:01 -0700">
+                            <Title>Part One: The Salt Road</Title>
                             <MetaData>
                                 <IncludeInCompile>Yes</IncludeInCompile>
+                                <CustomMetaData>
+                                    <MetaDataItem>
+                                        <FieldID>reviewed</FieldID>
+                                        <Value>Yes</Value>
+                                    </MetaDataItem>
+                                </CustomMetaData>
                             </MetaData>
                             <TextSettings>
                                 <TextSelection>0,0</TextSelection>
                             </TextSettings>
                             <Children>
-                                <BinderItem UUID="A9C97B44-46C8-4CA8-8F28-B8C0606A58EF" Type="Text" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 10:40:55 -0700">
-                                    <Title>01 - Opening</Title>
+                                <BinderItem UUID="58D0189B-0507-4669-B129-4A392CF07F36" Type="Folder" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 19:44:13 -0700">
+                                    <Title>Chapter 1: Departure</Title>
                                     <MetaData>
-                                        <LabelID>7</LabelID>
-                                        <StatusID>2</StatusID>
                                         <IncludeInCompile>Yes</IncludeInCompile>
-                                        <CustomMetaData>
-                                            <MetaDataItem>
-                                                <FieldID>povcharacter</FieldID>
-                                                <Value>Alice</Value>
-                                            </MetaDataItem>
-                                        </CustomMetaData>
                                     </MetaData>
                                     <TextSettings>
-                                        <TextSelection>1,0</TextSelection>
+                                        <TextSelection>0,0</TextSelection>
                                     </TextSettings>
-                                    <Keywords>
-                                        <KeywordID>1</KeywordID>
-                                    </Keywords>
+                                    <Children>
+                                        <BinderItem UUID="A9C97B44-46C8-4CA8-8F28-B8C0606A58EF" Type="Text" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-08 16:07:11 -0700">
+                                            <Title>01 - Opening</Title>
+                                            <MetaData>
+                                                <LabelID>7</LabelID>
+                                                <StatusID>2</StatusID>
+                                                <IncludeInCompile>Yes</IncludeInCompile>
+                                                <CustomMetaData>
+                                                    <MetaDataItem>
+                                                        <FieldID>lastrevised</FieldID>
+                                                        <Value>2026-05-05 00:00:00 -0700</Value>
+                                                    </MetaDataItem>
+                                                    <MetaDataItem>
+                                                        <FieldID>povcharacter</FieldID>
+                                                        <Value>Alice</Value>
+                                                    </MetaDataItem>
+                                                    <MetaDataItem>
+                                                        <FieldID>povmode</FieldID>
+                                                        <Value>2</Value>
+                                                    </MetaDataItem>
+                                                </CustomMetaData>
+                                            </MetaData>
+                                            <TextSettings>
+                                                <TextSelection>361,0</TextSelection>
+                                            </TextSettings>
+                                            <Keywords>
+                                                <KeywordID>1</KeywordID>
+                                            </Keywords>
+                                        </BinderItem>
+                                        <BinderItem UUID="E6BBAC10-E639-4E86-A784-EDEEE7DF0206" Type="Text" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-08 10:29:50 -0700">
+                                            <Title>02 - Argument</Title>
+                                            <MetaData>
+                                                <LabelID>9</LabelID>
+                                                <StatusID>3</StatusID>
+                                                <IncludeInCompile>Yes</IncludeInCompile>
+                                                <NotesTextSelection>110,0</NotesTextSelection>
+                                                <CustomMetaData>
+                                                    <MetaDataItem>
+                                                        <FieldID>povcharacter</FieldID>
+                                                        <Value>Bob</Value>
+                                                    </MetaDataItem>
+                                                    <MetaDataItem>
+                                                        <FieldID>reviewed</FieldID>
+                                                        <Value>No</Value>
+                                                    </MetaDataItem>
+                                                </CustomMetaData>
+                                            </MetaData>
+                                            <TextSettings>
+                                                <TextSelection>423,0</TextSelection>
+                                            </TextSettings>
+                                            <Children>
+                                                <BinderItem UUID="657B4C4D-7022-41AC-94FB-19CCEE969983" Type="Text" Created="2026-05-08 07:13:23 -0700" Modified="2026-05-08 16:08:05 -0700">
+                                                    <Title>Sub-scene 1</Title>
+                                                    <MetaData>
+                                                        <IncludeInCompile>Yes</IncludeInCompile>
+                                                        <NotesTextSelection>96,0</NotesTextSelection>
+                                                    </MetaData>
+                                                    <TextSettings>
+                                                        <TextSelection>487,0</TextSelection>
+                                                    </TextSettings>
+                                                </BinderItem>
+                                                <BinderItem UUID="433191F0-7ACD-4106-898A-0FE79F9670A1" Type="Text" Created="2026-05-08 07:14:18 -0700" Modified="2026-05-08 07:14:40 -0700">
+                                                    <Title>Sub-scene 2</Title>
+                                                    <MetaData>
+                                                        <IncludeInCompile>Yes</IncludeInCompile>
+                                                    </MetaData>
+                                                    <TextSettings>
+                                                        <TextSelection>414,0</TextSelection>
+                                                    </TextSettings>
+                                                </BinderItem>
+                                            </Children>
+                                        </BinderItem>
+                                        <BinderItem UUID="723FA540-E7C4-4263-91F1-767000ECDC9B" Type="Folder" Created="2026-05-08 07:17:17 -0700" Modified="2026-05-08 07:17:22 -0700">
+                                            <Title>Extra subfolder</Title>
+                                            <MetaData>
+                                                <IncludeInCompile>Yes</IncludeInCompile>
+                                            </MetaData>
+                                            <TextSettings>
+                                                <TextSelection>0,0</TextSelection>
+                                            </TextSettings>
+                                            <Children>
+                                                <BinderItem UUID="DBB42FF3-B724-4B12-AEC5-1374A79F0918" Type="Text" Created="2026-05-08 07:17:46 -0700" Modified="2026-05-08 07:18:03 -0700">
+                                                    <Title>Extra something</Title>
+                                                    <MetaData>
+                                                        <IncludeInCompile>Yes</IncludeInCompile>
+                                                    </MetaData>
+                                                    <TextSettings>
+                                                        <TextSelection>202,0</TextSelection>
+                                                    </TextSettings>
+                                                </BinderItem>
+                                            </Children>
+                                        </BinderItem>
+                                    </Children>
                                 </BinderItem>
-                                <BinderItem UUID="E6BBAC10-E639-4E86-A784-EDEEE7DF0206" Type="Text" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 10:41:07 -0700">
-                                    <Title>02 - Argument</Title>
+                                <BinderItem UUID="567B89D4-21E4-44DF-BD5C-3F32EEC78ADD" Type="Folder" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 10:34:33 -0700">
+                                    <Title>Chapter 2: The Crossing</Title>
                                     <MetaData>
-                                        <LabelID>9</LabelID>
-                                        <StatusID>3</StatusID>
                                         <IncludeInCompile>Yes</IncludeInCompile>
-                                        <NotesTextSelection>110,0</NotesTextSelection>
-                                        <CustomMetaData>
-                                            <MetaDataItem>
-                                                <FieldID>povcharacter</FieldID>
-                                                <Value>Bob</Value>
-                                            </MetaDataItem>
-                                        </CustomMetaData>
                                     </MetaData>
                                     <TextSettings>
-                                        <TextSelection>423,0</TextSelection>
+                                        <TextSelection>0,0</TextSelection>
                                     </TextSettings>
+                                    <Children>
+                                        <BinderItem UUID="F5604565-3F9E-451B-98E0-142BE1BDE83D" Type="Text" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 10:41:20 -0700">
+                                            <Title>Scene</Title>
+                                            <MetaData>
+                                                <IncludeInCompile>Yes</IncludeInCompile>
+                                                <NotesTextSelection>117,0</NotesTextSelection>
+                                            </MetaData>
+                                            <TextSettings>
+                                                <TextSelection>529,0</TextSelection>
+                                            </TextSettings>
+                                        </BinderItem>
+                                    </Children>
                                 </BinderItem>
                             </Children>
                         </BinderItem>
-                        <BinderItem UUID="567B89D4-21E4-44DF-BD5C-3F32EEC78ADD" Type="Folder" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 10:34:33 -0700">
-                            <Title>Chapter 2: The Crossing</Title>
+                        <BinderItem UUID="68F32305-EBE6-4072-B6C2-B8883B667EBC" Type="Folder" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-08 10:31:01 -0700">
+                            <Title>Part Two: The Meridian Drift</Title>
                             <MetaData>
                                 <IncludeInCompile>Yes</IncludeInCompile>
                             </MetaData>
@@ -72,47 +163,53 @@
                                 <TextSelection>0,0</TextSelection>
                             </TextSettings>
                             <Children>
-                                <BinderItem UUID="F5604565-3F9E-451B-98E0-142BE1BDE83D" Type="Text" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 10:41:20 -0700">
-                                    <Title>Scene</Title>
+                                <BinderItem UUID="245C2ABD-E9C1-4091-B1B7-DA32402644E7" Type="Folder" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 19:44:53 -0700">
+                                    <Title>Chapter 3: Midway</Title>
                                     <MetaData>
                                         <IncludeInCompile>Yes</IncludeInCompile>
-                                        <NotesTextSelection>117,0</NotesTextSelection>
                                     </MetaData>
                                     <TextSettings>
-                                        <TextSelection>529,0</TextSelection>
+                                        <TextSelection>0,0</TextSelection>
                                     </TextSettings>
+                                    <Children>
+                                        <BinderItem UUID="156AAE33-5D68-4ACA-8469-6440CDFED4EA" Type="Text" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 10:41:30 -0700">
+                                            <Title>Scene</Title>
+                                            <MetaData>
+                                                <IncludeInCompile>Yes</IncludeInCompile>
+                                                <NotesTextSelection>53,0</NotesTextSelection>
+                                            </MetaData>
+                                            <TextSettings>
+                                                <TextSelection>450,0</TextSelection>
+                                            </TextSettings>
+                                        </BinderItem>
+                                    </Children>
                                 </BinderItem>
-                            </Children>
-                        </BinderItem>
-                    </Children>
-                </BinderItem>
-                <BinderItem UUID="68F32305-EBE6-4072-B6C2-B8883B667EBC" Type="Folder" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 10:29:18 -0700">
-                    <Title>Part Two: The Meridian Drift</Title>
-                    <MetaData>
-                        <IncludeInCompile>Yes</IncludeInCompile>
-                    </MetaData>
-                    <TextSettings>
-                        <TextSelection>0,0</TextSelection>
-                    </TextSettings>
-                    <Children>
-                        <BinderItem UUID="245C2ABD-E9C1-4091-B1B7-DA32402644E7" Type="Folder" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 10:34:33 -0700">
-                            <Title>Chapter</Title>
-                            <MetaData>
-                                <IncludeInCompile>Yes</IncludeInCompile>
-                            </MetaData>
-                            <TextSettings>
-                                <TextSelection>0,0</TextSelection>
-                            </TextSettings>
-                            <Children>
-                                <BinderItem UUID="156AAE33-5D68-4ACA-8469-6440CDFED4EA" Type="Text" Created="2018-11-06 10:57:53 -0700" Modified="2026-05-07 10:41:30 -0700">
-                                    <Title>Scene</Title>
+                                <BinderItem UUID="55359F37-AADC-4B2E-87B0-5BE7E1381152" Type="Folder" Created="2026-05-07 19:48:45 -0700" Modified="2026-05-07 19:48:55 -0700">
+                                    <Title>Chapter 4: Almost There</Title>
                                     <MetaData>
                                         <IncludeInCompile>Yes</IncludeInCompile>
-                                        <NotesTextSelection>53,0</NotesTextSelection>
                                     </MetaData>
                                     <TextSettings>
-                                        <TextSelection>69,0</TextSelection>
+                                        <TextSelection>0,0</TextSelection>
                                     </TextSettings>
+                                    <Children>
+                                        <BinderItem UUID="09A14678-F455-43C8-BD07-EC91C173F4C9" Type="Text" Created="2026-05-07 19:49:01 -0700" Modified="2026-05-07 19:50:09 -0700">
+                                            <Title>Scene</Title>
+                                            <MetaData>
+                                                <IncludeInCompile>Yes</IncludeInCompile>
+                                            </MetaData>
+                                            <TextSettings>
+                                                <TextSelection>665,0</TextSelection>
+                                            </TextSettings>
+                                        </BinderItem>
+                                        <BinderItem UUID="29C9D389-1CBD-495F-B53E-D318FE1FD2E7" Type="Text" Created="2026-05-08 15:59:51 -0700" Modified="2026-05-08 16:00:28 -0700">
+                                            <Title>Scene that's excluded</Title>
+                                            <MetaData/>
+                                            <TextSettings>
+                                                <TextSelection>392,0</TextSelection>
+                                            </TextSettings>
+                                        </BinderItem>
+                                    </Children>
                                 </BinderItem>
                             </Children>
                         </BinderItem>
@@ -428,6 +525,21 @@
         <MetaDataField Type="Text" ID="povcharacter" Wraps="No" Align="Left">
             <Title>POV Character</Title>
         </MetaDataField>
+        <MetaDataField Type="Checkbox" ID="reviewed">
+            <Title>Reviewed</Title>
+        </MetaDataField>
+        <MetaDataField Type="Date" ID="lastrevised" DateType="Short">
+            <Title>Last revised</Title>
+            <DateFormat></DateFormat>
+        </MetaDataField>
+        <MetaDataField Type="List" ID="povmode">
+            <Title>POV mode</Title>
+            <ListOptions None="None">
+                <Option ID="1">First</Option>
+                <Option ID="2">Third limited</Option>
+                <Option ID="3">Omniscient</Option>
+            </ListOptions>
+        </MetaDataField>
     </CustomMetaDataSettings>
     <ProjectBookmarks>
         <Bookmark BinderUUID="06C0455C-36DD-4F38-BB7B-F7DD2453A8A5"/>
@@ -437,15 +549,15 @@
     <ProjectTargets Notify="No">
         <DraftTarget Type="Words" CountIncludedOnly="Yes" CurrentCompileGroupOnly="Yes" Deadline="2026-05-05 10:11:41 -0700" IgnoreDeadline="Yes">0</DraftTarget>
         <SessionTarget Type="Words" CountDraftOnly="Yes" AllowNegatives="Yes" ResetType="Time" ResetTime="00:00" DeterminedFromDeadline="No" CanWriteOnDeadlineDate="No" WritingDays="">0</SessionTarget>
-        <PreviousSession Words="265" Characters="1853" Date="2026-05-07 10:43:30 -0700"/>
+        <PreviousSession Words="186" Characters="1317" Date="2026-05-08 16:10:08 -0700"/>
     </ProjectTargets>
     <TemplateFolderUUID>5C03DE09-C285-48ED-827F-78E62B7D0F72</TemplateFolderUUID>
     <BookmarksFolderUUID>69822417-D015-4BDD-90BD-18AAA6198D15</BookmarksFolderUUID>
-    <RecentWritingHistory Date="2026-05-07 00:00:00 -0700">
-        <DraftWordCount>265</DraftWordCount>
-        <DraftCharCount>1853</DraftCharCount>
+    <RecentWritingHistory Date="2026-05-08 00:00:00 -0700">
+        <DraftWordCount>240</DraftWordCount>
+        <DraftCharCount>1709</DraftCharCount>
         <OtherWordCount>0</OtherWordCount>
-        <OtherCharCount>1</OtherCharCount>
+        <OtherCharCount>0</OtherCharCount>
     </RecentWritingHistory>
     <PrintSettings PaperSize="612.0,792.0" LeftMargin="72.0" RightMargin="72.0" TopMargin="90.0" BottomMargin="90.0" PaperType="na-letter" Orientation="Portrait" ScaleFactor="1.0" HorizontallyCentered="Yes" VerticallyCentered="Yes" Collates="Yes" PagesAcross="1" PagesDown="1"/>
 </ScrivenerProject>

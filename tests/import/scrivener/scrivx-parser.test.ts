@@ -511,19 +511,24 @@ describe.skipIf(novelFixture === undefined)(
 			expect(byTitle.get('Characters')?.type).toBe('Folder');
 		});
 
-		it('walks the Manuscript -> Part -> Chapter -> Scene nesting', () => {
+		it('walks the Manuscript -> Volume -> Part -> Chapter -> Scene nesting', () => {
 			const manuscript = result.binder.find(
 				(b) => b.title === 'Manuscript'
 			);
 			expect(manuscript).toBeDefined();
 			expect(manuscript?.children.map((c) => c.title)).toEqual([
+				'Volume 1',
+			]);
+
+			const volume = manuscript?.children[0];
+			expect(volume?.children.map((c) => c.title)).toEqual([
 				'Part One: The Salt Road',
 				'Part Two: The Meridian Drift',
 			]);
 
-			const partOne = manuscript?.children[0];
+			const partOne = volume?.children[0];
 			expect(partOne?.children.map((c) => c.title)).toEqual([
-				'Chapter1: Departure',
+				'Chapter 1: Departure',
 				'Chapter 2: The Crossing',
 			]);
 
@@ -531,6 +536,7 @@ describe.skipIf(novelFixture === undefined)(
 			expect(chapter1?.children.map((c) => c.title)).toEqual([
 				'01 - Opening',
 				'02 - Argument',
+				'Extra subfolder',
 			]);
 		});
 
@@ -583,10 +589,16 @@ describe.skipIf(novelFixture === undefined)(
 			});
 		});
 
-		it('preserves Created and Modified attributes verbatim', () => {
+		it('preserves Created and Modified attributes', () => {
+			// Created is a stable seed-time value; Modified drifts every
+			// time the fixture is re-saved in Scrivener, so assert
+			// format-shape only (YYYY-MM-DD HH:MM:SS ±HHMM) rather than a
+			// literal string.
 			const opening = findByTitle(result.binder, '01 - Opening');
 			expect(opening?.created).toBe('2018-11-06 10:57:53 -0700');
-			expect(opening?.modified).toBe('2026-05-07 10:40:55 -0700');
+			expect(opening?.modified).toMatch(
+				/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [-+]\d{4}$/
+			);
 		});
 
 		it('handles non-Text BinderItem types (Image, PDF) without error', () => {

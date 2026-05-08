@@ -323,13 +323,13 @@ describe.skipIf(novelFixture === undefined)(
 			stubOptions
 		);
 
-		it('plans 3 chapters and 4 scenes from the manuscript', () => {
-			expect(plan.counts.chapters).toBe(3);
-			expect(plan.counts.scenes).toBe(4);
+		it('plans 4 chapters and 7 scenes from the manuscript', () => {
+			expect(plan.counts.chapters).toBe(4);
+			expect(plan.counts.scenes).toBe(7);
 		});
 
-		it('counts the two Parts as extras-above', () => {
-			expect(plan.counts.extrasAbove).toBe(2);
+		it('counts the Volume and two Parts as extras-above', () => {
+			expect(plan.counts.extrasAbove).toBe(3);
 		});
 
 		it('produces the expected chapter paths', () => {
@@ -337,9 +337,10 @@ describe.skipIf(novelFixture === undefined)(
 				.filter((e) => e.kind === 'chapter-note')
 				.map((e) => e.path);
 			expect(chapterPaths).toEqual([
-				'Draft Bench/Salt Road/Chapter1 - Departure.md',
+				'Draft Bench/Salt Road/Chapter 1 - Departure.md',
 				'Draft Bench/Salt Road/Chapter 2 - The Crossing.md',
-				'Draft Bench/Salt Road/Chapter.md',
+				'Draft Bench/Salt Road/Chapter 3 - Midway.md',
+				'Draft Bench/Salt Road/Chapter 4 - Almost There.md',
 			]);
 		});
 
@@ -348,10 +349,10 @@ describe.skipIf(novelFixture === undefined)(
 				.filter((e) => e.kind === 'scene-note')
 				.map((e) => e.path);
 			expect(scenePaths[0]).toBe(
-				'Draft Bench/Salt Road/Chapter1 - Departure/01 - Opening.md'
+				'Draft Bench/Salt Road/Chapter 1 - Departure/01 - Opening.md'
 			);
 			expect(scenePaths[1]).toBe(
-				'Draft Bench/Salt Road/Chapter1 - Departure/02 - Argument.md'
+				'Draft Bench/Salt Road/Chapter 1 - Departure/02 - Argument.md'
 			);
 		});
 

@@ -4,6 +4,12 @@
         <Document ID="06C0455C-36DD-4F38-BB7B-F7DD2453A8A5">
             <Title>Characters</Title>
         </Document>
+        <Document ID="09A14678-F455-43C8-BD07-EC91C173F4C9">
+            <Title>Scene</Title>
+            <Text>Gallia est omnis divisa in partes tres, quarum. Paullum deliquit, ponderibus modulisque suis ratio utitur. Curabitur blandit tempus ardua ridiculus sed magna. Pellentesque habitant morbi tristique senectus et netus. Phasellus laoreet lorem vel dolor tempus vehicula. Curabitur est gravida et libero vitae dictum.
+Curabitur blandit tempus ardua ridiculus sed magna. Paullum deliqnuit, ponderibus modulisque suis ratio utitur. Magna pars studiorum, prodita quaerimus. Phasellus laoreet lorem vel dolor tempus vehicula.
+Paullum deliquit, ponderibus modulisque suis ratio utitur. A communi observantia non est recedendum. Nec dubitamus multa iter quae et nos invenerat.</Text>
+        </Document>
         <Document ID="156AAE33-5D68-4ACA-8469-6440CDFED4EA">
             <Title>Scene</Title>
             <Synopsis>Pellentesque habitant morbi tristique senectus et netus.</Synopsis>
@@ -38,7 +44,13 @@ ISBN-13:</Text>
             <Notes>Feel free to delete this document if you don’t need it, or edit it for your needs.</Notes>
         </Document>
         <Document ID="245C2ABD-E9C1-4091-B1B7-DA32402644E7">
-            <Title>Chapter</Title>
+            <Title>Chapter 3: Midway</Title>
+        </Document>
+        <Document ID="29C9D389-1CBD-495F-B53E-D318FE1FD2E7">
+            <Title>Scene that's excluded</Title>
+            <Text>This scene should not appear in Obsidian imports. Magna pars studiorum, prodita quaerimus. Paullum deliquit, ponderibus modulisque suis ratio utitur.
+Nec dubitamus multa iter quae et nos invenerat. Unam incolunt Belgae, aliam Aquitani, tertiam. Quo usque tandem abutere, Catilina, patientia nostra? A communi observantia non est recedendum.
+Curabitur blandit tempus ardua ridiculus sed magna.</Text>
         </Document>
         <Document ID="30F57C96-1A26-4107-B9AA-58F1730085BA">
             <Title>Paperback Novel</Title>
@@ -900,6 +912,12 @@ the BBC Writers' Room website: http://www.bbc.co.uk/writersroom
         <Document ID="3E5B46A7-2D74-46C0-9C84-D3D1B9EB378E">
             <Title>Manuscript Format</Title>
         </Document>
+        <Document ID="433191F0-7ACD-4106-898A-0FE79F9670A1">
+            <Title>Sub-scene 2</Title>
+            <Text>Paullum deliquit, ponderibus modulisque suis ratio utitur. Curabitur est gravida et libero vitae dictum. Ullamco laboris nisi ut aliquid ex ea commodi consequat. Inmensae subtilitatis, obscuris et malesuada fames.
+Unam incolunt Belgae, aliam Aquitani, tertiam. Inmensae subtilitatis, obscuris et malesuada fames. Curabitur est gravida et libero vitae dictum.
+Quisque ut dolor gravida, placerat libero vel, euismod.</Text>
+        </Document>
         <Document ID="486D874A-7589-4C1E-BECE-40B465746BA1">
             <Title>Title Page</Title>
             <Text>
@@ -922,6 +940,9 @@ the BBC Writers' Room website: http://www.bbc.co.uk/writersroom
         <Document ID="4D01D8EC-C1C3-427E-88C0-602D9158FC95">
             <Title>Paperback</Title>
         </Document>
+        <Document ID="55359F37-AADC-4B2E-87B0-5BE7E1381152">
+            <Title>Chapter 4: Almost There</Title>
+        </Document>
         <Document ID="567B89D4-21E4-44DF-BD5C-3F32EEC78ADD">
             <Title>Chapter 2: The Crossing</Title>
         </Document>
@@ -934,10 +955,19 @@ This saves us from having to manually assign the “Front Matter” section type
 During compile, documents assigned the “Front Matter” section type will be laid out differently from documents in the main body of the manuscript.</Notes>
         </Document>
         <Document ID="58D0189B-0507-4669-B129-4A392CF07F36">
-            <Title>Chapter1: Departure</Title>
+            <Title>Chapter 1: Departure</Title>
         </Document>
         <Document ID="5C03DE09-C285-48ED-827F-78E62B7D0F72">
             <Title>Template Sheets</Title>
+        </Document>
+        <Document ID="657B4C4D-7022-41AC-94FB-19CCEE969983">
+            <Title>Sub-scene 1</Title>
+            <Synopsis>Curabitur blandit tempus ardua ridiculus sed magna.</Synopsis>
+            <Text>Quisque ut dolor gravida, placerat libero vel, euismod. Curabitur blandit tempus ardua ridiculus sed magna. Inmensae subtilitatis, obscuris et malesuada fames. Unam incolunt Belgae, aliam Aquitani, tertiam. Quisque ut dolor gravida, placerat libero vel, euismod.
+Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.
+Quisque ut dolor gravida, placerat libero vel, euismod. Phasellus laoreet lorem vel dolor tempus vehicula.</Text>
+            <Notes>These are some notes for a sub-scene. Paullum deliquit, ponderibus modulisque suis ratio utitur.</Notes>
+            <Comments>This scene also has a footnote. Yay!</Comments>
         </Document>
         <Document ID="6830B6AC-686B-4370-A979-2FD1D7288BDA">
             <Title>Places</Title>
@@ -984,6 +1014,9 @@ Feel free to edit the text of the title page as required.</Notes>
         </Document>
         <Document ID="69822417-D015-4BDD-90BD-18AAA6198D15">
             <Title>Notes</Title>
+        </Document>
+        <Document ID="723FA540-E7C4-4263-91F1-767000ECDC9B">
+            <Title>Extra subfolder</Title>
         </Document>
         <Document ID="874592F5-2256-46A1-8434-432743846FB8">
             <Title>Dedication</Title>
@@ -1034,9 +1067,15 @@ Your dedication here.</Text>
             <Title>01 - Opening</Title>
             <Synopsis>Nec dubitamus multa iter quae et nos invenerat. Pellentesque habitant morbi tristique senectus et netus.</Synopsis>
             <Text>Ullamco laboris nisi ut aliquid ex ea commodi consequat. Inmensae subtilitatis, obscuris et malesuada fames. Quisque ut dolor gravida, placerat libero vel, euismod. Cras mattis iudicium purus sit amet fermentum. Unam incolunt Belgae, aliam Aquitani, tertiam.
-Unam incolunt Belgae, aliam Aquitani, tertiam. Ullamco laboris nisi ut aliquid ex ea commodi consequat. Cras mattis iudicium purus sit amet fermentum. A communi observantia non est recedendum.</Text>
-            <CustomMetaData>Alice</CustomMetaData>
+Unam incolunt Belgae, aliam Aquitani, tertiam. Ullamco laboris nisi ut aliquid ex ea commodi consequat. Cras mattis iudicium purus sit amet fermentum. A communi observantia non est recedendum.
+Changes after a snapshot. Unam incolunt Belgae, aliam Aquitani, tertiam. Ullamco laboris nisi ut aliquid ex ea commodi consequat.
+More changes after a second snapshot. Curabitur est gravida et libero vitae dictum.</Text>
+            <CustomMetaData>2026-05-05 00:00:00 -0700 Alice 2</CustomMetaData>
             <Notes>A communi observantia non est recedendum. Curabitur est gravida et libero vitae dictum.</Notes>
+            <Comments>This is the first footnote. Yay!</Comments>
+        </Document>
+        <Document ID="B35BDAE0-9EE9-463F-8D85-656627E1A1E0">
+            <Title>Volume 1</Title>
         </Document>
         <Document ID="BE948F87-BDA3-4551-8E08-AC248FE89301">
             <Title>Character Sketch</Title>
@@ -1059,6 +1098,12 @@ Notes:
         </Document>
         <Document ID="D5397FD6-99DB-4FED-B7A9-9F985D9A9FE2">
             <Title>Part One: The Salt Road</Title>
+            <CustomMetaData>Yes</CustomMetaData>
+        </Document>
+        <Document ID="DBB42FF3-B724-4B12-AEC5-1374A79F0918">
+            <Title>Extra something</Title>
+            <Text>Nec dubitamus multa iter quae et nos invenerat. Curabitur blandit tempus ardua ridiculus sed magna.
+Cras mattis iudicium purus sit amet fermentum. Quisque ut dolor gravida, placerat libero vel, euismod.</Text>
         </Document>
         <Document ID="E6BBAC10-E639-4E86-A784-EDEEE7DF0206">
             <Title>02 - Argument</Title>
@@ -1066,7 +1111,7 @@ Notes:
             <Text>Nec dubitamus multa iter quae et nos invenerat. Ullamco laboris nisi ut aliquid ex ea commodi consequat. Gallia est omnis divisa in partes tres, quarum. Pellentesque habitant morbi tristique senectus et netus.
 Curabitur blandit tempus ardua ridiculus sed magna. Phasellus laoreet lorem vel dolor tempus vehicula. Quo usque tandem abutere, Catilina, patientia nostra?
 Pellentesque habitant morbi tristique senectus et netus.</Text>
-            <CustomMetaData>Bob</CustomMetaData>
+            <CustomMetaData>Bob No</CustomMetaData>
             <Notes>Inmensae subtilitatis, obscuris et malesuada fames. Paullum deliquit, ponderibus modulisque suis ratio utitur.</Notes>
         </Document>
         <Document ID="EAED9F93-2779-4184-82E8-30D27307C6AC">
@@ -1146,7 +1191,9 @@ Part titles: Likewise, by default part numbers are added but not their titles. T
 Click on “Assign Section Layouts” at the bottom of the Compile panel.
 Select “Part Heading” in the list on the left.
 Select a different layout on the right, such as “Part Title” or “Part Title Page”.
-Font: You can override the font used throughout a compiled document. At the top of the “Section Layouts” pane in the centre of the Compile panel, change the “Font” setting.Note that fonts are not included in ebooks, however—e-readers choose their own fonts (and you would need to pay a hefty fee for a licence to embed a font in an ebook). The “Font” setting is therefore not available for ebook formats.
+Font: You can override the font used throughout a compiled document. At the top of the “Section Layouts” pane in the centre of the Compile panel, change the “Font” setting.
+
+Note that fonts are not included in ebooks, however—e-readers choose their own fonts (and you would need to pay a hefty fee for a licence to embed a font in an ebook). The “Font” setting is therefore not available for ebook formats.
 Page size: The “Paperback” formats are set to create a PDF with a page size of 5.06&quot; x 7.81&quot; or 6&quot; x 9&quot;, which are two of the formats you can use with Amazon’s CreateSpace and are popular sizes for trade paperbacks. You can create your own paperback format using a different page size as follows:
 Right-click on the “Paperback (5.06&quot; x 7.81&quot;)” format in Compile’s “Formats” list.
 Select “Duplicate &amp; Edit Format…”. The compile format designer window will open.
@@ -1177,7 +1224,9 @@ In the binder, select the documents you would like to appear in the table of con
 For a simple flat list, drag the selected documents into the editor and drop them in the empty “Contents” document. Alternatively, if you would like the table of contents indented to match the binder structure, select Edit &gt; Copy Special &gt; Copy Documents as Structured Link List and then click into the text of the “Contents” document and hit Ctrl+V or use Edit &gt; Paste. The documents you wish to appear in the table of contents will now appear as a list of links.
 If you wish to centre the table of contents, select the text and centre it.
 In the Inspector, change the “Section Type” of the “Contents” document to “Table of Contents”.
-Remove the editor lock by toggling Navigate &gt; Editor &gt; Lock in Place or deselecting the option from the menu that appears when right-clicking the document icon in the editor header.Now, when you compile, your custom “Contents” document will be used instead of the automatically-generated one. The titles in the links of the “Contents” document will automatically be updated to match those of the final compiled ebook.
+Remove the editor lock by toggling Navigate &gt; Editor &gt; Lock in Place or deselecting the option from the menu that appears when right-clicking the document icon in the editor header.
+
+Now, when you compile, your custom “Contents” document will be used instead of the automatically-generated one. The titles in the links of the “Contents” document will automatically be updated to match those of the final compiled ebook.
 Sample Documents
 The “Sample Output” folder inside the Research folder contains examples of documents that have been created by compiling from this template. “Standard Manuscript” shows the results when compiling to “Manuscript (Courier)”, and “Paperback Novel” shows the results when compiling to “Paperback (5.06&quot; x 7.81&quot;)” format with chapter subtitles included, as described in Making Changes, above.
 Final Note

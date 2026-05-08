@@ -176,14 +176,24 @@ describe.skipIf(novelFixture === undefined)(
 
 		it('tallies the Manuscript draft material', () => {
 			// The fixture's Manuscript has:
-			//   Part One: The Salt Road
-			//     Chapter1: Departure   (2 scenes: 01 Opening, 02 Argument)
-			//     Chapter 2: The Crossing  (1 scene)
-			//   Part Two: The Meridian Drift
-			//     Chapter (1 scene)
-			// -> 4 scenes, 5 folders (2 parts + 3 chapters).
-			expect(summary.draftDocuments).toBe(4);
-			expect(summary.draftFolders).toBe(5);
+			//   Volume 1
+			//     Part One: The Salt Road
+			//       Chapter 1: Departure
+			//         01 - Opening
+			//         02 - Argument (with Sub-scene 1, Sub-scene 2)
+			//         Extra subfolder (with Extra something)
+			//       Chapter 2: The Crossing
+			//         Scene
+			//     Part Two: The Meridian Drift
+			//       Chapter 3: Midway
+			//         Scene
+			//       Chapter 4: Almost There
+			//         Scene
+			//         Scene that's excluded
+			// -> 9 Text documents, 8 folders (Volume + 2 Parts + 4 Chapters
+			//    + Extra subfolder).
+			expect(summary.draftDocuments).toBe(9);
+			expect(summary.draftFolders).toBe(8);
 		});
 
 		it('tallies Research items', () => {

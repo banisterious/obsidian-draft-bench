@@ -266,28 +266,38 @@ describe.skipIf(novelFixture === undefined)(
 		expect(draftRoot).toBeDefined();
 		const result = autoDetectHierarchy(draftRoot as BinderItem);
 
-		it('detects scene depth 3 (Manuscript > Part > Chapter > Scene)', () => {
-			expect(result.sceneDepth).toBe(3);
+		it('detects scene depth 4 (Manuscript > Volume > Part > Chapter > Scene)', () => {
+			expect(result.sceneDepth).toBe(4);
 		});
 
-		it('classifies the two Parts as extras-above', () => {
-			// Part One: The Salt Road, Part Two: The Meridian Drift
-			const partOne = (draftRoot as BinderItem).children[0];
-			const partTwo = (draftRoot as BinderItem).children[1];
+		it('classifies the Volume and the two Parts as extras-above', () => {
+			// Volume 1 wraps Part One: The Salt Road + Part Two: The Meridian Drift
+			const volume = (draftRoot as BinderItem).children[0];
+			const partOne = volume.children[0];
+			const partTwo = volume.children[1];
+			expect(result.byId.get(volume.id)).toBe('extras-above');
 			expect(result.byId.get(partOne.id)).toBe('extras-above');
 			expect(result.byId.get(partTwo.id)).toBe('extras-above');
 		});
 
-		it('classifies the three Chapters as chapters', () => {
-			expect(result.counts.chapter).toBe(3);
+		it('classifies the four Chapters as chapters', () => {
+			expect(result.counts.chapter).toBe(4);
 		});
 
-		it('classifies the four Text leaves as scenes', () => {
-			expect(result.counts.scene).toBe(4);
+		it('classifies the leaves at scene depth as scenes', () => {
+			// 6 Text leaves at scene-depth (01 Opening, 02 Argument,
+			// Chapter 2's Scene, Chapter 3's Scene, Chapter 4's Scene,
+			// Scene that's excluded) plus "Extra subfolder" — a Folder at
+			// scene-depth that gets classified as a scene because it
+			// holds prose-bearing children at sub-scene depth.
+			expect(result.counts.scene).toBe(7);
 		});
 
-		it('produces no sub-scene or extras-below items (template has none)', () => {
-			expect(result.counts['sub-scene']).toBe(0);
+		it('classifies the Argument sub-scenes and the Extra subfolder leaf as sub-scenes', () => {
+			// Sub-scene 1, Sub-scene 2 (under 02 - Argument) + Extra
+			// something (under Extra subfolder) — three Text leaves at
+			// scene-depth + 1.
+			expect(result.counts['sub-scene']).toBe(3);
 			expect(result.counts['extras-below']).toBe(0);
 		});
 	}

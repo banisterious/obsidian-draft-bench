@@ -152,18 +152,33 @@ export async function executeImportPlan(
 					'Default compile preset stub is not yet implemented; create a preset manually after import.'
 				);
 			}
-
-			// Pass 4: error log.
-			if (result.errors.length > 0) {
-				await writeErrorLog(input.app, project.file, result.errors);
-				result.filesCreated += 1;
-			}
 		} catch (err) {
 			result.errors.push({
 				binderItemId: '',
 				itemTitle: '(top-level)',
 				message: err instanceof Error ? err.message : String(err),
 			});
+		} finally {
+			// Always attempt to write the error log when there's a
+			// project file and any errors collected. Inside `finally`
+			// so early-return paths and outer-catch paths both reach
+			// it. `writeErrorLog` is idempotent (skips if the file
+			// already exists), so a duplicate run is harmless.
+			if (
+				result.projectFile !== null &&
+				result.errors.length > 0
+			) {
+				try {
+					await writeErrorLog(
+						input.app,
+						result.projectFile,
+						result.errors
+					);
+					result.filesCreated += 1;
+				} catch {
+					// Error-log write itself failed; nothing else to do.
+				}
+			}
 		}
 		return result;
 	});
@@ -232,9 +247,16 @@ async function createProjectFromBundle(
 		await input.app.fileManager.processFrontMatter(file, (frontmatter) => {
 			frontmatter['scrivener-source'] = input.bundleRootPath;
 		});
+
+		// Capture the note BEFORE any vault.modify call. Production
+		// Obsidian invalidates the metadata cache after `vault.modify`,
+		// so a `readProjectNote` afterwards returns null and throws.
+		// The mock keeps the cache populated regardless, which is why
+		// tests don't catch this. Refs #28 dogfood.
+		const note = readProjectNote(input.app, file);
+
 		await normalizeBlankLineAfterFrontmatter(input.app, file);
 
-		const note = readProjectNote(input.app, file);
 		input.onProgress?.('Created project', 1, 100);
 		return note;
 	} catch (err) {
@@ -336,13 +358,18 @@ async function createImportedChapter(
 
 	await applyScrivenerFrontmatter(file, item, ctx, 'chapter');
 
+	// Capture before any vault.modify so the metadata-cache snapshot
+	// is fresh. See `createProjectFromBundle` for the cache-after-
+	// modify rationale.
+	const note = readChapterNote(ctx.input.app, file);
+
 	const body = await loadChapterBody(item, ctx);
 	if (body !== null) {
 		await replaceBody(ctx.input.app, file, body);
 	} else {
 		await normalizeBlankLineAfterFrontmatter(ctx.input.app, file);
 	}
-	return readChapterNote(ctx.input.app, file);
+	return note;
 }
 
 // ---- Scene creation -----------------------------------------------------
@@ -364,13 +391,18 @@ async function createImportedScene(
 
 	await applyScrivenerFrontmatter(file, item, ctx, 'scene');
 
+	// Capture before any vault.modify so the metadata-cache snapshot
+	// is fresh. See `createProjectFromBundle` for the cache-after-
+	// modify rationale.
+	const note = readSceneNote(ctx.input.app, file);
+
 	const body = await loadSceneBody(item, ctx);
 	if (body !== null) {
 		await replaceBody(ctx.input.app, file, body);
 	} else {
 		await normalizeBlankLineAfterFrontmatter(ctx.input.app, file);
 	}
-	return readSceneNote(ctx.input.app, file);
+	return note;
 }
 
 // ---- Sub-scene creation -------------------------------------------------

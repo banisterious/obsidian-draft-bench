@@ -17,7 +17,11 @@ import {
 	type HierarchyMapping,
 	type HierarchyTarget,
 } from './hierarchy-mapping';
-import type { BinderItem, ScrivProject } from './scrivx-parser';
+import type {
+	BinderItem,
+	CustomMetaDataField,
+	ScrivProject,
+} from './scrivx-parser';
 import type { MetadataMapping, StatusTarget } from './metadata-mapping';
 import type { ImportOptions } from './import-wizard-modal';
 import type { ParsedBundle, ScrivenerImportFormData } from './import-wizard-modal';
@@ -175,8 +179,14 @@ export async function executeImportPlan(
 						result.errors
 					);
 					result.filesCreated += 1;
-				} catch {
-					// Error-log write itself failed; nothing else to do.
+				} catch (logErr) {
+					// Surface the failure rather than silently
+					// swallowing it. The wizard's Complete step also
+					// renders errors inline as a fallback.
+					console.error(
+						'Scrivener import: failed to write Import errors.md',
+						logErr
+					);
 				}
 			}
 		}
@@ -582,14 +592,8 @@ async function applyScrivenerFrontmatter(
 			for (const [fieldId, value] of item.customMetaData) {
 				const targetKey = customFields.get(fieldId);
 				if (targetKey === undefined || targetKey === null) continue;
-				frontmatter[targetKey] = value;
-				// Also surface the field's display title via a "*-title"
-				// key when the project defines one — useful provenance.
 				const def = projectFields.get(fieldId);
-				if (def && def.fieldType !== '') {
-					// Don't write extra keys; the title is already
-					// embedded in the field name when scrivener-prefixed.
-				}
+				frontmatter[targetKey] = coerceCustomFieldValue(value, def);
 			}
 		}
 		if (item.includeInCompile === false) {
@@ -630,6 +634,52 @@ function resolveLabel(item: BinderItem, ctx: WriteContext): string | null {
 	const title = ctx.input.bundle.project.labels.get(item.labelId);
 	if (!title || title === '' || title === 'No Label') return null;
 	return title;
+}
+
+/**
+ * Coerce a Scrivener custom-field value into its proper YAML shape
+ * based on the field's declared `fieldType`:
+ *
+ * - **Checkbox** ("Yes"/"No") -> JS boolean true/false. YAML emits as
+ *   the unquoted booleans `true`/`false` rather than the YAML 1.1
+ *   bare-word ambiguity of `Yes`/`No`.
+ * - **List** (option ID number) -> resolved option title via the
+ *   field's `listOptions` map. Falls back to the raw ID string when
+ *   the lookup fails.
+ * - **Date** (Scrivener-specific format like "2026-05-05 00:00:00 -0700")
+ *   -> ISO date string `YYYY-MM-DD` when parseable. Falls back to the
+ *   raw string when not.
+ * - **Text** / unknown -> raw string (existing behavior).
+ *
+ * `def` may be undefined if the project's field-definitions don't
+ * include the referenced field ID (corrupted bundle, or schema
+ * variation we don't yet handle); fall back to the raw string.
+ */
+function coerceCustomFieldValue(
+	value: string,
+	def: CustomMetaDataField | undefined
+): string | boolean {
+	if (!def) return value;
+	switch (def.fieldType) {
+		case 'Checkbox':
+			return value === 'Yes';
+		case 'List': {
+			const title = def.listOptions.get(value);
+			return title !== undefined ? title : value;
+		}
+		case 'Date': {
+			// Scrivener's "Short" date format is `YYYY-MM-DD HH:MM:SS ±HHMM`.
+			// `new Date()` parses it; emit the date portion only so
+			// Bases / Dataview can query it as a date.
+			const parsed = new Date(value);
+			if (!Number.isNaN(parsed.getTime())) {
+				return parsed.toISOString().slice(0, 10);
+			}
+			return value;
+		}
+		default:
+			return value;
+	}
 }
 
 // ---- Image extraction ---------------------------------------------------

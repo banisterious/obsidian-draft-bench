@@ -262,12 +262,36 @@ describe('parseScrivx — custom metadata', () => {
 			id: 'povcharacter',
 			title: 'POV Character',
 			fieldType: 'Text',
+			listOptions: new Map(),
 		});
 		expect(result.customMetaDataFields.get('reviewed')).toEqual({
 			id: 'reviewed',
 			title: 'Reviewed',
 			fieldType: 'Checkbox',
+			listOptions: new Map(),
 		});
+	});
+
+	it('reads <ListOptions> children for List-typed fields', () => {
+		const result = parseScrivx(
+			projectXml(`
+				<Binder/>
+				<CustomMetaDataSettings>
+					<MetaDataField Type="List" ID="povmode">
+						<Title>POV mode</Title>
+						<ListOptions None="None">
+							<Option ID="1">First</Option>
+							<Option ID="2">Third limited</Option>
+							<Option ID="3">Omniscient</Option>
+						</ListOptions>
+					</MetaDataField>
+				</CustomMetaDataSettings>`)
+		);
+		const field = result.customMetaDataFields.get('povmode');
+		expect(field?.fieldType).toBe('List');
+		expect(field?.listOptions.get('1')).toBe('First');
+		expect(field?.listOptions.get('2')).toBe('Third limited');
+		expect(field?.listOptions.get('3')).toBe('Omniscient');
 	});
 });
 
@@ -555,6 +579,7 @@ describe.skipIf(novelFixture === undefined)(
 				id: 'povcharacter',
 				title: 'POV Character',
 				fieldType: 'Text',
+				listOptions: new Map(),
 			});
 		});
 

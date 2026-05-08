@@ -62,6 +62,12 @@ export interface CustomMetaDataField {
 	 *  "Text" | "Checkbox" | "Date" | "List". Preserved as-is; the
 	 *  importer doesn't validate the set. */
 	fieldType: string;
+	/** When `fieldType` is "List", maps option ID -> option title from
+	 *  `<ListOptions><Option ID="...">Title</Option></ListOptions>`.
+	 *  Empty for non-List fields. The per-document `<Value>` for a
+	 *  List field stores the option ID; consumers resolve via this
+	 *  map to get the human-readable title. */
+	listOptions: Map<string, string>;
 }
 
 export interface BinderItem {
@@ -242,7 +248,26 @@ function readCustomMetaDataFields(
 			id,
 			title: (title?.textContent ?? '').trim(),
 			fieldType: field.getAttribute('Type') ?? '',
+			listOptions: readListOptions(field),
 		});
+	}
+	return out;
+}
+
+/**
+ * Read `<ListOptions><Option ID="N">Title</Option>...</ListOptions>`
+ * children of a List-typed `<MetaDataField>`. Returns an empty Map for
+ * non-List fields (no `<ListOptions>` child) so callers can rely on
+ * the field shape being consistent.
+ */
+function readListOptions(field: Element): Map<string, string> {
+	const out = new Map<string, string>();
+	const wrap = childByName(field, 'ListOptions');
+	if (!wrap) return out;
+	for (const option of childrenByName(wrap, 'Option')) {
+		const id = option.getAttribute('ID');
+		if (id === null) continue;
+		out.set(id, (option.textContent ?? '').trim());
 	}
 	return out;
 }

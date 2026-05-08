@@ -136,11 +136,21 @@ describe('autoDetectCustomFieldMapping', () => {
 			customMetaDataFields: new Map([
 				[
 					'povcharacter',
-					{ id: 'povcharacter', title: 'POV Character', fieldType: 'Text' },
+					{
+						id: 'povcharacter',
+						title: 'POV Character',
+						fieldType: 'Text',
+						listOptions: new Map(),
+					},
 				],
 				[
 					'reviewed',
-					{ id: 'reviewed', title: 'Reviewed', fieldType: 'Checkbox' },
+					{
+						id: 'reviewed',
+						title: 'Reviewed',
+						fieldType: 'Checkbox',
+						listOptions: new Map(),
+					},
 				],
 			]),
 		});
@@ -197,7 +207,15 @@ describe('initialMetadataMapping', () => {
 		const project = makeProject({
 			statuses: new Map([['1', 'Draft']]),
 			customMetaDataFields: new Map([
-				['pov', { id: 'pov', title: 'POV', fieldType: 'Text' }],
+				[
+					'pov',
+					{
+						id: 'pov',
+						title: 'POV',
+						fieldType: 'Text',
+						listOptions: new Map(),
+					},
+				],
 			]),
 		});
 		const result = initialMetadataMapping(project, ['draft']);

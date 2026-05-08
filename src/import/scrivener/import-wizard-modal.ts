@@ -1514,9 +1514,24 @@ export class ScrivenerImportWizardModal extends Modal {
 				cls: 'dbench-import-wizard__preview-section-title',
 				text: 'Errors',
 			});
+			const errList = body.createEl('ul', {
+				cls: 'dbench-import-wizard__summary-list',
+			});
+			for (const err of result.errors) {
+				const item = errList.createEl('li', {
+					cls: 'dbench-import-wizard__warning-row',
+				});
+				item.createSpan({
+					cls: 'dbench-import-wizard__error-title',
+					text: err.itemTitle,
+				});
+				item.createSpan({
+					text: `: ${err.message}`,
+				});
+			}
 			body.createEl('p', {
 				cls: 'dbench-import-wizard__hint',
-				text: 'See the import errors file inside the new project folder for details.',
+				text: 'Also written to the import errors file in the new project folder.',
 			});
 		}
 	}

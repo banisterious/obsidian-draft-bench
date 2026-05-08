@@ -399,6 +399,10 @@
 	line-height: 1.5;
 }
 
+.dbench-import-wizard__error-title {
+	font-weight: var(--font-semibold);
+}
+
 .dbench-import-wizard__preview-tree {
 	max-height: 360px;
 	overflow-y: auto;

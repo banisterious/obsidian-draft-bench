@@ -360,8 +360,24 @@ describe('executeImportPlan — frontmatter mappings', () => {
 		const bundle = makeBundle({
 			binder: [draftFolder],
 			customMetaDataFields: new Map([
-				['povcharacter', { id: 'povcharacter', title: 'POV', fieldType: 'Text' }],
-				['mood', { id: 'mood', title: 'Mood', fieldType: 'Text' }],
+				[
+					'povcharacter',
+					{
+						id: 'povcharacter',
+						title: 'POV',
+						fieldType: 'Text',
+						listOptions: new Map(),
+					},
+				],
+				[
+					'mood',
+					{
+						id: 'mood',
+						title: 'Mood',
+						fieldType: 'Text',
+						listOptions: new Map(),
+					},
+				],
 			]),
 		});
 		const formData = makeFormData({ destinationName: 'X', bundle });
@@ -390,6 +406,191 @@ describe('executeImportPlan — frontmatter mappings', () => {
 		)?.frontmatter;
 		expect(fm?.['scrivener-povcharacter']).toBe('Alice');
 		expect(fm?.['mood']).toBeUndefined();
+	});
+
+	it('coerces Checkbox custom fields to YAML booleans (Yes/No -> true/false)', async () => {
+		const { app, settings, linker } = setupApp();
+		const sceneItem = makeItem({
+			id: 's',
+			type: 'Text',
+			title: 'Scene',
+			customMetaData: new Map([['reviewed', 'Yes']]),
+		});
+		const chapterItem = makeItem({
+			id: 'c',
+			type: 'Folder',
+			title: 'Chapter',
+			children: [sceneItem],
+		});
+		const draftFolder = makeItem({
+			id: 'd',
+			type: 'DraftFolder',
+			children: [chapterItem],
+		});
+		const bundle = makeBundle({
+			binder: [draftFolder],
+			customMetaDataFields: new Map([
+				[
+					'reviewed',
+					{
+						id: 'reviewed',
+						title: 'Reviewed',
+						fieldType: 'Checkbox',
+						listOptions: new Map(),
+					},
+				],
+			]),
+		});
+		const formData = makeFormData({ destinationName: 'X', bundle });
+		formData.metadataMapping = {
+			statuses: new Map(),
+			labelKey: 'scrivener-label',
+			customFields: new Map<string, string | null>([
+				['reviewed', 'scrivener-reviewed'],
+			]),
+		};
+
+		const result = await executeImportPlan({
+			app,
+			settings,
+			linker,
+			saveSettings: async () => {},
+			bundle,
+			bundleRootPath: 'imports/test.scriv',
+			formData,
+		});
+		expect(result.errors).toEqual([]);
+
+		const fm = app.metadataCache.getFileCache(
+			app.vault.getFileByPath('Draft Bench/X/Chapter/Scene.md')!
+		)?.frontmatter;
+		expect(fm?.['scrivener-reviewed']).toBe(true);
+	});
+
+	it('resolves List custom fields via field.listOptions to the option title', async () => {
+		const { app, settings, linker } = setupApp();
+		const sceneItem = makeItem({
+			id: 's',
+			type: 'Text',
+			title: 'Scene',
+			customMetaData: new Map([['povmode', '2']]),
+		});
+		const chapterItem = makeItem({
+			id: 'c',
+			type: 'Folder',
+			title: 'Chapter',
+			children: [sceneItem],
+		});
+		const draftFolder = makeItem({
+			id: 'd',
+			type: 'DraftFolder',
+			children: [chapterItem],
+		});
+		const bundle = makeBundle({
+			binder: [draftFolder],
+			customMetaDataFields: new Map([
+				[
+					'povmode',
+					{
+						id: 'povmode',
+						title: 'POV mode',
+						fieldType: 'List',
+						listOptions: new Map([
+							['1', 'First'],
+							['2', 'Third limited'],
+							['3', 'Omniscient'],
+						]),
+					},
+				],
+			]),
+		});
+		const formData = makeFormData({ destinationName: 'X', bundle });
+		formData.metadataMapping = {
+			statuses: new Map(),
+			labelKey: 'scrivener-label',
+			customFields: new Map<string, string | null>([
+				['povmode', 'scrivener-povmode'],
+			]),
+		};
+
+		const result = await executeImportPlan({
+			app,
+			settings,
+			linker,
+			saveSettings: async () => {},
+			bundle,
+			bundleRootPath: 'imports/test.scriv',
+			formData,
+		});
+		expect(result.errors).toEqual([]);
+
+		const fm = app.metadataCache.getFileCache(
+			app.vault.getFileByPath('Draft Bench/X/Chapter/Scene.md')!
+		)?.frontmatter;
+		expect(fm?.['scrivener-povmode']).toBe('Third limited');
+	});
+
+	it('coerces Date custom fields to ISO YYYY-MM-DD when parseable', async () => {
+		const { app, settings, linker } = setupApp();
+		const sceneItem = makeItem({
+			id: 's',
+			type: 'Text',
+			title: 'Scene',
+			customMetaData: new Map([
+				['lastrevised', '2026-05-05 00:00:00 -0700'],
+			]),
+		});
+		const chapterItem = makeItem({
+			id: 'c',
+			type: 'Folder',
+			title: 'Chapter',
+			children: [sceneItem],
+		});
+		const draftFolder = makeItem({
+			id: 'd',
+			type: 'DraftFolder',
+			children: [chapterItem],
+		});
+		const bundle = makeBundle({
+			binder: [draftFolder],
+			customMetaDataFields: new Map([
+				[
+					'lastrevised',
+					{
+						id: 'lastrevised',
+						title: 'Last revised',
+						fieldType: 'Date',
+						listOptions: new Map(),
+					},
+				],
+			]),
+		});
+		const formData = makeFormData({ destinationName: 'X', bundle });
+		formData.metadataMapping = {
+			statuses: new Map(),
+			labelKey: 'scrivener-label',
+			customFields: new Map<string, string | null>([
+				['lastrevised', 'scrivener-lastrevised'],
+			]),
+		};
+
+		const result = await executeImportPlan({
+			app,
+			settings,
+			linker,
+			saveSettings: async () => {},
+			bundle,
+			bundleRootPath: 'imports/test.scriv',
+			formData,
+		});
+		expect(result.errors).toEqual([]);
+
+		const fm = app.metadataCache.getFileCache(
+			app.vault.getFileByPath('Draft Bench/X/Chapter/Scene.md')!
+		)?.frontmatter;
+		// Scrivener's date is 2026-05-05 00:00:00 -0700 -> midnight
+		// Pacific = 07:00 UTC same day, so ISO date is 2026-05-05.
+		expect(fm?.['scrivener-lastrevised']).toBe('2026-05-05');
 	});
 
 	it('writes scrivener-include-in-compile: false when the source flag was off', async () => {

@@ -17,7 +17,7 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
 
 ## Documentation
 
-- **Getting started**: [Getting Started](Getting-Started) · [Manuscript Builder](Manuscript-Builder)
+- **Getting started**: [Getting Started](Getting-Started) · [Manuscript Builder](Manuscript-Builder) · [Importing from Scrivener](Importing-from-Scrivener)
 - **Core workflow**: [Projects, Chapters, and Scenes](Projects-And-Scenes) · [Drafts and Versioning](Drafts-And-Versioning) · [Templates](Templates)
 - **Reference**: [Essential Properties](Essential-Properties) · [Frontmatter Reference](Frontmatter-Reference) · [Settings and Configuration](Settings-And-Configuration) · [Context Menu Actions](Context-Menu-Actions)
 - **Help**: [FAQ](FAQ) · [Release History](Release-History)

@@ -15,6 +15,7 @@ These are the drafts currently informing the site:
 | [homepage.md](homepage.md) | Landing page. What Draft Bench is, what it does, where it sits, what's currently shipped. | Live |
 | [faq.md](faq.md) | Prospect-facing FAQ. Four sections (Getting started, How it compares, Scope and compatibility, Getting help). | Live |
 | [comparison.md](comparison.md) | Side-by-side with Longform / StoryLine / Scrivener / plain Obsidian. Lifts from [branding.md § Positioning](../branding.md). | Live |
+| [scrivener-import.md](scrivener-import.md) | Features-page section (or standalone feature page) for the Scrivener 3 importer. Slot decision deferred to the website session. | Live |
 | [media-plan.md](media-plan.md) | Asset inventory + capture-session log. Tier 1 motion loops + Tier 2 stills captured. | Live |
 | `handoff-prompt.md` *(gitignored)* | Standalone prompt to paste into a website-repo session for each port. Local-only; regenerate per handoff. | Live |
 

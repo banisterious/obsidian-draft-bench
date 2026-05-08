@@ -25,6 +25,7 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
 - **Obsidian Bases compatible.** Every property is Bases-queryable out of the box. Build manuscript tables, status queues, and corkboards without custom configuration.
 - **Compile without JavaScript.** A form-based Manuscript Builder handles compile presets, scene selection, and multi-format export (Markdown, ODT, PDF, DOCX).
 - **Compile preview, in-place.** A Preview tab renders the current preset's output as continuous read-only prose, no real export file needed. Dock the Builder as a workspace tab to keep Preview pinned next to a scene you're editing; Preview re-renders as you save.
+- **Scrivener 3 import.** A multi-step wizard reads a `.scriv` bundle from inside your vault and produces a fresh Draft Bench project: chapters, scenes, sub-scenes, drafts (optional), inspector content (synopses, notes, comments, footnotes, keywords), and custom metadata. Cross-platform; works on every OS Draft Bench itself supports. See [Importing from Scrivener](https://github.com/banisterious/obsidian-draft-bench/wiki/Importing-from-Scrivener).
 
 <p align="center">
   <img src="docs/images/dbench-manuscript-builder-preview.png"

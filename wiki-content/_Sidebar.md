@@ -5,6 +5,7 @@
 ### Getting Started
 - [Getting Started](Getting-Started)
 - [Manuscript Builder](Manuscript-Builder)
+- [Importing from Scrivener](Importing-from-Scrivener)
 
 ### Core Workflow
 - [Projects, Chapters, Scenes, and Sub-scenes](Projects-And-Scenes)

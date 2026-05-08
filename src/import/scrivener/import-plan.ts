@@ -24,9 +24,12 @@ import type { ImportOptions } from './import-wizard-modal';
  * `core/sub-scenes.ts` but takes plain strings (no TFile).
  */
 
-/** Filesystem-unsafe characters; sanitized to `-` per the same rule
- *  as `core/drafts.ts`'s `resolveDraftFilename`. */
-const FILENAME_UNSAFE = /[\\/:*?"<>|]/g;
+/** Filesystem-unsafe characters (excluding `:`, which is handled
+ *  separately to preserve the typical "Word: Word" -> "Word - Word"
+ *  spacing rather than producing "Word- Word"). The `-` replacement
+ *  matches `core/drafts.ts`'s `resolveDraftFilename` for the
+ *  remaining characters. */
+const FILENAME_UNSAFE = /[\\/*?"<>|]/g;
 
 export type PlanEntryKind =
 	| 'folder'
@@ -395,7 +398,11 @@ function resolveSubSceneFolder(
 }
 
 function sanitize(name: string): string {
-	return name.replace(FILENAME_UNSAFE, '-');
+	return name
+		.replace(/\s*:\s*/g, ' - ')
+		.replace(FILENAME_UNSAFE, '-')
+		.replace(/\s{2,}/g, ' ')
+		.trim();
 }
 
 function walkAll(

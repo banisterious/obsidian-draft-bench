@@ -124,8 +124,9 @@ describe('buildImportPlan — minimal shapes', () => {
 			DEFAULT_SETTINGS,
 			stubOptions
 		);
-		// `:` and `/` get replaced with `-` per the sanitize rule.
-		expect(plan.entries[0].path).toBe('Draft Bench/Foo- Bar-Baz');
+		// Colons get spaced (": " -> " - ") for readable filenames; `/`
+		// still falls through to the unsafe-char hyphen rule.
+		expect(plan.entries[0].path).toBe('Draft Bench/Foo - Bar-Baz');
 	});
 });
 
@@ -336,8 +337,8 @@ describe.skipIf(novelFixture === undefined)(
 				.filter((e) => e.kind === 'chapter-note')
 				.map((e) => e.path);
 			expect(chapterPaths).toEqual([
-				'Draft Bench/Salt Road/Chapter1- Departure.md',
-				'Draft Bench/Salt Road/Chapter 2- The Crossing.md',
+				'Draft Bench/Salt Road/Chapter1 - Departure.md',
+				'Draft Bench/Salt Road/Chapter 2 - The Crossing.md',
 				'Draft Bench/Salt Road/Chapter.md',
 			]);
 		});
@@ -347,10 +348,10 @@ describe.skipIf(novelFixture === undefined)(
 				.filter((e) => e.kind === 'scene-note')
 				.map((e) => e.path);
 			expect(scenePaths[0]).toBe(
-				'Draft Bench/Salt Road/Chapter1- Departure/01 - Opening.md'
+				'Draft Bench/Salt Road/Chapter1 - Departure/01 - Opening.md'
 			);
 			expect(scenePaths[1]).toBe(
-				'Draft Bench/Salt Road/Chapter1- Departure/02 - Argument.md'
+				'Draft Bench/Salt Road/Chapter1 - Departure/02 - Argument.md'
 			);
 		});
 

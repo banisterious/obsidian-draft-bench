@@ -46,7 +46,9 @@ import type { ParsedBundle, ScrivenerImportFormData } from './import-wizard-moda
  * abort and surface in the result.
  */
 
-const FILENAME_UNSAFE = /[\\/:*?"<>|]/g;
+/** Filesystem-unsafe characters (excluding `:`, handled separately
+ *  to preserve "Word: Word" -> "Word - Word" spacing). */
+const FILENAME_UNSAFE = /[\\/*?"<>|]/g;
 
 /** Maximum heading depth for nested extras-below collapse. Markdown
  *  caps at H6; we cap our nesting one level shallower so leftover
@@ -230,6 +232,7 @@ async function createProjectFromBundle(
 		await input.app.fileManager.processFrontMatter(file, (frontmatter) => {
 			frontmatter['scrivener-source'] = input.bundleRootPath;
 		});
+		await normalizeBlankLineAfterFrontmatter(input.app, file);
 
 		const note = readProjectNote(input.app, file);
 		input.onProgress?.('Created project', 1, 100);
@@ -331,10 +334,14 @@ async function createImportedChapter(
 	ctx.result.filesCreated += 1;
 	ctx.uuidToPath.set(item.id, file.path);
 
-	const body = await loadChapterBody(item, ctx);
-	if (body !== null) await replaceBody(ctx.input.app, file, body);
-
 	await applyScrivenerFrontmatter(file, item, ctx, 'chapter');
+
+	const body = await loadChapterBody(item, ctx);
+	if (body !== null) {
+		await replaceBody(ctx.input.app, file, body);
+	} else {
+		await normalizeBlankLineAfterFrontmatter(ctx.input.app, file);
+	}
 	return readChapterNote(ctx.input.app, file);
 }
 
@@ -355,10 +362,14 @@ async function createImportedScene(
 	ctx.result.filesCreated += 1;
 	ctx.uuidToPath.set(item.id, file.path);
 
-	const body = await loadSceneBody(item, ctx);
-	if (body !== null) await replaceBody(ctx.input.app, file, body);
-
 	await applyScrivenerFrontmatter(file, item, ctx, 'scene');
+
+	const body = await loadSceneBody(item, ctx);
+	if (body !== null) {
+		await replaceBody(ctx.input.app, file, body);
+	} else {
+		await normalizeBlankLineAfterFrontmatter(ctx.input.app, file);
+	}
 	return readSceneNote(ctx.input.app, file);
 }
 
@@ -379,6 +390,8 @@ async function createImportedSubScene(
 	ctx.result.filesCreated += 1;
 	ctx.uuidToPath.set(item.id, file.path);
 
+	await applyScrivenerFrontmatter(file, item, ctx, 'sub-scene');
+
 	// Sub-scene body: own RTF + appended extras-below children as
 	// nested headings.
 	const own = await loadSceneBody(item, ctx);
@@ -387,9 +400,11 @@ async function createImportedSubScene(
 	if (extras !== '') {
 		body = (body === '' ? '' : body + '\n\n') + extras;
 	}
-	if (body !== '') await replaceBody(ctx.input.app, file, body);
-
-	await applyScrivenerFrontmatter(file, item, ctx, 'sub-scene');
+	if (body !== '') {
+		await replaceBody(ctx.input.app, file, body);
+	} else {
+		await normalizeBlankLineAfterFrontmatter(ctx.input.app, file);
+	}
 }
 
 /**
@@ -703,7 +718,43 @@ async function replaceBody(
 	const current = await app.vault.read(file);
 	const match = current.match(/^---\n[\s\S]*?\n---\n?/);
 	const frontmatter = match ? match[0] : '';
-	await app.vault.modify(file, frontmatter + body);
+	// Insert exactly one blank line between the closing `---` and the
+	// body so the YAML block is visually separated. The frontmatter
+	// regex captures up to and including the trailing newline; we add
+	// one more newline as the separator. Strip any leading newlines on
+	// the body so the result is always exactly `---\n\n<body>`.
+	const normalizedBody = body.replace(/^\n+/, '');
+	const separator =
+		frontmatter !== '' && normalizedBody !== '' ? '\n' : '';
+	await app.vault.modify(file, frontmatter + separator + normalizedBody);
+}
+
+/**
+ * Ensure the file has exactly one blank line between its closing
+ * `---` and the body. No-op when the file has no frontmatter, no
+ * body, or already has a blank line. Used for chapter / scene /
+ * sub-scene notes that don't have imported RTF bodies (their
+ * template-rendered body needs the same separator that imported
+ * bodies get via `replaceBody`).
+ *
+ * Why this is needed: Obsidian's `processFrontMatter` writes
+ * frontmatter directly above the existing body without inserting
+ * a blank-line separator when one is missing. The result reads
+ * `---\n<body>` instead of `---\n\n<body>`, which is technically
+ * valid YAML but visually awkward and inconsistent with how writers
+ * see frontmatter in their own notes.
+ */
+async function normalizeBlankLineAfterFrontmatter(
+	app: App,
+	file: TFile
+): Promise<void> {
+	const current = await app.vault.read(file);
+	const match = current.match(/^---\n[\s\S]*?\n---\n?/);
+	if (!match) return;
+	const frontmatter = match[0];
+	const body = current.slice(frontmatter.length);
+	if (body === '' || body.startsWith('\n')) return;
+	await app.vault.modify(file, frontmatter + '\n' + body);
 }
 
 function readProjectNote(app: App, file: TFile): ProjectNote {
@@ -744,7 +795,11 @@ function parentPath(filePath: string): string {
 
 function sanitize(name: string): string {
 	const trimmed = name.trim();
-	const cleaned = trimmed.replace(FILENAME_UNSAFE, '-');
+	const cleaned = trimmed
+		.replace(/\s*:\s*/g, ' - ')
+		.replace(FILENAME_UNSAFE, '-')
+		.replace(/\s{2,}/g, ' ')
+		.trim();
 	return cleaned === '' ? 'Untitled' : cleaned;
 }
 

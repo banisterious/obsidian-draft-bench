@@ -9,8 +9,8 @@ import type { BinderItem, ScrivProject } from './scrivx-parser';
  *   produces category counts the wizard renders as a "what's here"
  *   summary. Pure; no I/O.
  * - `countSnapshots(adapter, bundleRoot)` walks the bundle's
- *   `Files/Data/<UUID>/Snapshots/` directories and counts snapshot
- *   files. Async; uses the vault adapter (cross-platform per the
+ *   `Snapshots/<UUID>.snapshots/` directories and counts snapshot
+ *   RTF files. Async; uses the vault adapter (cross-platform per the
  *   2026-05-06 expansion).
  */
 
@@ -144,29 +144,31 @@ function walkAll(
 }
 
 /**
- * Count snapshot files inside a Scrivener bundle. Snapshots live at
- * `<bundleRoot>/Files/Data/<UUID>/Snapshots/<name>.rtf`; this walks
- * each per-document data folder and tallies all snapshot files.
+ * Count snapshot files inside a Scrivener bundle. Snapshots in
+ * Scrivener 3 (Windows) live at
+ * `<bundleRoot>/Snapshots/<UUID>.snapshots/<timestamp>.rtf`, where
+ * `<UUID>` matches the binder document's UUID and `<timestamp>` is the
+ * snapshot's `<Date>` from the sibling `index.xml`. Each
+ * `.snapshots/` directory also carries an `index.xml` (snapshot
+ * metadata) and a `snapshot.indexes` (binary index) which we don't
+ * count.
  *
- * Best-effort: returns 0 when the bundle has no `Files/Data` folder
- * (synthetic test fixtures, malformed bundles), and silently ignores
- * UUID folders without a `Snapshots/` subdirectory (most documents
- * have none).
+ * Best-effort: returns 0 when the bundle has no top-level `Snapshots/`
+ * folder, and silently ignores `.snapshots/` directories without RTF
+ * bodies (rare; would only happen with a partially-corrupted bundle).
  */
 export async function countSnapshots(
 	adapter: DataAdapter,
 	bundleRoot: string
 ): Promise<number> {
-	const dataPath = `${bundleRoot}/Files/Data`;
-	if (!(await adapter.exists(dataPath))) return 0;
+	const snapshotsRoot = `${bundleRoot}/Snapshots`;
+	if (!(await adapter.exists(snapshotsRoot))) return 0;
 
 	let total = 0;
-	const dataListing = await adapter.list(dataPath);
-	for (const docFolder of dataListing.folders) {
-		const snapshotsPath = `${docFolder}/Snapshots`;
-		if (!(await adapter.exists(snapshotsPath))) continue;
-		const snapListing = await adapter.list(snapshotsPath);
-		for (const file of snapListing.files) {
+	const rootListing = await adapter.list(snapshotsRoot);
+	for (const docSnapshotsFolder of rootListing.folders) {
+		const docListing = await adapter.list(docSnapshotsFolder);
+		for (const file of docListing.files) {
 			if (file.endsWith('.rtf')) total += 1;
 		}
 	}

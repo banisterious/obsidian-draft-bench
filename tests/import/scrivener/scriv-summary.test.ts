@@ -25,6 +25,40 @@ function fakeAdapter(map: Record<string, ListedFiles>): DataAdapter {
 	} as unknown as DataAdapter;
 }
 
+/**
+ * Real-disk `DataAdapter` stub backed by Node's `fs`, for tests that
+ * walk a fixture bundle on the local filesystem rather than a fake
+ * vault map. Implements just `exists` + `list` (the surface
+ * `countSnapshots` and the snapshot parser actually use).
+ */
+function nodeFsAdapter(): DataAdapter {
+	return {
+		exists: async (p: string) => {
+			try {
+				statSync(p);
+				return true;
+			} catch {
+				return false;
+			}
+		},
+		list: async (p: string) => {
+			try {
+				const entries = readdirSync(p);
+				const files: string[] = [];
+				const folders: string[] = [];
+				for (const e of entries) {
+					const full = `${p}/${e}`;
+					if (statSync(full).isDirectory()) folders.push(full);
+					else files.push(full);
+				}
+				return { files, folders };
+			} catch {
+				return { files: [], folders: [] };
+			}
+		},
+	} as unknown as DataAdapter;
+}
+
 // ---- summarizeProject — synthetic shapes -------------------------------
 
 function makeItem(
@@ -231,41 +265,45 @@ describe.skipIf(novelFixture === undefined)(
 // ---- countSnapshots ----------------------------------------------------
 
 describe('countSnapshots', () => {
-	it('returns 0 when the bundle has no Files/Data folder', async () => {
+	it('returns 0 when the bundle has no top-level Snapshots folder', async () => {
 		const adapter = fakeAdapter({});
 		expect(await countSnapshots(adapter, 'bundle.scriv')).toBe(0);
 	});
 
-	it('returns 0 when no UUID folder has a Snapshots subdirectory', async () => {
+	it('returns 0 when the Snapshots folder has no <UUID>.snapshots subdirectories', async () => {
 		const adapter = fakeAdapter({
-			'bundle.scriv/Files/Data': {
+			'bundle.scriv/Snapshots': {
 				files: [],
-				folders: ['bundle.scriv/Files/Data/UUID-A', 'bundle.scriv/Files/Data/UUID-B'],
+				folders: [],
 			},
 		});
 		expect(await countSnapshots(adapter, 'bundle.scriv')).toBe(0);
 	});
 
-	it('counts .rtf files across multiple Snapshots subdirectories', async () => {
+	it('counts .rtf files across multiple <UUID>.snapshots subdirectories', async () => {
 		const adapter = fakeAdapter({
-			'bundle.scriv/Files/Data': {
+			'bundle.scriv/Snapshots': {
 				files: [],
 				folders: [
-					'bundle.scriv/Files/Data/UUID-A',
-					'bundle.scriv/Files/Data/UUID-B',
-					'bundle.scriv/Files/Data/UUID-C',
+					'bundle.scriv/Snapshots/UUID-A.snapshots',
+					'bundle.scriv/Snapshots/UUID-B.snapshots',
+					'bundle.scriv/Snapshots/UUID-C.snapshots',
 				],
 			},
-			'bundle.scriv/Files/Data/UUID-A/Snapshots': {
+			'bundle.scriv/Snapshots/UUID-A.snapshots': {
 				files: [
-					'bundle.scriv/Files/Data/UUID-A/Snapshots/2024-03-01.rtf',
-					'bundle.scriv/Files/Data/UUID-A/Snapshots/2024-03-15.rtf',
+					'bundle.scriv/Snapshots/UUID-A.snapshots/2024-03-01-12-00-00-0700.rtf',
+					'bundle.scriv/Snapshots/UUID-A.snapshots/2024-03-15-12-00-00-0700.rtf',
 				],
 				folders: [],
 			},
-			'bundle.scriv/Files/Data/UUID-C/Snapshots': {
+			'bundle.scriv/Snapshots/UUID-B.snapshots': {
+				files: [],
+				folders: [],
+			},
+			'bundle.scriv/Snapshots/UUID-C.snapshots': {
 				files: [
-					'bundle.scriv/Files/Data/UUID-C/Snapshots/2024-04-10.rtf',
+					'bundle.scriv/Snapshots/UUID-C.snapshots/2024-04-10-12-00-00-0700.rtf',
 				],
 				folders: [],
 			},
@@ -273,17 +311,17 @@ describe('countSnapshots', () => {
 		expect(await countSnapshots(adapter, 'bundle.scriv')).toBe(3);
 	});
 
-	it('ignores non-.rtf files in Snapshots folders', async () => {
+	it('ignores index.xml + snapshot.indexes (only .rtf files count as snapshots)', async () => {
 		const adapter = fakeAdapter({
-			'bundle.scriv/Files/Data': {
+			'bundle.scriv/Snapshots': {
 				files: [],
-				folders: ['bundle.scriv/Files/Data/UUID-A'],
+				folders: ['bundle.scriv/Snapshots/UUID-A.snapshots'],
 			},
-			'bundle.scriv/Files/Data/UUID-A/Snapshots': {
+			'bundle.scriv/Snapshots/UUID-A.snapshots': {
 				files: [
-					'bundle.scriv/Files/Data/UUID-A/Snapshots/2024-03-01.rtf',
-					'bundle.scriv/Files/Data/UUID-A/Snapshots/.DS_Store',
-					'bundle.scriv/Files/Data/UUID-A/Snapshots/notes.txt',
+					'bundle.scriv/Snapshots/UUID-A.snapshots/2024-03-01-12-00-00-0700.rtf',
+					'bundle.scriv/Snapshots/UUID-A.snapshots/index.xml',
+					'bundle.scriv/Snapshots/UUID-A.snapshots/snapshot.indexes',
 				],
 				folders: [],
 			},
@@ -291,3 +329,17 @@ describe('countSnapshots', () => {
 		expect(await countSnapshots(adapter, 'bundle.scriv')).toBe(1);
 	});
 });
+
+describe.skipIf(novelFixture === undefined)(
+	'countSnapshots — real fixture: ScrivenerTesting.scriv',
+	() => {
+		it('counts the 8 snapshots across the bundle\'s Snapshots/ directories', async () => {
+			// Distribution: 5 documents have 1 snapshot each + 1 document
+			// (01 - Opening / A9C97B44) has 3. Total 8.
+			const fixtureBundle = path.dirname(novelFixture as string);
+			const adapter = nodeFsAdapter();
+			const count = await countSnapshots(adapter, fixtureBundle);
+			expect(count).toBe(8);
+		});
+	}
+);

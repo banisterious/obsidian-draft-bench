@@ -373,17 +373,17 @@ function emit(tokens: RtfToken[]): RtfConversionResult {
 		if (tok.type === 'control-word') {
 			if (SKIPPED_GROUP_CONTROL_WORDS.has(tok.name)) {
 				top().suppressDepth = depth;
-				if (!seenSkipped.has(tok.name)) {
+				// Most skipped groups (fonttbl, colortbl, stylesheet,
+				// info, header*, footer*) are RTF infrastructure that
+				// every Scrivener document includes; surfacing them
+				// floods the writer with noise. We only warn for
+				// `\pict` (inline image), where skipping actually
+				// loses content the writer might care about.
+				if (tok.name === 'pict' && !seenSkipped.has(tok.name)) {
 					seenSkipped.add(tok.name);
-					if (tok.name === 'pict') {
-						warnings.push(
-							'Inline image found and skipped (image extraction lands in a follow-up commit).'
-						);
-					} else {
-						warnings.push(
-							`Skipped \\${tok.name} group (metadata; not meant for output).`
-						);
-					}
+					warnings.push(
+						'Inline image found and skipped (image extraction lands in a follow-up commit).'
+					);
 				}
 				continue;
 			}

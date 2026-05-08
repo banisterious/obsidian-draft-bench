@@ -159,7 +159,7 @@ describe('rtfToMarkdown — character escapes', () => {
 });
 
 describe('rtfToMarkdown — metadata group skipping', () => {
-	it('skips the font table group entirely', () => {
+	it('skips the font table group entirely without surfacing a warning', () => {
 		const input = rtf(
 			'{\\rtf1\\ansi',
 			'{\\fonttbl\\f0\\fswiss Helvetica;\\f1\\froman Times;}',
@@ -167,10 +167,13 @@ describe('rtfToMarkdown — metadata group skipping', () => {
 		);
 		const result = rtfToMarkdown(input);
 		expect(result.markdown).toBe('Body text.');
-		expect(result.warnings.some((w) => w.includes('fonttbl'))).toBe(true);
+		// fonttbl is RTF infrastructure that every Scrivener document
+		// includes; surfacing its skip would flood the writer with
+		// noise. We strip silently.
+		expect(result.warnings.some((w) => w.includes('fonttbl'))).toBe(false);
 	});
 
-	it('skips the color table group entirely', () => {
+	it('skips the color table group entirely without surfacing a warning', () => {
 		const input = rtf(
 			'{\\rtf1\\ansi',
 			'{\\colortbl;\\red255\\green0\\blue0;}',
@@ -178,10 +181,10 @@ describe('rtfToMarkdown — metadata group skipping', () => {
 		);
 		const result = rtfToMarkdown(input);
 		expect(result.markdown).toBe('Body text.');
-		expect(result.warnings.some((w) => w.includes('colortbl'))).toBe(true);
+		expect(result.warnings.some((w) => w.includes('colortbl'))).toBe(false);
 	});
 
-	it('skips the stylesheet group entirely', () => {
+	it('skips the stylesheet group entirely without surfacing a warning', () => {
 		const input = rtf(
 			'{\\rtf1\\ansi',
 			'{\\stylesheet{\\s0 Normal;}{\\s1\\b Heading;}}',
@@ -189,10 +192,10 @@ describe('rtfToMarkdown — metadata group skipping', () => {
 		);
 		const result = rtfToMarkdown(input);
 		expect(result.markdown).toBe('Body text.');
-		expect(result.warnings.some((w) => w.includes('stylesheet'))).toBe(true);
+		expect(result.warnings.some((w) => w.includes('stylesheet'))).toBe(false);
 	});
 
-	it('skips the info group entirely', () => {
+	it('skips the info group entirely without surfacing a warning', () => {
 		const input = rtf(
 			'{\\rtf1\\ansi',
 			'{\\info{\\title My Doc}{\\author Jane}}',
@@ -200,10 +203,13 @@ describe('rtfToMarkdown — metadata group skipping', () => {
 		);
 		const result = rtfToMarkdown(input);
 		expect(result.markdown).toBe('Body text.');
-		expect(result.warnings.some((w) => w.includes('info'))).toBe(true);
+		expect(result.warnings.some((w) => w.includes('info'))).toBe(false);
 	});
 
 	it('skips inline image (\\pict) groups with a warning', () => {
+		// `\pict` is the one routine-skip that DOES surface a warning,
+		// because it represents content (an inline image) that's
+		// actually being lost from the markdown output.
 		const input =
 			'{\\rtf1\\ansi Before. {\\pict\\pngblip\\picw100\\pich100 deadbeef} After.}';
 		const result = rtfToMarkdown(input);
@@ -213,12 +219,14 @@ describe('rtfToMarkdown — metadata group skipping', () => {
 		);
 	});
 
-	it('emits each warning at most once per document', () => {
+	it('emits the \\pict warning at most once per document', () => {
 		const input =
-			'{\\rtf1\\ansi {\\fonttbl\\f0 Helvetica;}A. {\\fonttbl\\f1 Times;} B.}';
+			'{\\rtf1\\ansi A. {\\pict deadbeef} B. {\\pict cafebabe} C.}';
 		const result = rtfToMarkdown(input);
-		const fontWarnings = result.warnings.filter((w) => w.includes('fonttbl'));
-		expect(fontWarnings).toHaveLength(1);
+		const imageWarnings = result.warnings.filter((w) =>
+			w.toLowerCase().includes('image')
+		);
+		expect(imageWarnings).toHaveLength(1);
 	});
 });
 

@@ -16,7 +16,7 @@ If you're looking for a plotting tool with character databases, plot grids, and 
 
 ### When can I install it?
 
-Now. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin, then enabling Draft Bench in **Settings -> Community plugins**. The current release is **0.4.0** (2026-05-06); the first BRAT-public release was 0.1.0 on 2026-04-29. Community-plugin directory submission follows after the 0.x phase stabilizes.
+Now. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin, then enabling Draft Bench in **Settings -> Community plugins**. The current release is **0.5.0** (2026-05-08); the first BRAT-public release was 0.1.0 on 2026-04-29. Community-plugin directory submission follows after the 0.x phase stabilizes.
 
 ### Is it free?
 
@@ -32,13 +32,15 @@ Draft Bench extends that model with chapter as a first-class note type, drafts a
 
 ### How is it different from StoryLine?
 
-[StoryLine](https://github.com/PixeroJan/obsidian-storyline) is much broader — a Scrivener-in-Obsidian that handles plotting (corkboard, kanban, plotgrid, subway map, timeline), entity management (characters, locations, codex), beat-sheet templates, plot-hole detection, pacing analysis, and Scrivener `.scriv` import.
+[StoryLine](https://github.com/PixeroJan/obsidian-storyline) is much broader — a Scrivener-in-Obsidian that handles plotting (corkboard, kanban, plotgrid, subway map, timeline), entity management (characters, locations, codex), beat-sheet templates, plot-hole detection, and pacing analysis. Both Draft Bench and StoryLine import Scrivener 3 `.scriv` projects (Draft Bench since 0.5.0).
 
 Draft Bench is narrow on purpose. It handles the manuscript spine and stays out of the rest. If you want one plugin that covers the whole writing-tool surface, StoryLine is excellent at that. If you want a focused tool for the structural editing of a manuscript with everything else in plain notes or in [Charted Roots](https://chartedroots.com/), Draft Bench is built for that.
 
 ### Can it replace Scrivener?
 
 For the manuscript-organization and compile parts, often yes — Draft Bench's project / chapter / scene / draft model maps cleanly to how most novelists use Scrivener's binder, and the compile pipeline supports the four formats writers actually submit (Markdown, PDF, ODT, DOCX). For corkboard plotting, character sheets, research-folder management, and Scrivener-specific features, no — Draft Bench doesn't try to replicate them. Some writers will want a focused plugin alongside other Obsidian tools; some will stay in Scrivener. Both choices are reasonable.
+
+If you're moving over, the **Scrivener 3 importer** (shipped in 0.5.0) reads a `.scriv` bundle from inside your vault and produces a fresh Draft Bench project: chapters, scenes, sub-scenes, drafts (optional), inspector content, and custom metadata all carry across. See [Importing from Scrivener](https://github.com/banisterious/obsidian-draft-bench/wiki/Importing-from-Scrivener) for the full walkthrough.
 
 ## Workflow
 
@@ -68,7 +70,7 @@ This is a design commitment, not an unfinished scope. Writers who want everythin
 
 ### Does it import from Scrivener?
 
-Not in V1. Scrivener `.scriv` import is the strongest post-V1 candidate (writers coming from Scrivener are a real audience), but V1 is for writers starting fresh in Obsidian or already vault-native.
+Yes, as of **0.5.0** (2026-05-08). A multi-step wizard reads a Scrivener 3 `.scriv` bundle from inside your vault and produces a fresh Draft Bench project. Hierarchy auto-detect maps the binder to projects / chapters / scenes / sub-scenes; statuses, labels, and custom-metadata fields route to your vocabulary; RTF bodies convert to markdown; inline images extract; cross-document Scrivener Links rewrite to wikilinks. Optional snapshot import and Research-folder import. Cross-platform (works on every OS Draft Bench supports). Scrivener 2 and iOS Scrivener formats are not supported in V1. See [Importing from Scrivener](https://github.com/banisterious/obsidian-draft-bench/wiki/Importing-from-Scrivener) for the full walkthrough and known limitations.
 
 ### Does it lock my notes into a plugin format?
 

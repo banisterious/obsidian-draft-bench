@@ -44,7 +44,7 @@ Concrete differences:
 | Plotting (corkboard, plotgrid, timeline) | — | ✓ |
 | Character / location / entity management | — | ✓ |
 | Analytics (pacing, plot-hole, prose) | — | ✓ |
-| Scrivener `.scriv` import | Post-V1 candidate | ✓ |
+| Scrivener `.scriv` import | ✓ (0.5.0) | ✓ |
 | Mobile (Android / iOS) | ✓ (Android verified, iOS untested) | Untested |
 | Bases-native discovery | ✓ | — |
 | Frontmatter properties | ✓ (`dbench-` namespaced) | ✓ (un-prefixed keys) |
@@ -63,13 +63,14 @@ The real question isn't "Draft Bench vs Scrivener." It's "do I want my writing t
 Where Draft Bench fits Scrivener users:
 
 - **Project / chapter / scene / sub-scene / draft model maps cleanly to Scrivener's binder.** Most novelist binder structures port over without conceptual translation; nested binder items (a scene with multiple beats) map to scene -> sub-scene.
+- **Scrivener 3 project import** (shipped in 0.5.0). A multi-step wizard reads a `.scriv` bundle from inside your vault and produces a fresh Draft Bench project: hierarchy auto-detect with per-row override, status / label / custom-metadata mapping, RTF body conversion, inline image extraction, cross-document Scrivener-Link rewriting, optional snapshot import. Scrivener 2 and iOS Scrivener formats are not supported in V1.
 - **Compile to Markdown, PDF, ODT, and DOCX** covers the formats writers actually submit.
-- **Snapshots become drafts.** Scrivener's per-document snapshots have a near-equivalent in Draft Bench's `dbench-type: draft`.
+- **Snapshots become drafts.** Scrivener's per-document snapshots have a near-equivalent in Draft Bench's `dbench-type: draft`. The importer can carry them across, capped per-scene.
 
 Where it doesn't:
 
 - **Corkboard plotting, character sheets, research-folder management, label/keyword cross-referencing, name-generator, project-statistics dashboards.** None of these are V1 scope. Some are post-V1 candidates; some are explicitly out of scope (entity management belongs to [Charted Roots](https://chartedroots.com/) or to user-managed plain notes).
-- **Scrivener `.scriv` import.** Post-V1 candidate, not V1.
+- **Scrivener compile preset translation.** Scrivener compile formats don't map cleanly to Draft Bench compile presets. Build your DB presets from scratch after import.
 
 Some writers will run both: Scrivener for the writing-room work, Obsidian + Draft Bench for everything else. Some will move fully into Obsidian. Both are reasonable.
 

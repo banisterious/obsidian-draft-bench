@@ -354,6 +354,79 @@ Three stills, lower priority than the motion loops. Capture as a second pass; us
 - [x] Raw at `docs/images/dbench-style-settings.png` (doc-source for README + wiki)
 - [x] Optimized in website repo `static/img/dbench-style-settings.png`
 
+## Tier 3 captures (Scrivener importer)
+
+Captured 2026-05-08 alongside the 0.5.0 release. One motion loop end-to-end through the wizard plus seven per-step stills. Embedded inline on the [Importing from Scrivener](https://github.com/banisterious/obsidian-draft-bench/wiki/Importing-from-Scrivener) wiki page; the website features-page section (drafted at [scrivener-import.md](scrivener-import.md)) consumes the same set when ported.
+
+### Capture: `dbench-scrivener-import.webm`
+
+**Type**: motion loop · **Target duration**: ~60s end-to-end · **Embed**: features page (Scrivener-import section, lede); doubles as the linked-thumbnail target on the wiki page
+
+**Setup checklist**
+
+- [x] Theme + accent locked (matches the rest of the asset library)
+- [x] Vault: `dev-vault`
+- [x] Pre-condition: `Imports/ScrivenerTesting.scriv/` staged inside the vault (real Scrivener 3 Novel-template fixture; sub-scenes + multi-level extras-above + Checkbox / Date / List custom-metadata fields)
+- [x] No prior `Draft Bench/ScrivenerTesting/` (delete before recording so step 2's destination-name validation is clean)
+
+**Action sequence**
+
+- [x] Source step: drop / pick `.scriv`, then in-vault dropdown selection
+- [x] Parse step: summary card resolves; destination name pre-filled and validated
+- [x] Hierarchy step: auto-detect resolves; tree expands with per-row override dropdowns
+- [x] Metadata step: status / label / custom-metadata sub-tables fill in
+- [x] Options step: snapshot toggle on; filename template field appears; research toggle off
+- [x] Preview step: counts + warnings + file tree expand
+- [x] Import step: progress bar
+- [x] Complete step: success summary + Done
+
+**Post-process**
+
+- [x] Maintainer sped the raw up before encode (long natural pace -> ~60s)
+- [x] Encode: `ffmpeg -i raw.mp4 -c:v libvpx-vp9 -crf 32 -an -b:v 0 dbench-scrivener-import.webm`
+- [x] Final size: ~1 MB
+
+**Outputs**
+
+- [x] Raw at `docs/images/raw/dbench-scrivener-import.webm` (gitignored)
+- [x] Optimized webm copied to website repo `static/img/dbench-scrivener-import.webm`
+- [x] Live at `https://draftbench.io/img/dbench-scrivener-import.webm`
+- [x] Linked-thumbnail target on the wiki Importing-from-Scrivener page (GitHub wiki sanitizer strips `<video>` tags, so the wiki uses an `<img>` wrapped in an `<a href>` to draftbench.io rather than an inline player)
+
+---
+
+### Captures: per-step wizard stills
+
+**Type**: stills (PNG) · **Embed**: wiki Importing-from-Scrivener page (one per step heading); features-page section can reuse for individual section illustrations
+
+Each is a modal-only capture (1119-1120 px wide, 8-bit RGBA, heights 521-1448 px depending on step content). Display target on the wiki and features page is `width="800"` — keep source dimensions intact (don't downsample; the oversample is intentional for HiDPI).
+
+| Step | Filename | What's in frame |
+|---|---|---|
+| 1. Source | `dbench-scrivener-import-source.png` | Drop-or-pick widget + "Or pick from your vault" dropdown |
+| 2. Parse | `dbench-scrivener-import-parse.png` | Counts summary card + destination-name input |
+| 3. Hierarchy | `dbench-scrivener-import-hierarchy.png` | Binder tree with auto-detected target dropdowns per row |
+| 4. Metadata | `dbench-scrivener-import-metadata.png` | Three sub-tables: Statuses (with "Add as new" + rename), Labels, Custom metadata |
+| 5. Options | `dbench-scrivener-import-snapshots.png` | Snapshots toggle on, surfacing per-scene cap + filename template |
+| 6. Preview | `dbench-scrivener-import-preview.png` | Counts + warnings + file tree about to be created |
+| 8. Complete | `dbench-scrivener-import-complete.png` | Success summary + Done buttons |
+
+(Step 7 / Import-in-flight is transient — no still.)
+
+**Post-process**
+
+- [x] PNGs: lossless compression in the website repo via the project's existing convention (typically `oxipng -o4`); 30-60 % size reduction without perceptible quality loss
+- [x] Skip lossy quantization (`pngquant`) — the wizard UI has fine text and crisp edges that lossy can blur
+
+**Outputs**
+
+- [x] Raw at `docs/images/dbench-scrivener-import-{source,parse,hierarchy,metadata,snapshots,preview,complete}.png` (full-res, tracked; doc-source for wiki + website)
+- [x] Optimized in website repo `static/img/<same-name>.png`
+- [x] Wiki references via `https://raw.githubusercontent.com/banisterious/obsidian-draft-bench/main/docs/images/<file>.png`
+- [x] Website references via `/img/<file>.png`
+
+---
+
 ## Format and size targets
 
 Per § 5.3 (locking the conventions here so the V1 session doesn't re-derive):

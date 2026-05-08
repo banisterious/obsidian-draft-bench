@@ -7,6 +7,7 @@ import { registerCreateCompilePresetCommand } from './create-compile-preset';
 import { registerCreateExampleProjectCommand } from './create-example-project';
 import { registerCreateProjectCommand } from './create-project';
 import { registerDuplicateCompilePresetCommand } from './duplicate-compile-preset';
+import { registerImportFromScrivenerCommand } from './import-from-scrivener';
 import { registerInstallBasesCommand } from './install-bases';
 import { registerNewChapterCommand } from './new-chapter';
 import { registerNewChapterDraftCommand } from './new-chapter-draft';
@@ -52,6 +53,12 @@ export function registerCommands(
 	registerCreateExampleProjectCommand(plugin, linker);
 	registerCreateCompilePresetCommand(plugin, linker);
 	registerDuplicateCompilePresetCommand(plugin, linker);
+	registerImportFromScrivenerCommand(
+		plugin,
+		getSettings,
+		linker,
+		() => plugin.saveSettings()
+	);
 	registerInstallBasesCommand(plugin);
 	registerNewChapterCommand(plugin, getSettings, linker);
 	registerNewChapterDraftCommand(plugin, getSettings, linker);

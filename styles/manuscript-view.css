@@ -60,6 +60,13 @@
 	line-height: 1.5;
 }
 
+.dbench-manuscript-view__empty-cta-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--dbench-spacing-sm);
+	justify-content: center;
+}
+
 .dbench-manuscript-view__empty-cta {
 	align-self: center;
 }

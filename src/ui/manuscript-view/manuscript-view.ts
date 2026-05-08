@@ -345,12 +345,23 @@ export class ManuscriptView extends ItemView {
 			cls: 'dbench-manuscript-view__empty-body',
 			text: 'Create your first project to start tracking scenes, drafts, and compile presets.',
 		});
-		const cta = wrapper.createEl('button', {
+		const ctaRow = wrapper.createDiv({
+			cls: 'dbench-manuscript-view__empty-cta-row',
+		});
+		const cta = ctaRow.createEl('button', {
 			cls: 'dbench-manuscript-view__empty-cta mod-cta',
 			text: 'Create project',
 		});
 		cta.addEventListener('click', () => {
 			this.openCreateProjectCommand();
+		});
+		const importCta = ctaRow.createEl('button', {
+			cls: 'dbench-manuscript-view__empty-cta',
+			// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
+			text: 'Import from Scrivener',
+		});
+		importCta.addEventListener('click', () => {
+			this.openImportFromScrivenerCommand();
 		});
 		wrapper.createEl('p', {
 			cls: 'dbench-manuscript-view__empty-footnote',
@@ -418,6 +429,20 @@ export class ManuscriptView extends ItemView {
 		setIcon(newProjectButton, 'plus');
 		newProjectButton.addEventListener('click', () => {
 			this.openCreateProjectCommand();
+		});
+
+		const importButton = header.createEl('button', {
+			cls: 'dbench-manuscript-view__header-button',
+			attr: {
+				// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
+				'aria-label': 'Import from Scrivener',
+				// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
+				title: 'Import from Scrivener',
+			},
+		});
+		setIcon(importButton, 'file-input');
+		importButton.addEventListener('click', () => {
+			this.openImportFromScrivenerCommand();
 		});
 	}
 
@@ -648,6 +673,17 @@ export class ManuscriptView extends ItemView {
 			}
 		).commands;
 		commands?.executeCommandById('draft-bench:create-project');
+	}
+
+	private openImportFromScrivenerCommand(): void {
+		const commands = (
+			this.plugin.app as unknown as {
+				commands?: {
+					executeCommandById: (id: string) => boolean;
+				};
+			}
+		).commands;
+		commands?.executeCommandById('draft-bench:import-from-scrivener');
 	}
 }
 

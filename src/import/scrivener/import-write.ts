@@ -163,30 +163,21 @@ export async function executeImportPlan(
 				message: err instanceof Error ? err.message : String(err),
 			});
 		} finally {
-			// Always attempt to write the error log when there's a
-			// project file and any errors collected. Inside `finally`
-			// so early-return paths and outer-catch paths both reach
-			// it. `writeErrorLog` is idempotent (skips if the file
-			// already exists), so a duplicate run is harmless.
-			if (
-				result.projectFile !== null &&
-				result.errors.length > 0
-			) {
-				try {
-					await writeErrorLog(
-						input.app,
-						result.projectFile,
-						result.errors
-					);
+			// Always attempt to write the error log when any errors
+			// were collected. Inside `finally` so early-return paths
+			// and outer-catch paths both reach it. `writeErrorLog`
+			// tries the project folder first, then falls back to a
+			// vault-root file if no project exists or the project-
+			// folder write fails — there's always a path that
+			// succeeds for the writer to find.
+			if (result.errors.length > 0) {
+				const writtenAt = await writeErrorLog(
+					input.app,
+					result.projectFile,
+					result.errors
+				);
+				if (writtenAt !== null) {
 					result.filesCreated += 1;
-				} catch (logErr) {
-					// Surface the failure rather than silently
-					// swallowing it. The wizard's Complete step also
-					// renders errors inline as a fallback.
-					console.error(
-						'Scrivener import: failed to write Import errors.md',
-						logErr
-					);
 				}
 			}
 		}
@@ -763,12 +754,24 @@ async function guessImageExtension(
 
 // ---- Error log ----------------------------------------------------------
 
+/**
+ * Write the import error log to the most useful disk path. Tries the
+ * project folder first (`<project>/Import errors.md`) and falls back
+ * to a vault-root file (`Scrivener import errors.md`) if no project
+ * folder exists or the project-folder write fails. Each path is
+ * idempotent: skipped when a file already exists at that location, so
+ * a writer who runs the importer repeatedly into the same project
+ * sees a single log per attempt rather than a write conflict.
+ *
+ * Returns the path that was actually written to (or null if both
+ * attempts failed). Callers can surface that path to the writer via
+ * a Notice so they know where to look.
+ */
 async function writeErrorLog(
 	app: App,
-	projectFile: TFile,
+	projectFile: TFile | null,
 	errors: ImportError[]
-): Promise<void> {
-	const logPath = `${parentPath(projectFile.path)}/Import errors.md`;
+): Promise<string | null> {
 	const lines: string[] = [
 		'# Import errors',
 		'',
@@ -785,9 +788,32 @@ async function writeErrorLog(
 		lines.push(err.message);
 		lines.push('');
 	}
-	if (app.vault.getAbstractFileByPath(logPath) === null) {
-		await app.vault.create(logPath, lines.join('\n'));
+	const body = lines.join('\n');
+
+	const candidatePaths: string[] = [];
+	if (projectFile !== null) {
+		candidatePaths.push(`${parentPath(projectFile.path)}/Import errors.md`);
 	}
+	candidatePaths.push('Scrivener import errors.md');
+
+	for (const path of candidatePaths) {
+		try {
+			if (app.vault.getAbstractFileByPath(path) !== null) {
+				// Existing file from a previous run; treat as success
+				// at this path rather than rolling onward to the
+				// fallback (the writer can already find their log).
+				return path;
+			}
+			await app.vault.create(path, body);
+			return path;
+		} catch (err) {
+			console.error(
+				`Scrivener import: failed to write error log at ${path}`,
+				err
+			);
+		}
+	}
+	return null;
 }
 
 // ---- Helpers ------------------------------------------------------------

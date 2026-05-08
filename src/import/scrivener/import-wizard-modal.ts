@@ -1,6 +1,5 @@
 import {
 	App,
-	FuzzySuggestModal,
 	Modal,
 	Notice,
 	Platform,
@@ -484,10 +483,6 @@ export class ScrivenerImportWizardModal extends Modal {
 		}
 
 		if (candidates.length > 0) {
-			body.createEl('h4', {
-				cls: 'dbench-import-wizard__source-section-title',
-				text: 'Or pick from your vault',
-			});
 			this.renderInVaultPicker(body, candidates);
 		} else if (!widgetVisible) {
 			body.createEl('p', {
@@ -572,49 +567,41 @@ export class ScrivenerImportWizardModal extends Modal {
 		}
 	}
 
+	/**
+	 * Render an inline dropdown of `.scriv` folders detected in the
+	 * vault. Replaces the older FuzzySuggestModal popup with a Setting
+	 * + Dropdown for cleaner UX — typical vaults have 1-3 candidates,
+	 * which fit comfortably in a select. The dropdown's value is
+	 * controlled by `formData.sourcePath`; selecting an option updates
+	 * `formData` and refreshes the Next-button gating in place.
+	 */
 	private renderInVaultPicker(
 		parent: HTMLElement,
 		candidates: TFolder[]
 	): void {
-		const selection = parent.createDiv({
-			cls: 'dbench-import-wizard__selection',
-		});
-		if (this.formData.sourcePath !== '') {
-			selection.createSpan({
-				cls: 'dbench-import-wizard__selection-icon',
-				text: '✓',
-			});
-			selection.createSpan({
-				cls: 'dbench-import-wizard__selection-path',
-				text: this.formData.sourcePath,
-			});
-		} else {
-			selection.createSpan({
-				cls: 'dbench-import-wizard__selection-empty',
-				text: 'No folder selected.',
-			});
-		}
+		const candidatePaths = new Set(candidates.map((c) => c.path));
+		const initial = candidatePaths.has(this.formData.sourcePath)
+			? this.formData.sourcePath
+			: '';
 
-		const pickBtn = parent.createEl('button', {
-			cls: 'dbench-import-wizard__btn',
-			text:
-				this.formData.sourcePath !== ''
-					? 'Choose a different folder'
-					: 'Choose .scriv folder',
-		});
-		pickBtn.addEventListener('click', () => {
-			new ScrivFolderSuggestModal(this.app, candidates, (folder) => {
-				this.formData.sourcePath = folder.path;
-				this.renderCurrentStep();
-			}).open();
-		});
-
-		if (candidates.length > 1) {
-			parent.createEl('p', {
-				cls: 'dbench-import-wizard__hint',
-				text: `${candidates.length} .scriv folders available in this vault.`,
+		new Setting(parent)
+			.setName('Or pick from your vault')
+			.setDesc(
+				candidates.length === 1
+					? '1 folder available.'
+					: `${candidates.length} folders available.`
+			)
+			.addDropdown((dropdown) => {
+				dropdown.addOption('', 'Select a folder…');
+				for (const folder of candidates) {
+					dropdown.addOption(folder.path, folder.path);
+				}
+				dropdown.setValue(initial);
+				dropdown.onChange((value) => {
+					this.formData.sourcePath = value;
+					this.refreshNextButtonEnabled();
+				});
 			});
-		}
 	}
 
 	private async handleFolderDrop(dataTransfer: DataTransfer): Promise<void> {
@@ -1460,6 +1447,11 @@ export class ScrivenerImportWizardModal extends Modal {
 			};
 		}
 		this.importDone = true;
+		if (this.importResult && this.importResult.errors.length > 0) {
+			new Notice(
+				`Import finished with ${this.importResult.errors.length} error${this.importResult.errors.length === 1 ? '' : 's'}. Check the Complete step or the import errors file in the new project folder.`
+			);
+		}
 		if (this.currentStep === 6) {
 			this.currentStep = 7;
 			this.renderCurrentStep();
@@ -1564,35 +1556,6 @@ export function findScrivProjectFolders(app: App): TFolder[] {
 	);
 }
 
-/**
- * Obsidian-native suggester for picking a `.scriv` bundle root from
- * the candidates `findScrivProjectFolders` returns. Standard
- * `FuzzySuggestModal` shape: items rendered as their path strings;
- * fuzzy-search lets the writer narrow large vaults to the right
- * folder by typing.
- */
-class ScrivFolderSuggestModal extends FuzzySuggestModal<TFolder> {
-	constructor(
-		app: App,
-		private folders: TFolder[],
-		private onChoose: (folder: TFolder) => void
-	) {
-		super(app);
-		this.setPlaceholder('Pick a .scriv folder...');
-	}
-
-	getItems(): TFolder[] {
-		return this.folders;
-	}
-
-	getItemText(folder: TFolder): string {
-		return folder.path;
-	}
-
-	onChooseItem(folder: TFolder): void {
-		this.onChoose(folder);
-	}
-}
 
 /**
  * Read + parse + summarize a `.scriv` bundle from inside the vault.

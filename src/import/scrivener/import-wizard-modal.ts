@@ -31,6 +31,11 @@ import {
 	type ImportPlan,
 	type PlanEntry,
 } from './import-plan';
+import {
+	executeImportPlan,
+	type ImportResult,
+} from './import-write';
+import type { DraftBenchLinker } from '../../core/linker';
 
 /**
  * Scrivener `.scriv` import wizard. DB's first wizard, built standalone
@@ -77,7 +82,7 @@ const VISIBLE_INDICATOR_STEPS = 6;
  * change. Cleared and recomputed when the writer goes back to Source
  * and picks a different bundle.
  */
-interface ParsedBundle {
+export interface ParsedBundle {
 	project: ScrivProject;
 	summary: ProjectSummary;
 	snapshotCount: number;
@@ -92,7 +97,7 @@ interface ParsedBundle {
  * Fields are added incrementally as steps land in the implementation
  * sequence.
  */
-interface ScrivenerImportFormData {
+export interface ScrivenerImportFormData {
 	/** Vault path to the `.scriv` folder bundle. Set by the Source
 	 *  step (0). Empty until the writer picks one. */
 	sourcePath: string;
@@ -198,9 +203,15 @@ export class ScrivenerImportWizardModal extends Modal {
 	 *  disabled state in place without re-rendering the whole step. */
 	private nextButtonEl: HTMLButtonElement | null = null;
 
+	private importResult: ImportResult | null = null;
+	private importStatus = '';
+	private importDone = false;
+
 	constructor(
 		app: App,
-		private settings: DraftBenchSettings
+		private settings: DraftBenchSettings,
+		private linker: DraftBenchLinker,
+		private saveSettings: () => Promise<void>
 	) {
 		super(app);
 		this.modalEl.addClass('dbench-import-wizard');
@@ -1224,18 +1235,124 @@ export class ScrivenerImportWizardModal extends Modal {
 		}
 	}
 
+	/**
+	 * Import step. Runs `executeImportPlan` once on first entry; renders
+	 * progress (last status message + current/total counter). Auto-
+	 * advances to the Complete step (7) when the import finishes,
+	 * regardless of success / partial failure.
+	 */
 	private renderImportStep(body: HTMLElement): void {
+		const fd = this.formData;
 		body.createEl('p', {
-			cls: 'dbench-import-wizard__placeholder',
-			text: 'Import — async write with progress. (Skeleton placeholder.)',
+			cls: 'dbench-import-wizard__progress',
+			text:
+				this.importStatus === ''
+					? 'Starting import…'
+					: this.importStatus,
 		});
+
+		if (this.importDone || this.importResult !== null) return;
+		if (!fd.parsedBundle || !fd.parsedSourcePath) {
+			this.importDone = true;
+			return;
+		}
+
+		void this.runImport();
 	}
 
+	private async runImport(): Promise<void> {
+		const fd = this.formData;
+		if (!fd.parsedBundle) return;
+		try {
+			this.importResult = await executeImportPlan({
+				app: this.app,
+				settings: this.settings,
+				linker: this.linker,
+				saveSettings: this.saveSettings,
+				bundle: fd.parsedBundle,
+				bundleRootPath: fd.parsedSourcePath,
+				formData: fd,
+				onProgress: (message, current, total) => {
+					this.importStatus = `${message} (${current}/${total})`;
+					if (this.currentStep === 6) {
+						this.renderCurrentStep();
+					}
+				},
+			});
+		} catch (err) {
+			this.importResult = {
+				projectFile: null,
+				filesCreated: 0,
+				errors: [
+					{
+						binderItemId: '',
+						itemTitle: '(top-level)',
+						message: err instanceof Error ? err.message : String(err),
+					},
+				],
+				warnings: [],
+			};
+		}
+		this.importDone = true;
+		if (this.currentStep === 6) {
+			this.currentStep = 7;
+			this.renderCurrentStep();
+		}
+	}
+
+	/**
+	 * Complete step. Summary of created files + per-error list (if
+	 * any) + Done button. Closes the wizard on Done.
+	 */
 	private renderCompleteStep(body: HTMLElement): void {
-		body.createEl('p', {
-			cls: 'dbench-import-wizard__placeholder',
-			text: 'Complete — summary + Done + Import another. (Skeleton placeholder.)',
+		const result = this.importResult;
+		if (!result) {
+			body.createEl('p', {
+				cls: 'dbench-import-wizard__hint',
+				text: 'No import result available.',
+			});
+			return;
+		}
+
+		body.createEl('h3', {
+			cls: 'dbench-import-wizard__preview-section-title',
+			text:
+				result.errors.length === 0
+					? 'Import complete'
+					: 'Import complete with errors',
 		});
+
+		body.createEl('p', {
+			cls: 'dbench-import-wizard__help-text',
+			text: `${result.filesCreated} ${pluralize('file', result.filesCreated)} created${
+				result.errors.length > 0
+					? `, ${result.errors.length} ${pluralize('error', result.errors.length)} encountered`
+					: ''
+			}.`,
+		});
+
+		if (result.warnings.length > 0) {
+			const wList = body.createEl('ul', {
+				cls: 'dbench-import-wizard__summary-list',
+			});
+			for (const w of result.warnings) {
+				wList.createEl('li', {
+					cls: 'dbench-import-wizard__warning-row',
+					text: w,
+				});
+			}
+		}
+
+		if (result.errors.length > 0) {
+			body.createEl('h3', {
+				cls: 'dbench-import-wizard__preview-section-title',
+				text: 'Errors',
+			});
+			body.createEl('p', {
+				cls: 'dbench-import-wizard__hint',
+				text: 'See the import errors file inside the new project folder for details.',
+			});
+		}
 	}
 }
 

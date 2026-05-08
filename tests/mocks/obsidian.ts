@@ -95,8 +95,64 @@ export class Vault {
 	folders = new Map<string, TFolder>();
 	private content = new Map<string, string>();
 	private binaryContent = new Map<string, ArrayBuffer>();
+	/** Bundle-internal adapter content keyed by raw vault paths. Used
+	 *  by `vault.adapter` to serve `.scriv` bundle internals (synopsis
+	 *  .txt, content.rtf, etc.) without going through the TFile layer. */
+	private adapterContent = new Map<string, string>();
+	private adapterBinary = new Map<string, ArrayBuffer>();
+	private adapterFolders = new Set<string>();
 	private cacheRef: MetadataCache | null = null;
 	private listeners = new Map<VaultEventName, Set<EventRef>>();
+
+	adapter = {
+		exists: async (path: string): Promise<boolean> => {
+			return (
+				this.files.has(path) ||
+				this.folders.has(path) ||
+				this.adapterContent.has(path) ||
+				this.adapterBinary.has(path) ||
+				this.adapterFolders.has(path)
+			);
+		},
+		read: async (path: string): Promise<string> => {
+			if (this.adapterContent.has(path)) return this.adapterContent.get(path) ?? '';
+			return this.content.get(path) ?? '';
+		},
+		readBinary: async (path: string): Promise<ArrayBuffer> => {
+			if (this.adapterBinary.has(path)) return this.adapterBinary.get(path) ?? new ArrayBuffer(0);
+			return this.binaryContent.get(path) ?? new ArrayBuffer(0);
+		},
+		list: async (
+			path: string
+		): Promise<{ files: string[]; folders: string[] }> => {
+			const files: string[] = [];
+			const folders: string[] = [];
+			const prefix = path === '' ? '' : `${path}/`;
+			const allFilePaths = new Set<string>([
+				...this.files.keys(),
+				...this.adapterContent.keys(),
+				...this.adapterBinary.keys(),
+			]);
+			for (const filePath of allFilePaths) {
+				if (filePath.startsWith(prefix)) {
+					const rest = filePath.slice(prefix.length);
+					if (rest !== '' && !rest.includes('/')) files.push(filePath);
+				}
+			}
+			const allFolderPaths = new Set<string>([
+				...this.folders.keys(),
+				...this.adapterFolders,
+			]);
+			for (const folderPath of allFolderPaths) {
+				if (folderPath === path) continue;
+				if (folderPath.startsWith(prefix)) {
+					const rest = folderPath.slice(prefix.length);
+					if (rest !== '' && !rest.includes('/')) folders.push(folderPath);
+				}
+			}
+			return { files, folders };
+		},
+	};
 
 	getMarkdownFiles(): TFile[] {
 		return [...this.files.values()].filter((f) => f.extension === 'md');
@@ -216,6 +272,32 @@ export class Vault {
 	_addFile(file: TFile, content = ''): void {
 		this.files.set(file.path, file);
 		this.content.set(file.path, content);
+	}
+
+	/** Test helper: seed adapter-only content (used for `.scriv` bundle
+	 *  internals like content.rtf, synopsis.txt, image binaries). The
+	 *  TFile layer doesn't surface these — they're only readable via
+	 *  `vault.adapter.*`. */
+	_addAdapterFile(path: string, content: string): void {
+		this.adapterContent.set(path, content);
+		// Auto-register parent folder paths so list() can walk down.
+		this._registerParentAdapterFolders(path);
+	}
+
+	_addAdapterBinary(path: string, bytes: ArrayBuffer): void {
+		this.adapterBinary.set(path, bytes);
+		this._registerParentAdapterFolders(path);
+	}
+
+	private _registerParentAdapterFolders(path: string): void {
+		let p = path;
+		while (true) {
+			const idx = p.lastIndexOf('/');
+			if (idx < 0) break;
+			p = p.slice(0, idx);
+			if (p === '') break;
+			this.adapterFolders.add(p);
+		}
 	}
 
 	/**

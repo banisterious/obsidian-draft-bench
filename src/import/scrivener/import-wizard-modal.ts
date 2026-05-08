@@ -531,7 +531,7 @@ export class ScrivenerImportWizardModal extends Modal {
 
 		if (showDropZone && pickerSupported) {
 			mainText.setText('Drop a .scriv folder here');
-			subText.setText('or click to browse');
+			subText.setText('Or click to browse');
 		} else if (pickerSupported) {
 			mainText.setText('Tap to pick a .scriv folder');
 			subText.setText('Choose from your device');
@@ -991,6 +991,11 @@ export class ScrivenerImportWizardModal extends Modal {
 		const project = fd.parsedBundle.project;
 		const docCounts = countDocumentsByStatus(project);
 
+		body.createEl('p', {
+			cls: 'dbench-import-wizard__help-text',
+			text: 'Decide how source statuses, labels, and custom fields land in the new project. To rename or reorder existing statuses, edit your status vocabulary in plugin settings.',
+		});
+
 		this.renderStatusMappingTable(body, project, mapping, docCounts);
 		this.renderLabelKeyField(body, mapping);
 		this.renderCustomFieldsTable(body, project, mapping);
@@ -1002,7 +1007,7 @@ export class ScrivenerImportWizardModal extends Modal {
 		mapping: MetadataMapping,
 		docCounts: Map<string, number>
 	): void {
-		body.createEl('h3', {
+		body.createEl('h4', {
 			cls: 'dbench-import-wizard__meta-section-title',
 			text: 'Statuses',
 		});
@@ -1013,10 +1018,6 @@ export class ScrivenerImportWizardModal extends Modal {
 			});
 			return;
 		}
-		body.createEl('p', {
-			cls: 'dbench-import-wizard__help-text',
-			text: 'Pick a target for each source status.',
-		});
 
 		const table = body.createDiv({
 			cls: 'dbench-import-wizard__meta-table',
@@ -1034,11 +1035,21 @@ export class ScrivenerImportWizardModal extends Modal {
 				cls: 'dbench-import-wizard__meta-row-count',
 				text: `${count} ${pluralize('doc', count)}`,
 			});
-			this.renderStatusDropdown(row, scrivId, mapping);
+			const targetCell = row.createDiv({
+				cls: 'dbench-import-wizard__meta-row-target-cell',
+			});
+			this.renderStatusTargetCell(targetCell, scrivId, mapping);
 		}
 	}
 
-	private renderStatusDropdown(
+	/**
+	 * Render the dropdown plus an optional inline text input for
+	 * customizing the new-status name. The cell stacks: dropdown on
+	 * top, input below (only when "Add as new" is selected). Input
+	 * additions / removals happen on dropdown change without re-
+	 * rendering the rest of the step.
+	 */
+	private renderStatusTargetCell(
 		parent: HTMLElement,
 		scrivId: string,
 		mapping: MetadataMapping
@@ -1048,7 +1059,6 @@ export class ScrivenerImportWizardModal extends Modal {
 		});
 		const current = mapping.statuses.get(scrivId) ?? { kind: 'drop' };
 
-		// Existing DB statuses
 		for (const dbStatus of this.settings.statusVocabulary) {
 			const option = select.createEl('option', {
 				value: encodeStatusOption({ kind: 'existing', dbStatus }),
@@ -1062,23 +1072,13 @@ export class ScrivenerImportWizardModal extends Modal {
 			}
 		}
 
-		// Add as new
-		const addNewValue = encodeStatusOption({
-			kind: 'new',
-			statusName: '',
-		});
+		const addNewValue = encodeStatusOption({ kind: 'new', statusName: '' });
 		const addNewOption = select.createEl('option', {
 			value: addNewValue,
 			text: 'Add as new status',
 		});
-		if (current.kind === 'new') {
-			addNewOption.selected = true;
-			// Display the new-status name in the option label so the
-			// writer sees what would be added without re-rendering.
-			addNewOption.textContent = `Add as new: ${current.statusName}`;
-		}
+		if (current.kind === 'new') addNewOption.selected = true;
 
-		// Drop
 		const dropValue = encodeStatusOption({ kind: 'drop' });
 		const dropOption = select.createEl('option', {
 			value: dropValue,
@@ -1086,17 +1086,45 @@ export class ScrivenerImportWizardModal extends Modal {
 		});
 		if (current.kind === 'drop') dropOption.selected = true;
 
+		// New-status-name input. Visible only when target.kind === 'new';
+		// re-attached / detached on dropdown change so writers can
+		// rename before the import write phase commits to the vocab.
+		let nameInput: HTMLInputElement | null = null;
+		const ensureNameInput = (): void => {
+			const target = mapping.statuses.get(scrivId);
+			if (target?.kind !== 'new') {
+				if (nameInput) {
+					nameInput.remove();
+					nameInput = null;
+				}
+				return;
+			}
+			if (!nameInput) {
+				nameInput = parent.createEl('input', {
+					cls: 'dbench-import-wizard__meta-new-name',
+					attr: { type: 'text', placeholder: 'New status name' },
+				});
+				nameInput.value = target.statusName;
+				nameInput.addEventListener('input', () => {
+					if (!nameInput) return;
+					const ex = mapping.statuses.get(scrivId);
+					if (ex?.kind === 'new') {
+						mapping.statuses.set(scrivId, {
+							kind: 'new',
+							statusName: nameInput.value,
+						});
+					}
+				});
+			}
+		};
+
 		select.addEventListener('change', () => {
 			const decoded = decodeStatusOption(select.value);
-			// For 'new', preserve the auto-detected statusName from the
-			// previous mapping (writer's choice was "add this scriv
-			// status as new" — name comes from the Scrivener title).
 			if (decoded.kind === 'new') {
 				const existing = mapping.statuses.get(scrivId);
 				if (existing && existing.kind === 'new') {
 					mapping.statuses.set(scrivId, existing);
 				} else {
-					// Fall back to the Scrivener title verbatim.
 					const project = this.formData.parsedBundle?.project;
 					const title = project?.statuses.get(scrivId) ?? '';
 					mapping.statuses.set(scrivId, {
@@ -1107,14 +1135,17 @@ export class ScrivenerImportWizardModal extends Modal {
 			} else {
 				mapping.statuses.set(scrivId, decoded);
 			}
+			ensureNameInput();
 		});
+
+		ensureNameInput();
 	}
 
 	private renderLabelKeyField(
 		body: HTMLElement,
 		mapping: MetadataMapping
 	): void {
-		body.createEl('h3', {
+		body.createEl('h4', {
 			cls: 'dbench-import-wizard__meta-section-title',
 			text: 'Labels',
 		});
@@ -1135,7 +1166,7 @@ export class ScrivenerImportWizardModal extends Modal {
 		project: ScrivProject,
 		mapping: MetadataMapping
 	): void {
-		body.createEl('h3', {
+		body.createEl('h4', {
 			cls: 'dbench-import-wizard__meta-section-title',
 			text: 'Custom metadata',
 		});

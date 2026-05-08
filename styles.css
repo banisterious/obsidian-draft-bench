@@ -1061,7 +1061,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of welcome-modal.css */
 
 /* --------------------------------------------------------------------------
-   IMPORT-WIZARD.CSS  (475 lines, 10.47 KB)
+   IMPORT-WIZARD.CSS  (482 lines, 10.56 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1395,18 +1395,12 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* ---- Metadata step ---- */
 
 .dbench-import-wizard__meta-section-title {
-	margin: var(--dbench-spacing-md) 0 var(--dbench-spacing-xs);
-	font-size: var(--font-ui-medium);
+	margin: 0;
+	font-size: var(--font-ui-small);
 	font-weight: var(--font-semibold);
-	color: var(--text-normal);
-}
-
-.dbench-import-wizard__meta-section-title:first-child {
-	margin-top: 0;
-}
-
-.setting-item + .dbench-import-wizard__meta-section-title {
-	margin-top: 0;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
 }
 
 .dbench-import-wizard__meta-table {
@@ -1441,9 +1435,22 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	font-variant-numeric: tabular-nums;
 }
 
+.dbench-import-wizard__meta-row-target-cell {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-xs);
+	align-items: stretch;
+	min-width: 14rem;
+}
+
 .dbench-import-wizard__meta-target {
 	font-size: var(--font-ui-small);
-	min-width: 12rem;
+	width: 100%;
+}
+
+.dbench-import-wizard__meta-new-name {
+	width: 100%;
+	font-size: var(--font-ui-small);
 }
 
 /* ---- Preview step ---- */
@@ -2934,7 +2941,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 11
-   Total:      2842 lines, 78.22 KB
+   Total:      2849 lines, 78.32 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
@@ -2942,7 +2949,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - manuscript-builder.css: 436 lines, 13.11 KB
    - preview-toolbar.css: 94 lines, 2.54 KB
    - welcome-modal.css: 94 lines, 2.21 KB
-   - import-wizard.css: 475 lines, 10.47 KB
+   - import-wizard.css: 482 lines, 10.56 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 1044 lines, 28.92 KB
    - settings-tab.css: 219 lines, 5.53 KB

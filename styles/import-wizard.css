@@ -329,18 +329,12 @@
 /* ---- Metadata step ---- */
 
 .dbench-import-wizard__meta-section-title {
-	margin: var(--dbench-spacing-md) 0 var(--dbench-spacing-xs);
-	font-size: var(--font-ui-medium);
+	margin: 0;
+	font-size: var(--font-ui-small);
 	font-weight: var(--font-semibold);
-	color: var(--text-normal);
-}
-
-.dbench-import-wizard__meta-section-title:first-child {
-	margin-top: 0;
-}
-
-.setting-item + .dbench-import-wizard__meta-section-title {
-	margin-top: 0;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
 }
 
 .dbench-import-wizard__meta-table {
@@ -375,9 +369,22 @@
 	font-variant-numeric: tabular-nums;
 }
 
+.dbench-import-wizard__meta-row-target-cell {
+	display: flex;
+	flex-direction: column;
+	gap: var(--dbench-spacing-xs);
+	align-items: stretch;
+	min-width: 14rem;
+}
+
 .dbench-import-wizard__meta-target {
 	font-size: var(--font-ui-small);
-	min-width: 12rem;
+	width: 100%;
+}
+
+.dbench-import-wizard__meta-new-name {
+	width: 100%;
+	font-size: var(--font-ui-small);
 }
 
 /* ---- Preview step ---- */

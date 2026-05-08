@@ -1061,7 +1061,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of welcome-modal.css */
 
 /* --------------------------------------------------------------------------
-   IMPORT-WIZARD.CSS  (493 lines, 10.89 KB)
+   IMPORT-WIZARD.CSS  (513 lines, 11.88 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1073,6 +1073,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
  * styled standalone (no shared wizard chrome yet).
  */
 
+/* stylelint-disable-next-line selector-class-pattern -- targets Obsidian's modal-content class */
 .dbench-import-wizard .modal-content {
 	padding: 0;
 	max-height: 85vh;
@@ -1086,10 +1087,20 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	min-height: 0;
 	display: flex;
 	flex-direction: column;
-	gap: var(--dbench-spacing-xl);
+	gap: var(--dbench-spacing-lg);
 	padding: var(--dbench-spacing-lg);
 	min-width: min(480px, 92vw);
 	max-width: min(720px, 92vw);
+}
+
+/* Tighten the Obsidian Setting component when used inside the wizard.
+ *  Default vertical padding is generous (good for sparse settings tabs);
+ *  inside a multi-step wizard with several Settings it adds up. */
+/* stylelint-disable-next-line selector-class-pattern -- targets Obsidian's setting-item class */
+.dbench-import-wizard .setting-item {
+	padding-top: var(--dbench-spacing-sm);
+	padding-bottom: var(--dbench-spacing-sm);
+	border-top: none;
 }
 
 /* ---- Header ---- */
@@ -1163,12 +1174,20 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	flex: 1 1 auto;
 	display: flex;
 	flex-direction: column;
-	gap: var(--dbench-spacing-lg);
+	gap: var(--dbench-spacing-md);
 	overflow-y: auto;
+
 	/* `min-height: 0` is required for flex children to shrink below
 	 *  their intrinsic content size; without it `overflow-y: auto`
 	 *  doesn't kick in because the flex item just grows. */
 	min-height: 0;
+
+	/* Bottom fade hints that content continues past the fold even
+	 *  when the scrollbar is too subtle to notice. The shadow is
+	 *  inset on the body's bottom edge; visible whether or not
+	 *  there's more to scroll, but it doesn't lie — it just signals
+	 *  "this is a scroll container". */
+	box-shadow: inset 0 -12px 12px -12px var(--background-modifier-border);
 }
 
 .dbench-import-wizard__placeholder {
@@ -1270,6 +1289,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	color: var(--text-muted);
 }
 
+/* stylelint-disable-next-line selector-class-pattern -- targets Obsidian's svg-icon class */
 .dbench-import-wizard__dropzone-icon .svg-icon {
 	width: 32px;
 	height: 32px;
@@ -2952,7 +2972,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 11
-   Total:      2860 lines, 78.64 KB
+   Total:      2880 lines, 79.64 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
@@ -2960,7 +2980,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - manuscript-builder.css: 436 lines, 13.11 KB
    - preview-toolbar.css: 94 lines, 2.54 KB
    - welcome-modal.css: 94 lines, 2.21 KB
-   - import-wizard.css: 493 lines, 10.89 KB
+   - import-wizard.css: 513 lines, 11.88 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 1044 lines, 28.92 KB
    - settings-tab.css: 219 lines, 5.53 KB

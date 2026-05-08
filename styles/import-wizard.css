@@ -7,6 +7,7 @@
  * styled standalone (no shared wizard chrome yet).
  */
 
+/* stylelint-disable-next-line selector-class-pattern -- targets Obsidian's modal-content class */
 .dbench-import-wizard .modal-content {
 	padding: 0;
 	max-height: 85vh;
@@ -20,10 +21,20 @@
 	min-height: 0;
 	display: flex;
 	flex-direction: column;
-	gap: var(--dbench-spacing-xl);
+	gap: var(--dbench-spacing-lg);
 	padding: var(--dbench-spacing-lg);
 	min-width: min(480px, 92vw);
 	max-width: min(720px, 92vw);
+}
+
+/* Tighten the Obsidian Setting component when used inside the wizard.
+ *  Default vertical padding is generous (good for sparse settings tabs);
+ *  inside a multi-step wizard with several Settings it adds up. */
+/* stylelint-disable-next-line selector-class-pattern -- targets Obsidian's setting-item class */
+.dbench-import-wizard .setting-item {
+	padding-top: var(--dbench-spacing-sm);
+	padding-bottom: var(--dbench-spacing-sm);
+	border-top: none;
 }
 
 /* ---- Header ---- */
@@ -97,12 +108,20 @@
 	flex: 1 1 auto;
 	display: flex;
 	flex-direction: column;
-	gap: var(--dbench-spacing-lg);
+	gap: var(--dbench-spacing-md);
 	overflow-y: auto;
+
 	/* `min-height: 0` is required for flex children to shrink below
 	 *  their intrinsic content size; without it `overflow-y: auto`
 	 *  doesn't kick in because the flex item just grows. */
 	min-height: 0;
+
+	/* Bottom fade hints that content continues past the fold even
+	 *  when the scrollbar is too subtle to notice. The shadow is
+	 *  inset on the body's bottom edge; visible whether or not
+	 *  there's more to scroll, but it doesn't lie — it just signals
+	 *  "this is a scroll container". */
+	box-shadow: inset 0 -12px 12px -12px var(--background-modifier-border);
 }
 
 .dbench-import-wizard__placeholder {
@@ -204,6 +223,7 @@
 	color: var(--text-muted);
 }
 
+/* stylelint-disable-next-line selector-class-pattern -- targets Obsidian's svg-icon class */
 .dbench-import-wizard__dropzone-icon .svg-icon {
 	width: 32px;
 	height: 32px;

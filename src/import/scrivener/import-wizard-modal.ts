@@ -226,6 +226,13 @@ export class ScrivenerImportWizardModal extends Modal {
 	private importResult: ImportResult | null = null;
 	private importStatus = '';
 	private importDone = false;
+	/** Re-entrancy guard. Set true at the start of `runImport`; the
+	 *  Import-step renderer skips re-triggering the pass while it's
+	 *  still running. Without this, `onProgress`-driven re-renders
+	 *  would call `runImport` again mid-flight, each new call racing
+	 *  the previous on file creation and throwing "file exists" on
+	 *  the second creator. */
+	private importStarted = false;
 
 	constructor(
 		app: App,
@@ -1404,7 +1411,13 @@ export class ScrivenerImportWizardModal extends Modal {
 					: this.importStatus,
 		});
 
-		if (this.importDone || this.importResult !== null) return;
+		if (
+			this.importDone ||
+			this.importResult !== null ||
+			this.importStarted
+		) {
+			return;
+		}
 		if (!fd.parsedBundle || !fd.parsedSourcePath) {
 			this.importDone = true;
 			return;
@@ -1414,6 +1427,7 @@ export class ScrivenerImportWizardModal extends Modal {
 	}
 
 	private async runImport(): Promise<void> {
+		this.importStarted = true;
 		const fd = this.formData;
 		if (!fd.parsedBundle) return;
 		try {

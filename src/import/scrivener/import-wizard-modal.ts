@@ -1,4 +1,4 @@
-import { App, FuzzySuggestModal, Modal, Setting, TFile, TFolder } from 'obsidian';
+import { App, FuzzySuggestModal, Modal, Notice, Platform, Setting, TFile, TFolder } from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
 import { resolveProjectPaths } from '../../core/projects';
 import {
@@ -35,7 +35,18 @@ import {
 	executeImportPlan,
 	type ImportResult,
 } from './import-write';
+import {
+	copyFromDataTransfer,
+	copyFromFileList,
+	FolderImportError,
+	supportsDirectoryInput,
+} from './folder-import';
 import type { DraftBenchLinker } from '../../core/linker';
+
+/** Vault folder where dropped / picked `.scriv` bundles get copied
+ *  before the wizard imports from them. Defaulting here for V1; can
+ *  surface as a setting later if writers ask. */
+const IMPORT_STAGING_FOLDER = 'Imports';
 
 /**
  * Scrivener `.scriv` import wizard. DB's first wizard, built standalone
@@ -436,24 +447,115 @@ export class ScrivenerImportWizardModal extends Modal {
 	// rendering lands in subsequent commits per the implementation
 	// sequence.
 
+	/**
+	 * Source step. Three intake paths, layered by platform support:
+	 *
+	 * - **Drag-drop zone** (desktop only). Drop a `.scriv` folder onto
+	 *   the wizard; the handler walks via `webkitGetAsEntry()` and
+	 *   copies into the vault under `Imports/<name>.scriv/`.
+	 * - **"Pick a folder from your device" button** (desktop + Android
+	 *   where `webkitdirectory` is supported). Same copy logic, driven
+	 *   by `<input type="file" webkitdirectory>`.
+	 * - **Detected folders list** (all platforms). Already-in-vault
+	 *   `.scriv` bundles surfaced via `findScrivProjectFolders`.
+	 *
+	 * When the picker isn't supported (iOS WKWebView), an explicit
+	 * note explains the file-manager copy flow so writers don't waste
+	 * time looking for a missing button.
+	 */
 	private renderSourceStep(body: HTMLElement): void {
+		const candidates = findScrivProjectFolders(this.app);
+		const pickerSupported = supportsDirectoryInput();
+		const showDropZone = Platform.isDesktopApp;
+
 		body.createEl('p', {
 			cls: 'dbench-import-wizard__help-text',
-			text: 'Your .scriv folder must be inside the vault first. Copy it in via your file manager, share sheet, or sync — then pick it here.',
+			text: this.composeSourceHelpText(pickerSupported, showDropZone),
 		});
 
-		const candidates = findScrivProjectFolders(this.app);
+		if (showDropZone) this.renderDropZone(body);
+		if (pickerSupported) this.renderFolderPickerButton(body);
 
-		if (candidates.length === 0) {
+		if (candidates.length > 0) {
+			body.createEl('h4', {
+				cls: 'dbench-import-wizard__source-section-title',
+				text: 'Or pick from your vault',
+			});
+			this.renderInVaultPicker(body, candidates);
+		} else if (!pickerSupported && !showDropZone) {
 			body.createEl('p', {
 				cls: 'dbench-import-wizard__empty-state',
-				text: 'No .scriv folders found in the vault yet. Copy one in, then reopen this wizard.',
+				// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
+				text: 'No .scriv folders in this vault yet. Use your device\'s file manager to copy a Scrivener project bundle into your vault folder, then reopen this wizard.',
 			});
-			return;
 		}
+	}
 
-		// Current selection display
-		const selection = body.createDiv({
+	private composeSourceHelpText(
+		pickerSupported: boolean,
+		showDropZone: boolean
+	): string {
+		if (showDropZone && pickerSupported) {
+			return 'Drop a .scriv folder onto this window, pick one from your device, or pick one already in your vault.';
+		}
+		if (pickerSupported) {
+			return 'Pick a .scriv folder from your device, or pick one already in your vault.';
+		}
+		return 'Copy a .scriv folder into your vault using your device\'s file manager, then pick it from the list below.';
+	}
+
+	private renderDropZone(parent: HTMLElement): void {
+		const zone = parent.createDiv({
+			cls: 'dbench-import-wizard__dropzone',
+		});
+		zone.createSpan({
+			cls: 'dbench-import-wizard__dropzone-text',
+			text: 'Drop a .scriv folder here',
+		});
+		zone.addEventListener('dragover', (ev) => {
+			ev.preventDefault();
+			zone.addClass('dbench-import-wizard__dropzone--active');
+		});
+		zone.addEventListener('dragleave', () => {
+			zone.removeClass('dbench-import-wizard__dropzone--active');
+		});
+		zone.addEventListener('drop', (ev) => {
+			ev.preventDefault();
+			zone.removeClass('dbench-import-wizard__dropzone--active');
+			if (!ev.dataTransfer) return;
+			void this.handleFolderDrop(ev.dataTransfer);
+		});
+	}
+
+	private renderFolderPickerButton(parent: HTMLElement): void {
+		const wrapper = parent.createDiv({
+			cls: 'dbench-import-wizard__source-picker',
+		});
+		const btn = wrapper.createEl('button', {
+			cls: 'dbench-import-wizard__btn',
+			text: 'Pick a .scriv folder from your device',
+		});
+		const input = wrapper.createEl('input', {
+			cls: 'dbench-import-wizard__source-picker-input',
+			attr: {
+				type: 'file',
+				multiple: 'true',
+			},
+		});
+		input.webkitdirectory = true;
+		btn.addEventListener('click', () => input.click());
+		input.addEventListener('change', () => {
+			if (input.files && input.files.length > 0) {
+				void this.handleFolderPick(input.files);
+			}
+		});
+	}
+
+	private renderInVaultPicker(
+		parent: HTMLElement,
+		candidates: TFolder[]
+	): void {
+		const selection = parent.createDiv({
 			cls: 'dbench-import-wizard__selection',
 		});
 		if (this.formData.sourcePath !== '') {
@@ -472,8 +574,7 @@ export class ScrivenerImportWizardModal extends Modal {
 			});
 		}
 
-		// Pick button
-		const pickBtn = body.createEl('button', {
+		const pickBtn = parent.createEl('button', {
 			cls: 'dbench-import-wizard__btn',
 			text:
 				this.formData.sourcePath !== ''
@@ -487,13 +588,56 @@ export class ScrivenerImportWizardModal extends Modal {
 			}).open();
 		});
 
-		// Candidate count hint when there's more than one
 		if (candidates.length > 1) {
-			body.createEl('p', {
+			parent.createEl('p', {
 				cls: 'dbench-import-wizard__hint',
 				text: `${candidates.length} .scriv folders available in this vault.`,
 			});
 		}
+	}
+
+	private async handleFolderDrop(dataTransfer: DataTransfer): Promise<void> {
+		try {
+			const result = await copyFromDataTransfer(
+				this.app,
+				dataTransfer,
+				IMPORT_STAGING_FOLDER
+			);
+			new Notice(
+				`Copied ${result.filesCopied} file${result.filesCopied === 1 ? '' : 's'} into ${result.vaultPath}.`
+			);
+			this.formData.sourcePath = result.vaultPath;
+			this.renderCurrentStep();
+		} catch (err) {
+			this.surfaceFolderImportError(err);
+		}
+	}
+
+	private async handleFolderPick(fileList: FileList): Promise<void> {
+		try {
+			const result = await copyFromFileList(
+				this.app,
+				fileList,
+				IMPORT_STAGING_FOLDER
+			);
+			new Notice(
+				`Copied ${result.filesCopied} file${result.filesCopied === 1 ? '' : 's'} into ${result.vaultPath}.`
+			);
+			this.formData.sourcePath = result.vaultPath;
+			this.renderCurrentStep();
+		} catch (err) {
+			this.surfaceFolderImportError(err);
+		}
+	}
+
+	private surfaceFolderImportError(err: unknown): void {
+		const message =
+			err instanceof FolderImportError
+				? err.message
+				: err instanceof Error
+					? err.message
+					: String(err);
+		new Notice(`Could not import folder: ${message}`);
 	}
 
 	/**

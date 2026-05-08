@@ -1061,7 +1061,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of welcome-modal.css */
 
 /* --------------------------------------------------------------------------
-   IMPORT-WIZARD.CSS  (397 lines, 8.63 KB)
+   IMPORT-WIZARD.CSS  (438 lines, 9.61 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -1216,6 +1216,47 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	color: var(--text-faint);
 	font-size: var(--font-ui-small);
 	margin: 0;
+}
+
+.dbench-import-wizard__dropzone {
+	display: grid;
+	place-items: center;
+	min-height: 80px;
+	padding: var(--dbench-spacing-md);
+	border: 2px dashed var(--background-modifier-border);
+	border-radius: var(--dbench-radius-md);
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.dbench-import-wizard__dropzone--active {
+	border-color: var(--interactive-accent);
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.dbench-import-wizard__dropzone-text {
+	pointer-events: none;
+}
+
+.dbench-import-wizard__source-picker {
+	display: flex;
+	align-items: center;
+}
+
+.dbench-import-wizard__source-picker-input {
+	display: none;
+}
+
+.dbench-import-wizard__source-section-title {
+	margin: var(--dbench-spacing-sm) 0 0;
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
 }
 
 /* ---- Parse step ---- */
@@ -2856,7 +2897,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 11
-   Total:      2764 lines, 76.38 KB
+   Total:      2805 lines, 77.36 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
@@ -2864,7 +2905,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - manuscript-builder.css: 436 lines, 13.11 KB
    - preview-toolbar.css: 94 lines, 2.54 KB
    - welcome-modal.css: 94 lines, 2.21 KB
-   - import-wizard.css: 397 lines, 8.63 KB
+   - import-wizard.css: 438 lines, 9.61 KB
    - reorder-modal.css: 103 lines, 2.31 KB
    - manuscript-view.css: 1044 lines, 28.92 KB
    - settings-tab.css: 219 lines, 5.53 KB

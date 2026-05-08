@@ -18,6 +18,7 @@
 	padding: var(--dbench-spacing-lg);
 	min-width: min(480px, 92vw);
 	max-width: min(720px, 92vw);
+	max-height: 85vh;
 }
 
 /* ---- Header ---- */
@@ -92,6 +93,11 @@
 	display: flex;
 	flex-direction: column;
 	gap: var(--dbench-spacing-lg);
+	overflow-y: auto;
+	/* `min-height: 0` is required for flex children to shrink below
+	 *  their intrinsic content size; without it `overflow-y: auto`
+	 *  doesn't kick in because the flex item just grows. */
+	min-height: 0;
 }
 
 .dbench-import-wizard__placeholder {

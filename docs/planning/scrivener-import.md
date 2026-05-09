@@ -112,6 +112,8 @@ Scrivener attaches several writer-defined metadata axes to each document:
 
 **Amended 2026-05-06:** filename template field surfaces in Step 5 when snapshot import is on. Default template matches native DB drafts; writers can edit to surface Scrivener titles. Per-snapshot title preserved in `scrivener-snapshot-title` frontmatter regardless of whether the template references it.
 
+**Amended 2026-05-08:** during 0.5.1 implementation, fixture inspection of a real Scrivener 3 Windows project revealed that (a) snapshots live at `<bundleRoot>/Snapshots/<UUID>.snapshots/` (NOT at `Files/Data/<UUID>/Snapshots/` as the original parser assumed), and (b) Scrivener writes the literal string `Untitled Snapshot` for snapshots taken without a writer-typed title (rather than an empty `<Title>` element). The `{title}` substitution rule now treats both an empty title AND the literal `Untitled Snapshot` as the empty-title sentinel, both resolving to `Untitled` in filenames. Frontmatter (`scrivener-snapshot-title`) preserves whichever string Scrivener wrote, so provenance is intact.
+
 Scrivener snapshots are per-document RTF copies with a title (often empty / auto-named with timestamp) and a creation timestamp. A heavy-snapshot user can have hundreds across a project.
 
 - **Default: opt-in off.** Most first-time importers want a clean slate; their Scrivener snapshot history is a backup safety net rather than active material.
@@ -133,7 +135,7 @@ Resolved against a typical scene this produces `01 - Opening - Draft 2 (20240315
 | Variable | Resolves to | Example |
 |---|---|---|
 | `{scene}` | Parent scene's basename | `01 - Opening` |
-| `{title}` | Scrivener snapshot title; `Untitled` when empty | `before edit` |
+| `{title}` | Scrivener snapshot title; `Untitled` when empty OR when literal `Untitled Snapshot` (Scrivener Windows's auto-name default per 2026-05-08 amendment) | `before edit` |
 | `{date}` | Snapshot creation date (`YYYY-MM-DD`) | `2024-03-15` |
 | `{date_compact}` | Snapshot creation date (`YYYYMMDD`); matches native pattern | `20240315` |
 | `{time}` | Snapshot creation time (`HHMM`, 24-hour) | `1430` |
@@ -141,7 +143,7 @@ Resolved against a typical scene this produces `01 - Opening - Draft 2 (20240315
 
 **Resolution + safety rules:**
 
-- Empty `{title}` resolves to the literal `Untitled` rather than producing awkward double spaces or empty segments in the output.
+- Empty `{title}` (or literal `Untitled Snapshot`, per 2026-05-08 amendment) resolves to the literal `Untitled` rather than producing awkward double spaces or empty segments in the output. The frontmatter `scrivener-snapshot-title` preserves whatever Scrivener actually wrote, regardless of whether the writer's template uses `{title}`.
 - After full substitution, filesystem-unsafe characters (`/ \ : * ? " < > |`) in the result are replaced with `-`. Applies to both literal template content and resolved variable values, so a Scrivener title containing `/` or a writer-typed template that introduces a path separator both get flattened.
 - If two snapshots resolve to the same filename (writer's template doesn't disambiguate, e.g., bare `{title}`), append ` 2`, ` 3`, ... in import order, matching Obsidian's native "Untitled" / "Untitled 1" / "Untitled 2" pattern. Last-resort safety net only; well-formed templates won't trigger it.
 - The Scrivener title is preserved in `scrivener-snapshot-title` frontmatter regardless of whether `{title}` appears in the template. Filename is presentation; frontmatter is source of truth. Writers who edit the template later (via post-import rename, scripts, etc.) don't lose the Scrivener provenance.
@@ -365,3 +367,4 @@ Track ratifications and reversals here as work proceeds.
 - **2026-05-05** — Compile settings ratified: skipped entirely; optional default-preset stub via Step 5 toggle.
 - **2026-05-06** — **Cross-platform expansion.** Importer scope expands to mobile. Architectural shift: read `.scriv` bundles from inside the vault via `app.vault.adapter.read` / `readBinary` / `list`, not from arbitrary OS paths via Electron + Node `fs`. Writer copies their `.scriv` folder into the vault before importing. Drops the `Platform.isDesktopApp` gate on the command + Manuscript view button (§ Implementation step 13). Tightens the RTF library spike (§ Implementation step 4) with a browser-compat constraint (no Node-only APIs). Out of scope adds: reading `.scriv` from outside the vault (deferred). Mobile-reference.md § DB commitments updated correspondingly.
 - **2026-05-08** — **Step 14 (Test corpus + QA pass) reframed at ship time.** Original plan gated 0.5.0 on 3-5 contributed `.scriv` projects. With seven BRAT testers and no community repo activity, holding the release for inbound contributions would have indefinitely deferred a feature-complete + dogfood-validated importer. The 0.5.0 QA surface is the maintainer's Scrivener 3 Novel-template fixture (sub-scenes + multi-level extras-above + Checkbox / Date / List custom-metadata) plus 1297 unit / integration tests. The test-corpus tracking issue stays pinned to #28 as a permanent post-release feedback channel.
+- **2026-05-08** — **§ 4 amendment (Snapshot on-disk format + Untitled Snapshot sentinel).** Discovered while implementing #33 against a refreshed test fixture: (1) Scrivener 3 Windows stores snapshots at `<bundleRoot>/Snapshots/<UUID>.snapshots/`, NOT at `Files/Data/<UUID>/Snapshots/` as the original 0.5.0 parser assumed. The pre-existing `countSnapshots` helper silently returned 0 for any real project; fixed in 0.5.1. (2) Scrivener writes the literal `Untitled Snapshot` for snapshots without a writer-typed title (rather than an empty `<Title>`); the `{title}` template substitution treats both as the empty-title sentinel and resolves to `Untitled`. Frontmatter (`scrivener-snapshot-title`) preserves whatever Scrivener wrote.

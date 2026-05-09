@@ -275,6 +275,7 @@ What V1 doesn't do:
 - **Custom destination folder picker.** New project lands under `defaultProjectFolder`. Move or rename after import if needed.
 - **Resumable wizard state.** Form data is in-session only; closing and reopening starts fresh. Source `.scriv` bundles can change between sessions, so re-parsing is the right default.
 - **Inline RTF features deferred for fidelity tuning** (gated on real-corpus exposure): some hyperlink variants, nested footnotes within tables, unusual inline-image arrangements. These import as best-effort placeholders flagged in the error log.
+- **Include-in-Compile detection on docs with no other metadata** (Scrivener Windows quirk). When Scrivener Windows persists a document whose `Include in Compile` checkbox is unchecked, it removes the corresponding XML element from the document's `<MetaData>` block (rather than writing an explicit "No"). The importer detects this — but only when the document also carries some *other* metadata that lives **inside** the `<MetaData>` block: a **Status**, a **Label**, or a **Custom Metadata** field. (Keywords don't qualify — they're stored as a sibling element of `<MetaData>`, not inside it.) For a document with empty `<MetaData/>`, the unchecked-state and untouched-default state are indistinguishable on disk. Workaround: in Scrivener, set a Status, assign a Label, or fill any Custom Metadata field on the document before toggling Include-in-Compile off. The importer then detects the exclusion and surfaces the document in the Preview step's disclosure.
 
 ## Troubleshooting
 

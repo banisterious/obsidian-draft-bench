@@ -154,6 +154,28 @@ describe('parseScrivx — IncludeInCompile parsing', () => {
 				.includeInCompile
 		).toBe(false);
 	});
+
+	it('is false when IncludeInCompile is missing AND MetaData has other children (Scrivener Windows toggle-off serialization)', () => {
+		// Scrivener Windows handles "unchecked Include-in-Compile" by
+		// REMOVING the element from MetaData rather than writing
+		// <IncludeInCompile>No</...>. So a non-empty MetaData block
+		// without IncludeInCompile is the writer's exclusion signal.
+		expect(
+			item('<MetaData><LabelID>7</LabelID><StatusID>2</StatusID></MetaData>')
+				.includeInCompile
+		).toBe(false);
+	});
+
+	it('is true when IncludeInCompile is "Yes" alongside other MetaData (typical Scrivener Windows checked-state serialization)', () => {
+		// Scrivener Windows writes the explicit Yes when MetaData has
+		// other content; verify the rule doesn't accidentally treat
+		// these as exclusions.
+		expect(
+			item(
+				'<MetaData><LabelID>7</LabelID><IncludeInCompile>Yes</IncludeInCompile><StatusID>2</StatusID></MetaData>'
+			).includeInCompile
+		).toBe(true);
+	});
 });
 
 describe('parseScrivx — status / label IDs', () => {

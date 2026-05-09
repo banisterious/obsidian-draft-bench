@@ -89,8 +89,26 @@ export interface BinderItem {
 	statusId: string | null;
 	/** `<LabelID>` value; null when missing. Resolve via `labels`. */
 	labelId: string | null;
-	/** `<IncludeInCompile>` parsed: true when "Yes" or missing, false
-	 *  when "No". Scrivener's default is on, so missing is true. */
+	/** Per-document compile-flag, derived from `<IncludeInCompile>`:
+	 *
+	 *  - `true` when explicit `<IncludeInCompile>Yes</IncludeInCompile>`,
+	 *    OR when the element is missing AND the `<MetaData>` block is
+	 *    empty / absent entirely (untouched-default case).
+	 *  - `false` when explicit `<IncludeInCompile>No</IncludeInCompile>`,
+	 *    OR when the element is missing AND the `<MetaData>` block has
+	 *    other children. Scrivener Windows handles "unchecked" by
+	 *    REMOVING the element from MetaData (rather than writing
+	 *    "No"), so a non-empty MetaData with no IncludeInCompile child
+	 *    is the writer's exclusion signal.
+	 *
+	 *  The empty-`<MetaData/>` case is genuinely ambiguous on Scrivener
+	 *  Windows (could be never-touched-default OR toggled-off-by-writer
+	 *  on a doc with no other metadata); we default to `true` to avoid
+	 *  silently dropping content the writer may have intended to keep.
+	 *  Writers who want such a doc detected as excluded need to add at
+	 *  least one other metadata field (status / label / keyword / custom
+	 *  field) before toggling Include-in-Compile off so Scrivener
+	 *  serializes the exclusion. */
 	includeInCompile: boolean;
 	/** Per-document custom metadata. Field ID -> string value. Lookup
 	 *  the field name + type via the project's `customMetaDataFields`
@@ -338,6 +356,15 @@ function readBinderItemMetaData(meta: Element, item: BinderItem): void {
 	const inc = childByName(meta, 'IncludeInCompile');
 	if (inc) {
 		item.includeInCompile = (inc.textContent ?? '').trim() !== 'No';
+	} else if (hasAnyChildElement(meta)) {
+		// Scrivener Windows quirk: when the writer toggles
+		// Include-in-Compile off on a doc that has other metadata,
+		// Scrivener REMOVES the <IncludeInCompile> element from
+		// MetaData rather than writing <IncludeInCompile>No</...>.
+		// So a non-empty MetaData block with no IncludeInCompile child
+		// is the writer's "explicitly excluded" signal. See
+		// `BinderItem.includeInCompile` doc for the full rule.
+		item.includeInCompile = false;
 	}
 
 	const labelId = childByName(meta, 'LabelID');
@@ -409,4 +436,11 @@ function childByName(parent: Element, name: string): Element | null {
 
 function childrenByName(parent: Element, name: string): Element[] {
 	return elementChildren(parent).filter((c) => c.nodeName === name);
+}
+
+/** True when `parent` has at least one element child (text/comment
+ *  nodes don't count). Used by the Include-in-Compile rule to
+ *  distinguish a non-empty MetaData block from `<MetaData/>`. */
+function hasAnyChildElement(parent: Element): boolean {
+	return elementChildren(parent).length > 0;
 }

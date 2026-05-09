@@ -1362,7 +1362,8 @@ export class ScrivenerImportWizardModal extends Modal {
 			fd.hierarchyOverrides,
 			fd.destinationName,
 			this.settings,
-			fd.options
+			fd.options,
+			fd.parsedBundle.snapshotsByUuid
 		);
 
 		this.renderPreviewCounts(body, plan);
@@ -1847,6 +1848,8 @@ function previewIcon(kind: PlanEntry['kind']): string {
 			return 'scn';
 		case 'sub-scene-note':
 			return 'sub';
+		case 'snapshot-draft':
+			return 'draft';
 	}
 }
 

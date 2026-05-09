@@ -253,6 +253,255 @@ describe('buildImportPlan — extras-below warning', () => {
 	});
 });
 
+describe('buildImportPlan — snapshot drafts', () => {
+	const optionsWithSnapshots: ImportOptions = {
+		...stubOptions,
+		importSnapshots: true,
+		snapshotCap: 3,
+		snapshotFilenameTemplate: '{scene} - Draft {n} ({date_compact})',
+	};
+
+	function buildSceneFixture(): {
+		project: ReturnType<typeof makeProject>;
+		auto: ReturnType<typeof autoDetectHierarchy>;
+		sceneId: string;
+	} {
+		const scene = makeItem({ type: 'Text', title: '01 - Opening' });
+		const draft = makeItem({
+			type: 'DraftFolder',
+			children: [
+				makeItem({ type: 'Folder', title: 'Chapter 1', children: [scene] }),
+			],
+		});
+		const project = makeProject([draft]);
+		const auto = autoDetectHierarchy(draft);
+		return { project, auto, sceneId: scene.id };
+	}
+
+	it('emits no snapshot-draft entries when importSnapshots is off (even with snapshots present)', () => {
+		const { project, auto, sceneId } = buildSceneFixture();
+		const snapshots = new Map([
+			[
+				sceneId,
+				[
+					{
+						title: 'Workshop',
+						date: '2024-01-01 10:00:00 -0700',
+						rtfPath: 'unused.rtf',
+					},
+				],
+			],
+		]);
+		const plan = buildImportPlan(
+			project,
+			auto,
+			new Map(),
+			'My Novel',
+			DEFAULT_SETTINGS,
+			stubOptions, // importSnapshots: false
+			snapshots
+		);
+		expect(plan.entries.some((e) => e.kind === 'snapshot-draft')).toBe(false);
+		expect(plan.counts.snapshots).toBe(0);
+	});
+
+	it('emits one snapshot-draft entry per kept snapshot in chronological order', () => {
+		const { project, auto, sceneId } = buildSceneFixture();
+		const snapshots = new Map([
+			[
+				sceneId,
+				[
+					{
+						title: 'Third',
+						date: '2024-03-01 10:00:00 -0700',
+						rtfPath: 'third.rtf',
+					},
+					{
+						title: 'First',
+						date: '2024-01-01 10:00:00 -0700',
+						rtfPath: 'first.rtf',
+					},
+					{
+						title: 'Second',
+						date: '2024-02-01 10:00:00 -0700',
+						rtfPath: 'second.rtf',
+					},
+				],
+			],
+		]);
+		const plan = buildImportPlan(
+			project,
+			auto,
+			new Map(),
+			'My Novel',
+			DEFAULT_SETTINGS,
+			optionsWithSnapshots,
+			snapshots
+		);
+		const drafts = plan.entries.filter((e) => e.kind === 'snapshot-draft');
+		expect(drafts.map((d) => d.sourceTitle)).toEqual([
+			'First',
+			'Second',
+			'Third',
+		]);
+		expect(plan.counts.snapshots).toBe(3);
+		expect(plan.counts.snapshotsCapped).toBe(0);
+	});
+
+	it('respects the per-scene cap and counts dropped snapshots', () => {
+		const { project, auto, sceneId } = buildSceneFixture();
+		const snapshots = new Map([
+			[
+				sceneId,
+				[
+					{ title: 'A', date: '2024-01-01 10:00:00 -0700', rtfPath: 'a.rtf' },
+					{ title: 'B', date: '2024-02-01 10:00:00 -0700', rtfPath: 'b.rtf' },
+					{ title: 'C', date: '2024-03-01 10:00:00 -0700', rtfPath: 'c.rtf' },
+					{ title: 'D', date: '2024-04-01 10:00:00 -0700', rtfPath: 'd.rtf' },
+					{ title: 'E', date: '2024-05-01 10:00:00 -0700', rtfPath: 'e.rtf' },
+				],
+			],
+		]);
+		const plan = buildImportPlan(
+			project,
+			auto,
+			new Map(),
+			'My Novel',
+			DEFAULT_SETTINGS,
+			{ ...optionsWithSnapshots, snapshotCap: 3 },
+			snapshots
+		);
+		const drafts = plan.entries.filter((e) => e.kind === 'snapshot-draft');
+		// Most recent 3 kept (C, D, E); A and B dropped.
+		expect(drafts.map((d) => d.sourceTitle)).toEqual(['C', 'D', 'E']);
+		expect(plan.counts.snapshots).toBe(3);
+		expect(plan.counts.snapshotsCapped).toBe(2);
+		expect(
+			plan.warnings.some((w) =>
+				w.includes('2 snapshots will be skipped')
+			)
+		).toBe(true);
+	});
+
+	it('keeps all snapshots when cap is "all"', () => {
+		const { project, auto, sceneId } = buildSceneFixture();
+		const snapshots = new Map([
+			[
+				sceneId,
+				[
+					{ title: 'A', date: '2024-01-01 10:00:00 -0700', rtfPath: 'a.rtf' },
+					{ title: 'B', date: '2024-02-01 10:00:00 -0700', rtfPath: 'b.rtf' },
+					{ title: 'C', date: '2024-03-01 10:00:00 -0700', rtfPath: 'c.rtf' },
+					{ title: 'D', date: '2024-04-01 10:00:00 -0700', rtfPath: 'd.rtf' },
+					{ title: 'E', date: '2024-05-01 10:00:00 -0700', rtfPath: 'e.rtf' },
+				],
+			],
+		]);
+		const plan = buildImportPlan(
+			project,
+			auto,
+			new Map(),
+			'My Novel',
+			DEFAULT_SETTINGS,
+			{ ...optionsWithSnapshots, snapshotCap: 'all' },
+			snapshots
+		);
+		expect(plan.counts.snapshots).toBe(5);
+		expect(plan.counts.snapshotsCapped).toBe(0);
+	});
+
+	it('applies the filename template with substituted variables and {n} per-scene counter', () => {
+		const { project, auto, sceneId } = buildSceneFixture();
+		const snapshots = new Map([
+			[
+				sceneId,
+				[
+					{ title: 'A', date: '2024-01-01 10:00:00 -0700', rtfPath: 'a.rtf' },
+					{ title: 'B', date: '2024-02-01 10:00:00 -0700', rtfPath: 'b.rtf' },
+				],
+			],
+		]);
+		const plan = buildImportPlan(
+			project,
+			auto,
+			new Map(),
+			'My Novel',
+			DEFAULT_SETTINGS,
+			optionsWithSnapshots,
+			snapshots
+		);
+		const drafts = plan.entries.filter((e) => e.kind === 'snapshot-draft');
+		expect(drafts[0].path.endsWith('01 - Opening - Draft 1 (20240101).md')).toBe(
+			true
+		);
+		expect(drafts[1].path.endsWith('01 - Opening - Draft 2 (20240201).md')).toBe(
+			true
+		);
+	});
+
+	it('disambiguates collisions when the template is bare {title}', () => {
+		const { project, auto, sceneId } = buildSceneFixture();
+		const snapshots = new Map([
+			[
+				sceneId,
+				[
+					{
+						title: 'Untitled Snapshot',
+						date: '2024-01-01 10:00:00 -0700',
+						rtfPath: 'a.rtf',
+					},
+					{
+						title: 'Untitled Snapshot',
+						date: '2024-02-01 10:00:00 -0700',
+						rtfPath: 'b.rtf',
+					},
+				],
+			],
+		]);
+		const plan = buildImportPlan(
+			project,
+			auto,
+			new Map(),
+			'My Novel',
+			DEFAULT_SETTINGS,
+			{ ...optionsWithSnapshots, snapshotFilenameTemplate: '{title}' },
+			snapshots
+		);
+		const drafts = plan.entries.filter((e) => e.kind === 'snapshot-draft');
+		// Both resolve via "Untitled Snapshot" -> "Untitled" sentinel,
+		// then the second collides and gets " 2" appended.
+		expect(drafts.map((d) => d.path.split('/').pop())).toEqual([
+			'Untitled.md',
+			'Untitled 2.md',
+		]);
+	});
+
+	it('emits a Drafts/ folder entry alongside the snapshot drafts', () => {
+		const { project, auto, sceneId } = buildSceneFixture();
+		const snapshots = new Map([
+			[
+				sceneId,
+				[
+					{ title: 'A', date: '2024-01-01 10:00:00 -0700', rtfPath: 'a.rtf' },
+				],
+			],
+		]);
+		const plan = buildImportPlan(
+			project,
+			auto,
+			new Map(),
+			'My Novel',
+			DEFAULT_SETTINGS,
+			optionsWithSnapshots,
+			snapshots
+		);
+		const folders = plan.entries.filter(
+			(e) => e.kind === 'folder' && e.path.endsWith('/Drafts')
+		);
+		expect(folders).toHaveLength(1);
+	});
+});
+
 describe('buildImportPlan — image counting', () => {
 	it('tallies binder items typed Image across all locations', () => {
 		const project = makeProject([

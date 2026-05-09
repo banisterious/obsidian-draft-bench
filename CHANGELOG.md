@@ -6,6 +6,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-05-08
+
+Scrivener importer follow-up: completes the snapshot import + default compile preset toggles that 0.5.0 wizard surfaced as deferred warnings, fixes a pre-existing bug in the Parse step's snapshot count, corrects a Scrivener 3 Windows serialization quirk in the Include-in-Compile parser, and surfaces excluded documents in the Preview step. Tracked via [#33](https://github.com/banisterious/obsidian-draft-bench/issues/33).
+
+### Added
+
+- **Scrivener snapshot import** (planning doc [§ 4](docs/planning/scrivener-import.md)). When the **Import snapshots** toggle is on in the wizard's Options step, per-document Scrivener snapshots become `dbench-type: draft` files alongside each imported scene. Per-scene cap (1 / 3 / 5 / All) honored. Filename template (`{scene}` `{title}` `{date}` `{date_compact}` `{time}` `{n}`) drives each draft's name; the default template (`{scene} - Draft {n} ({date_compact})`) matches native Draft Bench draft files so imported snapshots sit indistinguishably alongside drafts the writer creates after import. Each draft note carries `dbench-type: draft`, scene/project links, `dbench-draft-number`, `dbench-created-at`, and `scrivener-snapshot-title` (preserves the original Scrivener title even when the writer's template doesn't reference `{title}`). The parent scene's `dbench-drafts` and `dbench-draft-ids` reverse arrays update accordingly.
+- **Default compile preset stub** (planning doc § Compile-settings). When the **Create default compile preset** toggle is on in the Options step, the importer adds an "Imported defaults" preset to the new project's `Compile Presets/` folder using Draft Bench's standard preset defaults. Scrivener compile formats don't translate cleanly so the stub is just a starting point; the writer renames / duplicates / deletes from there.
+- **Preview-step disclosure of excluded documents.** When the source bundle contains documents marked Include-in-Compile = No (Scrivener UI checkbox unchecked), the Preview step's Warnings section lists them by title with the wording "**N documents** marked for exclusion in Scrivener: ...". The import behavior is unchanged from spec § 8 (preserve as `scrivener-include-in-compile: false` provenance frontmatter; don't filter at import); the disclosure just makes the existing behavior visible up front so writers see the provenance frontmatter that's about to land rather than discovering it post-import.
+
+### Fixed
+
+- **`countSnapshots` looked at the wrong path.** Pre-existing bug from 0.5.0: the Parse step's snapshot-count summary returned 0 silently for any real Scrivener 3 (Windows) project because the helper walked `Files/Data/<UUID>/Snapshots/` (the location assumed during initial implementation) rather than the actual `<bundleRoot>/Snapshots/<UUID>.snapshots/` Scrivener 3 uses. Now correctly counts the bundle-root location.
+- **Include-in-Compile detection on Scrivener Windows.** Pre-existing parser rule "missing `<IncludeInCompile>` element defaults to true" silently treated toggle-off documents as included. Scrivener Windows serializes the unchecked state by REMOVING the element from `<MetaData>` (rather than writing `<IncludeInCompile>No</IncludeInCompile>`), so missing-element + non-empty MetaData is the writer's exclusion signal. Updated parser rule: missing element + MetaData with other children -> `false`; missing element + empty `<MetaData/>` -> `true` (the empty case is genuinely ambiguous and we default to include to avoid silently dropping content). Both the Preview-step disclosure and the `scrivener-include-in-compile: false` frontmatter now fire correctly for toggled-off Scrivener Windows documents.
+
+### Notes
+
+- **Empty-`<MetaData/>` ambiguity** (Scrivener Windows). For a document whose Include-in-Compile checkbox is unchecked AND that has no other metadata in its MetaData block (no Status, Label, or Custom Metadata field), Scrivener Windows persists empty `<MetaData/>` either way (untouched-default or toggled-off). The importer can't distinguish the two cases on disk and defaults to include. Workaround in [Importing from Scrivener § Known limitations](https://github.com/banisterious/obsidian-draft-bench/wiki/Importing-from-Scrivener): in Scrivener, set a Status / Label / Custom Metadata field on the document before toggling Include-in-Compile off. Keywords don't qualify (they're stored as a sibling element of MetaData, not inside it).
+- **Snapshot import fidelity is best-effort on per-snapshot RTF body issues.** A snapshot whose RTF body is missing or unreadable produces an empty draft note + a warning in the import error log, rather than aborting the whole snapshot import for the scene. Other snapshots for the same scene still import normally.
+- **`dbench-created-at` on imported drafts** is the snapshot's `<Date>` from `index.xml`, normalized to ISO `YYYY-MM-DD`. Scrivener emits a fuller timestamp (`YYYY-MM-DD HH:MM:SS [+-]HHMM`); only the date component is preserved on the draft frontmatter.
+
 ## [0.5.0] - 2026-05-08
 
 Scrivener 3 project import marquee. A multi-step wizard reads a `.scriv` bundle from inside the vault and produces a fresh Draft Bench project: chapters, scenes, sub-scenes, drafts (optional), and inspector content all carry across, with every mapping reviewed in a Preview step before any file gets written.

@@ -186,6 +186,19 @@ export function buildImportPlan(
 		if (item.type === 'Image') counts.images += 1;
 	});
 
+	// Disclosure: Draft-tree documents marked Include-in-Compile = No
+	// in Scrivener still import per spec § 8 (preserve as provenance,
+	// don't filter). Surfacing them here so the writer notices the
+	// provenance frontmatter that's about to land, rather than
+	// discovering it post-import.
+	const excludedTitles = collectDraftExcludedTitles(draftRoot);
+	if (excludedTitles.length > 0) {
+		const formatted = excludedTitles.map((t) => `"${t}"`).join(', ');
+		warnings.push(
+			`${excludedTitles.length} document${excludedTitles.length === 1 ? '' : 's'} marked for exclusion in Scrivener: ${formatted}. They'll be imported with the scrivener-include-in-compile: false frontmatter so you can filter them in your compile preset.`
+		);
+	}
+
 	if (counts.extrasBelow > 0) {
 		warnings.push(
 			`${counts.extrasBelow} item${counts.extrasBelow === 1 ? '' : 's'} will merge into parent body as nested headings.`
@@ -594,4 +607,28 @@ function walkAll(
 		visit(item);
 		walkAll(item.children, visit);
 	}
+}
+
+/**
+ * Collect titles of every Draft-tree binder item where Scrivener's
+ * Include-in-Compile flag is `false`. Returns titles in binder order.
+ *
+ * Folder items can also carry the flag (writers sometimes exclude a
+ * whole chapter folder); both Folder and Text excluded items are
+ * collected. The returned titles are used by the Preview-step
+ * disclosure so the writer sees what's about to land with the
+ * `scrivener-include-in-compile: false` provenance frontmatter.
+ */
+function collectDraftExcludedTitles(draftRoot: BinderItem): string[] {
+	const titles: string[] = [];
+	const visit = (items: BinderItem[]): void => {
+		for (const item of items) {
+			if (item.includeInCompile === false) {
+				titles.push(item.title === '' ? '(untitled)' : item.title);
+			}
+			visit(item.children);
+		}
+	};
+	visit(draftRoot.children);
+	return titles;
 }

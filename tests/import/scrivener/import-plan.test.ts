@@ -502,6 +502,151 @@ describe('buildImportPlan — snapshot drafts', () => {
 	});
 });
 
+describe('buildImportPlan — Include-in-Compile disclosure', () => {
+	function buildDraftWithExclusions(
+		exclusions: Array<{ id: string; title: string }>
+	) {
+		const draft = makeItem({
+			type: 'DraftFolder',
+			title: 'Manuscript',
+			children: [
+				makeItem({
+					type: 'Folder',
+					title: 'Chapter 1',
+					children: [
+						makeItem({ type: 'Text', title: 'Included scene' }),
+						...exclusions.map((e) => {
+							const item = makeItem({
+								id: e.id,
+								type: 'Text',
+								title: e.title,
+							});
+							item.includeInCompile = false;
+							return item;
+						}),
+					],
+				}),
+			],
+		});
+		const project = makeProject([draft]);
+		const auto = autoDetectHierarchy(draft);
+		return { project, auto };
+	}
+
+	it('emits no excluded-docs warning when no Draft items have the flag', () => {
+		const { project, auto } = buildDraftWithExclusions([]);
+		const plan = buildImportPlan(
+			project,
+			auto,
+			new Map(),
+			'My Novel',
+			DEFAULT_SETTINGS,
+			stubOptions
+		);
+		expect(
+			plan.warnings.some((w) => w.includes('marked for exclusion'))
+		).toBe(false);
+	});
+
+	it('lists a single excluded document with title in double quotes', () => {
+		const { project, auto } = buildDraftWithExclusions([
+			{ id: 'ex-1', title: "Scene that's excluded" },
+		]);
+		const plan = buildImportPlan(
+			project,
+			auto,
+			new Map(),
+			'My Novel',
+			DEFAULT_SETTINGS,
+			stubOptions
+		);
+		const warning = plan.warnings.find((w) =>
+			w.includes('marked for exclusion')
+		);
+		expect(warning).toBeDefined();
+		expect(warning).toContain('1 document marked for exclusion');
+		expect(warning).toContain('"Scene that\'s excluded"');
+		expect(warning).toContain('scrivener-include-in-compile: false');
+	});
+
+	it('lists multiple excluded documents comma-separated in binder order', () => {
+		const { project, auto } = buildDraftWithExclusions([
+			{ id: 'ex-1', title: 'First excluded' },
+			{ id: 'ex-2', title: 'Second excluded' },
+			{ id: 'ex-3', title: 'Third excluded' },
+		]);
+		const plan = buildImportPlan(
+			project,
+			auto,
+			new Map(),
+			'My Novel',
+			DEFAULT_SETTINGS,
+			stubOptions
+		);
+		const warning = plan.warnings.find((w) =>
+			w.includes('marked for exclusion')
+		);
+		expect(warning).toBeDefined();
+		expect(warning).toContain('3 documents marked for exclusion');
+		expect(warning).toContain(
+			'"First excluded", "Second excluded", "Third excluded"'
+		);
+	});
+
+	it('falls back to (untitled) for excluded docs with empty title', () => {
+		const { project, auto } = buildDraftWithExclusions([
+			{ id: 'ex-1', title: '' },
+		]);
+		const plan = buildImportPlan(
+			project,
+			auto,
+			new Map(),
+			'My Novel',
+			DEFAULT_SETTINGS,
+			stubOptions
+		);
+		const warning = plan.warnings.find((w) =>
+			w.includes('marked for exclusion')
+		);
+		expect(warning).toContain('"(untitled)"');
+	});
+
+	it('only walks the Draft tree (Research-tree exclusions ignored)', () => {
+		const research = makeItem({
+			type: 'ResearchFolder',
+			title: 'Research',
+			children: [
+				(() => {
+					const item = makeItem({
+						type: 'Text',
+						title: 'Excluded research note',
+					});
+					item.includeInCompile = false;
+					return item;
+				})(),
+			],
+		});
+		const draft = makeItem({
+			type: 'DraftFolder',
+			title: 'Manuscript',
+			children: [makeItem({ type: 'Text', title: 'Included scene' })],
+		});
+		const project = makeProject([draft, research]);
+		const auto = autoDetectHierarchy(draft);
+		const plan = buildImportPlan(
+			project,
+			auto,
+			new Map(),
+			'My Novel',
+			DEFAULT_SETTINGS,
+			stubOptions
+		);
+		expect(
+			plan.warnings.some((w) => w.includes('marked for exclusion'))
+		).toBe(false);
+	});
+});
+
 describe('buildImportPlan — image counting', () => {
 	it('tallies binder items typed Image across all locations', () => {
 		const project = makeProject([

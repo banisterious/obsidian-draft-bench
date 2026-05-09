@@ -281,6 +281,10 @@ What V1 doesn't do:
 
 **Empty Source step on iOS.** iOS Safari WKWebView doesn't support `webkitdirectory`. Copy the `.scriv` bundle into your vault using the Files app, then reopen the wizard so the in-vault picker dropdown can surface it.
 
+**Source step picker won't select a `.scriv` folder on Android** ([#34](https://github.com/banisterious/obsidian-draft-bench/issues/34)). Some Android builds present a file-only picker even when the `webkitdirectory` attribute is set on the input element — the picker lets you navigate *into* a `.scriv` folder but won't let you pick the folder itself. Workaround: copy the `.scriv` folder into your vault using your device's file manager (Files by Google, Samsung My Files, etc.), then use the wizard's "Or pick from your vault" dropdown instead. (Source-step UX is being reworked in a future patch to make the in-vault path the primary option on Android.)
+
+**In-vault dropdown doesn't show a just-copied `.scriv` folder on Android** ([#35](https://github.com/banisterious/obsidian-draft-bench/issues/35)). Files copied into the vault via Android's file manager (rather than via Obsidian's own APIs) don't always trigger Obsidian's file-watcher, so the indexed cache stays stale until the next reload. Workaround: after copying, run **`Reload app without saving`** from the command palette. The dropdown then surfaces the folder. Adapter-based discovery (which bypasses the cache) is in progress for a future patch — once it lands, the reload step won't be needed.
+
 **"Project creation failed" in the Complete step.** Almost always a destination-name conflict (a project with that name already exists in `defaultProjectFolder`). Go back to step 2 and pick a unique name.
 
 **Scenes have empty bodies after import.** Check the import error log (`Scrivener import errors.md` in the project folder). The most common cause is RTF parser fallback on unusual encodings; the bodies should still contain *some* content as HTML fallback. File an issue at [#28](https://github.com/banisterious/obsidian-draft-bench/issues/28) with the offending RTF (sanitized) so the parser can be tuned.

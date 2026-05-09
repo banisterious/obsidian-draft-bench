@@ -25,6 +25,7 @@ import {
 	loadSnapshots,
 	type SnapshotMetadata,
 } from './snapshots';
+import { DEFAULT_SNAPSHOT_FILENAME_TEMPLATE } from './snapshot-filename';
 import {
 	autoDetectHierarchy,
 	effectiveTarget,
@@ -203,8 +204,10 @@ export interface ImportOptions {
 
 export type SnapshotCap = 1 | 3 | 5 | 'all';
 
-export const DEFAULT_SNAPSHOT_FILENAME_TEMPLATE =
-	'{scene} - Draft {n} ({date_compact})';
+// Re-exported for callers (and the wizard's own usage in
+// getDefaultImportOptions / the snapshot template Setting placeholder).
+// Canonical definition in snapshot-filename.ts.
+export { DEFAULT_SNAPSHOT_FILENAME_TEMPLATE };
 
 export const DEFAULT_IMAGE_EXTRACTION_FOLDER = 'Research/Images/';
 

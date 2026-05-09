@@ -938,6 +938,46 @@ describe('executeImportPlan — snapshot import', () => {
 		expect(draftsFolder).toBeNull();
 	});
 
+	it('creates a default compile preset when the createDefaultCompilePreset toggle is on', async () => {
+		const { app, settings, linker } = setupApp();
+		const sceneItem = makeItem({ id: 's', type: 'Text', title: 'Scene' });
+		const draftFolder = makeItem({
+			id: 'draft',
+			type: 'DraftFolder',
+			title: 'Manuscript',
+			children: [
+				makeItem({
+					id: 'c',
+					type: 'Folder',
+					title: 'Chapter 1',
+					children: [sceneItem],
+				}),
+			],
+		});
+		const bundle = makeBundle({ binder: [draftFolder] });
+
+		const formData = makeFormData({ destinationName: 'X', bundle });
+		formData.options.createDefaultCompilePreset = true;
+
+		const result = await executeImportPlan({
+			app,
+			settings,
+			linker,
+			saveSettings: async () => {},
+			bundle,
+			bundleRootPath: 'imports/test.scriv',
+			formData,
+		});
+
+		expect(result.errors).toEqual([]);
+		const presetFile = app.vault.getFileByPath(
+			'Draft Bench/X/Compile Presets/Imported defaults.md'
+		);
+		expect(presetFile).not.toBeNull();
+		const fm = app.metadataCache.getFileCache(presetFile!)?.frontmatter;
+		expect(fm?.['dbench-type']).toBe('compile-preset');
+	});
+
 	it('warns instead of erroring when a snapshot RTF body is missing', async () => {
 		// Don't use the standard setup helper — it auto-seeds every
 		// rtfPath. Build the bundle manually so the snapshot's path

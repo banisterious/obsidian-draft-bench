@@ -5,6 +5,7 @@ import { createProject } from '../../core/projects';
 import { createChapter } from '../../core/chapters';
 import { createScene } from '../../core/scenes';
 import { createSubScene } from '../../core/sub-scenes';
+import { createCompilePreset } from '../../core/compile-presets';
 import type {
 	ChapterNote,
 	ProjectNote,
@@ -165,9 +166,7 @@ export async function executeImportPlan(
 
 			// Pass 4: default compile preset stub (when toggle on).
 			if (input.formData.options.createDefaultCompilePreset) {
-				result.warnings.push(
-					'Default compile preset stub is not yet implemented; create a preset manually after import.'
-				);
+				await createDefaultCompilePresetForImport(ctx);
 			}
 		} catch (err) {
 			result.errors.push({
@@ -998,6 +997,37 @@ function readArray(value: unknown): unknown[] {
 	if (Array.isArray(value)) return value;
 	if (value === undefined || value === null) return [];
 	return [value];
+}
+
+// ---- Pass 4: default compile preset stub --------------------------------
+
+/**
+ * Create a starter compile preset using DB's standard defaults so the
+ * writer has somewhere to begin. Per spec § Compile-settings: Scrivener
+ * compile formats don't translate cleanly, so the importer doesn't try
+ * — the stub is just an empty preset named "Imported defaults" that
+ * the writer can rename, duplicate, or delete after import.
+ *
+ * Errors during preset creation surface in result.errors but don't
+ * abort the import (drafts are already written; a missing preset is
+ * recoverable manually).
+ */
+async function createDefaultCompilePresetForImport(
+	ctx: WriteContext
+): Promise<void> {
+	try {
+		await createCompilePreset(ctx.input.app, {
+			name: 'Imported defaults',
+			project: ctx.project,
+		});
+		ctx.result.filesCreated += 1;
+	} catch (err) {
+		ctx.result.errors.push({
+			binderItemId: '',
+			itemTitle: 'Default compile preset',
+			message: `Could not create default compile preset: ${err instanceof Error ? err.message : String(err)}`,
+		});
+	}
 }
 
 // ---- Error log ----------------------------------------------------------

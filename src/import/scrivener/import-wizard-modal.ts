@@ -22,6 +22,10 @@ import {
 	type ProjectSummary,
 } from './scriv-summary';
 import {
+	loadSnapshots,
+	type SnapshotMetadata,
+} from './snapshots';
+import {
 	autoDetectHierarchy,
 	effectiveTarget,
 	HIERARCHY_TARGETS,
@@ -105,7 +109,19 @@ const VISIBLE_INDICATOR_STEPS = 6;
 export interface ParsedBundle {
 	project: ScrivProject;
 	summary: ProjectSummary;
+	/** Total snapshot count surfaced on the Parse step's summary card.
+	 *  Cheap to compute (just counts `.rtf` files); see also
+	 *  `snapshotsByUuid` for the rich metadata used by the Plan +
+	 *  Write passes. */
 	snapshotCount: number;
+	/** Per-document snapshot metadata, keyed by binder UUID. Populated
+	 *  by `loadSnapshots` during `loadAndParseBundle`. Documents without
+	 *  snapshots don't appear in the map. */
+	snapshotsByUuid: Map<string, SnapshotMetadata[]>;
+	/** Best-effort warnings from `loadSnapshots` (malformed `index.xml`,
+	 *  missing RTF bodies, etc.). Surfaced in the import error log
+	 *  alongside the parser's own warnings. */
+	snapshotWarnings: string[];
 }
 
 /**
@@ -1643,8 +1659,16 @@ export async function loadAndParseBundle(
 
 	const summary = summarizeProject(project);
 	const snapshotCount = await countSnapshots(app.vault.adapter, bundlePath);
+	const { snapshotsByUuid, warnings: snapshotWarnings } =
+		await loadSnapshots(app.vault.adapter, bundlePath);
 
-	return { project, summary, snapshotCount };
+	return {
+		project,
+		summary,
+		snapshotCount,
+		snapshotsByUuid,
+		snapshotWarnings,
+	};
 }
 
 /** Strip the conventional `.scriv` suffix from a bundle folder path

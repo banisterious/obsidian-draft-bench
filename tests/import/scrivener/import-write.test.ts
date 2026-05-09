@@ -70,6 +70,8 @@ function makeBundle(opts: Partial<ScrivProject>): ParsedBundle {
 			totalItems: 0,
 		},
 		snapshotCount: 0,
+		snapshotsByUuid: new Map(),
+		snapshotWarnings: [],
 	};
 }
 
@@ -672,5 +674,330 @@ describe('executeImportPlan — extras-above and extras-below', () => {
 		);
 		const chapterFm = app.metadataCache.getFileCache(chapterFile!)?.frontmatter;
 		expect(chapterFm?.['scrivener-part']).toBe('Part One');
+	});
+});
+
+describe('executeImportPlan — snapshot import', () => {
+	function setupSceneWithSnapshots(
+		snapshotsByUuid: Map<
+			string,
+			Array<{ title: string; date: string; rtfPath: string }>
+		>,
+		options?: Partial<ScrivenerImportFormData['options']>
+	) {
+		const { app, settings, linker } = setupApp();
+		const sceneItem = makeItem({ id: 'scn-1', type: 'Text', title: 'Scene' });
+		const chapterItem = makeItem({
+			id: 'ch-1',
+			type: 'Folder',
+			title: 'Chapter 1',
+			children: [sceneItem],
+		});
+		const draftFolder = makeItem({
+			id: 'draft',
+			type: 'DraftFolder',
+			title: 'Manuscript',
+			children: [chapterItem],
+		});
+		const bundle = makeBundle({ binder: [draftFolder] });
+		bundle.snapshotsByUuid = snapshotsByUuid;
+
+		// Seed primary scene RTF so the scene gets created cleanly.
+		app.vault._addAdapterFile(
+			'imports/test.scriv/Files/Data/scn-1/content.rtf',
+			'{\\rtf1\\ansi The current scene body.}'
+		);
+
+		// Seed each snapshot's RTF body at the path the snapshots map
+		// declares.
+		for (const snapshots of snapshotsByUuid.values()) {
+			for (const snap of snapshots) {
+				app.vault._addAdapterFile(
+					snap.rtfPath,
+					`{\\rtf1\\ansi Snapshot body for ${snap.title}.}`
+				);
+			}
+		}
+
+		const formData = makeFormData({ destinationName: 'X', bundle });
+		formData.options.importSnapshots = true;
+		if (options) Object.assign(formData.options, options);
+
+		return { app, settings, linker, bundle, formData };
+	}
+
+	it('creates draft files for each kept snapshot when the toggle is on', async () => {
+		const sceneId = 'scn-1';
+		const snapshotsByUuid = new Map([
+			[
+				sceneId,
+				[
+					{
+						title: 'Workshop draft',
+						date: '2024-01-01 10:00:00 -0700',
+						rtfPath:
+							'imports/test.scriv/Snapshots/scn-1.snapshots/2024-01-01-10-00-00-0700.rtf',
+					},
+					{
+						title: 'Before agent edits',
+						date: '2024-02-01 10:00:00 -0700',
+						rtfPath:
+							'imports/test.scriv/Snapshots/scn-1.snapshots/2024-02-01-10-00-00-0700.rtf',
+					},
+				],
+			],
+		]);
+		const { app, settings, linker, bundle, formData } =
+			setupSceneWithSnapshots(snapshotsByUuid);
+
+		const result = await executeImportPlan({
+			app,
+			settings,
+			linker,
+			saveSettings: async () => {},
+			bundle,
+			bundleRootPath: 'imports/test.scriv',
+			formData,
+		});
+
+		expect(result.errors).toEqual([]);
+
+		const draft1 = app.vault.getFileByPath(
+			'Draft Bench/X/Drafts/Scene - Draft 1 (20240101).md'
+		);
+		const draft2 = app.vault.getFileByPath(
+			'Draft Bench/X/Drafts/Scene - Draft 2 (20240201).md'
+		);
+		expect(draft1).not.toBeNull();
+		expect(draft2).not.toBeNull();
+	});
+
+	it('stamps draft frontmatter (dbench-type, scene link, draft-number, scrivener-snapshot-title)', async () => {
+		const snapshotsByUuid = new Map([
+			[
+				'scn-1',
+				[
+					{
+						title: 'Workshop draft',
+						date: '2024-01-01 10:00:00 -0700',
+						rtfPath:
+							'imports/test.scriv/Snapshots/scn-1.snapshots/2024-01-01-10-00-00-0700.rtf',
+					},
+				],
+			],
+		]);
+		const { app, settings, linker, bundle, formData } =
+			setupSceneWithSnapshots(snapshotsByUuid);
+
+		await executeImportPlan({
+			app,
+			settings,
+			linker,
+			saveSettings: async () => {},
+			bundle,
+			bundleRootPath: 'imports/test.scriv',
+			formData,
+		});
+
+		const draft = app.vault.getFileByPath(
+			'Draft Bench/X/Drafts/Scene - Draft 1 (20240101).md'
+		);
+		const fm = app.metadataCache.getFileCache(draft!)?.frontmatter;
+		expect(fm?.['dbench-type']).toBe('draft');
+		expect(fm?.['dbench-scene']).toBe('[[Scene]]');
+		expect(fm?.['dbench-draft-number']).toBe(1);
+		expect(fm?.['scrivener-snapshot-title']).toBe('Workshop draft');
+		expect(fm?.['dbench-created-at']).toBe('2024-01-01');
+	});
+
+	it('updates the parent scene reverse arrays (dbench-drafts, dbench-draft-ids)', async () => {
+		const snapshotsByUuid = new Map([
+			[
+				'scn-1',
+				[
+					{
+						title: 'A',
+						date: '2024-01-01 10:00:00 -0700',
+						rtfPath:
+							'imports/test.scriv/Snapshots/scn-1.snapshots/2024-01-01-10-00-00-0700.rtf',
+					},
+					{
+						title: 'B',
+						date: '2024-02-01 10:00:00 -0700',
+						rtfPath:
+							'imports/test.scriv/Snapshots/scn-1.snapshots/2024-02-01-10-00-00-0700.rtf',
+					},
+				],
+			],
+		]);
+		const { app, settings, linker, bundle, formData } =
+			setupSceneWithSnapshots(snapshotsByUuid);
+
+		await executeImportPlan({
+			app,
+			settings,
+			linker,
+			saveSettings: async () => {},
+			bundle,
+			bundleRootPath: 'imports/test.scriv',
+			formData,
+		});
+
+		const sceneFile = app.vault.getFileByPath(
+			'Draft Bench/X/Chapter 1/Scene.md'
+		);
+		const fm = app.metadataCache.getFileCache(sceneFile!)?.frontmatter;
+		const drafts = fm?.['dbench-drafts'];
+		expect(Array.isArray(drafts)).toBe(true);
+		expect(drafts).toHaveLength(2);
+		expect((drafts as string[])[0]).toContain('Draft 1');
+		expect((drafts as string[])[1]).toContain('Draft 2');
+	});
+
+	it('honors the per-scene cap (drops oldest when over the cap)', async () => {
+		const snapshotsByUuid = new Map([
+			[
+				'scn-1',
+				[
+					{
+						title: 'A',
+						date: '2024-01-01 10:00:00 -0700',
+						rtfPath:
+							'imports/test.scriv/Snapshots/scn-1.snapshots/2024-01-01-10-00-00-0700.rtf',
+					},
+					{
+						title: 'B',
+						date: '2024-02-01 10:00:00 -0700',
+						rtfPath:
+							'imports/test.scriv/Snapshots/scn-1.snapshots/2024-02-01-10-00-00-0700.rtf',
+					},
+					{
+						title: 'C',
+						date: '2024-03-01 10:00:00 -0700',
+						rtfPath:
+							'imports/test.scriv/Snapshots/scn-1.snapshots/2024-03-01-10-00-00-0700.rtf',
+					},
+				],
+			],
+		]);
+		const { app, settings, linker, bundle, formData } =
+			setupSceneWithSnapshots(snapshotsByUuid, { snapshotCap: 1 });
+
+		await executeImportPlan({
+			app,
+			settings,
+			linker,
+			saveSettings: async () => {},
+			bundle,
+			bundleRootPath: 'imports/test.scriv',
+			formData,
+		});
+
+		// Only the most recent kept (C, dated 2024-03-01).
+		const draft = app.vault.getFileByPath(
+			'Draft Bench/X/Drafts/Scene - Draft 1 (20240301).md'
+		);
+		expect(draft).not.toBeNull();
+		const a = app.vault.getFileByPath(
+			'Draft Bench/X/Drafts/Scene - Draft 1 (20240101).md'
+		);
+		expect(a).toBeNull();
+	});
+
+	it('emits no draft files when importSnapshots is off', async () => {
+		const snapshotsByUuid = new Map([
+			[
+				'scn-1',
+				[
+					{
+						title: 'A',
+						date: '2024-01-01 10:00:00 -0700',
+						rtfPath:
+							'imports/test.scriv/Snapshots/scn-1.snapshots/2024-01-01-10-00-00-0700.rtf',
+					},
+				],
+			],
+		]);
+		const { app, settings, linker, bundle, formData } =
+			setupSceneWithSnapshots(snapshotsByUuid);
+		formData.options.importSnapshots = false;
+
+		await executeImportPlan({
+			app,
+			settings,
+			linker,
+			saveSettings: async () => {},
+			bundle,
+			bundleRootPath: 'imports/test.scriv',
+			formData,
+		});
+
+		const draftsFolder = app.vault.getAbstractFileByPath(
+			'Draft Bench/X/Drafts'
+		);
+		expect(draftsFolder).toBeNull();
+	});
+
+	it('warns instead of erroring when a snapshot RTF body is missing', async () => {
+		// Don't use the standard setup helper — it auto-seeds every
+		// rtfPath. Build the bundle manually so the snapshot's path
+		// isn't backed by a vault adapter file.
+		const { app, settings, linker } = setupApp();
+		const sceneItem = makeItem({ id: 'scn-1', type: 'Text', title: 'Scene' });
+		const chapterItem = makeItem({
+			id: 'ch-1',
+			type: 'Folder',
+			title: 'Chapter 1',
+			children: [sceneItem],
+		});
+		const draftFolder = makeItem({
+			id: 'draft',
+			type: 'DraftFolder',
+			title: 'Manuscript',
+			children: [chapterItem],
+		});
+		const bundle = makeBundle({ binder: [draftFolder] });
+		bundle.snapshotsByUuid = new Map([
+			[
+				'scn-1',
+				[
+					{
+						title: 'Orphaned',
+						date: '2024-01-01 10:00:00 -0700',
+						rtfPath:
+							'imports/test.scriv/Snapshots/scn-1.snapshots/missing.rtf',
+					},
+				],
+			],
+		]);
+		// Seed only the primary scene RTF — leave the snapshot path absent.
+		app.vault._addAdapterFile(
+			'imports/test.scriv/Files/Data/scn-1/content.rtf',
+			'{\\rtf1\\ansi Body.}'
+		);
+
+		const formData = makeFormData({ destinationName: 'X', bundle });
+		formData.options.importSnapshots = true;
+
+		const result = await executeImportPlan({
+			app,
+			settings,
+			linker,
+			saveSettings: async () => {},
+			bundle,
+			bundleRootPath: 'imports/test.scriv',
+			formData,
+		});
+
+		expect(result.errors).toEqual([]);
+		expect(result.warnings.some((w) => w.includes('snapshot RTF missing'))).toBe(
+			true
+		);
+		// Draft file still gets created (empty body) so the writer
+		// can see the placeholder.
+		const draft = app.vault.getFileByPath(
+			'Draft Bench/X/Drafts/Scene - Draft 1 (20240101).md'
+		);
+		expect(draft).not.toBeNull();
 	});
 });

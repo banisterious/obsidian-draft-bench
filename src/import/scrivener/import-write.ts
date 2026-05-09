@@ -11,6 +11,12 @@ import type {
 	SceneNote,
 } from '../../core/discovery';
 import { rtfToMarkdown } from './rtf-to-markdown';
+import type { SnapshotMetadata } from './snapshots';
+import {
+	applySnapshotFilenameTemplate,
+	disambiguateFilename,
+} from './snapshot-filename';
+import { stampDraftEssentials } from '../../core/essentials';
 import {
 	autoDetectHierarchy,
 	effectiveTarget,
@@ -144,13 +150,20 @@ export async function executeImportPlan(
 			// RTF images are deferred to a future RTF parser update).
 			await extractBinderImages(ctx);
 
-			// Pass 3: deferred toggles. Surface warnings so the writer
-			// knows the toggles didn't silently no-op.
-			if (input.formData.options.importSnapshots) {
-				result.warnings.push(
-					'Snapshot import is not yet implemented; this toggle will work in a future release.'
-				);
+			// Surface any non-fatal warnings the snapshot loader collected
+			// during the parse phase (malformed index.xml, missing RTF
+			// bodies, etc.). They're recorded into the import's warning
+			// list regardless of whether snapshot import is enabled.
+			for (const w of input.bundle.snapshotWarnings) {
+				result.warnings.push(`Snapshots: ${w}`);
 			}
+
+			// Pass 3: snapshot import (when toggle on).
+			if (input.formData.options.importSnapshots) {
+				await importSnapshots(ctx);
+			}
+
+			// Pass 4: default compile preset stub (when toggle on).
 			if (input.formData.options.createDefaultCompilePreset) {
 				result.warnings.push(
 					'Default compile preset stub is not yet implemented; create a preset manually after import.'
@@ -750,6 +763,241 @@ async function guessImageExtension(
 		if (await adapter.exists(p)) return ext;
 	}
 	return null;
+}
+
+// ---- Pass 3: snapshot import --------------------------------------------
+
+/**
+ * Walk the snapshot map (loaded during the parse phase via
+ * `loadSnapshots`), pair each UUID to its imported scene file via
+ * `ctx.uuidToPath`, apply the per-scene cap, and write each kept
+ * snapshot as a `dbench-type: draft` file in the scene's drafts
+ * folder. Each snapshot's RTF body is converted via the existing
+ * `rtfToMarkdown` path; filename comes from the writer's template via
+ * `applySnapshotFilenameTemplate`, with `disambiguateFilename` as a
+ * last-resort safety net.
+ *
+ * Per-snapshot errors land in `ctx.result.errors` and don't abort the
+ * pass — a single bad snapshot doesn't take down a whole scene's
+ * imported draft history.
+ */
+async function importSnapshots(ctx: WriteContext): Promise<void> {
+	const { snapshotsByUuid } = ctx.input.bundle;
+	const { options } = ctx.input.formData;
+
+	for (const [uuid, snapshots] of snapshotsByUuid) {
+		const scenePath = ctx.uuidToPath.get(uuid);
+		if (scenePath === undefined) continue;
+		const sceneFile = ctx.input.app.vault.getAbstractFileByPath(scenePath);
+		if (!(sceneFile instanceof TFile)) continue;
+
+		const { kept } = applySnapshotCap(snapshots, options.snapshotCap);
+		if (kept.length === 0) continue;
+
+		await writeSceneSnapshots(sceneFile, kept, ctx);
+	}
+}
+
+/**
+ * Write all kept snapshots for one scene. Resolves the drafts folder,
+ * creates it if needed, then iterates kept snapshots in chronological
+ * order to write each draft file + update the scene's reverse arrays.
+ */
+async function writeSceneSnapshots(
+	sceneFile: TFile,
+	snapshots: SnapshotMetadata[],
+	ctx: WriteContext
+): Promise<void> {
+	const { app, settings } = ctx.input;
+	const { options } = ctx.input.formData;
+
+	// Capture scene metadata via a no-op processFrontMatter so we get
+	// fresh values regardless of metadata-cache state. Direct cache
+	// reads would race the post-replaceBody invalidation in Pass 1.
+	let sceneId = '';
+	let projectId = '';
+	let projectWikilink = '';
+	await app.fileManager.processFrontMatter(sceneFile, (fm) => {
+		sceneId = String(fm['dbench-id'] ?? '');
+		projectId = String(fm['dbench-project-id'] ?? '');
+		projectWikilink = String(fm['dbench-project'] ?? '');
+	});
+	const sceneWikilink = `[[${sceneFile.basename}]]`;
+
+	const draftFolder = resolveDraftFolderForWrite(
+		settings,
+		ctx.project.file.path,
+		sceneFile.path,
+		sceneFile.basename
+	);
+	if (
+		draftFolder !== '' &&
+		app.vault.getAbstractFileByPath(draftFolder) === null
+	) {
+		try {
+			await app.vault.createFolder(draftFolder);
+		} catch {
+			// Race: another step (or async) created it. Ignore.
+		}
+	}
+
+	const seen = new Set<string>();
+	for (let i = 0; i < snapshots.length; i++) {
+		const snapshot = snapshots[i];
+		try {
+			const base = applySnapshotFilenameTemplate(
+				options.snapshotFilenameTemplate,
+				{ basename: sceneFile.basename },
+				snapshot,
+				i + 1
+			);
+			const filename = disambiguateFilename(base, seen);
+			seen.add(filename);
+			const filePath =
+				draftFolder === ''
+					? `${filename}.md`
+					: `${draftFolder}/${filename}.md`;
+
+			if (app.vault.getAbstractFileByPath(filePath) !== null) {
+				ctx.result.errors.push({
+					binderItemId: sceneId,
+					itemTitle: snapshot.title || sceneFile.basename,
+					message: `Draft file already exists: ${filePath}`,
+				});
+				continue;
+			}
+
+			const body = await loadSnapshotBody(snapshot, ctx, sceneFile.basename);
+			const draftFile = await app.vault.create(filePath, body);
+			ctx.result.filesCreated += 1;
+
+			let draftId = '';
+			await app.fileManager.processFrontMatter(draftFile, (fm) => {
+				fm['dbench-project'] = projectWikilink;
+				fm['dbench-project-id'] = projectId;
+				fm['dbench-scene'] = sceneWikilink;
+				fm['dbench-scene-id'] = sceneId;
+				fm['dbench-draft-number'] = i + 1;
+				fm['dbench-created-at'] = isoDateFromScrivenerDate(snapshot.date);
+				fm['scrivener-snapshot-title'] = snapshot.title;
+				stampDraftEssentials(fm, { basename: draftFile.basename });
+				draftId = String(fm['dbench-id'] ?? '');
+			});
+
+			const draftWikilink = `[[${draftFile.basename}]]`;
+			await app.fileManager.processFrontMatter(sceneFile, (fm) => {
+				const drafts = readArray(fm['dbench-drafts']);
+				const draftIds = readArray(fm['dbench-draft-ids']);
+				if (!drafts.includes(draftWikilink)) drafts.push(draftWikilink);
+				if (draftId !== '' && !draftIds.includes(draftId)) {
+					draftIds.push(draftId);
+				}
+				fm['dbench-drafts'] = drafts;
+				fm['dbench-draft-ids'] = draftIds;
+			});
+
+			await normalizeBlankLineAfterFrontmatter(app, draftFile);
+		} catch (err) {
+			ctx.result.errors.push({
+				binderItemId: sceneId,
+				itemTitle: snapshot.title || `${sceneFile.basename} snapshot`,
+				message: `Snapshot import failed: ${err instanceof Error ? err.message : String(err)}`,
+			});
+		}
+	}
+}
+
+/**
+ * Apply the per-scene cap (1 / 3 / 5 / All), keeping the most recent
+ * N after chronological sort. Mirrors the plan-builder helper of the
+ * same shape so plan and write produce identical kept-sets.
+ */
+function applySnapshotCap(
+	snapshots: SnapshotMetadata[],
+	cap: 1 | 3 | 5 | 'all'
+): { kept: SnapshotMetadata[]; capped: number } {
+	const sorted = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+	if (cap === 'all' || sorted.length <= cap) {
+		return { kept: sorted, capped: 0 };
+	}
+	return { kept: sorted.slice(-cap), capped: sorted.length - cap };
+}
+
+/**
+ * Read + convert a snapshot's RTF body. Falls back to an empty body
+ * (with a warning logged) when the RTF can't be read or parsed —
+ * better to land an empty draft file than to fail the whole snapshot
+ * import for one corrupted body.
+ */
+async function loadSnapshotBody(
+	snapshot: SnapshotMetadata,
+	ctx: WriteContext,
+	sceneTitle: string
+): Promise<string> {
+	const adapter = ctx.input.app.vault.adapter;
+	if (!(await adapter.exists(snapshot.rtfPath))) {
+		ctx.result.warnings.push(
+			`${sceneTitle}: snapshot RTF missing at ${snapshot.rtfPath}; created empty draft.`
+		);
+		return '';
+	}
+	try {
+		const rtf = await adapter.read(snapshot.rtfPath);
+		const converted = rtfToMarkdown(rtf);
+		for (const w of converted.warnings) {
+			ctx.result.warnings.push(`${sceneTitle} (snapshot): ${w}`);
+		}
+		return converted.markdown;
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		ctx.result.warnings.push(
+			`${sceneTitle}: snapshot RTF read failed (${msg}); created empty draft.`
+		);
+		return '';
+	}
+}
+
+/**
+ * Write-time draft folder resolver. Mirrors `resolveDraftFolder` in
+ * core/drafts.ts but takes plain string paths so we don't need an
+ * `App` lookup mid-import (the project-folder path is already known
+ * via `ctx.project.file.path`).
+ */
+function resolveDraftFolderForWrite(
+	settings: DraftBenchSettings,
+	projectFilePath: string,
+	sceneFilePath: string,
+	sceneBasename: string
+): string {
+	const folderName = settings.draftsFolderName.trim() || 'Drafts';
+	if (settings.draftsFolderPlacement === 'vault-wide') {
+		return folderName;
+	}
+	if (settings.draftsFolderPlacement === 'per-scene') {
+		const sceneFolder = parentPath(sceneFilePath);
+		const base = `${sceneBasename} - ${folderName}`;
+		return sceneFolder === '' ? base : `${sceneFolder}/${base}`;
+	}
+	// project-local (default).
+	const projectFolder = parentPath(projectFilePath);
+	return projectFolder === ''
+		? folderName
+		: `${projectFolder}/${folderName}`;
+}
+
+/** Convert a Scrivener `<Date>` (`YYYY-MM-DD HH:MM:SS [+-]HHMM`) to
+ *  ISO `YYYY-MM-DD` for the `dbench-created-at` frontmatter. */
+function isoDateFromScrivenerDate(scrivenerDate: string): string {
+	const match = scrivenerDate.match(/^(\d{4}-\d{2}-\d{2})/);
+	return match ? match[1] : scrivenerDate;
+}
+
+/** Read a frontmatter array field, defaulting to []. Mirrors
+ *  `readArray` in core/drafts.ts. */
+function readArray(value: unknown): unknown[] {
+	if (Array.isArray(value)) return value;
+	if (value === undefined || value === null) return [];
+	return [value];
 }
 
 // ---- Error log ----------------------------------------------------------

@@ -3,7 +3,7 @@
 	"name": "Draft Bench",
 	"version": "0.5.2",
 	"minAppVersion": "1.7.2",
-	"description": "A full creative writing workflow for Obsidian: project creation, scene management, and manuscript compilation with frontmatter-native data and Bases compatibility.",
+	"description": "A full creative writing workflow: project creation, scene management, and manuscript compilation with frontmatter-native data and Bases compatibility.",
 	"author": "banisterious",
 	"authorUrl": "https://github.com/banisterious",
 	"isDesktopOnly": false,

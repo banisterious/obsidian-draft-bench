@@ -1,14 +1,7 @@
-import tsParser from "@typescript-eslint/parser";
-import tsPlugin from "@typescript-eslint/eslint-plugin";
 import obsidianmd from "eslint-plugin-obsidianmd";
-import js from "@eslint/js";
-import globals from "globals";
 
 export default [
-	// Base ESLint recommended rules
-	js.configs.recommended,
-
-	// Ignore patterns (must come early)
+	// Ignore patterns
 	{
 		ignores: [
 			"main.js",
@@ -22,91 +15,51 @@ export default [
 		],
 	},
 
-	// Node.js build scripts at the project root
-	{
-		files: ["build-css.js"],
-		languageOptions: {
-			sourceType: "commonjs",
-			globals: {
-				...globals.node,
-			},
-		},
-	},
+	// Use the plugin's recommended config (matches what the review bot uses).
+	// Includes: TypeScript ESLint recommended (type-checked), Microsoft SDL,
+	// no-unsanitized, depend, the obsidianmd ruleset (commands, settings-tab,
+	// vault, ui/sentence-case, prefer-* rules, validate-manifest, etc.), and
+	// rule-custom-message wrapping no-console.
+	...obsidianmd.configs.recommended,
 
-	// TypeScript files configuration
+	// Project-specific overrides on top of the recommended config.
 	{
 		files: ["main.ts", "src/**/*.ts"],
 		languageOptions: {
-			parser: tsParser,
 			parserOptions: {
 				project: "./tsconfig.json",
-				sourceType: "module",
-				ecmaVersion: 2022,
 			},
 			globals: {
-				...globals.browser,
-				...globals.node,
-				// Obsidian adds these to the global scope at runtime
-				createDiv: 'readonly',
-				createEl: 'readonly',
-				createSpan: 'readonly',
-				createFragment: 'readonly',
+				// PDF renderer uses `Buffer` as a TypeScript type when
+				// describing pdfmake's callback API. Recognize Node's
+				// Buffer global so no-undef doesn't flag the type
+				// references.
+				Buffer: "readonly",
 			},
 		},
-		plugins: {
-			"@typescript-eslint": tsPlugin,
-			"obsidianmd": obsidianmd,
-		},
 		rules: {
-			// TypeScript ESLint rules
-			"no-unused-vars": "off",
-			"@typescript-eslint/no-unused-vars": [
-				"error",
-				{
-					args: "none",
-					argsIgnorePattern: "^_",
-					varsIgnorePattern: "^_",
-				},
-			],
-			"@typescript-eslint/ban-ts-comment": "off",
-			"no-prototype-builtins": "off",
-			"@typescript-eslint/no-empty-function": "off",
-			"@typescript-eslint/no-explicit-any": "error",
-			"@typescript-eslint/require-await": "error",
-			"@typescript-eslint/no-unnecessary-type-assertion": "error",
-			"@typescript-eslint/no-floating-promises": "error",
-			"@typescript-eslint/no-misused-promises": "error",
-			"@typescript-eslint/await-thenable": "error",
-			"@typescript-eslint/no-base-to-string": "warn",
-			"@typescript-eslint/no-this-alias": "error",
-			"@typescript-eslint/no-deprecated": "warn",
+			// Type-checked TS rules — disabled to match the review bot's
+			// actual scope. These flag legitimate any-from-API patterns
+			// throughout the codebase that the bot doesn't validate
+			// against. Revisit if the bot's scope expands.
+			"@typescript-eslint/no-unsafe-member-access": "off",
+			"@typescript-eslint/no-unsafe-argument": "off",
+			"@typescript-eslint/no-unsafe-assignment": "off",
+			"@typescript-eslint/no-unsafe-call": "off",
+			"@typescript-eslint/no-unsafe-return": "off",
 
-			// General ESLint rules
-			"no-console": ["error", { allow: ["warn", "error", "debug"] }],
-			"no-case-declarations": "error",
-			"no-constant-condition": "error",
-			"prefer-const": "error",
-			"no-var": "error",
+			// prefer-create-el / prefer-active-doc — useful guidance but
+			// the bot doesn't enforce them. Surface as warnings so
+			// they're visible without failing the build.
+			"obsidianmd/prefer-create-el": "warn",
+			"obsidianmd/prefer-active-doc": "warn",
 
-			// Obsidian-specific rules
-			"obsidianmd/no-forbidden-elements": "error",
-			"obsidianmd/no-static-styles-assignment": "error",
-			"obsidianmd/vault/iterate": "error",
-			"obsidianmd/detach-leaves": "error",
-			"obsidianmd/hardcoded-config-path": "error",
-			"obsidianmd/no-plugin-as-component": "error",
-			"obsidianmd/no-sample-code": "error",
-			"obsidianmd/no-tfile-tfolder-cast": "error",
-			"obsidianmd/no-view-references-in-plugin": "error",
-			"obsidianmd/platform": "error",
-			"obsidianmd/prefer-file-manager-trash-file": "warn",
-			"obsidianmd/regex-lookbehind": "error",
-			"obsidianmd/sample-names": "error",
+			// Custom brand / acronym lists. Providing these REPLACES the
+			// plugin's defaults, so we re-include the defaults we use.
 			"obsidianmd/ui/sentence-case": ["error", {
 				enforceCamelCaseLower: true,
-				// Note: providing brands/acronyms REPLACES defaults, so we include needed defaults
 				brands: [
-					// From defaults (essential ones we use)
+					// Plugin defaults (essential ones)
 					"iOS", "iPadOS", "macOS", "Windows", "Android", "Linux",
 					"Obsidian", "Obsidian Sync", "Obsidian Publish",
 					"Google Drive", "Dropbox", "OneDrive", "iCloud Drive",
@@ -114,16 +67,25 @@ export default [
 					"JavaScript", "TypeScript", "Node.js",
 					"npm", "pnpm", "Yarn", "Git", "GitHub", "GitLab",
 					"VS Code", "Visual Studio Code",
-					// Draft Bench specific
-					"Draft Bench",
+					// Third-party plugins / tools
 					"Bases",
 					"Longform",
 					"Templater",
 					"Dataview",
 					"Pandoc",
+					"Scrivener",
+					// Draft Bench feature names treated as proper nouns
+					// so the sentence-case rule doesn't flag them in
+					// commands / UI strings. Kept narrow: only the
+					// names whose multi-word capitalization is part of
+					// the brand. Generic feature labels like "compile
+					// preset" and "project note" stay sentence case
+					// per Obsidian's own UI conventions.
+					"Draft Bench",
+					"Manuscript Builder",
 				],
 				acronyms: [
-					// From defaults (essential ones)
+					// Plugin defaults (essential ones)
 					"API", "HTTP", "HTTPS", "URL", "DNS", "TCP", "IP", "SSH", "TLS", "SSL",
 					"JSON", "XML", "HTML", "CSS", "PDF", "CSV", "YAML", "SQL",
 					"PNG", "JPG", "JPEG", "GIF", "SVG",
@@ -136,13 +98,6 @@ export default [
 					"BRAT",
 				],
 			}],
-			"obsidianmd/commands/no-command-in-command-id": "error",
-			"obsidianmd/commands/no-command-in-command-name": "error",
-			"obsidianmd/commands/no-default-hotkeys": "error",
-			"obsidianmd/commands/no-plugin-id-in-command-id": "error",
-			"obsidianmd/commands/no-plugin-name-in-command-name": "error",
-			"obsidianmd/settings-tab/no-manual-html-headings": "error",
-			"obsidianmd/settings-tab/no-problematic-settings-headings": "error",
 		},
 	},
 ];

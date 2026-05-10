@@ -15,7 +15,7 @@ export interface SceneFrontmatter {
 	'dbench-type': 'scene';
 	'dbench-id': DbenchId;
 	'dbench-project': string;
-	'dbench-project-id': DbenchId | '';
+	'dbench-project-id': DbenchId;
 	/**
 	 * Optional chapter parent (chapter-aware projects only). Per
 	 * [chapter-type.md § 3](../../docs/planning/chapter-type.md),

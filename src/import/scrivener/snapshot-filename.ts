@@ -53,7 +53,7 @@ const TITLE_FALLBACK = 'Untitled';
 
 /** Filesystem-unsafe characters per spec § 4 (Windows + cross-platform
  *  safe set). Each is replaced with `-` in the resolved filename. */
-const UNSAFE_FS_CHARS = /[\/\\:*?"<>|]/g;
+const UNSAFE_FS_CHARS = /[/\\:*?"<>|]/g;
 
 /** Inputs the filename resolver needs from the parent scene. */
 export interface SnapshotFilenameSceneContext {

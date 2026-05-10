@@ -29,7 +29,7 @@ export interface CompilePresetFrontmatter {
 	'dbench-type': 'compile-preset';
 	'dbench-id': DbenchId;
 	'dbench-project': string;
-	'dbench-project-id': DbenchId | '';
+	'dbench-project-id': DbenchId;
 	'dbench-schema-version': 1;
 
 	// Book-output metadata (empty defaults = "fall back to project title /

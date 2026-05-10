@@ -22,15 +22,12 @@ import {
 	autoDetectHierarchy,
 	effectiveTarget,
 	type HierarchyMapping,
-	type HierarchyTarget,
 } from './hierarchy-mapping';
 import type {
 	BinderItem,
 	CustomMetaDataField,
-	ScrivProject,
 } from './scrivx-parser';
-import type { MetadataMapping, StatusTarget } from './metadata-mapping';
-import type { ImportOptions } from './import-wizard-modal';
+import type { StatusTarget } from './metadata-mapping';
 import type { ParsedBundle, ScrivenerImportFormData } from './import-wizard-modal';
 
 /**
@@ -1212,9 +1209,3 @@ function countMappedItems(
 	return count;
 }
 
-// Suppress unused-import warning on HierarchyTarget — exported types
-// aren't used internally but the file's domain owns the union.
-type _Unused = HierarchyTarget;
-type _UnusedScriv = ScrivProject;
-type _UnusedOpt = ImportOptions;
-type _UnusedMeta = MetadataMapping;

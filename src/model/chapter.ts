@@ -26,7 +26,7 @@ export interface ChapterFrontmatter {
 	'dbench-type': 'chapter';
 	'dbench-id': DbenchId;
 	'dbench-project': string;
-	'dbench-project-id': DbenchId | '';
+	'dbench-project-id': DbenchId;
 	'dbench-order': number;
 	'dbench-status': DbenchStatus;
 	'dbench-scenes': string[];

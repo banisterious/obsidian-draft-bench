@@ -31,10 +31,11 @@ const TEMPLATER_PLUGIN_ID = 'templater-obsidian';
  */
 interface TemplaterPlugin {
 	templater: {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		create_running_config: (template: TFile, target: TFile, runMode: number) => any;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		read_and_parse_template: (config: any) => Promise<string>;
+		// Templater's internal RunningConfig type isn't public; `unknown`
+		// captures that it's opaque to us. We hand it straight back into
+		// `read_and_parse_template`, so we never inspect its shape.
+		create_running_config: (template: TFile, target: TFile, runMode: number) => unknown;
+		read_and_parse_template: (config: unknown) => Promise<string>;
 	};
 }
 

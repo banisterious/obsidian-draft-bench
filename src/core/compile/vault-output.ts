@@ -117,7 +117,7 @@ function toArrayBuffer(content: ArrayBuffer | Uint8Array): ArrayBuffer {
 		return content.buffer.slice(
 			content.byteOffset,
 			content.byteOffset + content.byteLength
-		) as ArrayBuffer;
+		);
 	}
 	return content;
 }

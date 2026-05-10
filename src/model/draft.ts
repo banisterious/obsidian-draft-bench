@@ -36,7 +36,7 @@ export interface DraftFrontmatter {
 	'dbench-id': DbenchId;
 	'dbench-project': string;
 	'dbench-scene': string;
-	'dbench-scene-id': DbenchId | '';
+	'dbench-scene-id': DbenchId;
 	'dbench-draft-number': number;
 	/**
 	 * Optional chapter parent — present for chapter-level drafts only.

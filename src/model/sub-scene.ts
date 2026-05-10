@@ -29,9 +29,9 @@ export interface SubSceneFrontmatter {
 	'dbench-type': 'sub-scene';
 	'dbench-id': DbenchId;
 	'dbench-project': string;
-	'dbench-project-id': DbenchId | '';
+	'dbench-project-id': DbenchId;
 	'dbench-scene': string;
-	'dbench-scene-id': DbenchId | '';
+	'dbench-scene-id': DbenchId;
 	/**
 	 * Position within the immediate parent scene. Each scene resets the
 	 * sub-scene order to 1, 2, 3...; matches the scenes-in-chapter

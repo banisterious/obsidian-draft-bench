@@ -283,7 +283,7 @@ Before the P0 batch goes live on draftbench.io:
 
 ## 13. Open questions
 
-- **Does `/guides/` go in the top nav, or under "Docs" / similar?** Top nav is more discoverable but adds a fifth nav item (Home / FAQ / Comparison / Features / Guides). Current site has 4 nav items. To resolve when the website session scaffolds the section.
+- ~~**Does `/guides/` go in the top nav, or under "Docs" / similar?**~~ **Resolved 2026-05-10**: under a new **Docs ▾** dropdown alongside FAQ + Documentation (wiki link). Port brief carries the implementation. FAQ's URL stays at `/faq/` to preserve inbound links; only the menu reorganizes. The Documentation child points at the wiki (the canonical reference surface) rather than a new on-site page.
 - **Should the P0 batch ship together or trickle?** Reference doc says the launch batch ships together to give the section coverage critical mass on launch day. Recommendation: ship together. Confirm at draft-time.
 - **Is "I want to write on Android" a P2 or P1?** Currently P2 because it's edge-case. If Android-specific issues continue to surface (post-#34/#35), promote to P1. Re-evaluate in 2 weeks.
 

@@ -6,6 +6,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-05-09
+
+Mobile patch for the Scrivener importer's Source step. Two bugs surfaced during dev-vault Android verification of 0.5.1: the in-vault folder list missed bundles copied externally without an Obsidian reload (the indexed cache lags external filesystem changes on mobile), and the in-app folder picker fails on Android builds whose system file picker silently ignores `webkitdirectory`. The first is fixed; the second is mitigated (the OS-level limitation can't be repaired from JS, but the failure mode is now legible and routes writers to a workaround that works). Tracked via [#34](https://github.com/banisterious/obsidian-draft-bench/issues/34) and [#35](https://github.com/banisterious/obsidian-draft-bench/issues/35).
+
+### Fixed
+
+- **Externally-copied `.scriv` bundles surface in the Source step without an app reload** ([#35](https://github.com/banisterious/obsidian-draft-bench/issues/35)). The Source step's "in-vault picker" now walks via `app.vault.adapter.list` rather than `app.vault.getFiles()`, so a bundle copied into the vault via Android's file manager (Files by Google, Samsung My Files, etc.) appears the next time the wizard opens — no `Reload app without saving` required. The Parse step's bundle-load path moves to `adapter.read` for the same reason. Affects desktop too in principle; the symptom only surfaced on mobile because the indexed cache lags external changes there.
+
+### Mitigated
+
+- **Folder picker on Android builds that silently ignore `webkitdirectory`** ([#34](https://github.com/banisterious/obsidian-draft-bench/issues/34)). Some Android builds present the in-app folder picker as a file-only chooser regardless of the `webkitdirectory` hint, leaving writers unable to select the `.scriv` folder. **This is an OS-level limitation that can't be repaired from JS**: the plugin can only set the attribute as a hint, and the OS chooses whether to honor it. On affected devices the only path to import is to copy the `.scriv` folder into the vault via the device's file manager first, then use the in-vault dropdown (this works thanks to the #35 fix above).
+
+  The 0.5.2 mitigation reframes the Source step on mobile so this failure mode is legible:
+
+  - The in-vault dropdown renders **above** the picker widget when bundles exist (was: below).
+  - When no bundles are in the vault yet, an empty-state hint above the picker explains the file-manager workaround up front, before the writer taps a broken picker.
+  - The picker's subtext on mobile reads "If your file manager supports folder selection" (was: "Choose from your device") so its conditional nature is clear.
+  - Tapping the picker and dismissing without selecting (back arrow, cancel) now surfaces a Notice pointing at the workaround, instead of failing silently.
+
+### Notes
+
+- **`Platform.isMobile` is the gate** for the mobile reordering / reframing. Mobile-emulation toggle on desktop will trigger the mobile branch too, intentionally — the layout is also useful for desktop testing of the mobile path. The picker's "If your file manager…" subtext is mobile-only since folder selection works reliably on desktop browsers.
+- **Cancel-event detection requires Android System WebView 113+** (released May 2023). Earlier builds may not fire the `cancel` event on dismiss; on those, the empty-state hint above the picker remains the primary guidance and is unaffected.
+
 ## [0.5.1] - 2026-05-08
 
 Scrivener importer follow-up: completes the snapshot import + default compile preset toggles that 0.5.0 wizard surfaced as deferred warnings, fixes a pre-existing bug in the Parse step's snapshot count, corrects a Scrivener 3 Windows serialization quirk in the Include-in-Compile parser, and surfaces excluded documents in the Preview step. Tracked via [#33](https://github.com/banisterious/obsidian-draft-bench/issues/33).

@@ -74,8 +74,9 @@ docs/planning/use-cases/
 docs/planning/website-strategy-reference.md
 docs/planning/guides-authoring-reference.md
 
-# Personal planning — website handoff prompt (regenerated per handoff)
+# Personal planning — website handoff prompt + port briefs (regenerated per handoff; discarded after consumption)
 docs/planning/website-content/handoff-prompt.md
+docs/planning/website-content/*-port-brief.md
 
 # Local dev / test vault with dummy projects (recreate per docs/developer/dev-vault.md)
 dev-vault/

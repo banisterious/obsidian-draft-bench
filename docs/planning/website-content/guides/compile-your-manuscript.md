@@ -74,8 +74,7 @@ Open the output file from your file manager (or via the file explorer in Obsidia
 
 ## Reference
 
-- Wiki: [Manuscript Builder](https://github.com/banisterious/obsidian-draft-bench/wiki/Manuscript-Builder) - full Builder reference including modal vs leaf trade-offs, every form field, and per-format option details.
-- Wiki: [Compile presets](https://github.com/banisterious/obsidian-draft-bench/wiki/Compile-Presets) - preset frontmatter reference for hand-tuning.
+- Wiki: [Manuscript Builder](https://github.com/banisterious/obsidian-draft-bench/wiki/Manuscript-Builder) - full Builder reference including modal vs leaf trade-offs, every form field, per-format options, and compile-preset frontmatter for hand-tuning.
 
 ---
 
@@ -92,6 +91,5 @@ Open the output file from your file manager (or via the file explorer in Obsidia
   - Walked through the modal flow as the default. The dock-to-leaf option is mentioned in step 1 but not the headline path; the leaf form is more useful for power users and the recipe targets first-time compilers.
   - Skipped per-format option details. DOCX style mappings, PDF page sizes, etc. are wiki territory; the recipe should hand the writer enough to ship a first compile without wading through reference material.
   - The "If your output looks off" variation is a soft pointer at the Manuscript view's scene-ordering surface. A dedicated "I want to reorder scenes" guide could be P1 if scene-order questions accumulate in `guides`-labeled issues.
-  - The Wiki: Compile presets link assumes a wiki page at that path. If the actual wiki page is named differently, the port brief should flag the link rewrite.
   - Cross-link to `view-project-in-bases` is positioned as a verification path before final compile (status / completeness check). Reinforces the differentiator-style framing.
 - Did not include a screenshot of the Builder. The wiki has the canonical Builder screenshot ([dbench-manuscript-builder-leaf.png]); the recipe form fits in 5 numbered steps without one.

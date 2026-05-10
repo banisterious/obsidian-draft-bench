@@ -5,8 +5,6 @@ import {
 	Platform,
 	Setting,
 	setIcon,
-	TFile,
-	TFolder,
 } from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
 import { resolveProjectPaths } from '../../core/projects';
@@ -252,6 +250,16 @@ export class ScrivenerImportWizardModal extends Modal {
 	 *  the previous on file creation and throwing "file exists" on
 	 *  the second creator. */
 	private importStarted = false;
+	/** Cached `.scriv` bundle paths from the most recent vault scan.
+	 *  Null when a fresh scan is needed (initial open, after a
+	 *  drop/pick copy succeeds). The Source step kicks off the scan
+	 *  the first time it renders with a null cache; once populated,
+	 *  back-and-forth navigation reuses the result. */
+	private scrivCandidates: string[] | null = null;
+	/** Re-entrancy guard for `scanScrivCandidates`. Without it, a
+	 *  rapid step re-render would queue a second scan before the
+	 *  first finished. */
+	private scrivCandidatesScanning = false;
 
 	constructor(
 		app: App,
@@ -499,7 +507,6 @@ export class ScrivenerImportWizardModal extends Modal {
 	 * time looking for a missing button.
 	 */
 	private renderSourceStep(body: HTMLElement): void {
-		const candidates = findScrivProjectFolders(this.app);
 		const pickerSupported = supportsDirectoryInput();
 		const showDropZone = Platform.isDesktopApp;
 		const widgetVisible = showDropZone || pickerSupported;
@@ -508,14 +515,45 @@ export class ScrivenerImportWizardModal extends Modal {
 			this.renderDropPickWidget(body, showDropZone, pickerSupported);
 		}
 
-		if (candidates.length > 0) {
-			this.renderInVaultPicker(body, candidates);
+		if (this.scrivCandidates === null) {
+			body.createEl('p', {
+				cls: 'dbench-import-wizard__progress',
+				text: 'Scanning vault for .scriv folders…',
+			});
+			if (!this.scrivCandidatesScanning) {
+				void this.scanScrivCandidates();
+			}
+			return;
+		}
+
+		if (this.scrivCandidates.length > 0) {
+			this.renderInVaultPicker(body, this.scrivCandidates);
 		} else if (!widgetVisible) {
 			body.createEl('p', {
 				cls: 'dbench-import-wizard__empty-state',
 				// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
 				text: 'No .scriv folders in this vault yet. Use your device\'s file manager to copy a Scrivener project bundle into your vault folder, then reopen this wizard.',
 			});
+		}
+	}
+
+	/**
+	 * Async wrapper around `findScrivProjectFolders`. Stores the result
+	 * on `scrivCandidates` and re-renders the Source step if the writer
+	 * is still on it. Failures fall through to an empty list so the
+	 * step still renders (the writer can drop/pick + retry).
+	 */
+	private async scanScrivCandidates(): Promise<void> {
+		this.scrivCandidatesScanning = true;
+		try {
+			this.scrivCandidates = await findScrivProjectFolders(this.app);
+		} catch {
+			this.scrivCandidates = [];
+		} finally {
+			this.scrivCandidatesScanning = false;
+		}
+		if (this.currentStep === 0) {
+			this.renderCurrentStep();
 		}
 	}
 
@@ -603,10 +641,10 @@ export class ScrivenerImportWizardModal extends Modal {
 	 */
 	private renderInVaultPicker(
 		parent: HTMLElement,
-		candidates: TFolder[]
+		candidates: string[]
 	): void {
-		const candidatePaths = new Set(candidates.map((c) => c.path));
-		const initial = candidatePaths.has(this.formData.sourcePath)
+		const candidateSet = new Set(candidates);
+		const initial = candidateSet.has(this.formData.sourcePath)
 			? this.formData.sourcePath
 			: '';
 
@@ -619,8 +657,8 @@ export class ScrivenerImportWizardModal extends Modal {
 			)
 			.addDropdown((dropdown) => {
 				dropdown.addOption('', 'Select a folder…');
-				for (const folder of candidates) {
-					dropdown.addOption(folder.path, folder.path);
+				for (const path of candidates) {
+					dropdown.addOption(path, path);
 				}
 				dropdown.setValue(initial);
 				dropdown.onChange((value) => {
@@ -641,6 +679,7 @@ export class ScrivenerImportWizardModal extends Modal {
 				`Copied ${result.filesCopied} file${result.filesCopied === 1 ? '' : 's'} into ${result.vaultPath}.`
 			);
 			this.formData.sourcePath = result.vaultPath;
+			this.scrivCandidates = null;
 			this.renderCurrentStep();
 		} catch (err) {
 			this.surfaceFolderImportError(err);
@@ -658,6 +697,7 @@ export class ScrivenerImportWizardModal extends Modal {
 				`Copied ${result.filesCopied} file${result.filesCopied === 1 ? '' : 's'} into ${result.vaultPath}.`
 			);
 			this.formData.sourcePath = result.vaultPath;
+			this.scrivCandidates = null;
 			this.renderCurrentStep();
 		} catch (err) {
 			this.surfaceFolderImportError(err);
@@ -1602,55 +1642,75 @@ export class ScrivenerImportWizardModal extends Modal {
  * `.scrivx` presence so writers who renamed the folder still get
  * matched.
  *
- * Multiple `.scrivx` files in one folder would mean a corrupted
- * project; the dedup-by-folder-path map drops duplicates safely.
+ * Walks via `app.vault.adapter.list` rather than `app.vault.getFiles()`
+ * so that bundles copied externally (e.g., via Android's file manager
+ * directly into the vault folder) surface without an app reload — the
+ * indexed cache lags external changes on mobile, but the adapter
+ * always reads live filesystem state. See #35.
  *
- * Cross-platform: uses `app.vault.getFiles()` which returns all
- * TFile instances regardless of extension. No Node `fs` or Electron
- * dependency — runs identically on desktop and mobile.
+ * Skips dot-prefixed top-level folders (`.obsidian`, `.trash`); these
+ * never contain `.scriv` bundles and walking them is wasteful. Once a
+ * bundle root is identified, the walk stops descending into it (the
+ * bundle's `Files/`, `Snapshots/`, etc. won't contain nested projects).
  */
-export function findScrivProjectFolders(app: App): TFolder[] {
-	const folders = new Map<string, TFolder>();
-	for (const file of app.vault.getFiles()) {
-		if (file.extension === 'scrivx' && file.parent) {
-			folders.set(file.parent.path, file.parent);
+export async function findScrivProjectFolders(
+	app: App,
+	root = ''
+): Promise<string[]> {
+	const found = new Set<string>();
+	const queue: string[] = [root];
+	while (queue.length > 0) {
+		const dir = queue.shift() as string;
+		let listing: { files: string[]; folders: string[] };
+		try {
+			listing = await app.vault.adapter.list(dir);
+		} catch {
+			continue;
+		}
+		const dirIsBundle = listing.files.some((f) => f.endsWith('.scrivx'));
+		if (dirIsBundle && dir !== '') {
+			found.add(dir);
+			continue;
+		}
+		for (const sub of listing.folders) {
+			const slash = sub.lastIndexOf('/');
+			const name = slash < 0 ? sub : sub.slice(slash + 1);
+			if (name.startsWith('.')) continue;
+			queue.push(sub);
 		}
 	}
-	return Array.from(folders.values()).sort((a, b) =>
-		a.path.localeCompare(b.path)
-	);
+	return Array.from(found).sort((a, b) => a.localeCompare(b));
 }
 
 
 /**
  * Read + parse + summarize a `.scriv` bundle from inside the vault.
- * Locates the bundle's `.scrivx` file via `TFolder.children` (so a
+ * Locates the bundle's `.scrivx` via `app.vault.adapter.list` (so a
  * non-`.scriv` suffix on the bundle folder name still works, matching
  * the discovery rule in `findScrivProjectFolders`), reads it via
- * `app.vault.read`, parses via `parseScrivx`, runs `summarizeProject`,
- * and tallies snapshots via `countSnapshots`. All steps run via the
- * vault adapter — cross-platform.
+ * `app.vault.adapter.read`, parses via `parseScrivx`, runs
+ * `summarizeProject`, and tallies snapshots via `countSnapshots`. All
+ * steps run via the vault adapter so externally-copied bundles parse
+ * without waiting for the indexed cache to catch up (see #35).
  */
 export async function loadAndParseBundle(
 	app: App,
 	bundlePath: string
 ): Promise<ParsedBundle> {
-	const folder = app.vault.getFolderByPath(bundlePath);
-	if (!folder) {
+	if (!(await app.vault.adapter.exists(bundlePath))) {
 		throw new Error(
 			`Bundle folder not found at ${bundlePath}. Re-pick from the Source step.`
 		);
 	}
-	const scrivxFile = folder.children.find(
-		(c): c is TFile => c instanceof TFile && c.extension === 'scrivx'
-	);
-	if (!scrivxFile) {
+	const listing = await app.vault.adapter.list(bundlePath);
+	const scrivxPath = listing.files.find((f) => f.endsWith('.scrivx'));
+	if (!scrivxPath) {
 		throw new Error(
 			`No .scrivx file found in ${bundlePath}. Bundle may be corrupted.`
 		);
 	}
 
-	const xml = await app.vault.read(scrivxFile);
+	const xml = await app.vault.adapter.read(scrivxPath);
 	let project: ScrivProject;
 	try {
 		project = parseScrivx(xml);

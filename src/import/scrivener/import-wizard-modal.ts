@@ -4,6 +4,7 @@ import {
 	Notice,
 	Platform,
 	Setting,
+	normalizePath,
 	setIcon,
 } from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
@@ -1411,7 +1412,7 @@ export class ScrivenerImportWizardModal extends Modal {
 					.setPlaceholder(DEFAULT_IMAGE_EXTRACTION_FOLDER)
 					.setValue(opts.imageExtractionFolder)
 					.onChange((value) => {
-						opts.imageExtractionFolder = value;
+						opts.imageExtractionFolder = value === '' ? '' : normalizePath(value);
 					})
 			);
 

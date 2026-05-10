@@ -1,4 +1,4 @@
-import { Notice, PluginSettingTab, Setting, setIcon, type App } from 'obsidian';
+import { Notice, PluginSettingTab, Setting, normalizePath, setIcon, type App } from 'obsidian';
 import type DraftBenchPlugin from '../../main';
 import type { DraftsFolderPlacement } from '../model/settings';
 import { countStatusUsage, renameStatus } from '../core/statuses';
@@ -107,7 +107,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 					.setPlaceholder('Draft Bench/{project}/')
 					.setValue(settings.projectsFolder)
 					.onChange(async (value) => {
-						settings.projectsFolder = value;
+						settings.projectsFolder = value === '' ? '' : normalizePath(value);
 						await this.plugin.saveSettings();
 					});
 				new FolderSuggest(this.app, text.inputEl);
@@ -123,7 +123,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 					.setPlaceholder('{chapter}/')
 					.setValue(settings.scenesFolder)
 					.onChange(async (value) => {
-						settings.scenesFolder = value;
+						settings.scenesFolder = value === '' ? '' : normalizePath(value);
 						await this.plugin.saveSettings();
 					});
 				new FolderSuggest(this.app, text.inputEl);
@@ -139,7 +139,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 					.setPlaceholder('{scene}/')
 					.setValue(settings.subScenesFolder)
 					.onChange(async (value) => {
-						settings.subScenesFolder = value;
+						settings.subScenesFolder = value === '' ? '' : normalizePath(value);
 						await this.plugin.saveSettings();
 					});
 				new FolderSuggest(this.app, text.inputEl);
@@ -156,7 +156,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 					.setPlaceholder('Draft Bench/Templates/')
 					.setValue(settings.templatesFolder)
 					.onChange(async (value) => {
-						settings.templatesFolder = value;
+						settings.templatesFolder = value === '' ? '' : normalizePath(value);
 						await this.plugin.saveSettings();
 					});
 				new FolderSuggest(this.app, text.inputEl);
@@ -174,7 +174,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 					.setPlaceholder('Draft Bench/Bases')
 					.setValue(settings.basesFolder)
 					.onChange(async (value) => {
-						settings.basesFolder = value;
+						settings.basesFolder = value === '' ? '' : normalizePath(value);
 						await this.plugin.saveSettings();
 					});
 				new FolderSuggest(this.app, text.inputEl);
@@ -210,7 +210,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 					.setPlaceholder('Drafts')
 					.setValue(settings.draftsFolderName)
 					.onChange(async (value) => {
-						settings.draftsFolderName = value;
+						settings.draftsFolderName = value === '' ? '' : normalizePath(value);
 						await this.plugin.saveSettings();
 					})
 			);

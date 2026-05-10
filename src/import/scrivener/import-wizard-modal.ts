@@ -510,25 +510,65 @@ export class ScrivenerImportWizardModal extends Modal {
 		const pickerSupported = supportsDirectoryInput();
 		const showDropZone = Platform.isDesktopApp;
 		const widgetVisible = showDropZone || pickerSupported;
+		const isMobile = Platform.isMobile;
 
-		if (widgetVisible) {
-			this.renderDropPickWidget(body, showDropZone, pickerSupported);
-		}
+		// Mobile reordering (#34): some Android builds silently ignore
+		// `webkitdirectory` and present a file-only picker, so the
+		// in-vault dropdown is the more reliable surface there. Render
+		// it first when bundles exist; the drop-or-pick widget falls
+		// below as a "try this if your file manager supports folder
+		// selection" fallback.
+		const renderWidget = (): void => {
+			if (widgetVisible) {
+				this.renderDropPickWidget(
+					body,
+					showDropZone,
+					pickerSupported,
+					isMobile
+				);
+			}
+		};
+		const renderPicker = (hasCandidates: boolean): void => {
+			if (hasCandidates && this.scrivCandidates !== null) {
+				this.renderInVaultPicker(
+					body,
+					this.scrivCandidates,
+					isMobile
+				);
+			}
+		};
 
 		if (this.scrivCandidates === null) {
+			if (!isMobile) renderWidget();
 			body.createEl('p', {
 				cls: 'dbench-import-wizard__progress',
 				text: 'Scanning vault for .scriv folders…',
 			});
+			if (isMobile) renderWidget();
 			if (!this.scrivCandidatesScanning) {
 				void this.scanScrivCandidates();
 			}
 			return;
 		}
 
-		if (this.scrivCandidates.length > 0) {
-			this.renderInVaultPicker(body, this.scrivCandidates);
-		} else if (!widgetVisible) {
+		const hasCandidates = this.scrivCandidates.length > 0;
+
+		if (isMobile) {
+			if (hasCandidates) {
+				renderPicker(true);
+			} else {
+				body.createEl('p', {
+					cls: 'dbench-import-wizard__empty-state',
+					text: 'No .scriv folders in your vault yet. If the picker below doesn\'t let you select a folder (common on Android), copy your .scriv folder into the vault using your device\'s file manager; it\'ll appear here automatically.',
+				});
+			}
+			renderWidget();
+			return;
+		}
+
+		renderWidget();
+		renderPicker(hasCandidates);
+		if (!hasCandidates && !widgetVisible) {
 			body.createEl('p', {
 				cls: 'dbench-import-wizard__empty-state',
 				// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
@@ -567,7 +607,8 @@ export class ScrivenerImportWizardModal extends Modal {
 	private renderDropPickWidget(
 		parent: HTMLElement,
 		showDropZone: boolean,
-		pickerSupported: boolean
+		pickerSupported: boolean,
+		isMobile: boolean
 	): void {
 		const zone = parent.createDiv({
 			cls: 'dbench-import-wizard__dropzone',
@@ -589,6 +630,14 @@ export class ScrivenerImportWizardModal extends Modal {
 		if (showDropZone && pickerSupported) {
 			mainText.setText('Drop a .scriv folder here');
 			subText.setText('Or click to browse');
+		} else if (pickerSupported && isMobile) {
+			// On mobile (especially Android) the system picker may
+			// silently ignore `webkitdirectory` and present a file-only
+			// chooser. Frame the widget as a fallback so writers know
+			// the in-vault dropdown / file-manager copy is the
+			// recommended path. (#34)
+			mainText.setText('Tap to pick a .scriv folder');
+			subText.setText('If your file manager supports folder selection');
 		} else if (pickerSupported) {
 			mainText.setText('Tap to pick a .scriv folder');
 			subText.setText('Choose from your device');
@@ -606,8 +655,22 @@ export class ScrivenerImportWizardModal extends Modal {
 			});
 			input.webkitdirectory = true;
 			input.addEventListener('change', () => {
-				if (input && input.files && input.files.length > 0) {
+				if (input?.files && input.files.length > 0) {
 					void this.handleFolderPick(input.files);
+				}
+			});
+			// `cancel` fires when the writer dismisses the OS picker
+			// without picking anything. On Android Chromium WebView,
+			// `change` does not fire on cancel — only `cancel` does
+			// (HTML spec; supported in System WebView 113+). Without
+			// this, tapping the picker on a build where the OS
+			// presents a file-only chooser would leave the wizard
+			// silent if the writer backed out. (#34 option A)
+			input.addEventListener('cancel', () => {
+				if (isMobile) {
+					new Notice(
+						'No folder selected. If the picker only shows files, copy your .scriv folder into your vault using your device\'s file manager; it\'ll appear in the dropdown above.'
+					);
 				}
 			});
 			zone.addClass('dbench-import-wizard__dropzone--clickable');
@@ -641,7 +704,8 @@ export class ScrivenerImportWizardModal extends Modal {
 	 */
 	private renderInVaultPicker(
 		parent: HTMLElement,
-		candidates: string[]
+		candidates: string[],
+		isMobile: boolean
 	): void {
 		const candidateSet = new Set(candidates);
 		const initial = candidateSet.has(this.formData.sourcePath)
@@ -649,7 +713,10 @@ export class ScrivenerImportWizardModal extends Modal {
 			: '';
 
 		new Setting(parent)
-			.setName('Or pick from your vault')
+			// On mobile the in-vault picker is the primary surface (see
+			// `renderSourceStep`), so drop the "Or" prefix that frames it
+			// as secondary on desktop.
+			.setName(isMobile ? 'Pick from your vault' : 'Or pick from your vault')
 			.setDesc(
 				candidates.length === 1
 					? '1 folder available.'

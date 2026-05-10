@@ -270,7 +270,6 @@ export class ManuscriptBuilder {
 
 		sticky.createEl('h2', {
 			cls: 'dbench-manuscript-builder__title',
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- branded surface name (parallel to "Manuscript view")
 			text: 'Manuscript Builder',
 		});
 

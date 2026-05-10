@@ -44,7 +44,6 @@ export class ManuscriptBuilderView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		// eslint-disable-next-line obsidianmd/ui/sentence-case -- branded surface name (parallel to "Manuscript view")
 		return 'Manuscript Builder';
 	}
 

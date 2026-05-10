@@ -152,8 +152,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 			)
 			.addText((text) => {
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
-					.setPlaceholder('Draft Bench/Templates/')
+					.setPlaceholder('Draft Bench/templates/')
 					.setValue(settings.templatesFolder)
 					.onChange(async (value) => {
 						settings.templatesFolder = value === '' ? '' : normalizePath(value);

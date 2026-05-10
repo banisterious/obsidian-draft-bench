@@ -24,7 +24,6 @@ export function registerImportFromScrivenerCommand(
 ): void {
 	plugin.addCommand({
 		id: 'import-from-scrivener',
-		// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
 		name: 'Import from Scrivener',
 		callback: () => {
 			new ScrivenerImportWizardModal(

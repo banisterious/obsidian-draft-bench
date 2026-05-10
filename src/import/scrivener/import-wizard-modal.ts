@@ -333,7 +333,6 @@ export class ScrivenerImportWizardModal extends Modal {
 		});
 		header.createEl('h2', {
 			cls: 'dbench-import-wizard__title',
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
 			text: 'Import from Scrivener',
 		});
 	}
@@ -572,7 +571,6 @@ export class ScrivenerImportWizardModal extends Modal {
 		if (!hasCandidates && !widgetVisible) {
 			body.createEl('p', {
 				cls: 'dbench-import-wizard__empty-state',
-				// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
 				text: 'No .scriv folders in this vault yet. Use your device\'s file manager to copy a Scrivener project bundle into your vault folder, then reopen this wizard.',
 			});
 		}

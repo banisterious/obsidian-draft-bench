@@ -357,7 +357,6 @@ export class ManuscriptView extends ItemView {
 		});
 		const importCta = ctaRow.createEl('button', {
 			cls: 'dbench-manuscript-view__empty-cta',
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
 			text: 'Import from Scrivener',
 		});
 		importCta.addEventListener('click', () => {
@@ -365,7 +364,6 @@ export class ManuscriptView extends ItemView {
 		});
 		wrapper.createEl('p', {
 			cls: 'dbench-manuscript-view__empty-footnote',
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- quoted palette command name preserves its branded casing
 			text: 'Compile actions live in the Manuscript Builder (Draft Bench: Build manuscript).',
 		});
 	}
@@ -434,9 +432,7 @@ export class ManuscriptView extends ItemView {
 		const importButton = header.createEl('button', {
 			cls: 'dbench-manuscript-view__header-button',
 			attr: {
-				// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
 				'aria-label': 'Import from Scrivener',
-				// eslint-disable-next-line obsidianmd/ui/sentence-case -- "Scrivener" is the product name (proper noun)
 				title: 'Import from Scrivener',
 			},
 		});

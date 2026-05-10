@@ -68,7 +68,6 @@ export default class DraftBenchPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'show-manuscript-builder-leaf',
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- branded surface name (parallel to "Manuscript view")
 			name: 'Show Manuscript Builder leaf',
 			callback: () => {
 				void activateManuscriptBuilderView(this.app);

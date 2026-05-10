@@ -17,6 +17,7 @@ These are the drafts currently informing the site:
 | [comparison.md](comparison.md) | Side-by-side with Longform / StoryLine / Scrivener / plain Obsidian. Lifts from [branding.md § Positioning](../branding.md). | Live |
 | [scrivener-import.md](scrivener-import.md) | Features-page section (or standalone feature page) for the Scrivener 3 importer. Slot decision deferred to the website session. | Live |
 | [media-plan.md](media-plan.md) | Asset inventory + capture-session log. Tier 1 motion loops + Tier 2 stills captured. | Live |
+| [guides-plan.md](guides-plan.md) | Master plan for the `/guides/` recipe section. Enumeration table + authoring rules + phased rollout. P0 batch in progress; site section not yet scaffolded. | Live |
 | `handoff-prompt.md` *(gitignored)* | Standalone prompt to paste into a website-repo session for each port. Local-only; regenerate per handoff. | Live |
 
 ## Source-truth gaps

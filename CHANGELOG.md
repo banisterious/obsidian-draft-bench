@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Internal
+
+- **Extracted frontmatter-wikilinks utility.** New `src/core/frontmatter-wikilinks.ts` consolidates `parseWikilinkBasename`, `canonicalizeWikilinkValue`, and a cache-aware `readWikilinkBasename` helper. Reconciles two divergent implementations previously living in `src/core/linker.ts` and `src/core/sub-scene-drafts.ts`. Sub-scene-drafts callers now also recognize the flow-notation array form and strip block refs (`^block`), matching the linker's behavior. No user-visible change.
+- **Typed command-ID constants.** New `src/commands/ids.ts` exports a `COMMAND_IDS` const (all 28 Draft Bench commands) and a `runCommand(app, id)` helper that centralizes the unsafe cast around `app.commands.executeCommandById`. All 28 `addCommand` registrations and the three palette invocation sites in `welcome-modal.ts` and `manuscript-view.ts` now use the typed constants.
+
 ## [0.5.2] - 2026-05-09
 
 Mobile patch for the Scrivener importer's Source step. Two bugs surfaced during dev-vault Android verification of 0.5.1: the in-vault folder list missed bundles copied externally without an Obsidian reload (the indexed cache lags external filesystem changes on mobile), and the in-app folder picker fails on Android builds whose system file picker silently ignores `webkitdirectory`. The first is fixed; the second is mitigated (the OS-level limitation can't be repaired from JS, but the failure mode is now legible and routes writers to a workaround that works). Tracked via [#34](https://github.com/banisterious/obsidian-draft-bench/issues/34) and [#35](https://github.com/banisterious/obsidian-draft-bench/issues/35).

@@ -78,6 +78,9 @@ docs/planning/references/guides-authoring-reference.md
 docs/planning/website-content/handoff-prompt.md
 docs/planning/website-content/*-port-brief.md
 
+# Personal planning — audit master plan (per-phase deliverables get committed; this master stays private)
+docs/planning/audit-implementation-plan.md
+
 # Local dev / test vault with dummy projects (recreate per docs/developer/dev-vault.md)
 dev-vault/
 

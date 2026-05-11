@@ -22,7 +22,13 @@ src/
     id.ts                             generateDbenchId(); format validation (abc-123-def-456)
     essentials.ts                     stampProjectEssentials, stampSceneEssentials, stampDraftEssentials
     discovery.ts                      Vault-wide scan + frontmatter filter utilities
-    linker.ts                         DraftBenchLinker: live sync service
+    linker/                           DraftBenchLinker: live sync service (split per audit Phase 4)
+      index.ts                        Re-exports DraftBenchLinker
+      lifecycle.ts                    Class: state, start/stop/suspend, event-handler dispatchers
+      reconciliation.ts               RELATIONSHIPS table + reconcileChildInParent
+      wikilink-backfill.ts            Retrofit-time companion-id backfill (#4 / #6)
+      folder-auto-rename.ts           Scene/chapter folder auto-rename on file rename
+      readers.ts                      Defensive readArray / readString helpers
     integrity.ts                      DraftBenchIntegrityService: batch repair
     drafts.ts                         New-draft snapshot flow (scene body + frontmatter)
     reorder.ts                        dbench-order writes across multiple scenes
@@ -196,7 +202,7 @@ Command: "Draft Bench: Repair project links"
 
 - `core/id.ts`: format generation, validation, collision-handling.
 - `core/essentials.ts`: idempotent stamping, property preservation, filename defaults.
-- `core/linker.ts`: forward/reverse sync, suspend/resume, delete cascade.
+- `core/linker/`: forward/reverse sync, suspend/resume, delete cascade. Composed of `lifecycle.ts` (class + handler dispatchers), `reconciliation.ts` (RELATIONSHIPS + reconcile loop), `wikilink-backfill.ts` (retrofit companion-id backfill), `folder-auto-rename.ts` (scene/chapter folder sync), and `readers.ts` (shared frontmatter readers).
 - `core/integrity.ts`: mismatch detection, repair correctness, conflict flagging.
 - `core/discovery.ts`: vault scan + frontmatter filter.
 - `core/drafts.ts`: snapshot, carry-forward, auto-numbering.
@@ -227,7 +233,7 @@ Recommended order, minimizing branch churn:
 2. **`model/types.ts`, `model/project.ts`, `model/scene.ts`, `model/draft.ts`, `model/settings.ts`**. Lock down the shapes. *(done)*
 3. **`core/discovery.ts`** (plus tests). Vault scan + frontmatter filter. *(done)*
 4. **`commands/create-project.ts`, `ui/modals/new-project-modal.ts`**. First end-to-end user-visible feature. *(done)*
-5. **`core/linker.ts`, `core/integrity.ts`** (plus tests). Core correctness infrastructure before more features pile on. *(linker scaffold only; handler bodies + integrity service land in P1.A-C below)*
+5. **`core/linker/`, `core/integrity.ts`** (plus tests). Core correctness infrastructure before more features pile on. *(linker scaffold only; handler bodies + integrity service land in P1.A-C below)*
 6. **`commands/new-scene.ts`, `ui/modals/new-scene-modal.ts`**. Second user-facing command; exercises the linker. *(done)*
 7. **`ui/control-center/control-center-modal.ts`** + Project/Manuscript tabs (basic rendering only). *(deferred — lands in P1.D below)*
 8. **`commands/new-draft.ts`, `core/drafts.ts`**. Snapshot flow. *(done)*
@@ -362,7 +368,7 @@ Establishes the note type and plumbing before any pipeline work.
 
 - `src/model/compile-preset.ts` — `CompilePresetFrontmatter` type, `DEFAULT_COMPILE_PRESET` defaults, type guard, stamp helpers.
 - `src/core/compile-presets.ts` — `createCompilePreset`, `resolveCompilePresets(project)`, `duplicateCompilePreset`.
-- `src/core/linker.ts` — new `RelationshipConfig` entry for preset <-> project bidirectional linking (preset `dbench-project` <-> project `dbench-compile-presets` / `dbench-compile-preset-ids` reverse arrays).
+- `src/core/linker/reconciliation.ts` — new `RelationshipConfig` entry in the `RELATIONSHIPS` table for preset <-> project bidirectional linking (preset `dbench-project` <-> project `dbench-compile-presets` / `dbench-compile-preset-ids` reverse arrays).
 - `src/core/integrity.ts` — third `scanRelationship` call for the preset <-> project relationship.
 - `src/ui/modals/new-compile-preset-modal.ts` — 3-field create modal (name + project + format).
 - `src/commands/create-compile-preset.ts` — palette command.

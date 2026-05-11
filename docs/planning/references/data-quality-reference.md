@@ -438,7 +438,7 @@ These surfaces collectively cover the bidirectional-relationship and missing-pro
 
 ### V1 compile touchpoint
 
-[D-06](decisions/D-06-compile-preset-storage-and-content-rules.md) sub-decision 4c locked strict missing-status handling during compile: a scene with empty `dbench-status` is excluded when the preset's status filter is non-empty. This anticipates a future Data Quality tab that would surface "N scenes with missing status" as a fixable pre-compile issue. V1 writers encountering the edge case fix via the Properties panel or retrofit actions today.
+[D-06](../decisions/D-06-compile-preset-storage-and-content-rules.md) sub-decision 4c locked strict missing-status handling during compile: a scene with empty `dbench-status` is excluded when the preset's status filter is non-empty. This anticipates a future Data Quality tab that would surface "N scenes with missing status" as a fixable pre-compile issue. V1 writers encountering the edge case fix via the Properties panel or retrofit actions today.
 
 ### Patterns worth porting when the consolidated surface lands
 
@@ -465,6 +465,6 @@ These surfaces collectively cover the bidirectional-relationship and missing-pro
 
 ### Related docs
 
-- [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md) — compile content-handling rules; sub-decision 4c anticipates a future Data Quality surface for missing-status scenes.
+- [D-06](../decisions/D-06-compile-preset-storage-and-content-rules.md) — compile content-handling rules; sub-decision 4c anticipates a future Data Quality surface for missing-status scenes.
 - [control-center-reference.md](control-center-reference.md) — CR Control Center architecture; a future Data Quality tab would follow the same tab-dispatch pattern.
 - [wizards-reference.md](wizards-reference.md) — wizard patterns for the eventual cleanup wizard (or the Phase 3 onboarding wizard).

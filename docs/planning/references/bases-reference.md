@@ -6,14 +6,14 @@
 
 **How to use this document.**
 
-- **P2.C is scoped to Bases starter views.** Architecture.md commits to shipping `.base` files for a starter set (all projects, scenes by project, scenes by status, draft history) plus an optional "Install starter Bases views" command. See [architecture.md § P2.C](../developer/architecture.md).
+- **P2.C is scoped to Bases starter views.** Architecture.md commits to shipping `.base` files for a starter set (all projects, scenes by project, scenes by status, draft history) plus an optional "Install starter Bases views" command. See [architecture.md § P2.C](../../developer/architecture.md).
 - **This document captures the full CR model.** DB doesn't need all of it — CR has 5+ entity types, ~22 views per base, and a property-alias system DB lacks. The DB-specific scope is in "DB commitments for later design" at the bottom.
 - **Fresh eyes intended.** DB's 3 entity types (project, scene, draft), tighter relationships (via bidirectional linker), and absence of a property-alias system mean the DB implementation will be noticeably smaller and simpler than CR's ~2000 LOC. Adopt the orchestration pattern wholesale; rethink the per-view palette.
 
 **Related docs.**
 
-- [specification.md § Bases Integration](specification.md): authoritative design — property schema is sufficient, no custom view type registration, template `.base` files ship in Phase 2.
-- [architecture.md § P2.C](../developer/architecture.md): starter view list and implementation notes.
+- [specification.md § Bases Integration](../specification.md): authoritative design — property schema is sufficient, no custom view type registration, template `.base` files ship in Phase 2.
+- [architecture.md § P2.C](../../developer/architecture.md): starter view list and implementation notes.
 - [control-center-reference.md](control-center-reference.md) and [wizards-reference.md](wizards-reference.md): companion depth-first references for other CR surfaces.
 
 ---
@@ -323,11 +323,11 @@ The points below are specific DB decisions (not speculative adoption) that shape
 
 CR's `createBaseFile` / `isBasesAvailable` / `ensureFolderExists` / path-resolution / open-after-create flow is directly portable and should be adopted wholesale for DB. These patterns aren't domain-specific; they're the right shape for any "generate .base on demand" integration.
 
-The view palette is entirely DB-specific. CR's 22-views-per-base is far too many for DB's scope, and the slices (by lineage, by living status) don't translate. [architecture.md § P2.C](../developer/architecture.md) commits to a starter set of four bases covering the most common writer questions: all projects, scenes in current project, scenes by status, draft history for a scene. Start there; add more only when writers request specific slices.
+The view palette is entirely DB-specific. CR's 22-views-per-base is far too many for DB's scope, and the slices (by lineage, by living status) don't translate. [architecture.md § P2.C](../../developer/architecture.md) commits to a starter set of four bases covering the most common writer questions: all projects, scenes in current project, scenes by status, draft history for a scene. Start there; add more only when writers request specific slices.
 
 ### No property-alias system in V1
 
-CR's templates interpolate `propertyAliases` at generation time because CR lets users rename frontmatter keys. DB does not — the `dbench-*` prefix is a hard contract per [CLAUDE.md § Code Conventions](../../CLAUDE.md). All DB base templates can be static YAML; no generator functions needed. Drop this entire layer from the CR architecture when adapting.
+CR's templates interpolate `propertyAliases` at generation time because CR lets users rename frontmatter keys. DB does not — the `dbench-*` prefix is a hard contract per [CLAUDE.md § Code Conventions](../../../CLAUDE.md). All DB base templates can be static YAML; no generator functions needed. Drop this entire layer from the CR architecture when adapting.
 
 If DB ever adds an alias system, this decision revisits — until then, the simpler static-template model is correct.
 

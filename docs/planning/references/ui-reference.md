@@ -2,7 +2,7 @@
 
 **Purpose:** Patterns, conventions, and architectural guidance for building Draft Bench's interface. Adapted from the [Charted Roots](https://github.com/banisterious/obsidian-charted-roots) codebase, which has several years of production use and a cohesive UI/UX language. This document captures those patterns so Draft Bench can follow them consistently — including the known gaps CR has documented so we can close them at build time rather than retrofit later.
 
-**Relationship to the specification:** This is reference material for *how* to build the plugin's UI, not *what* the plugin does. The [specification](specification.md) is authoritative for features and behavior; this document captures the component patterns those features should use. When the specification says "a modal that does X," this document describes how that modal should look, behave, and integrate with the rest of the UI.
+**Relationship to the specification:** This is reference material for *how* to build the plugin's UI, not *what* the plugin does. The [specification](../specification.md) is authoritative for features and behavior; this document captures the component patterns those features should use. When the specification says "a modal that does X," this document describes how that modal should look, behave, and integrate with the rest of the UI.
 
 **Scope:** Eleven sections covering styling philosophy, Control Center, modals, settings UI, batch operations, notices, shared components, CSS conventions, accessibility, empty/loading states, and an Obsidian-native class and API inventory. Each section names the CR file paths to consult during implementation, the DB-specific adaptations to apply, and any gap CR has documented that DB should close.
 
@@ -70,7 +70,7 @@ The divergences are real and documented. The inheritance is the default.
 - Manuscript tab hosts a toolbar (New scene / New draft / Reorder scenes / Compile) along the top, per specification § User Interface.
 - Mobile drawer behavior: hide sidebar via `Platform.isMobile` check; toggle button in header.
 
-**Gap in CR to close in DB:** Explicit arrow-key navigation between tabs. CR relies on browser-default Tab key. DB's keyboard accessibility section ([specification § Keyboard accessibility](specification.md)) commits to keyboard-first navigation, so implement arrow-up/arrow-down within the sidebar tab list, with Home/End for first/last tab.
+**Gap in CR to close in DB:** Explicit arrow-key navigation between tabs. CR relies on browser-default Tab key. DB's keyboard accessibility section ([specification § Keyboard accessibility](../specification.md)) commits to keyboard-first navigation, so implement arrow-up/arrow-down within the sidebar tab list, with Home/End for first/last tab.
 
 **Further reading:** [control-center-reference.md](control-center-reference.md) — depth-first architectural summary of CR's Control Center (drawer shell, tab dispatcher, two-tier cache, Tools group, extension model). Reference material for a later DB Control Center design pass; not a blueprint for Phase 1.
 
@@ -345,7 +345,7 @@ The color/spacing/radius rules in the main §7 body assume you're writing custom
 - No `role="listbox"` / `role="option"` on picker results.
 - No explicit focus-trap logic inside modals (Obsidian's `Modal` handles this partially).
 
-**DB adaptation — the [specification § Keyboard accessibility](specification.md) commits to closing these:**
+**DB adaptation — the [specification § Keyboard accessibility](../specification.md) commits to closing these:**
 
 - Arrow-key navigation in the Control Center sidebar (up/down between tabs), in the reorder modal (up/down between scenes), and in picker modals (up/down between results with Enter to select).
 - Explicit `role="listbox"` on scrollable list surfaces; `role="option"` on items; `aria-selected` on the current item.
@@ -518,7 +518,7 @@ Canonical examples: [`src/trees/ui/unified-tree-wizard-modal.ts:191-384`], [`src
 
 …which hides the entire action strip (and everything added to it) whenever the leaf sits in the left or right sidebar.
 
-Consequence: if an `ItemView` defaults to a sidebar position — as Draft Bench's Manuscript leaf does per [D-07](decisions/D-07-control-center-split.md) — `addAction()` buttons are invisible to most users. They only appear if the writer drags the leaf into the main pane. Longform sidesteps this entirely by doing all entry-point UI inside `contentEl`.
+Consequence: if an `ItemView` defaults to a sidebar position — as Draft Bench's Manuscript leaf does per [D-07](../decisions/D-07-control-center-split.md) — `addAction()` buttons are invisible to most users. They only appear if the writer drags the leaf into the main pane. Longform sidesteps this entirely by doing all entry-point UI inside `contentEl`.
 
 **Pattern to adopt:** for leaves that default to sidebar, put entry-point buttons inside `contentEl` (typically in a custom header section you render yourself). Use `.clickable-icon` or a matching icon-button class for visual consistency with Obsidian's own sidebar widgets. Reserve `addAction()` for leaves that default to the main pane.
 
@@ -602,8 +602,8 @@ Where DB intentionally diverges from or extends CR's patterns:
 
 ## Related documents
 
-- [specification.md](specification.md): Plugin specification (authoritative for features and behavior)
-- [decisions/D-01](decisions/D-01-draft-modeling.md): Draft modeling
-- [decisions/D-03](decisions/D-03-parent-child-relationship-naming.md): Relationship naming
-- [decisions/D-04](decisions/D-04-folder-flexibility.md): Folder flexibility
-- [decisions/D-05](decisions/D-05-property-retrofit-actions.md): Retrofit actions
+- [specification.md](../specification.md): Plugin specification (authoritative for features and behavior)
+- [decisions/D-01](../decisions/D-01-draft-modeling.md): Draft modeling
+- [decisions/D-03](../decisions/D-03-parent-child-relationship-naming.md): Relationship naming
+- [decisions/D-04](../decisions/D-04-folder-flexibility.md): Folder flexibility
+- [decisions/D-05](../decisions/D-05-property-retrofit-actions.md): Retrofit actions

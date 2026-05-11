@@ -2,7 +2,7 @@
 
 **Status:** Reference material. **Not** a design spec for Draft Bench's Manuscript view.
 
-**Purpose.** Captures the Obsidian `ItemView` / dockable-view mechanics that apply to any future DB workspace-leaf feature, plus Charted Roots' (CR) Entity Profile Views architecture as a worked example of a non-trivial dockable view. The immediate consumer is the Draft Bench Manuscript-leaf work planned in [D-07](decisions/D-07-control-center-split.md); downstream consumers include any later DB leaf (per-scene inspector, compile-status panel, etc.).
+**Purpose.** Captures the Obsidian `ItemView` / dockable-view mechanics that apply to any future DB workspace-leaf feature, plus Charted Roots' (CR) Entity Profile Views architecture as a worked example of a non-trivial dockable view. The immediate consumer is the Draft Bench Manuscript-leaf work planned in [D-07](../decisions/D-07-control-center-split.md); downstream consumers include any later DB leaf (per-scene inspector, compile-status panel, etc.).
 
 **How to use this document.**
 
@@ -12,10 +12,10 @@
 
 **Related docs.**
 
-- [D-07](decisions/D-07-control-center-split.md): the Control Center / Manuscript-leaf split decision record.
+- [D-07](../decisions/D-07-control-center-split.md): the Control Center / Manuscript-leaf split decision record.
 - [control-center-reference.md](control-center-reference.md): sibling reference capturing CR's Control Center (modal) architecture. Together they sketch both halves of the post-split DB UI.
 - [ui-reference.md](ui-reference.md): breadth-first UI/UX patterns adapted for DB.
-- [docs/developer/architecture.md](../developer/architecture.md): DB's source layout. The Manuscript view will likely live under `src/ui/manuscript-view/` (parallels `src/ui/control-center/`).
+- [docs/developer/architecture.md](../../developer/architecture.md): DB's source layout. The Manuscript view will likely live under `src/ui/manuscript-view/` (parallels `src/ui/control-center/`).
 
 ---
 
@@ -586,7 +586,7 @@ Roughly **42% the size of CR's profile-view Phase 1**. Effort: ~1 week of focuse
 
 ## Planning + developer docs to produce alongside
 
-- **Planning doc**: [D-07](decisions/D-07-control-center-split.md) already locks the scope and flags open questions. Before coding, vote on the "Candidates under consideration" block and enumerate the three sections (Project summary / Manuscript list / Toolbar) with their state keys.
+- **Planning doc**: [D-07](../decisions/D-07-control-center-split.md) already locks the scope and flags open questions. Before coding, vote on the "Candidates under consideration" block and enumerate the three sections (Project summary / Manuscript list / Toolbar) with their state keys.
 - **Developer guide**: after the leaf ships, document the section-base API and how to add a new section (for example, a future "Recent drafts" section or "Compile status" hint when Book Builder lands). Target `docs/developer/manuscript-view.md`.
 
 Both are maintenance-multipliers; cheap to write, expensive to retrofit.

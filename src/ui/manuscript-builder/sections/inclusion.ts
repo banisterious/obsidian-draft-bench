@@ -70,7 +70,7 @@ export function renderInclusionSection(
 
 /**
  * Multi-select chips injected into a Setting's `.controlEl`. Per
- * [ui-reference.md § 3 Divergence 3](../../../../docs/planning/ui-reference.md),
+ * [ui-reference.md § 3 Divergence 3](../../../../docs/planning/references/ui-reference.md),
  * the Setting shell stays inherited (label, description, native
  * row layout); only the control surface is custom because Obsidian's
  * Setting API has no built-in multi-select primitive.

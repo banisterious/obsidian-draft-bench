@@ -22,7 +22,7 @@ import { ManuscriptBuilder } from './manuscript-builder';
  * Replaces the earlier two-tab Control Center modal. The Control
  * Center concept (a multi-tab plugin operations hub) is preserved
  * as a future direction in
- * [docs/planning/control-center-reference.md](../../../../docs/planning/control-center-reference.md);
+ * [docs/planning/references/control-center-reference.md](../../../../docs/planning/references/control-center-reference.md);
  * Draft Bench will adopt that pattern when there's enough
  * cross-cutting content to fill it. Until then, the Manuscript
  * Builder is the compile-specific surface.

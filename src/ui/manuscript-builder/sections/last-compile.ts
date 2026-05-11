@@ -8,7 +8,7 @@ import type { CompilePresetNote } from '../../../core/discovery';
  * "N scenes changed since last compile" readout per D-06's UI
  * commitment.
  *
- * Per [ui-reference.md § 0](../../../../docs/planning/ui-reference.md),
+ * Per [ui-reference.md § 0](../../../../docs/planning/references/ui-reference.md),
  * each row is a `Setting` row with `addText().setDisabled(true)` so
  * the read-only value picks up Obsidian's native disabled-text-input
  * styling instead of a custom pill class. The async update mutates

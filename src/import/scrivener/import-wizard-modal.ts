@@ -63,7 +63,7 @@ const IMPORT_STAGING_FOLDER = 'Imports';
 
 /**
  * Scrivener `.scriv` import wizard. DB's first wizard, built standalone
- * per the [DB commitments in wizards-reference.md](../../../docs/planning/wizards-reference.md):
+ * per the [DB commitments in wizards-reference.md](../../../docs/planning/references/wizards-reference.md):
  * no shared abstract base; the patterns (step-dispatcher, step-indicator,
  * footer rendering) live inline. Future wizards (onboarding, compile
  * preset editor) can extract a shared base when DB has 3+ wizards.

@@ -12,9 +12,9 @@
 
 **Related docs.**
 
-- [specification.md § Platform](specification.md): authoritative DB spec; the Platform section captures the post-0.3.2 mobile-supported state.
-- [coding-standards.md](../developer/coding-standards.md): TypeScript and CSS standards. The `Platform.isMobile` / `Platform.isPhone` patterns below would slot under § "Platform-conditional rendering" if DB adopts them.
-- [post-v1-forward-compat-audit.md](post-v1-forward-compat-audit.md): the original audit listed mobile as deferred; the 0.3.2 elevation moved it out of that bucket. Future mobile-related decisions still benefit from auditing the codebase for latent desktop assumptions.
+- [specification.md § Platform](../specification.md): authoritative DB spec; the Platform section captures the post-0.3.2 mobile-supported state.
+- [coding-standards.md](../../developer/coding-standards.md): TypeScript and CSS standards. The `Platform.isMobile` / `Platform.isPhone` patterns below would slot under § "Platform-conditional rendering" if DB adopts them.
+- [post-v1-forward-compat-audit.md](../post-v1-forward-compat-audit.md): the original audit listed mobile as deferred; the 0.3.2 elevation moved it out of that bucket. Future mobile-related decisions still benefit from auditing the codebase for latent desktop assumptions.
 
 ---
 
@@ -223,7 +223,7 @@ DB-specific decisions captured here so they survive session ends. Ratifications 
 
 **Original 2026-05-05 ratification**: only the Scrivener `.scriv` importer was desktop-gated for V1 mobile support; importer command + Manuscript view import button wrapped in `Platform.isDesktopApp` checks.
 
-**2026-05-06 amendment**: the Scrivener importer's desktop-only gate is removed. The importer's architecture shifted to read `.scriv` bundles from inside the vault via `app.vault.adapter` (writer copies the bundle into the vault before importing) rather than from arbitrary OS paths via Electron + Node `fs`. Cross-platform by construction; no `Platform.isDesktopApp` gate needed. See [scrivener-import.md § What's locked](scrivener-import.md) and § Implementation step 13.
+**2026-05-06 amendment**: the Scrivener importer's desktop-only gate is removed. The importer's architecture shifted to read `.scriv` bundles from inside the vault via `app.vault.adapter` (writer copies the bundle into the vault before importing) rather than from arbitrary OS paths via Electron + Node `fs`. Cross-platform by construction; no `Platform.isDesktopApp` gate needed. See [scrivener-import.md § What's locked](../scrivener-import.md) and § Implementation step 13.
 
 **Net result as of 2026-05-06**: **no DB feature is desktop-gated.** The only desktop-only paths in the codebase are the *disk-output* side of the compile pipeline (`renderXxxToDisk`, depending on Electron's save dialog) and the corresponding `disk-deps.ts` helpers; these are gated by their dependencies, not by an explicit `Platform` check, and writers route around them by configuring `output: vault` on their compile presets.
 

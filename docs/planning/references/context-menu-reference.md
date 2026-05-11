@@ -1,6 +1,6 @@
 # Context menu reference: Charted Roots submenu pattern
 
-**Status:** Reference material. **Not** a design spec for Draft Bench's context menu. DB currently ships flat top-level items via [src/context-menu/file-menu.ts](../../src/context-menu/file-menu.ts) and [src/context-menu/files-menu.ts](../../src/context-menu/files-menu.ts); the CR pattern below collapses each plugin's contributions into a single submenu entry, with a mobile-flat fallback. DB will adopt this shape via a tracked feature request.
+**Status:** Reference material. **Not** a design spec for Draft Bench's context menu. DB currently ships flat top-level items via [src/context-menu/file-menu.ts](../../../src/context-menu/file-menu.ts) and [src/context-menu/files-menu.ts](../../../src/context-menu/files-menu.ts); the CR pattern below collapses each plugin's contributions into a single submenu entry, with a mobile-flat fallback. DB will adopt this shape via a tracked feature request.
 
 **Purpose.** Captures Charted Roots' (CR) plugin-namespaced submenu pattern for Obsidian's `file-menu` and `editor-menu` events, so DB starts the submenu refactor from a concrete prior art rather than a blank page. The summary reflects CR's working pattern around April 2026; treat code excerpts as search starting points rather than stable anchors.
 
@@ -13,9 +13,9 @@
 
 **Related docs.**
 
-- [src/context-menu/file-menu.ts](../../src/context-menu/file-menu.ts), [src/context-menu/files-menu.ts](../../src/context-menu/files-menu.ts): current flat implementation. `buildSingleFileItems`, `buildFilesMenuItems`, `buildFolderItems` are the existing entry points.
-- [wiki-content/Context-Menu-Actions.md](../../wiki-content/Context-Menu-Actions.md): user-facing documentation; will need a refresh post-refactor.
-- [D-05 § Smart menu visibility](decisions/D-05-property-retrofit-actions.md): the rule that retrofit actions only appear when they would actually change something. Carries through into the submenu unchanged.
+- [src/context-menu/file-menu.ts](../../../src/context-menu/file-menu.ts), [src/context-menu/files-menu.ts](../../../src/context-menu/files-menu.ts): current flat implementation. `buildSingleFileItems`, `buildFilesMenuItems`, `buildFolderItems` are the existing entry points.
+- [wiki-content/Context-Menu-Actions.md](../../../wiki-content/Context-Menu-Actions.md): user-facing documentation; will need a refresh post-refactor.
+- [D-05 § Smart menu visibility](../decisions/D-05-property-retrofit-actions.md): the rule that retrofit actions only appear when they would actually change something. Carries through into the submenu unchanged.
 - [ui-reference.md](ui-reference.md): breadth-first CR UI/UX patterns including brief mentions of context-menu shape.
 
 ---

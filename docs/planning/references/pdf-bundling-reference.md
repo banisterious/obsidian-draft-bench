@@ -188,7 +188,7 @@ For a writing plugin, the first category is vastly more common than the second: 
 
 Upstream has already narrowed the default VFS to the same 4 variants pdfmake's default style definitions reference. Extracting those 4 variants into a custom `vfs.ts` and base64-encoding them produces the same ~834 KB payload — no saving. CR's ~80% win was real when `vfs_fonts.js` shipped the full Roboto family (~10-11 fonts, ~2.4 MB); 0.2.x pre-trimmed that down and closed the gap.
 
-**Decision:** import `pdfmake/build/vfs_fonts` directly from [render-pdf.ts](../../src/core/compile/render-pdf.ts). No extraction script, no generated `src/core/compile/pdf/fonts/vfs.ts`, no maintenance burden for the VFS-regex extraction approach that CR documented. Same output; fewer moving parts.
+**Decision:** import `pdfmake/build/vfs_fonts` directly from [render-pdf.ts](../../../src/core/compile/render-pdf.ts). No extraction script, no generated `src/core/compile/pdf/fonts/vfs.ts`, no maintenance burden for the VFS-regex extraction approach that CR documented. Same output; fewer moving parts.
 
 **CR gotchas preserved as "if we ever revisit" notes.** The five gotchas CR shared are still true if a future optimization path reopens this:
 
@@ -208,7 +208,7 @@ Draft Bench doesn't need DejaVu Sans Mono — there are no ASCII tree connectors
 
 ### Optimization 2: lazy-loading pdfmake (complex, investigate before committing)
 
-Current state: [render-pdf.ts](../../src/core/compile/render-pdf.ts) statically imports pdfmake. Once a P3.E command reaches render-pdf, esbuild bundles the ~1.4 MB pdfmake core into main.js for every user.
+Current state: [render-pdf.ts](../../../src/core/compile/render-pdf.ts) statically imports pdfmake. Once a P3.E command reaches render-pdf, esbuild bundles the ~1.4 MB pdfmake core into main.js for every user.
 
 **Expected saving:** all 1.4 MB shifts from initial-bundle cost to first-compile cost. Writers who only compile to MD or ODT never download pdfmake. Writers who compile to PDF download it once per plugin install (or per cache invalidation).
 

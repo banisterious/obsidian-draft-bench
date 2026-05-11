@@ -71,8 +71,8 @@ ISSUES.md
 docs/planning/use-cases/
 
 # Personal planning — cross-plugin reference notes (extracted from sibling repos)
-docs/planning/website-strategy-reference.md
-docs/planning/guides-authoring-reference.md
+docs/planning/references/website-strategy-reference.md
+docs/planning/references/guides-authoring-reference.md
 
 # Personal planning — website handoff prompt + port briefs (regenerated per handoff; discarded after consumption)
 docs/planning/website-content/handoff-prompt.md

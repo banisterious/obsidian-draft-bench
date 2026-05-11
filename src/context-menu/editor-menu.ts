@@ -14,7 +14,7 @@ import { populateMenuSurface } from './shared';
  * file. Right-click inside an open editor surfaces the same single-
  * file action set the file-menu offers when right-clicking the file
  * in the explorer (per #5 + the
- * [context-menu reference](../../docs/planning/context-menu-reference.md)).
+ * [context-menu reference](../../docs/planning/references/context-menu-reference.md)).
  *
  * `MarkdownFileInfo.file` is `TFile | null`; `null` happens for
  * detached editors or empty leaves. Bail when no file is in scope.

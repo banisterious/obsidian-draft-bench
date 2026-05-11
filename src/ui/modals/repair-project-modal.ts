@@ -12,7 +12,7 @@ import { findProjects, type ProjectNote } from '../../core/discovery';
  * "Repair project links" modal.
  *
  * Preview -> confirm -> execute -> summary pattern per
- * [ui-reference.md § Batch operations](docs/planning/ui-reference.md):
+ * [ui-reference.md § Batch operations](docs/planning/references/ui-reference.md):
  *
  * - Picker at top (pre-selected from active file if it's a project).
  * - Re-scan runs on open and on project change.

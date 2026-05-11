@@ -3,7 +3,7 @@ import { setIcon } from 'obsidian';
 /**
  * Collapsible section primitive with keyboard / ARIA accordion
  * support. Adapted from the Charted Roots `section-base` pattern (see
- * [dockable-view-reference.md](../../../../docs/planning/dockable-view-reference.md)
+ * [dockable-view-reference.md](../../../../docs/planning/references/dockable-view-reference.md)
  * Part 2). Each section renders as a header (chevron + title +
  * optional summary) plus a body container; the body's expanded state
  * is driven by `options.expanded` and a caller-supplied `onToggle`

@@ -249,8 +249,8 @@ Draft Bench has no Reports feature. The rendering-layer patterns in this doc (ma
 
 - **Generator class shape.** `constructor(app, settings) + async generate(options): Promise<result>`, stateless, composition over inheritance. Maps to a single `CompileService.generate(preset): Promise<CompileResult>` entry point.
 - **Markdown-first output.** The compile pipeline produces a markdown string; PDF, ODT, and vault-MD are renderers over that string. D-06's content-handling rules run once in the MD-synthesis step rather than per-format.
-- **pdfmake with lazy-loaded VFS fonts.** Bundled Roboto + DejaVuSansMono base64 VFS, dynamic-imported on first PDF export. Already committed in [specification.md § Compile / Book Builder](specification.md).
-- **ODT via JSZip.** The ~693 LOC pattern (mimetype + manifest + styles.xml + content.xml subset, system fonts, no bundling) is the answer to "how does Draft Bench render ODT." Draft Bench commits ODT in V1 (see [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md)).
+- **pdfmake with lazy-loaded VFS fonts.** Bundled Roboto + DejaVuSansMono base64 VFS, dynamic-imported on first PDF export. Already committed in [specification.md § Compile / Book Builder](../specification.md).
+- **ODT via JSZip.** The ~693 LOC pattern (mimetype + manifest + styles.xml + content.xml subset, system fonts, no bundling) is the answer to "how does Draft Bench render ODT." Draft Bench commits ODT in V1 (see [D-06](../decisions/D-06-compile-preset-storage-and-content-rules.md)).
 - **Footnote parser.** The ~109 LOC standalone utility supports D-06's "auto-renumber footnotes across concatenated scenes" content-handling rule. Near-verbatim copy.
 
 **What Draft Bench skips or simplifies:**
@@ -265,5 +265,5 @@ Draft Bench has no Reports feature. The rendering-layer patterns in this doc (ma
 **Related docs:**
 
 - [book-builder-reference.md](book-builder-reference.md) — the orchestration layer that sits over this rendering layer.
-- [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md) — Draft Bench's synthesis doc for preset storage format, content-handling rules, and ODT scope.
-- [specification.md § Compile / Book Builder](specification.md) — user-facing feature spec.
+- [D-06](../decisions/D-06-compile-preset-storage-and-content-rules.md) — Draft Bench's synthesis doc for preset storage format, content-handling rules, and ODT scope.
+- [specification.md § Compile / Book Builder](../specification.md) — user-facing feature spec.

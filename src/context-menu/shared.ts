@@ -167,7 +167,7 @@ export interface MenuItemSpec {
  * - **Mobile** — adds a separator, then each spec as a top-level item
  *   with title `Draft Bench: <title>`. Obsidian's mobile menu doesn't
  *   support submenus yet (per the
- *   [context-menu reference](../../docs/planning/context-menu-reference.md)),
+ *   [context-menu reference](../../docs/planning/references/context-menu-reference.md)),
  *   so the prefix preserves namespace-distinguishability.
  *
  * `specs.length === 0` is a no-op: no separator, no submenu, no flat

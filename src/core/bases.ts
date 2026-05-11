@@ -5,7 +5,7 @@ import type { BaseTemplate } from './bases-templates';
 /**
  * Bases integration: generate `.base` files (YAML) into a user-
  * configurable folder, following the Charted Roots pattern documented
- * in [bases-reference.md](../../docs/planning/bases-reference.md).
+ * in [bases-reference.md](../../docs/planning/references/bases-reference.md).
  *
  * Three responsibilities live here:
  *

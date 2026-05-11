@@ -108,7 +108,7 @@ The Manuscript Builder refactor (commit `d4d3377`) made the existing `wiki-conte
 
 - **`Getting-Started.md`:** § "Add a scene" still says "From the Control Center's Manuscript tab" -> Manuscript leaf. § "Work in the Control Center" needs full rewrite as "Work in the Manuscript view and Manuscript Builder" — describes the leaf (ordered scene list, status breakdown, compile CTA) and the modal (preset editor, Run button) as separate surfaces with distinct purposes.
 - **`Home.md`:** any Control-Center mentions -> Manuscript view / Manuscript Builder.
-- **`Control-Center.md`:** rename to `Manuscript-Builder.md` via `git mv` and rewrite. The CC concept is parked in `docs/planning/control-center-reference.md`; the wiki page should describe the Manuscript Builder modal, not the retired CC. Leave a one-line stub at the old path pointing at the new page so any external links survive.
+- **`Control-Center.md`:** rename to `Manuscript-Builder.md` via `git mv` and rewrite. The CC concept is parked in `docs/planning/references/control-center-reference.md`; the wiki page should describe the Manuscript Builder modal, not the retired CC. Leave a one-line stub at the old path pointing at the new page so any external links survive.
 - **`_Sidebar.md`:** Control Center sidebar entry -> Manuscript Builder.
 - **`Settings-And-Configuration.md`:** spot-check for any CC references.
 

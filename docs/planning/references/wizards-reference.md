@@ -6,14 +6,14 @@
 
 **How to use this document.**
 
-- **Nothing in DB is wizard-shape yet.** Phase 1 and Phase 2 ship linear modals (new-project / new-scene / new-draft / reorder / repair-project-links) that don't benefit from a wizard. The nearest wizard candidates are **onboarding** (deferred to Phase 3+ per [specification.md § Onboarding](specification.md#onboarding-deferred)) and the **compile preset editor** (UI pattern flagged as open in [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md)).
+- **Nothing in DB is wizard-shape yet.** Phase 1 and Phase 2 ship linear modals (new-project / new-scene / new-draft / reorder / repair-project-links) that don't benefit from a wizard. The nearest wizard candidates are **onboarding** (deferred to Phase 3+ per [specification.md § Onboarding](../specification.md#onboarding-deferred)) and the **compile preset editor** (UI pattern flagged as open in [D-06](../decisions/D-06-compile-preset-storage-and-content-rules.md)).
 - **This document is for the later pass**, when DB actually reaches for a wizard shape. The CR patterns are context for that design pass, not a commitment that DB must track CR one-for-one.
 - **Fresh eyes intended.** Wizards in DB might adopt CR's patterns, reshape them for the writing-workflow context, or take a different approach entirely (a settings-style single pane for compile presets, for instance). Those decisions belong to the implementation task, not to this document.
 
 **Related docs.**
 
-- [specification.md § Onboarding](specification.md#onboarding-deferred): the nearest wizard candidate; Phase 3+.
-- [D-06 — Compile preset storage and content rules](decisions/D-06-compile-preset-storage-and-content-rules.md): flags the preset-editor UI shape (single-pane vs. wizard vs. inline tab) as an open question.
+- [specification.md § Onboarding](../specification.md#onboarding-deferred): the nearest wizard candidate; Phase 3+.
+- [D-06 — Compile preset storage and content rules](../decisions/D-06-compile-preset-storage-and-content-rules.md): flags the preset-editor UI shape (single-pane vs. wizard vs. inline tab) as an open question.
 - [ui-reference.md § 2 Modal patterns](ui-reference.md#2-modal-patterns): breadth-first CR UI/UX patterns, including brief mentions of the wizard patterns captured in depth here.
 - [control-center-reference.md](control-center-reference.md): companion depth-first reference for the Control Center modal.
 

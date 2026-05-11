@@ -23,7 +23,7 @@ import { FolderSuggest } from './suggesters/folder-suggest';
  * name, not a path — suggestions don't apply).
  *
  * Sections default to open. State preservation across re-renders is
- * deferred per [docs/planning/settings-organization-reference.md § 6](../../docs/planning/settings-organization-reference.md);
+ * deferred per [docs/planning/references/settings-organization-reference.md § 6](../../docs/planning/references/settings-organization-reference.md);
  * adopt when the re-collapse-on-re-render behavior actually surfaces
  * as friction.
  */
@@ -57,7 +57,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 	 * Build a collapsible `<details>` section with a styled summary
 	 * (title + right-aligned description + chevron). Returns the
 	 * content container the section renderer should populate. Per
-	 * [settings-organization-reference.md § 3](../../docs/planning/settings-organization-reference.md):
+	 * [settings-organization-reference.md § 3](../../docs/planning/references/settings-organization-reference.md):
 	 * native `<details>` so the browser handles open/close, no custom
 	 * JS toggle logic, with a CSS chevron rotated via the `[open]`
 	 * attribute selector.

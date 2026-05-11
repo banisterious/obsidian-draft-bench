@@ -11,7 +11,7 @@ import { ManuscriptBuilderModal } from '../ui/manuscript-builder/manuscript-buil
  * compile runs. Replaces the retired "Open control center" command
  * (the Control Center concept stays parked for a future hub when
  * DB has enough cross-cutting content; see
- * docs/planning/control-center-reference.md).
+ * docs/planning/references/control-center-reference.md).
  *
  * Verb-form command name complements the noun-form modal title
  * ("Manuscript Builder"), per the convention writers can read as

@@ -402,7 +402,7 @@ The orchestration patterns in this doc port well to Draft Bench's compile pipeli
 
 **Preset persistence: first-class notes, not `.book.json`.**
 
-Draft Bench compile presets are first-class vault notes with `dbench-type: compile-preset`, not JSON sidecars. Rationale captured in [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md): travelability when project folders move between vaults, shareability between writers, Bases queryability, alignment with the plugin's notes-as-data philosophy. Presets participate in bidirectional linking: a new `RelationshipConfig` entry in the linker maintains `preset.dbench-project` <-> `project.dbench-compile-presets` / `project.dbench-compile-preset-ids` reverse arrays, same pattern already shipped for scene <-> project and scene <-> draft.
+Draft Bench compile presets are first-class vault notes with `dbench-type: compile-preset`, not JSON sidecars. Rationale captured in [D-06](../decisions/D-06-compile-preset-storage-and-content-rules.md): travelability when project folders move between vaults, shareability between writers, Bases queryability, alignment with the plugin's notes-as-data philosophy. Presets participate in bidirectional linking: a new `RelationshipConfig` entry in the linker maintains `preset.dbench-project` <-> `project.dbench-compile-presets` / `project.dbench-compile-preset-ids` reverse arrays, same pattern already shipped for scene <-> project and scene <-> draft.
 
 The `BookDefinition` schema shape still ports (`version: 1`, metadata, chapters, outputOptions, `lastGeneratedAt`, `lastChapterHashes`) — stored as frontmatter + body on the preset note rather than JSON. Schema versioning stays valuable for future migrations (e.g., adding a content-handling-rules block once D-06 locks the override surface).
 
@@ -414,7 +414,7 @@ The `BookDefinition` schema shape still ports (`version: 1`, metadata, chapters,
 Deferred to post-V1:
 
 - `vault-note` chapter — insert an arbitrary vault note (useful for front matter, dedications, appendices). Easy to add when asked for; sanitizer pattern from CR ports near-verbatim.
-- `chapter` chapter type — pairs with the post-V1 `chapter` note type (see [UC-02](use-cases/UC-02-novelist-with-chapters.md)). Would be an ordered grouping of scenes with its own title and numbering.
+- `chapter` chapter type — pairs with the post-V1 `chapter` note type (see [UC-02](../use-cases/UC-02-novelist-with-chapters.md)). Would be an ordered grouping of scenes with its own title and numbering.
 
 Skipped entirely:
 
@@ -431,18 +431,18 @@ Skipped entirely:
 
 **What Draft Bench skips or simplifies:**
 
-- **No bibliography back-matter section.** Footnote renumbering across concatenated scenes is a content-handling rule ([D-06](decisions/D-06-compile-preset-storage-and-content-rules.md)), not a rendered back-matter feature.
+- **No bibliography back-matter section.** Footnote renumbering across concatenated scenes is a content-handling rule ([D-06](../decisions/D-06-compile-preset-storage-and-content-rules.md)), not a rendered back-matter feature.
 - **No name index.** The genealogy-specific "bold names + table cells" extraction doesn't apply to prose manuscripts.
 - **One starter template, not three.** V1 default: "all scenes in `dbench-order`, no dividers." Post-V1 can add "chapter-grouped" and "custom selection" templates.
 - **Logo on cover page** is a nice-to-have; default to text-only cover in V1. Literary manuscripts rarely carry a logo.
 - **Chapter numbering:** default to "none" (literary manuscripts typically don't number scenes in compile output); numeric and roman remain easy to add.
-- **ODT and DOCX ship in V1** (unlike CR's Book Builder reference which suggests deferring both). Rationale in [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md): writers submitting to workshops / agents / editors overwhelmingly want Word-format output (DOCX) and the [docx](https://docx.js.org/) library is a self-contained no-Pandoc path; ODT covers the OpenOffice/LibreOffice user via JSZip, which already handles the archive mechanics.
+- **ODT and DOCX ship in V1** (unlike CR's Book Builder reference which suggests deferring both). Rationale in [D-06](../decisions/D-06-compile-preset-storage-and-content-rules.md): writers submitting to workshops / agents / editors overwhelmingly want Word-format output (DOCX) and the [docx](https://docx.js.org/) library is a self-contained no-Pandoc path; ODT covers the OpenOffice/LibreOffice user via JSZip, which already handles the archive mechanics.
 
 **Architectural divergence to note:** CR's Book Builder delegates per-chapter markdown-to-PDF/ODT conversion to the Reports system's renderers. Draft Bench has no Reports substrate, so the rendering code co-locates inside the compile service. A future post-V1 Reports feature (character summaries, per-scene stats, compile-diff reports, etc.) would motivate extracting the rendering layer at that time.
 
 **Related docs:**
 
 - [report-generation-reference.md](report-generation-reference.md) — the rendering-layer patterns this orchestration sits on top of.
-- [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md) — Draft Bench's synthesis doc for preset storage format, content-handling rules, and ODT scope.
+- [D-06](../decisions/D-06-compile-preset-storage-and-content-rules.md) — Draft Bench's synthesis doc for preset storage format, content-handling rules, and ODT scope.
 - [wizards-reference.md](wizards-reference.md) — consulting reference for the preset-edit wizard UI.
-- [specification.md § Compile / Book Builder](specification.md) — user-facing feature spec.
+- [specification.md § Compile / Book Builder](../specification.md) — user-facing feature spec.

@@ -3,7 +3,7 @@
  *
  * Each template is a static YAML string — no interpolation needed
  * because DB doesn't have a property-alias system (see
- * [bases-reference.md § DB commitments](../../docs/planning/bases-reference.md)).
+ * [bases-reference.md § DB commitments](../../docs/planning/references/bases-reference.md)).
  *
  * Property reference conventions per Obsidian's Bases syntax docs
  * ([external/obsidian-help/en/Bases/Bases syntax.md]):

@@ -437,7 +437,7 @@ Out of scope for non-genealogy ports. If your domain has a similar external-impo
 
 ## Draft Bench adaptation
 
-Media management is **out of scope for V1**. Scene-body image embeds (`![[photo.jpg]]`) are stripped-with-notice in V1 compile output (see [D-06 § content-handling rules](decisions/D-06-compile-preset-storage-and-content-rules.md)). This reference captures the target post-V1 shape so V1 decisions can avoid painting the future into a corner.
+Media management is **out of scope for V1**. Scene-body image embeds (`![[photo.jpg]]`) are stripped-with-notice in V1 compile output (see [D-06 § content-handling rules](../decisions/D-06-compile-preset-storage-and-content-rules.md)). This reference captures the target post-V1 shape so V1 decisions can avoid painting the future into a corner.
 
 ### Likely post-V1 direction
 
@@ -474,6 +474,6 @@ An image-credits back-matter section becomes a preset toggle: compile walks the 
 
 ### Related docs
 
-- [D-06](decisions/D-06-compile-preset-storage-and-content-rules.md) — compile preset storage + content-handling rules; locks V1's "strip images with notice" behavior and reserves a post-V1 hook for image-embed handling.
+- [D-06](../decisions/D-06-compile-preset-storage-and-content-rules.md) — compile preset storage + content-handling rules; locks V1's "strip images with notice" behavior and reserves a post-V1 hook for image-embed handling.
 - [book-builder-reference.md](book-builder-reference.md) — compile orchestration; describes where the image-resolver callback hooks in.
 - [report-generation-reference.md](report-generation-reference.md) — rendering-layer patterns; PDF and ODT renderers would consume resolved media items.

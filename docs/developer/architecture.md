@@ -7,7 +7,7 @@
 **Companion docs:**
 
 - [specification.md](../planning/specification.md): what the plugin does.
-- [ui-reference.md](../planning/ui-reference.md): how the UI should look and behave (Charted Roots patterns).
+- [ui-reference.md](../planning/references/ui-reference.md): how the UI should look and behave (Charted Roots patterns).
 - [coding-standards.md](coding-standards.md): TypeScript, CSS, and Obsidian-API conventions.
 
 ---
@@ -266,7 +266,7 @@ Extend the handler bodies to draft relationships:
   - `scanProject(projectId)` returns an `IntegrityReport` listing inconsistencies: missing reverse-array entries, orphan children (id companion points at non-existent note), conflicting refs (wikilink points at A, id companion at B).
   - Classifies each entry as `auto-repairable` or `conflict`. Auto-repairable cases have an obvious fix; conflicts need user judgment.
   - `applyRepairs(report)` executes the auto-repairable subset, returns a summary.
-- `src/ui/modals/repair-project-modal.ts` — preview modal per the canonical `preview → confirm → execute → summary` pattern in [ui-reference.md](../planning/ui-reference.md). Shows the report grouped by category, marks conflicts as unrepairable with an explanation.
+- `src/ui/modals/repair-project-modal.ts` — preview modal per the canonical `preview → confirm → execute → summary` pattern in [ui-reference.md](../planning/references/ui-reference.md). Shows the report grouped by category, marks conflicts as unrepairable with an explanation.
 - `src/commands/repair-project.ts` — palette command (needs an active project note or a project picker). Also surface via project context menu entry.
 
 **P1.D — Control Center skeleton.** Post-D-07 split:
@@ -278,10 +278,10 @@ Extend the handler bodies to draft relationships:
   - Palette command `Draft Bench: Show manuscript view`.
   - Project-note context menu entry `Show manuscript view` (sets selection to that project, reveals leaf).
   - Auto-reveal on first project creation (one-shot, tracked via `settings.firstProjectRevealed`).
-- Plugin settings stay at Options -> Community plugins -> Draft Bench; no Settings tab is embedded in either surface. A future Dashboard could launch the native settings panel via `app.setting.open()` + `openTabById('draft-bench')`; see [control-center-reference.md](../planning/control-center-reference.md) for the commitment.
+- Plugin settings stay at Options -> Community plugins -> Draft Bench; no Settings tab is embedded in either surface. A future Dashboard could launch the native settings panel via `app.setting.open()` + `openTabById('draft-bench')`; see [control-center-reference.md](../planning/references/control-center-reference.md) for the commitment.
 - Selection state is plugin-level (`plugin.selection: ProjectSelection`) — both modal and leaf read + write through a small event-emitter API. The leaf additionally persists `selectedProjectId` via `getState()` so a workspace-layout reload restores the previously selected project.
 - Scene list is re-read from discovery on each render. `WordCountCache` with mtime invalidation coalesces per-scene lookups. Leaf listens to `vault.on('modify')` with a 300ms debounce; modal is static (Templates/Compile tabs don't depend on vault state).
-- See [D-07](../planning/decisions/D-07-control-center-split.md) for the full split decision record and [dockable-view-reference.md](../planning/dockable-view-reference.md) for the Obsidian ItemView patterns the leaf uses.
+- See [D-07](../planning/decisions/D-07-control-center-split.md) for the full split decision record and [dockable-view-reference.md](../planning/references/dockable-view-reference.md) for the Obsidian ItemView patterns the leaf uses.
 
 **P1.E — Style Settings integration (deferred step 13).**
 
@@ -329,7 +329,7 @@ Composable with Templater rather than a replacement for it. Writers without Temp
   - Manuscript tab: per-scene row renders a stacked label + mini progress bar when the scene has a `dbench-target-words`, or the plain word badge otherwise.
 - V1 authoring: Properties panel or template frontmatter. No inline Set-target input on the Project/Manuscript tabs; revisit if writers ask.
 
-**P2.C — Bases starter views.** Patterns drawn from Charted Roots: see [bases-reference.md](../planning/bases-reference.md) for the orchestration pattern (`createBaseFile`, `isBasesAvailable`, soft availability gate, "already exists" guard) plus the DB commitments section for decisions already locked (static templates, no property aliases, user-triggered install, no cross-entity bases in V1).
+**P2.C — Bases starter views.** Patterns drawn from Charted Roots: see [bases-reference.md](../planning/references/bases-reference.md) for the orchestration pattern (`createBaseFile`, `isBasesAvailable`, soft availability gate, "already exists" guard) plus the DB commitments section for decisions already locked (static templates, no property aliases, user-triggered install, no cross-entity bases in V1).
 
 - Ship `.base` files in the plugin's repo (not auto-installed):
   - All projects (sorted by status).
@@ -354,7 +354,7 @@ Composable with Templater rather than a replacement for it. Writers without Temp
 
 ## Phase 3
 
-Phase 3 ships Book Builder (compile pipeline + UI) followed by the onboarding wizard. V1 compile decisions locked in [D-06](../planning/decisions/D-06-compile-preset-storage-and-content-rules.md); reference architectures for the implementation in [book-builder-reference.md](../planning/book-builder-reference.md) and [report-generation-reference.md](../planning/report-generation-reference.md).
+Phase 3 ships Book Builder (compile pipeline + UI) followed by the onboarding wizard. V1 compile decisions locked in [D-06](../planning/decisions/D-06-compile-preset-storage-and-content-rules.md); reference architectures for the implementation in [book-builder-reference.md](../planning/references/book-builder-reference.md) and [report-generation-reference.md](../planning/references/report-generation-reference.md).
 
 **P3.A — Compile preset as first-class note.**
 
@@ -412,7 +412,7 @@ The Control Center's Compile tab (currently a stub) gets full form content.
 
 **P3-Onboarding — Welcome modal + first-project walkthrough.**
 
-Phase 3's second half, following Book Builder completion. Not covered in D-06; see [wizards-reference.md](../planning/wizards-reference.md) for the wizard-shape reference and a future ADR for onboarding-specific decisions.
+Phase 3's second half, following Book Builder completion. Not covered in D-06; see [wizards-reference.md](../planning/references/wizards-reference.md) for the wizard-shape reference and a future ADR for onboarding-specific decisions.
 
 ---
 

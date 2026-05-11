@@ -52,7 +52,7 @@ See [Getting Started](https://github.com/banisterious/obsidian-draft-bench/wiki/
 User documentation lives at the [GitHub Wiki](https://github.com/banisterious/obsidian-draft-bench/wiki). Developer and design documentation is in the repo:
 
 - [Specification](docs/planning/specification.md): plugin features and behavior.
-- [UI/UX Reference](docs/planning/ui-reference.md): component patterns adapted from Charted Roots.
+- [UI/UX Reference](docs/planning/references/ui-reference.md): component patterns adapted from Charted Roots.
 - [Coding Standards](docs/developer/coding-standards.md): TypeScript and CSS conventions.
 - [Code Architecture](docs/developer/architecture.md): `src/` layout and layering.
 

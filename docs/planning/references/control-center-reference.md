@@ -18,9 +18,9 @@ The Control Center concept is **kept on file** rather than deleted — when DB g
 
 **Related docs.**
 
-- [specification.md § Manuscript view and Control Center](specification.md#manuscript-view-and-control-center): V1 surface inventory.
+- [specification.md § Manuscript view and Control Center](../specification.md#manuscript-view-and-control-center): V1 surface inventory.
 - [ui-reference.md § 1 Control Center](ui-reference.md#1-control-center-tabbed-plugin-hub): breadth-first CR UI/UX patterns; companion to this doc.
-- [docs/developer/architecture.md](../developer/architecture.md): DB's source layout.
+- [docs/developer/architecture.md](../../developer/architecture.md): DB's source layout.
 
 ---
 

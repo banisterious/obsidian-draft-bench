@@ -24,7 +24,7 @@
 
 ### For Developers
 - [Specification](https://github.com/banisterious/obsidian-draft-bench/blob/main/docs/planning/specification.md)
-- [UI/UX Reference](https://github.com/banisterious/obsidian-draft-bench/blob/main/docs/planning/ui-reference.md)
+- [UI/UX Reference](https://github.com/banisterious/obsidian-draft-bench/blob/main/docs/planning/references/ui-reference.md)
 - [Coding Standards](https://github.com/banisterious/obsidian-draft-bench/blob/main/docs/developer/coding-standards.md)
 
 ### Resources

@@ -2,11 +2,11 @@
 
 **Status:** Reference material. **Not** a design spec for Draft Bench's settings organization.
 
-**Purpose.** Captures the Charted Roots (CR) settings-tab UI pattern so that when DB's settings tab grows beyond the current flat-with-setHeading layout, the redesign starts from a concrete, well-understood prior art. The pattern below was lifted from a parallel CR session; file paths reflect CR's state around April 2026, so treat them as search starting points rather than stable anchors. The CSS class prefix in the examples is CR's `cr-` (which maps to DB's `dbench-` / `draft-bench-` per [coding-standards.md § 3](../developer/coding-standards.md)).
+**Purpose.** Captures the Charted Roots (CR) settings-tab UI pattern so that when DB's settings tab grows beyond the current flat-with-setHeading layout, the redesign starts from a concrete, well-understood prior art. The pattern below was lifted from a parallel CR session; file paths reflect CR's state around April 2026, so treat them as search starting points rather than stable anchors. The CSS class prefix in the examples is CR's `cr-` (which maps to DB's `dbench-` / `draft-bench-` per [coding-standards.md § 3](../../developer/coding-standards.md)).
 
 **How to use this document.**
 
-- **DB does not currently use this pattern.** As of 0.2.0 work, [src/settings/settings-tab.ts](../../src/settings/settings-tab.ts) is a single flat list of sections grouped by `setHeading()`: Folders, Drafts, Templates, Bases, Statuses, Sync, About. The list fits on a tall screen and re-renders fast; collapsibles would be premature today.
+- **DB does not currently use this pattern.** As of 0.2.0 work, [src/settings/settings-tab.ts](../../../src/settings/settings-tab.ts) is a single flat list of sections grouped by `setHeading()`: Folders, Drafts, Templates, Bases, Statuses, Sync, About. The list fits on a tall screen and re-renders fast; collapsibles would be premature today.
 - **This document is for the later pass**, once DB's settings list grows past comfortable scrolling (likely when the compile-preset editor and per-status rule editors land), or when the writer-feedback signal is "I can't find the X setting" rather than "I open settings rarely."
 - **Adoption is incremental.** Lift CSS first, then collapsibles, then search, then state preservation, then helpers — in that order. The "Adapting for DB" section at the end gives a recommended start order that defers each addition until it's actually justified.
 
@@ -52,7 +52,7 @@ display(): void {
 
 Each `render*Section` method is self-contained and produces one collapsible section. Adding a new section is one new method + one line in `display()`.
 
-**DB analog.** [src/settings/settings-tab.ts](../../src/settings/settings-tab.ts)'s current `display()` is already shaped this way (`renderFolders`, `renderDrafts`, `renderTemplates`, `renderBases`, `renderStatuses`, `renderSync`, `renderAbout`). The shape is right; the only change to adopt CR's pattern is wrapping each section in `<details>/<summary>` rather than `setHeading()`.
+**DB analog.** [src/settings/settings-tab.ts](../../../src/settings/settings-tab.ts)'s current `display()` is already shaped this way (`renderFolders`, `renderDrafts`, `renderTemplates`, `renderBases`, `renderStatuses`, `renderSync`, `renderAbout`). The shape is right; the only change to adopt CR's pattern is wrapping each section in `<details>/<summary>` rather than `setHeading()`.
 
 ---
 
@@ -282,13 +282,13 @@ The cross-reference pattern is what surfaces relationships between sections with
 | `styles/settings.css` | All section / chevron / search / info-box styling |
 | `main.ts` | One line: `this.addSettingTab(new CanvasRootsSettingTab(this.app, this));` |
 
-**DB analog.** [src/settings/settings-tab.ts](../../src/settings/settings-tab.ts) holds the `DraftBenchSettingTab` class; [src/model/settings.ts](../../src/model/settings.ts) holds the `DraftBenchSettings` interface and `DEFAULT_SETTINGS`. Adopting the CR pattern would keep that split intact and add a `styles/settings-tab.css` for the section / chevron / search styling, integrated into the [styles bundle](../../styles/) per the plugin's CSS build pipeline.
+**DB analog.** [src/settings/settings-tab.ts](../../../src/settings/settings-tab.ts) holds the `DraftBenchSettingTab` class; [src/model/settings.ts](../../../src/model/settings.ts) holds the `DraftBenchSettings` interface and `DEFAULT_SETTINGS`. Adopting the CR pattern would keep that split intact and add a `styles/settings-tab.css` for the section / chevron / search styling, integrated into the [styles bundle](../../../styles/) per the plugin's CSS build pipeline.
 
 ---
 
 ## 10. Adapting for Draft Bench — start order
 
-1. **Lift the CSS** for collapsible sections + info boxes (the `<details>/<summary>` chevron block and `cr-info-box` styles) into `styles/settings-tab.css`. Rename the prefix to `dbench-` / `draft-bench-` per [coding-standards.md § 3](../developer/coding-standards.md). No TS changes yet.
+1. **Lift the CSS** for collapsible sections + info boxes (the `<details>/<summary>` chevron block and `cr-info-box` styles) into `styles/settings-tab.css`. Rename the prefix to `dbench-` / `draft-bench-` per [coding-standards.md § 3](../../developer/coding-standards.md). No TS changes yet.
 2. **Build the `<details>/<summary>` skeleton** in `display()` with one section per logical grouping. Keep the existing `render*` methods intact; just wrap their content in a `<details>` shell. State preservation can wait until you notice the re-collapse problem.
 3. **Add the search box + `filterSettings()`** once you have 3+ sections that span more than one screen height.
 4. **Add `saveOpenSections` / `restoreOpenSections`** once the re-collapse-on-re-render behavior surfaces in dev-vault use.

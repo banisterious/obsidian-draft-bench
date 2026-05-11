@@ -6,6 +6,9 @@ export default [
 		ignores: [
 			"main.js",
 			"*.config.mjs",
+			"*.config.ts",
+			"build-css.js",
+			"version-bump.mjs",
 			"node_modules/**",
 			"docs/**",
 			"external/**",

@@ -1,4 +1,4 @@
-import { TFile, TFolder, type App, type EventRef } from 'obsidian';
+import { TFile, type App, type EventRef } from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
 import {
 	findChapters,
@@ -13,6 +13,11 @@ import {
 	canonicalizeWikilinkValue,
 	parseWikilinkBasename,
 } from '../frontmatter-wikilinks';
+import { readArray, readString } from './readers';
+import {
+	renameChapterScenesFolderIfNeeded,
+	renameSubSceneFolderIfNeeded,
+} from './folder-auto-rename';
 
 /**
  * `DraftBenchLinker` — live bidirectional sync service.
@@ -481,13 +486,15 @@ export class DraftBenchLinker {
 			});
 		}
 
-		// Sub-scene-folder auto-rename per [sub-scene-type.md § 10](../../docs/planning/sub-scene-type.md):
+		// Sub-scene-folder auto-rename per [sub-scene-type.md § 10](../../../docs/planning/sub-scene-type.md):
 		// when a SCENE is renamed AND the configured `subScenesFolder`
 		// template uses `{scene}`, find any sibling folder matching the
 		// old scene basename containing sub-scenes that reference the
 		// renamed scene's id, and rename the folder to the new basename.
 		if (type === 'scene') {
-			await this.renameSubSceneFolderIfNeeded(
+			await renameSubSceneFolderIfNeeded(
+				this.app,
+				this.getSettings(),
 				file,
 				fm as Record<string, unknown>,
 				oldBasename
@@ -501,7 +508,9 @@ export class DraftBenchLinker {
 		// scenes that reference the renamed chapter's id, and rename the
 		// folder to the new basename.
 		if (type === 'chapter') {
-			await this.renameChapterScenesFolderIfNeeded(
+			await renameChapterScenesFolderIfNeeded(
+				this.app,
+				this.getSettings(),
 				file,
 				fm as Record<string, unknown>,
 				oldBasename
@@ -509,146 +518,6 @@ export class DraftBenchLinker {
 		}
 	}
 
-	/**
-	 * § 10 auto-rename: keep the sub-scene folder name in sync with its
-	 * parent scene's basename when the writer renames the scene file.
-	 *
-	 * Skipped when:
-	 * - The configured `subScenesFolder` template doesn't include
-	 *   `{scene}` (flat opt-out or any template that doesn't depend on
-	 *   the parent-scene basename).
-	 * - The scene's project ref is empty / unresolvable.
-	 * - The expected old folder doesn't exist (writer manually renamed
-	 *   it to something else, or no sub-scenes have been created yet).
-	 * - The folder doesn't contain at least one sub-scene that references
-	 *   this scene's id (defends against renaming an unrelated folder
-	 *   that happens to share the old basename).
-	 * - The new folder path is already occupied (some other folder
-	 *   exists at the target name); we skip rather than overwrite.
-	 */
-	private async renameSubSceneFolderIfNeeded(
-		sceneFile: TFile,
-		sceneFm: Record<string, unknown>,
-		oldSceneBasename: string
-	): Promise<void> {
-		const sceneId = readString(sceneFm['dbench-id']);
-		if (sceneId === '') return;
-
-		const settings = this.getSettings();
-		if (!settings.subScenesFolder.includes('{scene}')) return;
-
-		const projectId = readString(sceneFm['dbench-project-id']);
-		if (projectId === '') return;
-		const project = findNoteById(this.app, projectId);
-		if (!project) return;
-
-		// Per #12: sub-scene folders are joined to the scene's parent
-		// folder, not the project's. The scene's parent folder is
-		// invariant across a basename rename, so both old and new paths
-		// share the same scene folder; only the leaf basename differs.
-		const sceneFolder = parentPath(sceneFile.path);
-		const oldFolderPath = computeSubSceneFolderPath(
-			settings.subScenesFolder,
-			project.file.basename,
-			sceneFolder,
-			oldSceneBasename
-		);
-		const newFolderPath = computeSubSceneFolderPath(
-			settings.subScenesFolder,
-			project.file.basename,
-			sceneFolder,
-			sceneFile.basename
-		);
-
-		if (oldFolderPath === newFolderPath) return;
-
-		const oldFolder = this.app.vault.getAbstractFileByPath(oldFolderPath);
-		if (!oldFolder || !(oldFolder instanceof TFolder)) return;
-
-		// Defend against renaming an unrelated folder that happens to
-		// share the old basename: only rename when the folder contains
-		// at least one sub-scene whose `dbench-scene-id` matches.
-		const subSceneInFolder = findSubScenes(this.app).some(
-			(s) =>
-				s.file.path.startsWith(`${oldFolderPath}/`) &&
-				s.frontmatter['dbench-scene-id'] === sceneId
-		);
-		if (!subSceneInFolder) return;
-
-		// Skip if the new folder path is already occupied; let integrity
-		// surface the conflict rather than silently overwriting.
-		if (this.app.vault.getAbstractFileByPath(newFolderPath) !== null) {
-			return;
-		}
-
-		await this.app.fileManager.renameFile(oldFolder, newFolderPath);
-	}
-
-	/**
-	 * Issue #11 auto-rename: keep the chapter-aware scenes folder name
-	 * in sync with its parent chapter's basename when the writer renames
-	 * the chapter file. Mirrors `renameSubSceneFolderIfNeeded` one level
-	 * up.
-	 *
-	 * Skipped when:
-	 * - The configured `scenesFolder` template doesn't include
-	 *   `{chapter}` (flat opt-out or any template that doesn't depend on
-	 *   the chapter basename).
-	 * - The chapter's project ref is empty / unresolvable.
-	 * - The expected old folder doesn't exist (writer manually renamed
-	 *   it to something else, or no scenes have been created in this
-	 *   chapter yet).
-	 * - The folder doesn't contain at least one scene that references
-	 *   this chapter's id (defends against renaming an unrelated folder
-	 *   that happens to share the old basename).
-	 * - The new folder path is already occupied; we skip rather than
-	 *   overwrite.
-	 */
-	private async renameChapterScenesFolderIfNeeded(
-		chapterFile: TFile,
-		chapterFm: Record<string, unknown>,
-		oldChapterBasename: string
-	): Promise<void> {
-		const chapterId = readString(chapterFm['dbench-id']);
-		if (chapterId === '') return;
-
-		const settings = this.getSettings();
-		if (!settings.scenesFolder.includes('{chapter}')) return;
-
-		const projectId = readString(chapterFm['dbench-project-id']);
-		if (projectId === '') return;
-		const project = findNoteById(this.app, projectId);
-		if (!project) return;
-
-		const oldFolderPath = computeChapterScenesFolderPath(
-			settings.scenesFolder,
-			project.file,
-			oldChapterBasename
-		);
-		const newFolderPath = computeChapterScenesFolderPath(
-			settings.scenesFolder,
-			project.file,
-			chapterFile.basename
-		);
-
-		if (oldFolderPath === newFolderPath) return;
-
-		const oldFolder = this.app.vault.getAbstractFileByPath(oldFolderPath);
-		if (!oldFolder || !(oldFolder instanceof TFolder)) return;
-
-		const sceneInFolder = findScenes(this.app).some(
-			(s) =>
-				s.file.path.startsWith(`${oldFolderPath}/`) &&
-				s.frontmatter['dbench-chapter-id'] === chapterId
-		);
-		if (!sceneInFolder) return;
-
-		if (this.app.vault.getAbstractFileByPath(newFolderPath) !== null) {
-			return;
-		}
-
-		await this.app.fileManager.renameFile(oldFolder, newFolderPath);
-	}
 }
 
 /**
@@ -849,19 +718,6 @@ const RELATIONSHIPS: Record<string, RelationshipConfig[]> = {
 };
 
 /**
- * Defensive array reader: returns the array as-is, or `[]` if the value
- * isn't an array. Guards against null, undefined, and corrupted entries.
- */
-function readArray(value: unknown): string[] {
-	return Array.isArray(value) ? (value as string[]) : [];
-}
-
-/** Read a frontmatter value as a string, defaulting to `''` if absent or wrong type. */
-function readString(value: unknown): string {
-	return typeof value === 'string' ? value : '';
-}
-
-/**
  * True iff either the wikilink array contains `wikilink` or the id array
  * contains `id`. Used to short-circuit work on projects that don't
  * mention this scene at all.
@@ -883,69 +739,5 @@ function basenameFromPath(filePath: string): string {
 	const tail = slash >= 0 ? filePath.slice(slash + 1) : filePath;
 	const dot = tail.lastIndexOf('.');
 	return dot > 0 ? tail.slice(0, dot) : tail;
-}
-
-/**
- * Return the parent-folder portion of a path (everything before the
- * final slash). Returns `''` for vault-root files. Mirrors the helper
- * used in scenes.ts / chapters.ts / sub-scenes.ts.
- */
-function parentPath(filePath: string): string {
-	const idx = filePath.lastIndexOf('/');
-	if (idx < 0) return '';
-	return filePath.slice(0, idx);
-}
-
-/**
- * Compute the on-disk folder path for sub-scenes of a given parent scene,
- * applying `{project}` and `{scene}` token expansion against
- * `settings.subScenesFolder`. Mirrors `resolveSubScenePaths` in
- * sub-scenes.ts but takes the scene's folder + basename as separate
- * arguments, so the linker can reconstruct the OLD path during rename
- * handling. The relative template is joined to `sceneFolder` (per #12)
- * rather than the project folder so chapter-aware scene placements
- * carry their sub-scenes along automatically.
- */
-function computeSubSceneFolderPath(
-	template: string,
-	projectBasename: string,
-	sceneFolder: string,
-	sceneBasename: string
-): string {
-	const relative = template
-		.replace(/\{project\}/g, projectBasename)
-		.replace(/\{scene\}/g, sceneBasename)
-		.replace(/\/+/g, '/')
-		.replace(/^\/+|\/+$/g, '');
-	return relative === ''
-		? sceneFolder
-		: sceneFolder === ''
-			? relative
-			: `${sceneFolder}/${relative}`;
-}
-
-/**
- * Compute the on-disk folder path for scenes of a given parent chapter,
- * applying `{project}` and `{chapter}` token expansion against
- * `settings.scenesFolder`. Mirrors `resolveScenePaths` in scenes.ts but
- * takes a bare chapter basename instead of a `ChapterNote`, so the linker
- * can reconstruct the OLD path during rename handling. Issue #11.
- */
-function computeChapterScenesFolderPath(
-	template: string,
-	projectFile: TFile,
-	chapterBasename: string
-): string {
-	const relative = template
-		.replace(/\{project\}/g, projectFile.basename)
-		.replace(/\{chapter\}/g, chapterBasename)
-		.replace(/\/+/g, '/')
-		.replace(/^\/+|\/+$/g, '');
-	const projectFolder = parentPath(projectFile.path);
-	return relative === ''
-		? projectFolder
-		: projectFolder === ''
-			? relative
-			: `${projectFolder}/${relative}`;
 }
 

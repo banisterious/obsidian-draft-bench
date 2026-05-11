@@ -81,6 +81,10 @@ docs/planning/website-content/*-port-brief.md
 # Personal planning — audit master plan (per-phase deliverables get committed; this master stays private)
 docs/planning/audit-implementation-plan.md
 
+# Audit measurement output (regenerable; raw metafile is large and noisy)
+scripts/audit/meta.json
+scripts/audit/bundle-report.txt
+
 # Local dev / test vault with dummy projects (recreate per docs/developer/dev-vault.md)
 dev-vault/
 

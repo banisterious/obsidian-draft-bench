@@ -3,6 +3,7 @@ import type DraftBenchPlugin from '../../main';
 import type { DraftBenchSettings } from '../model/settings';
 import { onProjectCreated } from '../ui/manuscript-view/project-created-hook';
 import { NewProjectModal } from '../ui/modals/new-project-modal';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: Create project" command.
@@ -22,7 +23,7 @@ export function registerCreateProjectCommand(
 	getPlugin: () => DraftBenchPlugin
 ): void {
 	plugin.addCommand({
-		id: 'create-project',
+		id: COMMAND_IDS.CREATE_PROJECT,
 		name: 'Create project',
 		callback: () => {
 			new NewProjectModal(plugin.app, getSettings(), (projectId) =>

@@ -5,6 +5,7 @@ import { isProjectFrontmatter } from '../model/project';
 import { isSceneFrontmatter } from '../model/scene';
 import { findNoteById, type SceneNote } from '../core/discovery';
 import { NewSubSceneModal } from '../ui/modals/new-sub-scene-modal';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: New sub-scene in scene" palette command.
@@ -21,7 +22,7 @@ export function registerNewSubSceneCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'new-sub-scene-in-scene',
+		id: COMMAND_IDS.NEW_SUB_SCENE_IN_SCENE,
 		name: 'New sub-scene in scene',
 		checkCallback: (checking) => {
 			const file = plugin.app.workspace.getActiveFile();

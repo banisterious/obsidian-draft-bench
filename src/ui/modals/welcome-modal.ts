@@ -1,5 +1,6 @@
 import { Modal } from 'obsidian';
 import type DraftBenchPlugin from '../../../main';
+import { COMMAND_IDS, runCommand } from '../../commands/ids';
 import { runCreateExampleProject } from '../../commands/create-example-project';
 import { activateManuscriptView } from '../manuscript-view/activate';
 import { appendBrandMark } from '../brand-mark';
@@ -66,7 +67,7 @@ export class WelcomeModal extends Modal {
 			'mod-cta',
 			() => {
 				this.close();
-				this.runCommand('draft-bench:create-project');
+				runCommand(this.plugin.app, COMMAND_IDS.CREATE_PROJECT);
 			}
 		);
 
@@ -124,12 +125,4 @@ export class WelcomeModal extends Modal {
 		return button;
 	}
 
-	private runCommand(commandId: string): void {
-		const commands = (
-			this.plugin.app as unknown as {
-				commands?: { executeCommandById: (id: string) => boolean };
-			}
-		).commands;
-		commands?.executeCommandById(commandId);
-	}
 }

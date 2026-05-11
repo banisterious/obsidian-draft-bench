@@ -2,6 +2,7 @@ import type { Plugin } from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
 import { setAsProject } from '../../core/retrofit';
 import { activeMarkdownFile, noticeForResult } from './shared';
+import { COMMAND_IDS } from '../ids';
 
 /**
  * Register `Draft Bench: Set as project`.
@@ -15,7 +16,7 @@ export function registerSetAsProjectCommand(
 	getSettings: () => DraftBenchSettings
 ): void {
 	plugin.addCommand({
-		id: 'set-as-project',
+		id: COMMAND_IDS.SET_AS_PROJECT,
 		name: 'Set as project',
 		checkCallback: (checking) => {
 			const file = activeMarkdownFile(plugin);

@@ -2,6 +2,7 @@ import type { Plugin } from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
 import { addDbenchId } from '../../core/retrofit';
 import { activeMarkdownFile, noticeForResult } from './shared';
+import { COMMAND_IDS } from '../ids';
 
 /**
  * Register `Draft Bench: Add identifier`. Stamps a stable `dbench-id`
@@ -14,7 +15,7 @@ export function registerAddIdCommand(
 	getSettings: () => DraftBenchSettings
 ): void {
 	plugin.addCommand({
-		id: 'add-dbench-id',
+		id: COMMAND_IDS.ADD_DBENCH_ID,
 		name: 'Add identifier',
 		checkCallback: (checking) => {
 			const file = activeMarkdownFile(plugin);

@@ -10,6 +10,7 @@ import {
 import { isProjectFrontmatter } from '../model/project';
 import { isSceneFrontmatter } from '../model/scene';
 import { reorderScenes } from '../core/reorder';
+import { COMMAND_IDS } from './ids';
 import {
 	ReorderChildrenModal,
 	type ReorderModalConfig,
@@ -32,7 +33,7 @@ export function registerReorderScenesCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'reorder-scenes',
+		id: COMMAND_IDS.REORDER_SCENES,
 		name: 'Reorder scenes',
 		callback: () => {
 			const config = buildSceneReorderConfig(

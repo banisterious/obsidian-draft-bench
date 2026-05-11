@@ -4,6 +4,7 @@ import type { DraftBenchLinker } from '../core/linker';
 import { isChapterFrontmatter } from '../model/chapter';
 import type { ChapterNote } from '../core/discovery';
 import { NewChapterDraftModal } from '../ui/modals/new-chapter-draft-modal';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: New draft of this chapter" command.
@@ -19,7 +20,7 @@ export function registerNewChapterDraftCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'new-draft-of-this-chapter',
+		id: COMMAND_IDS.NEW_DRAFT_OF_THIS_CHAPTER,
 		name: 'New draft of this chapter',
 		checkCallback: (checking) => {
 			const file = plugin.app.workspace.getActiveFile();

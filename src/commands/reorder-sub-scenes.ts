@@ -9,6 +9,7 @@ import {
 import { isSceneFrontmatter } from '../model/scene';
 import { isSubSceneFrontmatter } from '../model/sub-scene';
 import { reorderSubScenes } from '../core/reorder';
+import { COMMAND_IDS } from './ids';
 import {
 	ReorderChildrenModal,
 	type ReorderModalConfig,
@@ -31,7 +32,7 @@ export function registerReorderSubScenesCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'reorder-sub-scenes-in-scene',
+		id: COMMAND_IDS.REORDER_SUB_SCENES_IN_SCENE,
 		name: 'Reorder sub-scenes in scene',
 		callback: () => {
 			const config = buildSubSceneReorderConfig(

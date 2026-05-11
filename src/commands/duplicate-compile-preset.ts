@@ -13,6 +13,7 @@ import {
 	type ProjectNote,
 } from '../core/discovery';
 import { isCompilePresetFrontmatter } from '../model/compile-preset';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: Duplicate compile preset" palette
@@ -26,7 +27,7 @@ export function registerDuplicateCompilePresetCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'duplicate-compile-preset',
+		id: COMMAND_IDS.DUPLICATE_COMPILE_PRESET,
 		name: 'Duplicate compile preset',
 		callback: () => {
 			void runCommand(plugin, linker);

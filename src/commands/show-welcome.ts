@@ -1,5 +1,6 @@
 import type DraftBenchPlugin from '../../main';
 import { WelcomeModal } from '../ui/modals/welcome-modal';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: Show welcome screen" command.
@@ -20,7 +21,7 @@ import { WelcomeModal } from '../ui/modals/welcome-modal';
  */
 export function registerShowWelcomeCommand(plugin: DraftBenchPlugin): void {
 	plugin.addCommand({
-		id: 'show-welcome',
+		id: COMMAND_IDS.SHOW_WELCOME,
 		name: 'Show welcome screen',
 		callback: () => {
 			new WelcomeModal(plugin).open();

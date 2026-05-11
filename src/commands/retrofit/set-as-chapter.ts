@@ -2,6 +2,7 @@ import type { Plugin } from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
 import { setAsChapter } from '../../core/retrofit';
 import { activeMarkdownFile, noticeForResult } from './shared';
+import { COMMAND_IDS } from '../ids';
 
 /**
  * Register `Draft Bench: Set as chapter`. Companion to
@@ -13,7 +14,7 @@ export function registerSetAsChapterCommand(
 	getSettings: () => DraftBenchSettings
 ): void {
 	plugin.addCommand({
-		id: 'set-as-chapter',
+		id: COMMAND_IDS.SET_AS_CHAPTER,
 		name: 'Set as chapter',
 		checkCallback: (checking) => {
 			const file = activeMarkdownFile(plugin);

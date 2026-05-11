@@ -2,6 +2,7 @@ import { Notice } from 'obsidian';
 import type DraftBenchPlugin from '../../main';
 import type { DraftBenchLinker } from '../core/linker';
 import { createExampleProject } from '../core/example-project';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: Create example project" command.
@@ -23,7 +24,7 @@ export function registerCreateExampleProjectCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'create-example-project',
+		id: COMMAND_IDS.CREATE_EXAMPLE_PROJECT,
 		name: 'Create example project',
 		callback: () => {
 			void runCreateExampleProject(plugin, linker);

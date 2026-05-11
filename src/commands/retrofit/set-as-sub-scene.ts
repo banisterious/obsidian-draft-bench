@@ -2,6 +2,7 @@ import type { Plugin } from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
 import { setAsSubScene } from '../../core/retrofit';
 import { activeMarkdownFile, noticeForResult } from './shared';
+import { COMMAND_IDS } from '../ids';
 
 /**
  * Register `Draft Bench: Set as sub-scene`. Companion to
@@ -18,7 +19,7 @@ export function registerSetAsSubSceneCommand(
 	getSettings: () => DraftBenchSettings
 ): void {
 	plugin.addCommand({
-		id: 'set-as-sub-scene',
+		id: COMMAND_IDS.SET_AS_SUB_SCENE,
 		name: 'Set as sub-scene',
 		checkCallback: (checking) => {
 			const file = activeMarkdownFile(plugin);

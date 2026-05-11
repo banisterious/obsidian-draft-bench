@@ -8,6 +8,7 @@ import {
 } from '../core/compile/operations';
 import { findProjects } from '../core/discovery';
 import { isCompilePresetFrontmatter } from '../model/compile-preset';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: Run compile" palette command.
@@ -26,7 +27,7 @@ import { isCompilePresetFrontmatter } from '../model/compile-preset';
  */
 export function registerRunCompileCommand(plugin: DraftBenchPlugin): void {
 	plugin.addCommand({
-		id: 'run-compile',
+		id: COMMAND_IDS.RUN_COMPILE,
 		name: 'Run compile',
 		callback: () => {
 			void runCommand(plugin);

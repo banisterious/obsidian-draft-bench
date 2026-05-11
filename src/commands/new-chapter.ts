@@ -2,6 +2,7 @@ import type { Plugin } from 'obsidian';
 import type { DraftBenchSettings } from '../model/settings';
 import type { DraftBenchLinker } from '../core/linker';
 import { NewChapterModal } from '../ui/modals/new-chapter-modal';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: New chapter in project" command.
@@ -17,7 +18,7 @@ export function registerNewChapterCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'new-chapter-in-project',
+		id: COMMAND_IDS.NEW_CHAPTER_IN_PROJECT,
 		name: 'New chapter in project',
 		callback: () => {
 			new NewChapterModal(plugin.app, getSettings(), linker).open();

@@ -6,6 +6,7 @@ import {
 	resolveProjectForActive,
 } from '../core/compile/operations';
 import { isCompilePresetFrontmatter } from '../model/compile-preset';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: Compile current project" palette command.
@@ -20,7 +21,7 @@ export function registerCompileCurrentProjectCommand(
 	plugin: DraftBenchPlugin
 ): void {
 	plugin.addCommand({
-		id: 'compile-current-project',
+		id: COMMAND_IDS.COMPILE_CURRENT_PROJECT,
 		name: 'Compile current project',
 		callback: () => {
 			void runCommand(plugin);

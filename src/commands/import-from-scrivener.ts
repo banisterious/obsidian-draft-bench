@@ -2,6 +2,7 @@ import type { Plugin } from 'obsidian';
 import type { DraftBenchSettings } from '../model/settings';
 import type { DraftBenchLinker } from '../core/linker';
 import { ScrivenerImportWizardModal } from '../import/scrivener/import-wizard-modal';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: Import from Scrivener" command. Opens
@@ -23,7 +24,7 @@ export function registerImportFromScrivenerCommand(
 	saveSettings: () => Promise<void>
 ): void {
 	plugin.addCommand({
-		id: 'import-from-scrivener',
+		id: COMMAND_IDS.IMPORT_FROM_SCRIVENER,
 		name: 'Import from Scrivener',
 		callback: () => {
 			new ScrivenerImportWizardModal(

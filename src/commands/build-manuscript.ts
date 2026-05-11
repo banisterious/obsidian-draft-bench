@@ -2,6 +2,7 @@ import type { Plugin } from 'obsidian';
 import type DraftBenchPlugin from '../../main';
 import type { DraftBenchLinker } from '../core/linker';
 import { ManuscriptBuilderModal } from '../ui/manuscript-builder/manuscript-builder-modal';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: Build manuscript" command.
@@ -24,7 +25,7 @@ export function registerBuildManuscriptCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'build-manuscript',
+		id: COMMAND_IDS.BUILD_MANUSCRIPT,
 		name: 'Build manuscript',
 		callback: () => {
 			new ManuscriptBuilderModal(

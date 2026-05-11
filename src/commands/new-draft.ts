@@ -4,6 +4,7 @@ import type { DraftBenchLinker } from '../core/linker';
 import { isSceneFrontmatter } from '../model/scene';
 import type { SceneNote } from '../core/discovery';
 import { NewDraftModal } from '../ui/modals/new-draft-modal';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: New draft of this scene" command.
@@ -19,7 +20,7 @@ export function registerNewDraftCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'new-draft-of-this-scene',
+		id: COMMAND_IDS.NEW_DRAFT_OF_THIS_SCENE,
 		name: 'New draft of this scene',
 		checkCallback: (checking) => {
 			const file = plugin.app.workspace.getActiveFile();

@@ -6,6 +6,7 @@ import {
 	type InstallBasesResult,
 } from '../core/bases';
 import { BASE_TEMPLATES } from '../core/bases-templates';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: Install starter Bases views" command.
@@ -22,7 +23,7 @@ import { BASE_TEMPLATES } from '../core/bases-templates';
  */
 export function registerInstallBasesCommand(plugin: DraftBenchPlugin): void {
 	plugin.addCommand({
-		id: 'install-starter-bases',
+		id: COMMAND_IDS.INSTALL_STARTER_BASES,
 		name: 'Install starter Bases views',
 		callback: async () => {
 			const result = await installBases(

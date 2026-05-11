@@ -4,6 +4,7 @@ import type { DraftBenchLinker } from '../core/linker';
 import { isSubSceneFrontmatter } from '../model/sub-scene';
 import type { SubSceneNote } from '../core/discovery';
 import { NewSubSceneDraftModal } from '../ui/modals/new-sub-scene-draft-modal';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: New draft of this sub-scene" palette
@@ -18,7 +19,7 @@ export function registerNewSubSceneDraftCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'new-draft-of-this-sub-scene',
+		id: COMMAND_IDS.NEW_DRAFT_OF_THIS_SUB_SCENE,
 		name: 'New draft of this sub-scene',
 		checkCallback: (checking) => {
 			const file = plugin.app.workspace.getActiveFile();

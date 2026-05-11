@@ -8,6 +8,7 @@ import {
 	type ViewStateResult,
 } from 'obsidian';
 import type DraftBenchPlugin from '../../../main';
+import { COMMAND_IDS, runCommand } from '../../commands/ids';
 import {
 	findChaptersInProject,
 	findProjects,
@@ -661,25 +662,11 @@ export class ManuscriptView extends ItemView {
 		// Use the command palette entry rather than constructing the
 		// modal directly — keeps the UX consistent with the palette
 		// path and avoids duplicating wiring here.
-		const commands = (
-			this.plugin.app as unknown as {
-				commands?: {
-					executeCommandById: (id: string) => boolean;
-				};
-			}
-		).commands;
-		commands?.executeCommandById('draft-bench:create-project');
+		runCommand(this.plugin.app, COMMAND_IDS.CREATE_PROJECT);
 	}
 
 	private openImportFromScrivenerCommand(): void {
-		const commands = (
-			this.plugin.app as unknown as {
-				commands?: {
-					executeCommandById: (id: string) => boolean;
-				};
-			}
-		).commands;
-		commands?.executeCommandById('draft-bench:import-from-scrivener');
+		runCommand(this.plugin.app, COMMAND_IDS.IMPORT_FROM_SCRIVENER);
 	}
 }
 

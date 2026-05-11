@@ -10,6 +10,7 @@ import { isSceneFrontmatter } from '../model/scene';
 import { isDraftFrontmatter } from '../model/draft';
 import { isCompilePresetFrontmatter } from '../model/compile-preset';
 import { NewCompilePresetModal } from '../ui/modals/new-compile-preset-modal';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: Create compile preset" command.
@@ -24,7 +25,7 @@ export function registerCreateCompilePresetCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'create-compile-preset',
+		id: COMMAND_IDS.CREATE_COMPILE_PRESET,
 		name: 'Create compile preset',
 		callback: () => {
 			const initial = resolveInitialProject(plugin);

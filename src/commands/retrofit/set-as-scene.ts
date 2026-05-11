@@ -2,6 +2,7 @@ import type { Plugin } from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
 import { setAsScene } from '../../core/retrofit';
 import { activeMarkdownFile, noticeForResult } from './shared';
+import { COMMAND_IDS } from '../ids';
 
 /**
  * Register `Draft Bench: Set as scene`. Companion to `set-as-project`;
@@ -12,7 +13,7 @@ export function registerSetAsSceneCommand(
 	getSettings: () => DraftBenchSettings
 ): void {
 	plugin.addCommand({
-		id: 'set-as-scene',
+		id: COMMAND_IDS.SET_AS_SCENE,
 		name: 'Set as scene',
 		checkCallback: (checking) => {
 			const file = activeMarkdownFile(plugin);

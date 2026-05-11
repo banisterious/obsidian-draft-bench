@@ -8,6 +8,7 @@ import {
 import { isProjectFrontmatter } from '../model/project';
 import { isSceneFrontmatter } from '../model/scene';
 import { activateManuscriptView } from '../ui/manuscript-view/activate';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register `Draft Bench: Show manuscript view`.
@@ -25,7 +26,7 @@ export function registerShowManuscriptViewCommand(
 	getPlugin: () => DraftBenchPlugin
 ): void {
 	plugin.addCommand({
-		id: 'show-manuscript-view',
+		id: COMMAND_IDS.SHOW_MANUSCRIPT_VIEW,
 		name: 'Show manuscript view',
 		callback: () => {
 			void (async () => {

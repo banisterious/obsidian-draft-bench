@@ -10,6 +10,7 @@ import {
 import { isChapterFrontmatter } from '../model/chapter';
 import { isProjectFrontmatter } from '../model/project';
 import { reorderChapters } from '../core/reorder';
+import { COMMAND_IDS } from './ids';
 import {
 	ReorderChildrenModal,
 	type ReorderModalConfig,
@@ -33,7 +34,7 @@ export function registerReorderChaptersCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'reorder-chapters-in-project',
+		id: COMMAND_IDS.REORDER_CHAPTERS_IN_PROJECT,
 		name: 'Reorder chapters in project',
 		callback: () => {
 			const config = buildChapterReorderConfig(

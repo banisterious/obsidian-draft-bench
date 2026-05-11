@@ -2,6 +2,7 @@ import type { Plugin } from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
 import { completeEssentials } from '../../core/retrofit';
 import { activeMarkdownFile, noticeForResult } from './shared';
+import { COMMAND_IDS } from '../ids';
 
 /**
  * Register `Draft Bench: Complete essential properties`. Dispatches
@@ -13,7 +14,7 @@ export function registerCompleteEssentialsCommand(
 	getSettings: () => DraftBenchSettings
 ): void {
 	plugin.addCommand({
-		id: 'complete-essential-properties',
+		id: COMMAND_IDS.COMPLETE_ESSENTIAL_PROPERTIES,
 		name: 'Complete essential properties',
 		checkCallback: (checking) => {
 			const file = activeMarkdownFile(plugin);

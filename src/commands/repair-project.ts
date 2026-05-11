@@ -8,6 +8,7 @@ import {
 import { isProjectFrontmatter } from '../model/project';
 import { isSceneFrontmatter } from '../model/scene';
 import { RepairProjectModal } from '../ui/modals/repair-project-modal';
+import { COMMAND_IDS } from './ids';
 
 /**
  * Register the "Draft Bench: Repair project links" command.
@@ -22,7 +23,7 @@ export function registerRepairProjectCommand(
 	linker: DraftBenchLinker
 ): void {
 	plugin.addCommand({
-		id: 'repair-project-links',
+		id: COMMAND_IDS.REPAIR_PROJECT_LINKS,
 		name: 'Repair project links',
 		callback: () => {
 			const initial = resolveInitialProject(plugin);

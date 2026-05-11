@@ -6,12 +6,8 @@ import {
 	findSubScenes,
 } from '../discovery';
 import { sortReverseArraysByOrder } from '../reverse-array-order';
-import {
-	basenameFromLinkpath,
-	canonicalizeWikilinkValue,
-	parseWikilinkBasename,
-} from '../frontmatter-wikilinks';
 import { readArray, readString } from './readers';
+import { backfillCompanionId } from './wikilink-backfill';
 
 /**
  * Describes one forward-reference / reverse-array pair the linker
@@ -240,56 +236,18 @@ export async function reconcileChildInParent(
 	// the project's reverse arrays list direct children only, so the
 	// scene must not appear there.
 	const applies = config.appliesToChild?.(childFm) ?? true;
-	let declaredParentId = applies
-		? readString(childFm[config.childParentIdField])
-		: '';
 
-	// Wikilink-only retrofit backfill (issues #4 and #6). When a
-	// writer manually sets a relationship wikilink in the Properties
-	// panel (e.g., dbench-scene: [[Some Scene]]) without copying the
-	// parent's id into the companion (dbench-scene-id), resolve the
-	// link, find the matching candidate parent, and write the
-	// companion via processFrontMatter. Reconciliation in this pass
-	// then proceeds with the resolved id so the parent's reverse
-	// arrays update on the same event.
-	//
-	// Resolution prefers Obsidian's `frontmatterLinks` cache: it
-	// authoritatively resolves the link regardless of how the YAML
-	// stored the value. The Properties panel saves wikilinks
-	// unquoted (`dbench-scene: [[Foo]]`), which YAML parses as a
-	// nested array — `parseWikilinkBasename` would miss that on its
-	// own. `frontmatterLinks` covers the case (#6); the raw-value
-	// parser stays as a defense-in-depth fallback for cases where
-	// the link cache isn't populated (older Obsidian, certain edge
-	// formats).
-	if (applies && declaredParentId === '') {
-		const wikilinkBasename = resolveParentBasename(
-			app,
-			childFile,
-			childFm,
-			config.childParentWikilinkField
-		);
-		if (wikilinkBasename !== '') {
-			const matched = config
-				.candidateParents(app)
-				.find((c) => c.file.basename === wikilinkBasename);
-			if (matched) {
-				const matchedId = readString(matched.frontmatter['dbench-id']);
-				if (matchedId !== '') {
-					await app.fileManager.processFrontMatter(childFile, (fm) => {
-						fm[config.childParentIdField] = matchedId;
-						// Re-canonicalize the wikilink field so the
-						// serializer writes a clean quoted string,
-						// not block-style nested-array YAML (#7).
-						fm[config.childParentWikilinkField] = canonicalizeWikilinkValue(
-							fm[config.childParentWikilinkField]
-						);
-					});
-					declaredParentId = matchedId;
-				}
-			}
-		}
-	}
+	// Retrofit-time wikilink-only companion-id backfill (issues #4 / #6)
+	// runs here so reconciliation in this pass uses the resolved id and
+	// the parent's reverse arrays update on the same event. See
+	// `./wikilink-backfill.ts` for the resolution flow.
+	const declaredParentId = await backfillCompanionId(
+		app,
+		childFile,
+		childFm,
+		config,
+		applies
+	);
 
 	const childWikilink = `[[${childFile.basename}]]`;
 
@@ -336,39 +294,6 @@ export async function reconcileChildInParent(
 			);
 		}
 	}
-}
-
-/**
- * Resolve the basename of the wikilink target stored at the given
- * frontmatter field on `childFile`. Used by the wikilink-only retrofit
- * backfill (#4 / #6) when the ID companion is empty.
- *
- * Two-tier resolution:
- *
- * 1. **`frontmatterLinks` cache** (authoritative). Obsidian populates
- *    this for every resolved wikilink reference in a file's frontmatter,
- *    regardless of YAML encoding (string, flow-notation, alias). The
- *    entry's `link` field is the link target, possibly with subpath;
- *    basename it.
- * 2. **Raw frontmatter value** (fallback). Direct parse via
- *    `parseWikilinkBasename`. Useful when `frontmatterLinks` isn't
- *    populated (older Obsidian builds, certain edge cases).
- *
- * Returns `''` when neither path yields a basename.
- */
-function resolveParentBasename(
-	app: App,
-	childFile: TFile,
-	childFm: Record<string, unknown>,
-	fieldName: string
-): string {
-	const cache = app.metadataCache.getFileCache(childFile);
-	const fmLink = cache?.frontmatterLinks?.find((l) => l.key === fieldName);
-	if (fmLink?.link) {
-		const basename = basenameFromLinkpath(fmLink.link);
-		if (basename !== '') return basename;
-	}
-	return parseWikilinkBasename(childFm[fieldName]);
 }
 
 async function ensureChildInReverse(

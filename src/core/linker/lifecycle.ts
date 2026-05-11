@@ -1,18 +1,18 @@
 import { TFile, TFolder, type App, type EventRef } from 'obsidian';
-import type { DraftBenchSettings } from '../model/settings';
+import type { DraftBenchSettings } from '../../model/settings';
 import {
 	findChapters,
 	findNoteById,
 	findProjects,
 	findScenes,
 	findSubScenes,
-} from './discovery';
-import { sortReverseArraysByOrder } from './reverse-array-order';
+} from '../discovery';
+import { sortReverseArraysByOrder } from '../reverse-array-order';
 import {
 	basenameFromLinkpath,
 	canonicalizeWikilinkValue,
 	parseWikilinkBasename,
-} from './frontmatter-wikilinks';
+} from '../frontmatter-wikilinks';
 
 /**
  * `DraftBenchLinker` — live bidirectional sync service.

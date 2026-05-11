@@ -8,6 +8,11 @@ import {
 	findSubScenes,
 } from './discovery';
 import { sortReverseArraysByOrder } from './reverse-array-order';
+import {
+	basenameFromLinkpath,
+	canonicalizeWikilinkValue,
+	parseWikilinkBasename,
+} from './frontmatter-wikilinks';
 
 /**
  * `DraftBenchLinker` — live bidirectional sync service.
@@ -944,103 +949,3 @@ function computeChapterScenesFolderPath(
 			: `${projectFolder}/${relative}`;
 }
 
-/**
- * Re-canonicalize a frontmatter wikilink value so Obsidian's serializer
- * writes it as a clean quoted string (`"[[Basename]]"`) rather than the
- * block-style nested-array form Obsidian's link-aware parser produces
- * during processFrontMatter round-trips. Issue #7.
- *
- * Behavior:
- * - **String** (already canonical, or user-typed): returned unchanged.
- *   processFrontMatter round-trips strings stably.
- * - **Nested single-element array** `[["..."]]`: unwraps the inner
- *   string and re-wraps as `"[[X]]"`. Preserves whatever's in the inner
- *   string verbatim, including alias (`Foo|Display`), heading
- *   (`Foo#Heading`), or block (`Foo^Block`) suffixes.
- * - **Anything else**: returned unchanged. Defensive; never corrupts
- *   data we don't recognize.
- *
- * Idempotent. Applied inside DB processFrontMatter callbacks that touch
- * a relationship wikilink field, so subsequent linker writes don't
- * progressively reshape the YAML.
- */
-function canonicalizeWikilinkValue(value: unknown): unknown {
-	if (typeof value === 'string') return value;
-	if (Array.isArray(value) && value.length === 1) {
-		const inner = value[0];
-		if (
-			Array.isArray(inner) &&
-			inner.length === 1 &&
-			typeof inner[0] === 'string'
-		) {
-			return `[[${inner[0]}]]`;
-		}
-	}
-	return value;
-}
-
-/**
- * Strip a Markdown linkpath down to the bare basename. Removes any path
- * prefix (`Path/To/Foo`), alias (`Foo|Display`), heading reference
- * (`Foo#Heading`), and block reference (`Foo^block`). Used by both the
- * `frontmatterLinks` resolution path (where Obsidian's cache exposes
- * the link as a string like `Path/Foo#Heading`) and the raw frontmatter
- * fallback parser. Issue #4 / #6.
- */
-function basenameFromLinkpath(linkpath: string): string {
-	let target = linkpath;
-	const pipeIdx = target.indexOf('|');
-	if (pipeIdx >= 0) target = target.slice(0, pipeIdx);
-	const hashIdx = target.indexOf('#');
-	if (hashIdx >= 0) target = target.slice(0, hashIdx);
-	const caretIdx = target.indexOf('^');
-	if (caretIdx >= 0) target = target.slice(0, caretIdx);
-	const slashIdx = target.lastIndexOf('/');
-	if (slashIdx >= 0) target = target.slice(slashIdx + 1);
-	return target.trim();
-}
-
-/**
- * Parse the target basename from a raw frontmatter value, used as a
- * fallback when Obsidian's `frontmatterLinks` cache doesn't expose the
- * link (issue #6). Returns `''` when the value isn't a recognizable
- * wikilink shape.
- *
- * Handles two on-disk forms:
- *
- * 1. **Quoted-string form** (`dbench-scene: "[[Basename]]"` in YAML):
- *    `frontmatter[key]` is the literal string `'[[Basename]]'`. Supports
- *    aliases, headings, block refs, and path prefixes inside the brackets.
- *
- * 2. **Flow-notation form** (`dbench-scene: [[Basename]]` without quotes):
- *    YAML parses this as a nested array `[["Basename"]]` (an array of one
- *    array of one string). Obsidian's Properties panel writes wikilinks
- *    in this unquoted form by default, which is what surfaced #6. The
- *    nested-array fallback covers writers who edit YAML in this shape
- *    when the `frontmatterLinks` cache happens to be missing.
- *
- * Does NOT handle multi-target wikilinks. Frontmatter wikilink fields
- * are single-target by Draft Bench convention; arrays use reverse-array
- * fields, not parent-pointer fields.
- */
-function parseWikilinkBasename(value: unknown): string {
-	// Quoted-string form: `dbench-scene: "[[Basename]]"`
-	if (typeof value === 'string') {
-		const m = value.match(/^\[\[([^\]]+)\]\]$/);
-		if (!m) return '';
-		return basenameFromLinkpath(m[1]);
-	}
-	// Flow-notation form: `dbench-scene: [[Basename]]` parses as a
-	// nested single-element array (Array(1) of Array(1) of string).
-	if (Array.isArray(value) && value.length === 1) {
-		const inner = value[0];
-		if (
-			Array.isArray(inner) &&
-			inner.length === 1 &&
-			typeof inner[0] === 'string'
-		) {
-			return basenameFromLinkpath(inner[0]);
-		}
-	}
-	return '';
-}

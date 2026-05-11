@@ -4,6 +4,7 @@ import type { DraftBenchSettings } from '../model/settings';
 import type { SubSceneNote } from './discovery';
 import { findDraftsOfSubScene, findNoteById } from './discovery';
 import { stampDraftEssentials } from './essentials';
+import { parseWikilinkBasename } from './frontmatter-wikilinks';
 
 /**
  * Sub-scene-level draft creation: snapshots a sub-scene's body into a
@@ -259,22 +260,3 @@ function readArray(value: unknown): string[] {
 	return [];
 }
 
-/**
- * Parse the bare basename out of a `[[Wikilink]]` (or `[[Path/To/Foo|Display]]`)
- * value. Returns `''` if the value isn't a recognizable wikilink shape.
- * Defensive helper for reading the sub-scene's `dbench-scene` ref —
- * frontmatter values arrive as `unknown` from the cache.
- */
-function parseWikilinkBasename(value: unknown): string {
-	if (typeof value !== 'string') return '';
-	const m = value.match(/^\[\[(.+?)\]\]$/);
-	if (!m) return '';
-	let target = m[1];
-	const pipeIdx = target.indexOf('|');
-	if (pipeIdx >= 0) target = target.slice(0, pipeIdx);
-	const hashIdx = target.indexOf('#');
-	if (hashIdx >= 0) target = target.slice(0, hashIdx);
-	const slashIdx = target.lastIndexOf('/');
-	if (slashIdx >= 0) target = target.slice(slashIdx + 1);
-	return target.trim();
-}

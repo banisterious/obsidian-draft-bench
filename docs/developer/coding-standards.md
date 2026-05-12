@@ -1273,17 +1273,19 @@ The build script invokes `tsc` and `esbuild` via direct `node ./node_modules/<pk
 
 ### Generated files
 
-Three build artifacts live at the repo root and are committed to git so BRAT installs from GitHub work without a release workflow:
+Three build artifacts live at the repo root. Treatment differs by file:
 
-- **`styles.css`** — concatenated from `styles/*.css` by `build-css.js` (`npm run build:css`).
-- **`main.js`** — bundled from `main.ts` + `src/` by esbuild (`npm run build`).
-- **`main.js.map`** — source map, emitted alongside `main.js`.
+- **`styles.css`** — concatenated from `styles/*.css` by `build-css.js` (`npm run build:css`). **Committed to git.** A diff signals a real content change; rebuild before commit.
+- **`main.js`** — bundled from `main.ts` + `src/` by esbuild (`npm run build`). **Gitignored.** Produced fresh by the release workflow (`.github/workflows/release.yml`) for every tag push; attached to the GitHub release with a provenance attestation.
+- **`main.js.map`** — source map, emitted alongside `main.js`. **Gitignored.** Local-only build artifact; not part of the release asset set.
 
 Rules:
 
 - **Never hand-edit these files.** Edit the sources (`styles/*.css`, `main.ts`, `src/**/*.ts`) and rebuild.
-- **Builds are deterministic.** `build-css.js` emits no timestamps; esbuild is reproducible. A diff in any of the three artifacts therefore signals a real content change and should be committed alongside the source change that caused it.
-- **Keep the repo state consistent.** When committing source changes, run `npm run build` first so the committed artifacts match the committed sources. If `git status` shows no-op diffs in the artifacts alone, regenerate once to reconcile and commit everything together. Never commit a source change without the matching rebuild.
+- **Builds are deterministic.** `build-css.js` emits no timestamps; esbuild is reproducible. The locally-built `main.js` should byte-match the CI-built artifact for the same source commit + Node version (pinned in `.nvmrc`).
+- **`styles.css` keeps its source -> bundle commit discipline.** When you change `styles/*.css`, run `npm run build:css` and commit the resulting `styles.css` diff alongside the source change. The release workflow re-runs the build in CI, but the committed bundle is what tools that read `main` directly (theme-style auditors, BRAT-prerelease testers reading current source) see between tagged releases.
+- **`main.js` is the release artifact, not a source-tree artifact.** Local builds during dev produce `main.js` for vault deployment via `./deploy.sh`. Tagged releases produce the canonical `main.js` via CI, with attestation. Users install via BRAT or the community plugin directory; both resolve to release assets, not branch checkouts.
+- **Release-time provenance.** The CI workflow runs `actions/attest-build-provenance@v2` against `main.js`, `manifest.json`, and `styles.css`. End users can verify with `gh attestation verify <file> --repo banisterious/obsidian-draft-bench`. See CLAUDE.md § 4 "Release process" for the tag-push -> CI -> draft-release flow.
 - **`styles.css` is out of scope for Stylelint and Prettier.** `npm run lint:css` and `npm run format:css` target `styles/**/*.css` (the sources). `.stylelintrc.json` explicitly ignores `styles.css`.
 
 ---

@@ -31,6 +31,7 @@ The following appeared as candidates and have since landed in main during the pr
 - **Manuscript view title links honor Obsidian's open-in-tab affordances** (`64e9091`) — chapter card titles and scene row titles support cmd/ctrl-click for new tab, +shift for split, +alt for new window, middle-click for new tab, right-click for context menu. Implemented via a shared `attachWikilinkOpenAffordances` helper in `src/ui/manuscript-view/sections/open-affordances.ts`.
 - **Multi-template support** (`ae7e0f0`, `0b5f9d0`, `9a07f5d`) — discovery + picker for named templates beyond the default seed. Originally deferred as "Phase 2+ multi-template management" in spec § Scene Templates; promoted and shipped during the pre-capture polish round.
 - **Active-note-sync for the Manuscript view** (`945965f`) — was tracked in [post-v1-forward-compat-audit.md § Item 3](post-v1-forward-compat-audit.md), not here. Listed for completeness because it shipped in the same polish round.
+- **Scene archive** (0.5.4, [#36](https://github.com/banisterious/obsidian-draft-bench/issues/36)) — status-based design (the alternate path noted in the original entry's footnote): new `hiddenStatuses` settings field, default-seeded with `['archived']`; Manuscript view filters scenes / chapters / sub-scenes whose status is hidden by default, with a "Show archived" toolbar toggle that reveals them at 0.55 opacity. "Archive" / "Unarchive" context-menu item on scene / chapter / sub-scene notes. Per-row eye toggle in Settings lets any vocab entry be flagged hidden. Compile presets unaffected; the Manuscript Builder's existing status filter is orthogonal.
 
 ---
 
@@ -61,18 +62,6 @@ The following appeared as candidates and have since landed in main during the pr
 **Effort.** Half a day plus content writing (the templates themselves).
 
 **Note.** This is the kind of thing that scales nicely as a community contribution — not core code, just a curated content pack.
-
----
-
-### Scene archive
-
-**Scope.** A "Archive scene" right-click action that moves a scene to an `Archive/` folder (configurable) and removes it from the Manuscript view's scene list. Restoration via "Show archive" toggle that surfaces archived scenes for selective unarchiving.
-
-**Rationale.** Cut content has a way of accumulating. Writers don't want to delete it (might revive later) but don't want it polluting the manuscript view either. StoryLine has this.
-
-**Effort.** Half a day. Mostly UI plumbing; the data model is just a folder move plus an optional `dbench-archived: true` flag for retrofit-detected archives.
-
-**Note.** Could be implemented as a setting on `dbench-status` (e.g., "treat status `archived` as hidden from Manuscript view") rather than a folder move. Worth thinking through before committing.
 
 ---
 

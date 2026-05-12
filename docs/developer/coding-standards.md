@@ -9,6 +9,7 @@
   - [2.3. Type Safety](#23-type-safety)
   - [2.4. Variable Declarations](#24-variable-declarations)
   - [2.5. Unused Variables](#25-unused-variables)
+  - [2.6. Async error handling](#26-async-error-handling)
 - [3. CSS Standards](#3-css-standards)
   - [3.1. Naming Conventions](#31-naming-conventions)
   - [3.2. Custom Properties](#32-custom-properties)
@@ -270,6 +271,36 @@ const buffer = createBuffer();  // ESLint error if never used
 
 // ✅ CORRECT - Remove or use version control for history
 ```
+
+### 2.6. Async error handling
+
+#### Fire-and-forget `void` calls
+
+`void` in front of a promise-returning expression tells TypeScript "I am deliberately not awaiting this." Two main uses come up in this codebase:
+
+```typescript
+// Inside a non-async event-handler body (vault callbacks, etc.)
+void this.onModify(file).catch((err) => {
+  console.error('[DraftBench] linker handleModify failed:', err);
+});
+
+// At a leaf call site whose enclosing function is non-async by design
+void plugin.saveSettings();
+```
+
+**When `void promise` is the right tool:**
+
+- The enclosing function is synchronous (Obsidian event listeners; UI event handlers) and `await`ing the promise would require restructuring the caller chain unnecessarily.
+- The promise is genuinely fire-and-forget: failure doesn't change anything the user is about to do.
+- Errors are handled inside the awaited function (logging, surfacing a Notice, etc.) OR explicitly chained via `.catch(handler)` at the call site. Don't swallow.
+
+**When `void promise` is wrong:**
+
+- The user just clicked something and expects the operation to succeed. If it silently fails, they have no signal. Surface the error.
+- The enclosing function COULD be async. Prefer `await` over `void`.
+- Inside a try/catch where the surrounding logic depends on the promise resolving — `void` lets the function return before the work finishes, defeating the catch.
+
+**Pattern guidance, not a refactor obligation.** Existing `void this.X()` and `void (...)` call sites have been chosen deliberately during incremental work; only rewrite them when one of the "wrong" conditions above clearly applies. A future `runAsync(promise, errorContext)` helper that centralizes the logging + Notice plumbing is a possible follow-up, but isn't a current obligation.
 
 ---
 

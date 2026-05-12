@@ -51,6 +51,17 @@ export const VIEW_TYPE_MANUSCRIPT = 'draft-bench-manuscript';
 
 const SECTION_PROJECT_SUMMARY = 'project-summary';
 const SECTION_MANUSCRIPT_LIST = 'manuscript-list';
+/*
+ * Scene-list refresh debounce. Vault modify / metadata change /
+ * resolved / delete events for project members trigger a re-render of
+ * the Manuscript list section after this many milliseconds of
+ * quiescence. 300ms keeps the list visibly responsive while the
+ * writer is drafting (lower than the Manuscript Builder's 400ms
+ * FILE_SAVE_DEBOUNCE_MS in manuscript-builder.ts: the list is a
+ * smaller, lighter re-render than the Builder's Preview, so we can
+ * afford a tighter window). The two values are intentionally distinct;
+ * keep them tuned per surface rather than unifying.
+ */
 const MODIFY_DEBOUNCE_MS = 300;
 
 /**

@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-05-11
+
+Internal-quality release. Five-phase architectural audit landed: a shared frontmatter-wikilinks utility consolidates parser logic that had drifted between two modules; a typed `COMMAND_IDS` registry centralizes the unsafe palette-invocation cast; the 951-line linker decomposes into a focused `linker/` directory; integrity scanning routes every typed-frontmatter cast through the existing `toGeneric` helper. No user-visible behavior changes; the 1360-test suite passes unchanged across every phase.
+
 ### Internal
 
 - **Extracted frontmatter-wikilinks utility.** New `src/core/frontmatter-wikilinks.ts` consolidates `parseWikilinkBasename`, `canonicalizeWikilinkValue`, and a cache-aware `readWikilinkBasename` helper. Reconciles two divergent implementations previously living in `src/core/linker.ts` and `src/core/sub-scene-drafts.ts`. Sub-scene-drafts callers now also recognize the flow-notation array form and strip block refs (`^block`), matching the linker's behavior. No user-visible change.

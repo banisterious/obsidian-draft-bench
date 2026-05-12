@@ -4,6 +4,88 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.5.3: 2026-05-11 — Audit-work release
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.5.3)
+
+Internal-quality release bundling a five-phase architectural audit. No user-visible behavior changes; the 1360-test suite passes unchanged across every phase. Writers should see no difference from 0.5.2.
+
+### Internal
+
+- **Frontmatter wikilink utility extracted.** A new shared module consolidates parser logic that had drifted between two source files; sub-scene-drafts gains parity with the linker on the flow-notation `[[Foo]]` array form and block-ref stripping.
+- **Typed command-ID constants.** All 28 Draft Bench command IDs now live in a single typed `COMMAND_IDS` registry, with a `runCommand` helper that centralizes the unsafe `app.commands.executeCommandById` cast.
+- **Linker decomposed into a submodule directory.** The 951-line `linker.ts` becomes a `linker/` directory of five focused files (lifecycle, reconciliation, wikilink-backfill, folder-auto-rename, readers) plus a re-exporting `index.ts`. Public API unchanged.
+- **Integrity-scanner cleanup.** Eleven inline typed-frontmatter casts route through the existing helper. Debounce-constant divergence between Manuscript view and Manuscript Builder is now documented in code; the gap is intentional.
+
+Mobile-supported (Android verified through 0.5.2). 1360 tests pass.
+
+## 0.5.2: 2026-05-09 — Android Scrivener-import polish
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.5.2)
+
+Mobile patch for the Scrivener importer's Source step. Two Android-specific bugs surfaced during dev-vault verification of 0.5.1 are now addressed.
+
+### Fixed
+
+- **Externally-copied `.scriv` bundles surface without an app reload** ([#35](https://github.com/banisterious/obsidian-draft-bench/issues/35)). The in-vault bundle picker now walks via the vault adapter rather than the indexed file list, so a bundle copied into the vault via Android's file manager appears the next time the wizard opens — no `Reload app without saving` required. Affects desktop in principle too; the symptom only surfaced on mobile because the indexed cache lags external changes there.
+
+### Mitigated
+
+- **Folder picker on Android builds that silently ignore `webkitdirectory`** ([#34](https://github.com/banisterious/obsidian-draft-bench/issues/34)). Some Android builds present the in-app folder picker as a file-only chooser regardless of the `webkitdirectory` hint, leaving writers unable to select the `.scriv` folder. This is an OS-level limitation; the 0.5.2 mitigation reframes the Source step on mobile so the failure mode is legible: in-vault dropdown above the picker when bundles exist, an empty-state hint explaining the file-manager workaround when nothing's in the vault yet, picker subtext clarifying the conditional nature, and a Notice surfaced on cancel/dismiss pointing at the workaround.
+
+Mobile-supported (Android verified). 1360 tests pass.
+
+## 0.5.1: 2026-05-08 — Scrivener importer follow-up
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.5.1)
+
+Completes the snapshot import + default compile preset toggles that the 0.5.0 wizard surfaced as deferred warnings, plus two parser fixes that improve Scrivener 3 (Windows) import fidelity. Tracked via [#33](https://github.com/banisterious/obsidian-draft-bench/issues/33).
+
+### Added
+
+- **Scrivener snapshot import.** When the **Import snapshots** toggle is on in the wizard's Options step, per-document Scrivener snapshots become `dbench-type: draft` files alongside each imported scene. Per-scene cap (1 / 3 / 5 / All). Default filename template (`{scene} - Draft {n} ({date_compact})`) matches native Draft Bench draft files; tokens `{scene}` / `{title}` / `{date}` / `{date_compact}` / `{time}` / `{n}` available. Original Scrivener title preserved as `scrivener-snapshot-title` even when the template doesn't reference `{title}`. The parent scene's `dbench-drafts` and `dbench-draft-ids` reverse arrays update accordingly.
+- **Default compile preset stub.** When the **Create default compile preset** toggle is on, the importer adds an "Imported defaults" preset to the new project's `Compile Presets/` folder using Draft Bench's standard preset defaults. Starting point; rename / duplicate / delete as needed.
+- **Preview-step disclosure of excluded documents.** When the source bundle contains documents marked Include-in-Compile = No, the Preview step's Warnings section lists them by title.
+
+### Fixed
+
+- **`countSnapshots` looked at the wrong path** (pre-existing from 0.5.0). The Parse step's snapshot-count summary returned 0 silently for any real Scrivener 3 (Windows) project; now correctly counts the bundle-root `Snapshots/<UUID>.snapshots/` location.
+- **Include-in-Compile detection on Scrivener Windows.** Scrivener Windows serializes the unchecked state by removing the `<IncludeInCompile>` element from non-empty `<MetaData>`; the parser now treats that shape as `false`. Both the Preview-step disclosure and the `scrivener-include-in-compile: false` provenance frontmatter fire correctly.
+
+### Notes
+
+- **Empty-`<MetaData/>` ambiguity** (Scrivener Windows). For a document with no other metadata and an unchecked Include-in-Compile toggle, Scrivener Windows persists empty `<MetaData/>` either way; the importer can't distinguish and defaults to include. Workaround in [Importing from Scrivener § Known limitations](https://github.com/banisterious/obsidian-draft-bench/wiki/Importing-from-Scrivener): set any other metadata field (Status, Label, custom field) in Scrivener before toggling Include-in-Compile off.
+
+Desktop + Android. 1297 tests pass.
+
+## 0.5.0: 2026-05-08 — Scrivener 3 project import
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.5.0)
+
+The marquee feature for the 0.5.x line: a multi-step wizard reads a Scrivener 3 `.scriv` bundle from inside your vault and writes a fresh Draft Bench project — chapters, scenes, sub-scenes, drafts (optional), and inspector content all carry across, with every mapping reviewed in a Preview step before any file gets written. Tracked via [#28](https://github.com/banisterious/obsidian-draft-bench/issues/28). See the [Importing from Scrivener](https://github.com/banisterious/obsidian-draft-bench/wiki/Importing-from-Scrivener) wiki page for the full walkthrough.
+
+### Added
+
+- **Scrivener 3 project import.** Eight-step wizard (Source → Parse → Hierarchy → Metadata → Options → Preview → Import → Complete). Discoverable via the `Draft Bench: Import from Scrivener` palette command, an import button in the Manuscript view's project picker row, and an empty-state CTA when no projects exist yet. Cross-platform — reads via Obsidian's vault adapter on every supported OS.
+- **Hierarchy auto-detect with per-row override.** Deepest leaves with prose → scenes; immediate folder parents → chapters; extras above the chapter level (Parts, Books, Volumes) preserved as `scrivener-part` frontmatter; extras below the sub-scene level concatenated as nested markdown headings inside the parent sub-scene's body. The Hierarchy step renders the binder tree with per-row overrides.
+- **Status, label, and custom-metadata mapping.** Status table matches Scrivener statuses against your vocabulary (with an "Add as new status" option). Labels route to a writer-named frontmatter key. Custom-metadata fields route per-field with type-aware coercion (Checkbox → boolean, List option → resolved title, Date → ISO `YYYY-MM-DD`, Text → string).
+- **Inspector content carry-over.** Synopsis → `dbench-synopsis`; Document Notes → appended `## Notes` section in the scene body; inline Comments → Obsidian `%% comment %%` syntax; Footnotes → standard markdown footnotes; Project Notes → the project note's `## Notes` section; project-keyword usages → `tags:` frontmatter on each scene.
+- **RTF → markdown body conversion.** Italics, bold, lists (nested), smart quotes, em-dashes, ellipses, and inline footnotes / comments. Inline images extracted to `Research/Images/` and referenced via Obsidian wikilinks.
+- **Cross-document Scrivener Links rewritten to wikilinks.** A two-pass write builds a `scrivener-uuid → dbench-file-path` map and rewrites link markers as Obsidian wikilinks. Unresolvable links become `[broken: <title>]` and are logged.
+- **Optional snapshot import, optional Research folder import.** Both gated by toggles in the Options step.
+- **`dbench-synopsis` extended to the scene model.** Previously valid on chapters and sub-scenes only; now writes on scenes too, with Manuscript view scene rows rendering it as a muted second / third line below the title.
+- **Per-import error log.** Errors during the write pass are collected per file (a single bad scene doesn't abort the whole import) and written to `Scrivener import errors.md` in the new project folder.
+
+### Notes
+
+- **QA scope.** Tested against the maintainer's own Scrivener 3 Novel-template fixture (sub-scenes + multi-level extras-above + Checkbox / Date / List custom-metadata fields) plus 1297 unit / integration tests. The test-corpus tracking issue stays open as an ongoing post-release feedback channel; issue reports across other `.scriv` shapes welcomed via [#28](https://github.com/banisterious/obsidian-draft-bench/issues/28).
+- **Scrivener 2 and iOS Scrivener formats are not supported in V1.** Schema and bundle structure differ.
+- **The `.scriv` bundle has to live inside the vault.** The wizard's Source step copies it in for you on most platforms; on iOS, copy via the Files app first.
+- **Compile-format translation is intentionally skipped.** Scrivener compile formats don't map cleanly. The Options step has an opt-in toggle to create a starter preset; otherwise, build from scratch after import.
+- **Some inline RTF features are deferred for fidelity tuning** (gated on real-corpus exposure): some hyperlink variants, nested footnotes within tables, unusual inline-image arrangements. These import as best-effort placeholders flagged in the error log.
+
+Desktop + Android. 1297 tests pass.
+
 ## 0.4.0: 2026-05-06 — Manuscript view Continuous mode
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/v0.4.0)

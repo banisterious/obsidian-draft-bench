@@ -4,6 +4,22 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.5.5: 2026-05-12 — Release-hygiene + popout polish
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.5.5)
+
+Internal-quality release. Introduces a CI release workflow that produces cryptographic provenance attestations for every release asset (`main.js`, `manifest.json`, `styles.css`), addressing recommendations from the community.obsidian.md automated scan against 0.5.4. Also picks up eight popout-window polish sites. No user-visible feature changes.
+
+### Added
+
+- **CI release workflow with build-provenance attestations.** Tag push triggers `actions/attest-build-provenance@v2` against the three release assets. Verify any asset with `gh attestation verify <file> --repo banisterious/obsidian-draft-bench`.
+
+### Changed
+
+- **`document` -> `activeDocument`** in 8 sites so SVG / element / fragment creation in Obsidian popout windows works without further plumbing. ESLint warning count drops from 40 to 28.
+
+Mobile-supported (Android verified through 0.5.2). 1371 tests pass.
+
 ## 0.5.4: 2026-05-12 — Scene archive
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.5.4)

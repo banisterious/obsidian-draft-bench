@@ -6,6 +6,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-05-12
+
+Release-hygiene release. Introduces a GitHub Actions release workflow that produces cryptographic provenance attestations for every release asset; addresses the "no artifact attestation" recommendations surfaced by the community.obsidian.md automated scan against 0.5.4. Also picks up the eight `document` -> `activeDocument` polish sites from the same scan. No user-visible feature changes.
+
+### Added
+
+- **CI release workflow with build-provenance attestations.** New `.github/workflows/release.yml` triggers on plain SemVer tag push (`*.*.*`, `*.*.*-*`). Runs the full gate set (lint + lint:css + test + build), generates per-file provenance attestations via `actions/attest-build-provenance@v2` for `main.js` / `manifest.json` / `styles.css`, and creates a draft GitHub release with the assets attached. The author reviews the draft on GitHub, pastes the chat-audited release-description markdown, and publishes. End users can verify any release asset with `gh attestation verify <file> --repo banisterious/obsidian-draft-bench`.
+- **`.nvmrc`** pins Node 20.20.2 so the workflow's `setup-node` reads it via `node-version-file`. Local devs running `nvm use` (no args) pick up the same version automatically.
+
+### Changed
+
+- **`document` -> `activeDocument` in 8 sites** for popout-window compatibility. Affected: brand-mark SVG creation, settings-tab link fragment, manuscript-view word-counts wrapper + progress hero, Scrivener importer `webkitdirectory` probe. ESLint warnings drop from 40 to 28; all four gates remain green.
+
+### Internal
+
+- **`docs/developer/coding-standards.md` § 6.3 ("Generated files")** updated to reflect actual treatment: `styles.css` committed to git, `main.js` + `main.js.map` gitignored and produced fresh by CI for releases. Cross-references the new attestation flow.
+- **Pre-release tag handling.** Workflow detects the SemVer hyphen convention (e.g., `0.5.5-rc1`) and flags the resulting draft release as a pre-release. Lets us trial workflow changes end-to-end against an rc tag without touching the stable release line.
+
 ## [0.5.4] - 2026-05-12
 
 Scene archive ([#36](https://github.com/banisterious/obsidian-draft-bench/issues/36)). A "hidden statuses" mechanism lets writers park scenes / chapters / sub-scenes they aren't actively working on without deleting them. The Manuscript view (List + Continuous) filters items whose status is on the hidden list; a "Show archived" toolbar toggle reveals them with muted-opacity treatment. The default vocab grows by one entry (`archived`) and a per-row eye toggle in Settings lets writers flag any status as hidden. Compile presets are unaffected: the Manuscript Builder's existing status filter is orthogonal.

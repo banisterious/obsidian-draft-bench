@@ -16,7 +16,7 @@ If you're looking for a plotting tool with character databases, plot grids, and 
 
 ### When can I install it?
 
-Now. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin, then enabling Draft Bench in **Settings -> Community plugins**. The current release is **0.5.4** (2026-05-12); the first BRAT-public release was 0.1.0 on 2026-04-29. Submission to Obsidian's community-plugin directory is under review.
+Now. Install via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin, then enabling Draft Bench in **Settings -> Community plugins**. The current release is **0.5.5** (2026-05-12); the first BRAT-public release was 0.1.0 on 2026-04-29. Submission to Obsidian's community-plugin directory is under review.
 
 ### Is it free?
 

@@ -23,13 +23,17 @@ import { sortScenesByOrder } from '../../core/sort-scenes';
 import { appendBrandMark } from '../brand-mark';
 import { renderSection } from './sections/section-base';
 import { renderProjectSummaryBody } from './sections/project-summary-section';
-import { renderManuscriptListBody } from './sections/manuscript-list-section';
+import {
+	renderManuscriptListBody,
+	type ArchiveVisibility,
+} from './sections/manuscript-list-section';
 import { renderChapterListBody } from './sections/chapter-card-section';
 import {
 	renderContinuousBody,
 	type ContinuousBodyHandle,
 } from './sections/continuous';
 import { renderCompileCta, renderToolbar } from './sections/toolbar';
+import { isHiddenStatus } from '../../core/statuses';
 import type { ManuscriptViewMode } from '../../model/settings';
 
 /**
@@ -72,12 +76,22 @@ interface ManuscriptViewState {
 	schemaVersion: 1;
 	selectedProjectId: string | null;
 	sectionStates: Record<string, boolean>;
+	/**
+	 * Whether the leaf is currently revealing items whose `dbench-status`
+	 * is in `settings.hiddenStatuses`. Defaults false on a fresh leaf;
+	 * persisted alongside the rest of the leaf state so writers don't
+	 * have to re-enable it after Obsidian reload (the choice is per-
+	 * leaf rather than global so different leaves can show different
+	 * states for the same project).
+	 */
+	showArchived: boolean;
 }
 
 const EMPTY_STATE: ManuscriptViewState = {
 	schemaVersion: 1,
 	selectedProjectId: null,
 	sectionStates: {},
+	showArchived: false,
 };
 
 export class ManuscriptView extends ItemView {
@@ -199,6 +213,9 @@ export class ManuscriptView extends ItemView {
 			if (s.sectionStates && typeof s.sectionStates === 'object') {
 				this.viewState.sectionStates = { ...s.sectionStates };
 			}
+			if (typeof s.showArchived === 'boolean') {
+				this.viewState.showArchived = s.showArchived;
+			}
 		}
 		return super.setState(state, result);
 	}
@@ -304,11 +321,18 @@ export class ManuscriptView extends ItemView {
 			cls: 'dbench-manuscript-view__content',
 		});
 
+		const hiddenStatuses = this.plugin.settings.hiddenStatuses;
+		const allScenes = findScenesInProject(this.plugin.app, projectId);
+		const hasArchivedScenes = allScenes.some((s) =>
+			isHiddenStatus(s.frontmatter['dbench-status'], hiddenStatuses)
+		);
+
 		if (mode === 'continuous') {
 			this.continuousHandle = renderContinuousBody(
 				content,
 				this.plugin,
-				project
+				project,
+				this.viewState.showArchived
 			);
 			window.requestAnimationFrame(() => {
 				container.scrollTop = previousScroll;
@@ -317,7 +341,15 @@ export class ManuscriptView extends ItemView {
 		}
 
 		renderCompileCta(content, this.plugin);
-		renderToolbar(content, this.plugin, project);
+		renderToolbar(content, this.plugin, project, {
+			showArchived: this.viewState.showArchived,
+			hasArchived: hasArchivedScenes,
+			onToggleShowArchived: () => {
+				this.viewState.showArchived = !this.viewState.showArchived;
+				this.plugin.app.workspace.requestSaveLayout();
+				this.render();
+			},
+		});
 
 		const chapters = findChaptersInProject(this.plugin.app, projectId).sort(
 			(a, b) =>
@@ -327,13 +359,20 @@ export class ManuscriptView extends ItemView {
 
 		this.renderProjectSummarySection(content, project);
 
+		const archive = {
+			hiddenStatuses,
+			showArchived: this.viewState.showArchived,
+		};
 		if (chapters.length > 0) {
-			this.renderManuscriptHierarchySection(content, project, chapters);
-		} else {
-			const scenes = sortScenesByOrder(
-				findScenesInProject(this.plugin.app, projectId)
+			this.renderManuscriptHierarchySection(
+				content,
+				project,
+				chapters,
+				archive
 			);
-			this.renderManuscriptListSection(content, project, scenes);
+		} else {
+			const scenes = sortScenesByOrder(allScenes);
+			this.renderManuscriptListSection(content, project, scenes, archive);
 		}
 
 		// Preserve scroll position after full re-render.
@@ -538,6 +577,7 @@ export class ManuscriptView extends ItemView {
 		container: HTMLElement,
 		project: ProjectNote,
 		scenes: SceneNote[],
+		archive: ArchiveVisibility
 	): void {
 		const expanded = this.readSectionState(SECTION_MANUSCRIPT_LIST, true);
 		const summary =
@@ -573,14 +613,16 @@ export class ManuscriptView extends ItemView {
 				void this.plugin.app.workspace
 					.getLeaf(spec ?? false)
 					.openFile(subScene.file);
-			}
+			},
+			archive
 		);
 	}
 
 	private renderManuscriptHierarchySection(
 		container: HTMLElement,
 		project: ProjectNote,
-		chapters: ChapterNote[]
+		chapters: ChapterNote[],
+		archive: ArchiveVisibility
 	): void {
 		const expanded = this.readSectionState(SECTION_MANUSCRIPT_LIST, true);
 		const summary =
@@ -621,7 +663,8 @@ export class ManuscriptView extends ItemView {
 				void this.plugin.app.workspace
 					.getLeaf(spec ?? false)
 					.openFile(subScene.file);
-			}
+			},
+			archive
 		);
 	}
 

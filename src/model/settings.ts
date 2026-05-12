@@ -7,7 +7,7 @@
  * The Settings tab UI in `ui/settings/` reads and writes these.
  */
 
-import { DEFAULT_STATUS_VOCABULARY } from './types';
+import { DEFAULT_HIDDEN_STATUSES, DEFAULT_STATUS_VOCABULARY } from './types';
 
 /**
  * Where the drafts folder lives relative to projects in the vault.
@@ -184,6 +184,24 @@ export interface DraftBenchSettings {
 	statusVocabulary: string[];
 
 	/**
+	 * Statuses that are filtered out of the Manuscript view (List +
+	 * Continuous) by default. A "Show archived" toggle in the view
+	 * header reveals the hidden items with muted-opacity treatment.
+	 * Entries must also exist in `statusVocabulary`; rename / remove
+	 * sweeps in the Settings tab keep both arrays in sync.
+	 *
+	 * Compile presets are unaffected: the Manuscript Builder's own
+	 * `dbench-compile-scene-statuses` filter is independent of this
+	 * setting. Continuous mode (which is a synthetic compile preset)
+	 * honors it via per-render scene-exclude basenames; "real" presets
+	 * the writer configures don't.
+	 *
+	 * Seeded with `['archived']` on first load (fresh installs and one-
+	 * shot migration for existing installs; see `archivedStatusSeeded`).
+	 */
+	hiddenStatuses: string[];
+
+	/**
 	 * Master toggle for the bidirectional linker. When off, the live
 	 * sync service is dormant (manual repair via the "Repair project
 	 * links" command still works).
@@ -328,6 +346,17 @@ export interface DraftBenchSettings {
 	 * touching `scenesFolder`.
 	 */
 	scenesFolderMigrated: boolean;
+
+	/**
+	 * One-shot migration marker for the scene-archive feature added in
+	 * 0.5.4. When an existing `data.json` is loaded without this key,
+	 * `loadSettings` appends `'archived'` to `statusVocabulary` (if
+	 * absent) and `hiddenStatuses` (if absent), then flips this flag
+	 * true. Subsequent loads skip the migration so a writer who removes
+	 * the seeded status keeps that choice. Fresh installs persist `true`
+	 * on first save without re-running the migration.
+	 */
+	archivedStatusSeeded: boolean;
 }
 
 /**
@@ -347,6 +376,7 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 	subSceneTemplatePath: '',
 	basesFolder: 'Draft Bench/Bases',
 	statusVocabulary: [...DEFAULT_STATUS_VOCABULARY],
+	hiddenStatuses: [...DEFAULT_HIDDEN_STATUSES],
 	enableBidirectionalSync: true,
 	syncOnFileModify: true,
 	firstProjectRevealed: false,
@@ -364,4 +394,5 @@ export const DEFAULT_SETTINGS: DraftBenchSettings = {
 		fontFamily: 'default',
 	},
 	scenesFolderMigrated: true,
+	archivedStatusSeeded: true,
 };

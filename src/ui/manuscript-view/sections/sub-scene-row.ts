@@ -29,10 +29,15 @@ export function renderSubSceneRow(
 	parent: HTMLElement,
 	subScene: SubSceneNote,
 	wordCountCache: WordCountCache,
-	onOpen: (subScene: SubSceneNote, spec: OpenSpec) => void
+	onOpen: (subScene: SubSceneNote, spec: OpenSpec) => void,
+	options: { archived?: boolean } = {}
 ): void {
+	const classes = ['dbench-manuscript-view__sub-scene-row'];
+	if (options.archived) {
+		classes.push('dbench-manuscript-view__sub-scene-row--archived');
+	}
 	const item = parent.createEl('li', {
-		cls: 'dbench-manuscript-view__sub-scene-row',
+		cls: classes.join(' '),
 	});
 
 	item.createSpan({

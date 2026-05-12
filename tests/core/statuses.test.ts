@@ -3,6 +3,7 @@ import { App, TFile } from 'obsidian';
 import {
 	countStatusUsage,
 	filesWithStatus,
+	isHiddenStatus,
 	renameStatus,
 } from '../../src/core/statuses';
 
@@ -65,6 +66,28 @@ describe('countStatusUsage', () => {
 		expect(countStatusUsage(app, 'idea')).toBe(2);
 		expect(countStatusUsage(app, 'final')).toBe(1);
 		expect(countStatusUsage(app, 'missing')).toBe(0);
+	});
+});
+
+describe('isHiddenStatus', () => {
+	it('matches when status is in the hidden list', () => {
+		expect(isHiddenStatus('archived', ['archived'])).toBe(true);
+		expect(isHiddenStatus('cut', ['archived', 'cut'])).toBe(true);
+	});
+
+	it('does not match when status is absent from the hidden list', () => {
+		expect(isHiddenStatus('draft', ['archived'])).toBe(false);
+	});
+
+	it('returns false for non-string or empty status (missing = not hidden)', () => {
+		expect(isHiddenStatus(undefined, ['archived'])).toBe(false);
+		expect(isHiddenStatus(null, ['archived'])).toBe(false);
+		expect(isHiddenStatus('', ['archived'])).toBe(false);
+		expect(isHiddenStatus(42, ['archived'])).toBe(false);
+	});
+
+	it('returns false when the hidden list is empty', () => {
+		expect(isHiddenStatus('archived', [])).toBe(false);
 	});
 });
 

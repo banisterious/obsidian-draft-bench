@@ -51,10 +51,29 @@ export type DbenchStatus = string;
  * `settings.statusVocabulary` on first load and as a fallback when
  * the user's vocabulary somehow ends up empty. The first entry is
  * the default status stamped onto new scenes and projects.
+ *
+ * `archived` was added in 0.5.4 alongside the scene-archive feature;
+ * it is seeded as a hidden status (see `DEFAULT_HIDDEN_STATUSES`) so
+ * scenes carrying it are filtered out of the Manuscript view by
+ * default. Existing installs get the entry appended on first load
+ * after upgrade (one-shot, see `archivedStatusSeeded` migration in
+ * `loadSettings`).
  */
 export const DEFAULT_STATUS_VOCABULARY: readonly string[] = [
 	'idea',
 	'draft',
 	'revision',
 	'final',
+	'archived',
 ] as const;
+
+/**
+ * The default-seeded set of hidden statuses. Scenes / chapters /
+ * sub-scenes whose `dbench-status` matches any entry in
+ * `settings.hiddenStatuses` are filtered out of the Manuscript view
+ * (List + Continuous) by default; a "Show archived" toggle in the
+ * view reveals them with muted treatment. Compile presets are
+ * unaffected — the Manuscript Builder's own scene-status filter is
+ * orthogonal.
+ */
+export const DEFAULT_HIDDEN_STATUSES: readonly string[] = ['archived'] as const;

@@ -7,9 +7,11 @@ import type {
 } from '../../../core/discovery';
 import type { DraftBenchLinker } from '../../../core/linker';
 import { sortSubScenesByOrder } from '../../../core/sort-scenes';
+import { isHiddenStatus } from '../../../core/statuses';
 import { readTargetWords } from '../../../core/targets';
 import type { WordCountCache } from '../../../core/word-count-cache';
 import { NewSubSceneModal } from '../../modals/new-sub-scene-modal';
+import type { ArchiveVisibility } from './manuscript-list-section';
 import {
 	attachWikilinkOpenAffordances,
 	type OpenSpec,
@@ -54,16 +56,24 @@ export function renderSceneCard(
 	plugin: DraftBenchPlugin,
 	linker: DraftBenchLinker,
 	onOpenScene: (scene: SceneNote, spec: OpenSpec) => void,
-	onOpenSubScene: (subScene: SubSceneNote, spec: OpenSpec) => void
+	onOpenSubScene: (subScene: SubSceneNote, spec: OpenSpec) => void,
+	archive: ArchiveVisibility = { hiddenStatuses: [], showArchived: true }
 ): void {
 	const id = scene.frontmatter['dbench-id'];
 	const collapsed = plugin.settings.sceneCollapseState[id] === true;
+	const sceneArchived = isHiddenStatus(
+		scene.frontmatter['dbench-status'],
+		archive.hiddenStatuses
+	);
 
 	const card = parent.createEl('section', {
 		cls: 'dbench-manuscript-view__scene-card',
 	});
 	if (!collapsed) {
 		card.addClass('dbench-manuscript-view__scene-card--expanded');
+	}
+	if (sceneArchived) {
+		card.addClass('dbench-manuscript-view__scene-card--archived');
 	}
 
 	const header = card.createDiv({
@@ -139,18 +149,39 @@ export function renderSceneCard(
 		cardBody.addClass('dbench-manuscript-view__scene-card-body--collapsed');
 	}
 
-	if (subScenes.length === 0) {
+	const sortedSubScenes = sortSubScenesByOrder(subScenes);
+	const visibleSubScenes = archive.showArchived
+		? sortedSubScenes
+		: sortedSubScenes.filter(
+				(sub) =>
+					!isHiddenStatus(
+						sub.frontmatter['dbench-status'],
+						archive.hiddenStatuses
+					)
+			);
+
+	if (sortedSubScenes.length === 0) {
 		cardBody.createEl('p', {
 			cls: 'dbench-manuscript-view__placeholder',
 			text: 'No sub-scenes in this scene yet.',
+		});
+	} else if (visibleSubScenes.length === 0) {
+		cardBody.createEl('p', {
+			cls: 'dbench-manuscript-view__placeholder',
+			text: 'All sub-scenes archived.',
 		});
 	} else {
 		const list = cardBody.createEl('ol', {
 			cls: 'dbench-manuscript-view__sub-scene-list',
 		});
-		const sorted = sortSubScenesByOrder(subScenes);
-		for (const subScene of sorted) {
-			renderSubSceneRow(list, subScene, wordCountCache, onOpenSubScene);
+		for (const subScene of visibleSubScenes) {
+			const subArchived = isHiddenStatus(
+				subScene.frontmatter['dbench-status'],
+				archive.hiddenStatuses
+			);
+			renderSubSceneRow(list, subScene, wordCountCache, onOpenSubScene, {
+				archived: subArchived,
+			});
 		}
 	}
 

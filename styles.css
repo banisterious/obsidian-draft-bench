@@ -1691,7 +1691,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of reorder-modal.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-VIEW.CSS  (1044 lines, 28.92 KB)
+   MANUSCRIPT-VIEW.CSS  (1071 lines, 29.82 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -2738,11 +2738,38 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	border-top: 1px solid var(--background-modifier-border);
 }
 
+/* Archived rows (status is in settings.hiddenStatuses) are filtered
+ * from the list by default; the toolbar's "Show archived" toggle
+ * reveals them with muted-opacity treatment. The opacity-only
+ * approach lets writers re-discover archived items at a glance
+ * (still navigable, still readable) without competing with the
+ * active manuscript work for visual weight. Hover restores full
+ * opacity so the row's title is easy to click. */
+.dbench-manuscript-view__scene-row--archived,
+.dbench-manuscript-view__sub-scene-row--archived {
+	opacity: 0.55;
+}
+
+.dbench-manuscript-view__scene-row--archived:hover,
+.dbench-manuscript-view__sub-scene-row--archived:hover {
+	opacity: 0.9;
+}
+
+.dbench-manuscript-view__chapter-card--archived,
+.dbench-manuscript-view__scene-card--archived {
+	opacity: 0.55;
+}
+
+.dbench-manuscript-view__chapter-card--archived:hover,
+.dbench-manuscript-view__scene-card--archived:hover {
+	opacity: 0.9;
+}
+
 
 /* End of manuscript-view.css */
 
 /* --------------------------------------------------------------------------
-   SETTINGS-TAB.CSS  (219 lines, 5.53 KB)
+   SETTINGS-TAB.CSS  (228 lines, 5.67 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -2929,7 +2956,8 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 	letter-spacing: 0.04em;
 }
 
-.dbench-statuses__remove {
+.dbench-statuses__remove,
+.dbench-statuses__hide {
 	flex: 0 0 auto;
 	display: inline-flex;
 	align-items: center;
@@ -2948,6 +2976,14 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 .dbench-statuses__remove:disabled {
 	opacity: 0.4;
 	cursor: not-allowed;
+}
+
+.dbench-statuses__hide:hover {
+	color: var(--text-normal);
+}
+
+.dbench-statuses__hide--on {
+	color: var(--text-accent);
 }
 
 .dbench-statuses__add {
@@ -2972,7 +3008,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 11
-   Total:      2880 lines, 79.64 KB
+   Total:      2916 lines, 80.68 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
@@ -2982,8 +3018,8 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    - welcome-modal.css: 94 lines, 2.21 KB
    - import-wizard.css: 513 lines, 11.88 KB
    - reorder-modal.css: 103 lines, 2.31 KB
-   - manuscript-view.css: 1044 lines, 28.92 KB
-   - settings-tab.css: 219 lines, 5.53 KB
+   - manuscript-view.css: 1071 lines, 29.82 KB
+   - settings-tab.css: 228 lines, 5.67 KB
 */
 
 /* End of generated stylesheet */

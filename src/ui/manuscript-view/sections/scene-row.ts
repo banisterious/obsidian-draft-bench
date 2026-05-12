@@ -20,10 +20,15 @@ export function renderSceneRow(
 	parent: HTMLElement,
 	scene: SceneNote,
 	wordCountCache: WordCountCache,
-	onOpen: (scene: SceneNote, spec: OpenSpec) => void
+	onOpen: (scene: SceneNote, spec: OpenSpec) => void,
+	options: { archived?: boolean } = {}
 ): void {
+	const classes = ['dbench-manuscript-view__scene-row'];
+	if (options.archived) {
+		classes.push('dbench-manuscript-view__scene-row--archived');
+	}
 	const item = parent.createEl('li', {
-		cls: 'dbench-manuscript-view__scene-row',
+		cls: classes.join(' '),
 	});
 
 	item.createSpan({

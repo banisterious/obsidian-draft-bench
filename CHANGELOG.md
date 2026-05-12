@@ -6,6 +6,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-05-12
+
+Scene archive ([#36](https://github.com/banisterious/obsidian-draft-bench/issues/36)). A "hidden statuses" mechanism lets writers park scenes / chapters / sub-scenes they aren't actively working on without deleting them. The Manuscript view (List + Continuous) filters items whose status is on the hidden list; a "Show archived" toolbar toggle reveals them with muted-opacity treatment. The default vocab grows by one entry (`archived`) and a per-row eye toggle in Settings lets writers flag any status as hidden. Compile presets are unaffected: the Manuscript Builder's existing status filter is orthogonal.
+
+### Added
+
+- **Scene archive ([#36](https://github.com/banisterious/obsidian-draft-bench/issues/36)).** New `hiddenStatuses: string[]` settings field, default-seeded with `['archived']`. The Manuscript view's List + Continuous modes drop scenes / chapters / sub-scenes whose `dbench-status` is in this list by default. A fourth "Show archived" toolbar button (appears only when the project has at least one archived item) flips the leaf state and re-renders the hidden items at 0.55 opacity (hover: 0.9) so they're readable but de-emphasized. Toggle state persists per-leaf alongside the rest of the view state.
+- **"Archive" / "Unarchive" context-menu item** on scene / chapter / sub-scene notes (file-menu and editor-menu surfaces). Archive stamps the first hidden status (typically `'archived'`); Unarchive routes to the vocab's default status. Single-file scope; bulk multi-select is post-V1.
+- **Per-row eye toggle in the Settings statuses UI.** Any vocab entry can be flagged hidden / unhidden by clicking its eye icon. Renaming a hidden status updates the `hiddenStatuses` pointer so the archive filter follows the rename. Removing a hidden status drops it from the list.
+- **`'archived'` default vocab entry.** Fresh installs land with `['idea', 'draft', 'revision', 'final', 'archived']`. Existing installs migrate via the new `archivedStatusSeeded` one-shot flag in `loadSettings` (mirrors the `scenesFolderMigrated` pattern from #11): appends `'archived'` to the vocab if absent, seeds `hiddenStatuses` to `['archived']` if absent, then never re-runs. Writers who delete the seeded status on subsequent loads keep that choice.
+
+### Internal
+
+- **New `isHiddenStatus(status, hiddenStatuses)` helper** in `src/core/statuses.ts`. Defensive: non-string / empty status is never hidden (matches the "missing status = not ready" convention from D-06).
+- **`buildContinuousPreset(project, { excludeBasenames })`** now accepts a list of basenames to feed into the existing `dbench-compile-scene-excludes` field. Used by Continuous mode to drop scenes + sub-scenes whose status is hidden when the toggle is off.
+- **`filterArchivedScenes` shared helper** in `manuscript-list-section.ts` consumed by both List body and chapter-card section, so the filter rule lives in one place.
+
 ## [0.5.3] - 2026-05-11
 
 Internal-quality release. Five-phase architectural audit landed: a shared frontmatter-wikilinks utility consolidates parser logic that had drifted between two modules; a typed `COMMAND_IDS` registry centralizes the unsafe palette-invocation cast; the 951-line linker decomposes into a focused `linker/` directory; integrity scanning routes every typed-frontmatter cast through the existing `toGeneric` helper. No user-visible behavior changes; the 1360-test suite passes unchanged across every phase.

@@ -42,6 +42,22 @@ export function countStatusUsage(app: App, status: string): number {
 }
 
 /**
+ * Whether the given status is in the configured hidden-statuses list.
+ * Used by the Manuscript view (List + Continuous) to filter scenes /
+ * chapters / sub-scenes carrying a hidden status, and by the "Archive
+ * scene" affordance to decide which status to stamp. A non-string or
+ * empty status is never hidden (matches the "missing status = not
+ * ready" convention from D-06).
+ */
+export function isHiddenStatus(
+	status: unknown,
+	hiddenStatuses: readonly string[]
+): boolean {
+	if (typeof status !== 'string' || status === '') return false;
+	return hiddenStatuses.includes(status);
+}
+
+/**
  * Rewrite every note whose `dbench-status` equals `fromStatus` so it
  * reads `toStatus` instead. Returns the count of notes changed.
  *

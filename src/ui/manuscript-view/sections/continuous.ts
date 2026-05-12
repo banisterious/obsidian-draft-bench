@@ -5,8 +5,10 @@ import { HEADING_MARKER_CLASS } from '../../../core/compile/content-rules';
 import { buildContinuousPreset } from '../../../core/compile/continuous-preset';
 import {
 	findScenesInProject,
+	findSubScenesInProject,
 	type ProjectNote,
 } from '../../../core/discovery';
+import { isHiddenStatus } from '../../../core/statuses';
 import { attachWikilinkOpenAffordances } from './open-affordances';
 import {
 	applyPreviewTypography,
@@ -54,7 +56,8 @@ export interface ContinuousBodyHandle {
 export function renderContinuousBody(
 	parent: HTMLElement,
 	plugin: DraftBenchPlugin,
-	project: ProjectNote
+	project: ProjectNote,
+	showArchived: boolean
 ): ContinuousBodyHandle {
 	const root = parent.createDiv({
 		cls: 'dbench-manuscript-view__continuous',
@@ -95,7 +98,10 @@ export function renderContinuousBody(
 			renderSpinner(body);
 		}, SPINNER_THRESHOLD_MS);
 
-		const preset = buildContinuousPreset(project);
+		const excludeBasenames = showArchived
+			? []
+			: collectArchivedBasenames(plugin, project);
+		const preset = buildContinuousPreset(project, { excludeBasenames });
 		let markdown: string;
 		let scenesCompiled: number;
 		try {
@@ -229,6 +235,33 @@ export function renderContinuousBody(
 			}
 		},
 	};
+}
+
+/**
+ * Walk the project's scenes + sub-scenes and return basenames for any
+ * whose `dbench-status` is in `settings.hiddenStatuses`. Used by
+ * Continuous mode to feed `dbench-compile-scene-excludes` so archived
+ * items drop out of the rendered prose. Scene-level archives skip the
+ * whole segment (heading + body + sub-scenes); sub-scene archives skip
+ * just the sub-scene segment, leaving the parent intact.
+ */
+function collectArchivedBasenames(
+	plugin: DraftBenchPlugin,
+	project: ProjectNote
+): string[] {
+	const projectId = project.frontmatter['dbench-id'];
+	const hiddenStatuses = plugin.settings.hiddenStatuses;
+	const sceneNames = findScenesInProject(plugin.app, projectId)
+		.filter((scene) =>
+			isHiddenStatus(scene.frontmatter['dbench-status'], hiddenStatuses)
+		)
+		.map((scene) => scene.file.basename);
+	const subSceneNames = findSubScenesInProject(plugin.app, projectId)
+		.filter((sub) =>
+			isHiddenStatus(sub.frontmatter['dbench-status'], hiddenStatuses)
+		)
+		.map((sub) => sub.file.basename);
+	return [...sceneNames, ...subSceneNames];
 }
 
 /**

@@ -19,6 +19,8 @@ import { isProjectFrontmatter } from '../model/project';
 import { findChaptersInProject } from '../core/discovery';
 import { isSceneFrontmatter } from '../model/scene';
 import { isSubSceneFrontmatter } from '../model/sub-scene';
+import { Notice } from 'obsidian';
+import { isHiddenStatus } from '../core/statuses';
 import { ManuscriptBuilderModal } from '../ui/manuscript-builder/manuscript-builder-modal';
 import { activateManuscriptView } from '../ui/manuscript-view/activate';
 import { MoveToChapterModal } from '../ui/modals/move-to-chapter-modal';
@@ -135,15 +137,18 @@ export function buildSingleFileItemSpecs(
 	if (type === 'scene') {
 		specs.push(...newSceneDraftItemSpecs(plugin, linker, file));
 		specs.push(...moveToChapterItemSpecs(plugin, file));
+		specs.push(...archiveItemSpecs(plugin, file));
 	}
 
 	if (type === 'sub-scene') {
 		specs.push(...newSubSceneDraftItemSpecs(plugin, linker, file));
 		specs.push(...moveToSceneItemSpecs(plugin, file));
+		specs.push(...archiveItemSpecs(plugin, file));
 	}
 
 	if (type === 'chapter') {
 		specs.push(...newChapterDraftItemSpecs(plugin, linker, file));
+		specs.push(...archiveItemSpecs(plugin, file));
 	}
 
 	if (type === null) {
@@ -457,6 +462,50 @@ function newSubSceneDraftItemSpecs(
 					linker,
 					{ file, frontmatter: fm }
 				).open();
+			},
+		},
+	];
+}
+
+/**
+ * Archive / unarchive a scene, chapter, or sub-scene by stamping its
+ * `dbench-status` to / from a hidden status. The "to-archive" target
+ * is `settings.hiddenStatuses[0]` (typically `'archived'`); when the
+ * writer has cleared the hidden-statuses list, no archive item shows.
+ * Unarchive routes back to the default status (`statusVocabulary[0]`),
+ * so prior status is lost — that's acceptable for V1 simplicity and
+ * matches the post-V1 candidate's scope (archive is a low-friction
+ * one-way action; precision restore can land later if needed).
+ */
+function archiveItemSpecs(
+	plugin: DraftBenchPlugin,
+	file: TFile
+): MenuItemSpec[] {
+	const hidden = plugin.settings.hiddenStatuses;
+	if (hidden.length === 0) return [];
+	const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+	if (!fm) return [];
+	const currentStatus = fm['dbench-status'] as unknown;
+	const archived = isHiddenStatus(currentStatus, hidden);
+	const targetStatus = archived
+		? plugin.settings.statusVocabulary[0]
+		: hidden[0];
+	const label = archived ? 'Unarchive' : 'Archive';
+	const icon = archived ? 'archive-restore' : 'archive';
+	return [
+		{
+			title: label,
+			icon,
+			onClick: async () => {
+				try {
+					await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+						frontmatter['dbench-status'] = targetStatus;
+					});
+					new Notice(`✓ ${label}: ${file.basename}`);
+				} catch (err) {
+					console.error('[DraftBench] archive toggle failed:', err);
+					new Notice(`Failed to ${label.toLowerCase()} ${file.basename}.`);
+				}
 			},
 		},
 	];

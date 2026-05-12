@@ -198,6 +198,25 @@ export default class DraftBenchPlugin extends Plugin {
 			this.settings.scenesFolderMigrated = true;
 			await this.saveSettings();
 		}
+
+		// One-shot migration: seed the `archived` status for the scene-
+		// archive feature (0.5.4). Existing installs land here with their
+		// pre-0.5.4 `statusVocabulary` and no `hiddenStatuses` entry. We
+		// append `'archived'` to the vocab (when absent) and seed
+		// `hiddenStatuses` to `['archived']` (when the array merged from
+		// `DEFAULT_SETTINGS` is the seeded default and the writer hasn't
+		// touched it). Fresh installs (no data file) skip; writers who
+		// remove the seeded status on subsequent loads keep that choice.
+		if (data !== null && data.archivedStatusSeeded === undefined) {
+			if (!this.settings.statusVocabulary.includes('archived')) {
+				this.settings.statusVocabulary.push('archived');
+			}
+			if (data.hiddenStatuses === undefined) {
+				this.settings.hiddenStatuses = ['archived'];
+			}
+			this.settings.archivedStatusSeeded = true;
+			await this.saveSettings();
+		}
 	}
 
 	async saveSettings(): Promise<void> {

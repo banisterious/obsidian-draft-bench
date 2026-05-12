@@ -182,7 +182,8 @@
 	letter-spacing: 0.04em;
 }
 
-.dbench-statuses__remove {
+.dbench-statuses__remove,
+.dbench-statuses__hide {
 	flex: 0 0 auto;
 	display: inline-flex;
 	align-items: center;
@@ -201,6 +202,14 @@
 .dbench-statuses__remove:disabled {
 	opacity: 0.4;
 	cursor: not-allowed;
+}
+
+.dbench-statuses__hide:hover {
+	color: var(--text-normal);
+}
+
+.dbench-statuses__hide--on {
+	color: var(--text-accent);
 }
 
 .dbench-statuses__add {

@@ -85,4 +85,21 @@ describe('buildContinuousPreset', () => {
 		expect(a.frontmatter).not.toBe(b.frontmatter);
 		expect(a.frontmatter).toEqual(b.frontmatter);
 	});
+
+	it('threads excludeBasenames into the scene-excludes field', () => {
+		const project = makeProject('Salt Road', 'prj-saltroad');
+		const fm = buildContinuousPreset(project, {
+			excludeBasenames: ['Cut scene', 'Archived flashback'],
+		}).frontmatter;
+		expect(fm['dbench-compile-scene-excludes']).toEqual([
+			'Cut scene',
+			'Archived flashback',
+		]);
+	});
+
+	it('defaults scene-excludes to empty when excludeBasenames is omitted', () => {
+		const project = makeProject('Salt Road', 'prj-saltroad');
+		const fm = buildContinuousPreset(project, {}).frontmatter;
+		expect(fm['dbench-compile-scene-excludes']).toEqual([]);
+	});
 });

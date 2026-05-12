@@ -4,6 +4,21 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.5.4: 2026-05-12 — Scene archive
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.5.4)
+
+Adds a status-based archive workflow for the Manuscript view ([#36](https://github.com/banisterious/obsidian-draft-bench/issues/36)). Park scenes / chapters / sub-scenes you aren't actively working on without deleting them: the Manuscript view filters items whose status is on a "hidden" list and a "Show archived" toolbar toggle reveals them with muted treatment. Compile presets are unaffected.
+
+### Added
+
+- **Hidden statuses.** New per-status "hide from Manuscript view" flag. The default vocabulary grows by one entry (`archived`) which is hidden by default. Any other vocab entry can be flagged hidden via the Settings tab's eye toggle. Renaming a hidden status updates the flag pointer; removing it drops the flag.
+- **"Show archived" toolbar toggle.** Appears on the Manuscript leaf as a fourth toolbar button when the project has at least one archived item. Flipping it reveals hidden scenes / sub-scenes (and muted chapter cards) at 0.55 opacity (hover lifts to 0.9). State persists per-leaf.
+- **"Archive" / "Unarchive" context-menu item** on scene, chapter, and sub-scene notes. Stamps `dbench-status` to the first hidden status (typically `'archived'`); unarchive routes to the vocab's default status.
+- **Migration for existing installs.** A one-shot flag appends `'archived'` to the vocabulary (if absent) and seeds the hidden-statuses list to `['archived']` on first load after upgrade. Writers who delete the seeded status keep that choice; the migration runs at most once.
+
+Mobile-supported (Android verified through 0.5.2). 1371 tests pass.
+
 ## 0.5.3: 2026-05-11 — Audit-work release
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.5.3)

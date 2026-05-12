@@ -12,9 +12,14 @@ import {
 } from '../../../core/discovery';
 import type { DraftBenchLinker } from '../../../core/linker';
 import { sortScenesByOrder } from '../../../core/sort-scenes';
+import { isHiddenStatus } from '../../../core/statuses';
 import { readTargetWords } from '../../../core/targets';
 import type { WordCountCache } from '../../../core/word-count-cache';
 import { NewChapterDraftModal } from '../../modals/new-chapter-draft-modal';
+import {
+	filterArchivedScenes,
+	type ArchiveVisibility,
+} from './manuscript-list-section';
 import {
 	attachWikilinkOpenAffordances,
 	type OpenSpec,
@@ -52,7 +57,8 @@ export function renderChapterListBody(
 	linker: DraftBenchLinker,
 	onOpenChapter: (chapter: ChapterNote, spec: OpenSpec) => void,
 	onOpenScene: (scene: SceneNote, spec: OpenSpec) => void,
-	onOpenSubScene: (subScene: SubSceneNote, spec: OpenSpec) => void
+	onOpenSubScene: (subScene: SubSceneNote, spec: OpenSpec) => void,
+	archive: ArchiveVisibility
 ): void {
 	body.empty();
 
@@ -83,7 +89,8 @@ export function renderChapterListBody(
 			linker,
 			onOpenChapter,
 			onOpenScene,
-			onOpenSubScene
+			onOpenSubScene,
+			archive
 		);
 	}
 }
@@ -99,7 +106,8 @@ function renderChapterCard(
 	linker: DraftBenchLinker,
 	onOpenChapter: (chapter: ChapterNote, spec: OpenSpec) => void,
 	onOpenScene: (scene: SceneNote, spec: OpenSpec) => void,
-	onOpenSubScene: (subScene: SubSceneNote, spec: OpenSpec) => void
+	onOpenSubScene: (subScene: SubSceneNote, spec: OpenSpec) => void,
+	archive: ArchiveVisibility
 ): void {
 	const id = chapter.frontmatter['dbench-id'];
 	// Map semantic: stored value is `true` when the writer has explicitly
@@ -107,12 +115,19 @@ function renderChapterCard(
 	// expanded matches writer expectation when first viewing a chapter
 	// (they probably want to see the scenes).
 	const collapsed = plugin.settings.chapterCollapseState[id] === true;
+	const chapterArchived = isHiddenStatus(
+		chapter.frontmatter['dbench-status'],
+		archive.hiddenStatuses
+	);
 
 	const card = parent.createEl('section', {
 		cls: 'dbench-manuscript-view__chapter-card',
 	});
 	if (!collapsed) {
 		card.addClass('dbench-manuscript-view__chapter-card--expanded');
+	}
+	if (chapterArchived) {
+		card.addClass('dbench-manuscript-view__chapter-card--archived');
 	}
 
 	const header = card.createDiv({
@@ -193,22 +208,34 @@ function renderChapterCard(
 		cardBody.addClass('dbench-manuscript-view__chapter-body--collapsed');
 	}
 
+	const visibleScenes = filterArchivedScenes(scenes, archive);
 	if (scenes.length === 0) {
 		cardBody.createEl('p', {
 			cls: 'dbench-manuscript-view__placeholder',
 			text: 'No scenes in this chapter yet.',
 		});
+	} else if (visibleScenes.length === 0) {
+		cardBody.createEl('p', {
+			cls: 'dbench-manuscript-view__placeholder',
+			text: 'All scenes in this chapter are archived.',
+		});
 	} else {
 		const sceneList = cardBody.createEl('ol', {
 			cls: 'dbench-manuscript-view__scene-list',
 		});
-		for (const scene of scenes) {
+		for (const scene of visibleScenes) {
 			const subScenes = findSubScenesInScene(
 				app,
 				scene.frontmatter['dbench-id']
 			);
+			const sceneArchived = isHiddenStatus(
+				scene.frontmatter['dbench-status'],
+				archive.hiddenStatuses
+			);
 			if (subScenes.length === 0) {
-				renderSceneRow(sceneList, scene, wordCountCache, onOpenScene);
+				renderSceneRow(sceneList, scene, wordCountCache, onOpenScene, {
+					archived: sceneArchived,
+				});
 			} else {
 				renderSceneCard(
 					sceneList,
@@ -219,7 +246,8 @@ function renderChapterCard(
 					plugin,
 					linker,
 					onOpenScene,
-					onOpenSubScene
+					onOpenSubScene,
+					archive
 				);
 			}
 		}

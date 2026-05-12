@@ -52,14 +52,31 @@ export function renderCompileCta(
 }
 
 /**
+ * Optional archive-toggle wiring for the toolbar. The view passes
+ * this when the project has at least one scene carrying a hidden
+ * status (typically `archived`); the toolbar renders a fourth button
+ * labelled "Show archived" / "Hide archived" that flips the leaf
+ * state and re-renders. Omit when there are no archived items so the
+ * button doesn't appear at all.
+ */
+export interface ArchiveToggleSpec {
+	showArchived: boolean;
+	hasArchived: boolean;
+	onToggleShowArchived: () => void;
+}
+
+/**
  * Manuscript-leaf toolbar — three secondary project actions (New
- * scene / New draft of current scene / Reorder scenes). Compile used
+ * scene / New draft of current scene / Reorder scenes), plus an
+ * optional fourth "Show archived" toggle when the project contains
+ * scenes whose status is in `settings.hiddenStatuses`. Compile used
  * to live here as a fourth button; see `renderCompileCta` above.
  */
 export function renderToolbar(
 	container: HTMLElement,
 	plugin: DraftBenchPlugin,
-	selectedProject: ProjectNote
+	selectedProject: ProjectNote,
+	archiveToggle?: ArchiveToggleSpec
 ): void {
 	const toolbar = container.createDiv({
 		cls: 'dbench-manuscript-view__toolbar',
@@ -90,6 +107,19 @@ export function renderToolbar(
 		const config = buildSceneReorderConfig(plugin.app, selectedProject);
 		new ReorderChildrenModal(plugin.app, plugin.linker, config).open();
 	});
+
+	if (archiveToggle && archiveToggle.hasArchived) {
+		const label = archiveToggle.showArchived
+			? 'Hide archived'
+			: 'Show archived';
+		const icon = archiveToggle.showArchived ? 'eye-off' : 'eye';
+		addToolbarButton(
+			toolbar,
+			label,
+			icon,
+			archiveToggle.onToggleShowArchived
+		);
+	}
 }
 
 function addToolbarButton(

@@ -1041,3 +1041,30 @@
 .dbench-manuscript-view__chapter-body .dbench-manuscript-view__scene-card:first-child {
 	border-top: 1px solid var(--background-modifier-border);
 }
+
+/* Archived rows (status is in settings.hiddenStatuses) are filtered
+ * from the list by default; the toolbar's "Show archived" toggle
+ * reveals them with muted-opacity treatment. The opacity-only
+ * approach lets writers re-discover archived items at a glance
+ * (still navigable, still readable) without competing with the
+ * active manuscript work for visual weight. Hover restores full
+ * opacity so the row's title is easy to click. */
+.dbench-manuscript-view__scene-row--archived,
+.dbench-manuscript-view__sub-scene-row--archived {
+	opacity: 0.55;
+}
+
+.dbench-manuscript-view__scene-row--archived:hover,
+.dbench-manuscript-view__sub-scene-row--archived:hover {
+	opacity: 0.9;
+}
+
+.dbench-manuscript-view__chapter-card--archived,
+.dbench-manuscript-view__scene-card--archived {
+	opacity: 0.55;
+}
+
+.dbench-manuscript-view__chapter-card--archived:hover,
+.dbench-manuscript-view__scene-card--archived:hover {
+	opacity: 0.9;
+}

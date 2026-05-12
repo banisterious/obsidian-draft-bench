@@ -284,7 +284,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 		new Setting(container)
 			.setName('Workflow vocabulary')
 			.setDesc(
-				'The ordered list of statuses available on scenes and projects. The first value is the default for new scenes. Drag by the handle, or focus a row and press up/down, to reorder.'
+				'The ordered list of statuses available on scenes and projects. The first value is the default for new scenes. Drag by the handle, or focus a row and press up/down, to reorder. Toggle the eye icon to hide a status from the manuscript view by default; hidden items reappear via the leaf\'s "show archived" toggle.'
 			);
 
 		const list = container.createEl('ol', {
@@ -349,6 +349,26 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 				text: 'Default',
 			});
 		}
+
+		const isHidden = settings.hiddenStatuses.includes(status);
+		const hideButton = row.createEl('button', {
+			cls: isHidden
+				? 'dbench-statuses__hide dbench-statuses__hide--on'
+				: 'dbench-statuses__hide',
+			attr: {
+				'aria-label': isHidden
+					? `Show "${status}" in Manuscript view`
+					: `Hide "${status}" from Manuscript view`,
+				'aria-pressed': isHidden ? 'true' : 'false',
+				title: isHidden
+					? 'Currently hidden from Manuscript view'
+					: 'Show in Manuscript view',
+			},
+		});
+		setIcon(hideButton, isHidden ? 'eye-off' : 'eye');
+		hideButton.addEventListener('click', () => {
+			void this.handleToggleHidden(index);
+		});
 
 		const removeButton = row.createEl('button', {
 			cls: 'dbench-statuses__remove',
@@ -502,6 +522,14 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 			);
 		}
 		vocab[index] = trimmed;
+		// Keep the hidden-statuses pointer aligned when the renamed
+		// status was on the hidden list, so the archive filter follows
+		// the rename without a separate writer action.
+		const hidden = this.plugin.settings.hiddenStatuses;
+		const hiddenIdx = hidden.indexOf(current);
+		if (hiddenIdx !== -1) {
+			hidden[hiddenIdx] = trimmed;
+		}
 		await this.plugin.saveSettings();
 		if (affected > 0) {
 			const noun = affected === 1 ? 'note' : 'notes';
@@ -509,6 +537,21 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 				`✓ Renamed status on ${affected} ${noun}: ${current} -> ${trimmed}`
 			);
 		}
+		this.display();
+	}
+
+	private async handleToggleHidden(index: number): Promise<void> {
+		const vocab = this.plugin.settings.statusVocabulary;
+		const status = vocab[index];
+		const hidden = this.plugin.settings.hiddenStatuses;
+		const at = hidden.indexOf(status);
+		if (at === -1) {
+			hidden.push(status);
+		} else {
+			hidden.splice(at, 1);
+		}
+		this.statusFocusIndex = index;
+		await this.plugin.saveSettings();
 		this.display();
 	}
 
@@ -523,6 +566,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 
 		if (usage === 0) {
 			vocab.splice(index, 1);
+			this.dropFromHidden(target);
 			this.statusFocusIndex = Math.max(0, Math.min(index, vocab.length - 1));
 			await this.plugin.saveSettings();
 			this.display();
@@ -548,9 +592,20 @@ export class DraftBenchSettingTab extends PluginSettingTab {
 		}
 
 		vocab.splice(index, 1);
+		this.dropFromHidden(target);
 		this.statusFocusIndex = Math.max(0, Math.min(index, vocab.length - 1));
 		await this.plugin.saveSettings();
 		this.display();
+	}
+
+	/**
+	 * Drop a status from `hiddenStatuses` when it's removed from the
+	 * vocabulary. No-op when the status wasn't hidden.
+	 */
+	private dropFromHidden(status: string): void {
+		const hidden = this.plugin.settings.hiddenStatuses;
+		const at = hidden.indexOf(status);
+		if (at !== -1) hidden.splice(at, 1);
 	}
 
 	private renderSync(container: HTMLElement): void {

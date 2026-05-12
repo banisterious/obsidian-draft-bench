@@ -9,6 +9,17 @@ import type { CompilePresetNote, ProjectNote } from '../discovery';
  */
 export const CONTINUOUS_SYNTHETIC_PRESET_ID = '__dbench-continuous-synthetic__';
 
+export interface ContinuousPresetOptions {
+	/**
+	 * Scene basenames to exclude from the render (fed into the existing
+	 * `dbench-compile-scene-excludes` field). Used by the Manuscript
+	 * view's archive filter to drop scenes whose status is in
+	 * `settings.hiddenStatuses` when the "Show archived" toggle is off.
+	 * Defaults to `[]` (include all scenes).
+	 */
+	excludeBasenames?: readonly string[];
+}
+
 /**
  * Build a synthetic compile preset for the Manuscript view's Continuous
  * mode. Feeds the existing `CompileService.generate` pipeline with
@@ -28,7 +39,10 @@ export const CONTINUOUS_SYNTHETIC_PRESET_ID = '__dbench-continuous-synthetic__';
  * reality; lifting embeds into the rendered output is tracked as the
  * "Embed handling" open question in the planning doc.
  */
-export function buildContinuousPreset(project: ProjectNote): CompilePresetNote {
+export function buildContinuousPreset(
+	project: ProjectNote,
+	options: ContinuousPresetOptions = {}
+): CompilePresetNote {
 	return {
 		file: project.file,
 		frontmatter: {
@@ -45,7 +59,7 @@ export function buildContinuousPreset(project: ProjectNote): CompilePresetNote {
 
 			'dbench-compile-scene-source': 'auto',
 			'dbench-compile-scene-statuses': [],
-			'dbench-compile-scene-excludes': [],
+			'dbench-compile-scene-excludes': [...(options.excludeBasenames ?? [])],
 
 			'dbench-compile-format': 'md',
 			'dbench-compile-output': 'vault',

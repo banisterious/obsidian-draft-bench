@@ -2,7 +2,7 @@
 
 Planning doc for adding a Scrivener 3 project importer to Draft Bench. Originally captured as candidate #1 in [post-v1-candidates.md](post-v1-candidates.md), promoted to its own planning doc on 2026-05-05 with a pre-1.0 target.
 
-**Status:** Drafted 2026-05-05. Sections below mirror [manuscript-builder-preview.md](manuscript-builder-preview.md)'s template (the most recent pre-1.0 promotion precedent). Implementation tracked via [#28](https://github.com/banisterious/obsidian-draft-bench/issues/28).
+**Status:** ✅ Complete. All locks ratified; 16-step implementation closed. Shipped in 0.5.0 (marquee feature), with follow-up fixes in 0.5.1 (snapshot import + compile preset stub + Scrivener Windows parser fixes) and 0.5.2 (Android Source-step polish). Tracked via [#28](https://github.com/banisterious/obsidian-draft-bench/issues/28). Archived 2026-05-11.
 
 **Target release:** Pre-1.0; specific minor TBD when scheduled. Likely 0.5.0 or later given scope (3-4 weeks of focused work plus QA against real `.scriv` corpora).
 

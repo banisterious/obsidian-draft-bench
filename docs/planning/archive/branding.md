@@ -1,6 +1,6 @@
 # Branding and Visual Identity
 
-> **Canonical guidance lives in [brand-guidelines.md](../assets/branding/brand-guidelines.md).** This document is the design-exploration record — name selection, ribbon-icon reasoning, early logo iterations. For current asset inventory, clearspace rules, and placement guidance, use brand-guidelines.md.
+**Status:** ✅ Archived design-exploration record. Canonical brand guidance lives in [brand-guidelines.md](../../assets/branding/brand-guidelines.md); this doc preserves the name-selection, ribbon-icon reasoning, and early logo-iteration history. Archived 2026-05-11.
 
 **Purpose:** A single reference for Draft Bench's visual identity — name, tagline, logo, ribbon icon, and where each asset is used. Produced so placement and treatment decisions are captured once and don't have to be re-derived from conversation history.
 

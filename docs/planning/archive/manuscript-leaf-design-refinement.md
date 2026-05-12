@@ -2,7 +2,7 @@
 
 Planning doc for a deliberate design pass on the Manuscript leaf — the dockable right-sidebar view that writers see every session. Two goals: fix consistency / information-architecture issues that accumulated as the leaf grew feature-by-feature, and move the visual identity to harmonize with the rest of the plugin.
 
-**Status:** Direction revised 2026-05-05 to **D3 (single-row inline status, Builder-aligned)**, superseding the 2026-04-24 lock on Direction B (Ulysses warm). Implementation tracked via [#30](https://github.com/banisterious/obsidian-draft-bench/issues/30), targeting 0.3.3. Mockups for both passes live gitignored at [docs/mockups/](../mockups/).
+**Status:** ✅ Complete. Direction D3 (single-row inline status, Builder-aligned) shipped in 0.3.3, superseding the 2026-04-24 lock on Direction B (Ulysses warm). Tracked via [#30](https://github.com/banisterious/obsidian-draft-bench/issues/30). Mockups for both passes live gitignored at [docs/mockups/](../../mockups/). Archived 2026-05-11.
 
 ## Locked decisions (2026-05-05 — current)
 

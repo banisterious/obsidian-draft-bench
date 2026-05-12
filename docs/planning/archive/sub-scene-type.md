@@ -2,7 +2,7 @@
 
 Planning doc for the addition of `dbench-type: sub-scene` to Draft Bench's vocabulary. Originally scoped as the post-V1 `beat` type in [specification.md § Architected For (Post-V1)](specification.md), promoted to pre-1.0 on 2026-05-02 after the maintainer's own real-vault use surfaced the friction the spec entry anticipated.
 
-**Status:** §§ 1-10 ratified 2026-05-02. Sections below mirror [chapter-type.md](chapter-type.md)'s template (the most recent V1-scope-expansion precedent). Implementation pending per the sequence at the end of this doc; tracked via [#10](https://github.com/banisterious/obsidian-draft-bench/issues/10).
+**Status:** ✅ Complete. Sub-scene type shipped in the 0.2.x line (sub-scene note creation, sub-scene drafts, scene -> sub-scene relationships in the linker, retrofit + context-menu actions, compile-pipeline descent into sub-scenes). Archived 2026-05-11.
 
 **Naming decision (locked 2026-05-02):** the type is `sub-scene`, not `beat`. Rationale captured in § 1 below; in short: genre-neutral, self-explanatory, no collision with the existing `dbench-section-break-*` vocabulary.
 

@@ -2,7 +2,7 @@
 
 Planning doc for adding a Preview tab to the Manuscript Builder modal. Originally captured as candidate #4 in [post-v1-candidates.md](post-v1-candidates.md), promoted to its own planning doc on 2026-05-04 with a 0.3.0 target.
 
-**Status:** Drafted 2026-05-04. Sections below mirror [sub-scene-type.md](sub-scene-type.md)'s template (the most recent pre-1.0 promotion precedent). Implementation tracked via [#26](https://github.com/banisterious/obsidian-draft-bench/issues/26).
+**Status:** ✅ Complete. Shipped in 0.3.0; the dockable workspace-leaf form followed in 0.3.1, and the shared preview-typography toolbar was reused for Manuscript view Continuous mode in 0.4.0. Tracked via [#26](https://github.com/banisterious/obsidian-draft-bench/issues/26). Archived 2026-05-11.
 
 **Target release:** 0.3.0 (next minor after the 0.2.x line).
 

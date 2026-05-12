@@ -9,7 +9,7 @@
 - [specification.md § Non-goals](specification.md) lists features that do not belong in Draft Bench at any version. Items here are *not* non-goals; they are deferred-but-possibly-in-scope.
 - [specification.md § Open Questions](specification.md) lists undecided design questions. Items here are decided-as-deferred (we'd add the feature, just not yet).
 - [docs/planning/post-v1-forward-compat-audit.md](post-v1-forward-compat-audit.md) is a different doc: it tracks deferred *technical* items (lazy-loading pdfmake, Data Quality surface, active-note-sync heuristic) for a scheduled post-V1 audit. Functional candidates here.
-- [branding.md § Positioning relative to adjacent Obsidian plugins](branding.md) compares Draft Bench to StoryLine and Longform; some items here exist because they close real gaps surfaced by that comparison.
+- [branding.md § Positioning relative to adjacent Obsidian plugins](archive/branding.md) compares Draft Bench to StoryLine and Longform; some items here exist because they close real gaps surfaced by that comparison.
 
 ---
 
@@ -17,8 +17,8 @@
 
 Items that started as candidates here and have since graduated to their own planning docs (with implementation sequences, ratification sections, and a target release):
 
-- **Manuscript Builder Preview tab** — promoted 2026-05-04, target 0.3.0. Adds a Preview tab to the Manuscript Builder modal that renders the current preset's compile output as a continuous read-only document, alongside today's Build tab (the existing collapsible-section content). Complementary with the Manuscript view continuous mode below: two distinct use cases, two independent ship paths. See [manuscript-builder-preview.md](manuscript-builder-preview.md).
-- **Scrivener `.scriv` import** — promoted 2026-05-05, target pre-1.0 (specific minor TBD). Reads a Scrivener 3 project (`.scrivx` index + per-document RTF/RTFD bodies) and produces a Draft Bench project: project / chapters / scenes / sub-scenes mapped from the binder hierarchy, RTF bodies converted to markdown, inspector metadata preserved, snapshots optionally imported as drafts. DB's first wizard. See [scrivener-import.md](scrivener-import.md).
+- **Manuscript Builder Preview tab** — promoted 2026-05-04, target 0.3.0. Adds a Preview tab to the Manuscript Builder modal that renders the current preset's compile output as a continuous read-only document, alongside today's Build tab (the existing collapsible-section content). Complementary with the Manuscript view continuous mode below: two distinct use cases, two independent ship paths. See [manuscript-builder-preview.md](archive/manuscript-builder-preview.md).
+- **Scrivener `.scriv` import** — promoted 2026-05-05, target pre-1.0 (specific minor TBD). Reads a Scrivener 3 project (`.scrivx` index + per-document RTF/RTFD bodies) and produces a Draft Bench project: project / chapters / scenes / sub-scenes mapped from the binder hierarchy, RTF bodies converted to markdown, inspector metadata preserved, snapshots optionally imported as drafts. DB's first wizard. See [scrivener-import.md](archive/scrivener-import.md).
 - **Manuscript view continuous mode** — promoted 2026-05-05, target 0.4.0. Adds a Continuous view mode to the Manuscript leaf (alongside today's List view) rendering the entire manuscript as scrollable read-only prose. Complementary with the Manuscript Builder Preview tab: Builder Preview is preset-scoped (filters, scope, transforms applied) and Builder-shaped, while Continuous is always-everything and Manuscript-leaf-shaped. See [manuscript-view-continuous-mode.md](manuscript-view-continuous-mode.md).
 
 ---

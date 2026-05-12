@@ -14,7 +14,7 @@ These are the drafts currently informing the site:
 |---|---|---|
 | [homepage.md](homepage.md) | Landing page. What Draft Bench is, what it does, where it sits, what's currently shipped. | Live |
 | [faq.md](faq.md) | Prospect-facing FAQ. Four sections (Getting started, How it compares, Scope and compatibility, Getting help). | Live |
-| [comparison.md](comparison.md) | Side-by-side with Longform / StoryLine / Scrivener / plain Obsidian. Lifts from [branding.md § Positioning](../branding.md). | Live |
+| [comparison.md](comparison.md) | Side-by-side with Longform / StoryLine / Scrivener / plain Obsidian. Lifts from [branding.md § Positioning](../archive/branding.md). | Live |
 | [scrivener-import.md](scrivener-import.md) | Features-page section (or standalone feature page) for the Scrivener 3 importer. Slot decision deferred to the website session. | Live |
 | [media-plan.md](media-plan.md) | Asset inventory + capture-session log. Tier 1 motion loops + Tier 2 stills captured. | Live |
 | [guides-plan.md](guides-plan.md) | Master plan for the `/guides/` recipe section. Enumeration table + authoring rules + phased rollout. P0 batch in progress; site section not yet scaffolded. | Live |
@@ -36,7 +36,7 @@ Pages live on the site without a source-of-truth draft in this repo. Backfill is
 
 ## Voice conventions
 
-Anything written here should pass the checks from [website-strategy-reference.md § 2](../website-strategy-reference.md) and [branding.md § Voice and tone](../branding.md):
+Anything written here should pass the checks from [website-strategy-reference.md § 2](../website-strategy-reference.md) and [branding.md § Voice and tone](../archive/branding.md):
 
 - Concrete over abstract. Describe behavior, not outcomes.
 - No marketingese. Banned: "robust," "powerful," "seamless," "leverage," "empower," "blazingly fast," "industry-leading," "next-generation," "world-class," "best-in-class," "revolutionary."

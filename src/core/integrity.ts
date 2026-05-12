@@ -151,12 +151,7 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 	const shape = project.frontmatter['dbench-project-shape'];
 	const allScenes = findScenesInProject(app, projectId);
 	const directScenes = allScenes.filter(
-		(s) =>
-			!readString(
-				(s.frontmatter as unknown as Record<string, unknown>)[
-					'dbench-chapter-id'
-				]
-			)
+		(s) => !s.frontmatter['dbench-chapter-id']
 	);
 	const chapters = findChaptersInProject(app, projectId);
 
@@ -181,10 +176,7 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 	issues.push(
 		...scanRelationship({
 			app,
-			parent: {
-				file: project.file,
-				frontmatter: project.frontmatter as unknown as Record<string, unknown>,
-			},
+			parent: toGeneric(project),
 			parentId: projectId,
 			wikilinkField: 'dbench-scenes',
 			idField: 'dbench-scene-ids',
@@ -209,10 +201,7 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 	issues.push(
 		...scanRelationship({
 			app,
-			parent: {
-				file: project.file,
-				frontmatter: project.frontmatter as unknown as Record<string, unknown>,
-			},
+			parent: toGeneric(project),
 			parentId: projectId,
 			wikilinkField: 'dbench-chapters',
 			idField: 'dbench-chapter-ids',
@@ -233,13 +222,7 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 		issues.push(
 			...scanRelationship({
 				app,
-				parent: {
-					file: chapter.file,
-					frontmatter: chapter.frontmatter as unknown as Record<
-						string,
-						unknown
-					>,
-				},
+				parent: toGeneric(chapter),
 				parentId: chapterId,
 				wikilinkField: 'dbench-scenes',
 				idField: 'dbench-scene-ids',
@@ -258,13 +241,7 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 		issues.push(
 			...scanRelationship({
 				app,
-				parent: {
-					file: chapter.file,
-					frontmatter: chapter.frontmatter as unknown as Record<
-						string,
-						unknown
-					>,
-				},
+				parent: toGeneric(chapter),
 				parentId: chapterId,
 				wikilinkField: 'dbench-drafts',
 				idField: 'dbench-draft-ids',
@@ -287,13 +264,7 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 		issues.push(
 			...scanRelationship({
 				app,
-				parent: {
-					file: scene.file,
-					frontmatter: scene.frontmatter as unknown as Record<
-						string,
-						unknown
-					>,
-				},
+				parent: toGeneric(scene),
 				parentId: scene.frontmatter['dbench-id'],
 				wikilinkField: 'dbench-drafts',
 				idField: 'dbench-draft-ids',
@@ -325,13 +296,7 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 		issues.push(
 			...scanRelationship({
 				app,
-				parent: {
-					file: scene.file,
-					frontmatter: scene.frontmatter as unknown as Record<
-						string,
-						unknown
-					>,
-				},
+				parent: toGeneric(scene),
 				parentId: scene.frontmatter['dbench-id'],
 				wikilinkField: 'dbench-sub-scenes',
 				idField: 'dbench-sub-scene-ids',
@@ -356,13 +321,7 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 			issues.push(
 				...scanRelationship({
 					app,
-					parent: {
-						file: subScene.file,
-						frontmatter: subScene.frontmatter as unknown as Record<
-							string,
-							unknown
-						>,
-					},
+					parent: toGeneric(subScene),
 					parentId: subScene.frontmatter['dbench-id'],
 					wikilinkField: 'dbench-drafts',
 					idField: 'dbench-draft-ids',
@@ -390,13 +349,7 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 	issues.push(
 		...scanRelationship({
 			app,
-			parent: {
-				file: project.file,
-				frontmatter: project.frontmatter as unknown as Record<
-					string,
-					unknown
-				>,
-			},
+			parent: toGeneric(project),
 			parentId: projectId,
 			wikilinkField: 'dbench-compile-presets',
 			idField: 'dbench-compile-preset-ids',
@@ -419,13 +372,7 @@ export function scanProject(app: App, project: ProjectNote): IntegrityReport {
 		issues.push(
 			...scanRelationship({
 				app,
-				parent: {
-					file: project.file,
-					frontmatter: project.frontmatter as unknown as Record<
-						string,
-						unknown
-					>,
-				},
+				parent: toGeneric(project),
 				parentId: projectId,
 				wikilinkField: 'dbench-drafts',
 				idField: 'dbench-draft-ids',

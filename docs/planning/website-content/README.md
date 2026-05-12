@@ -55,7 +55,9 @@ The original "pre-V1 honesty handle" rule (locked 2026-04-26, retired 2026-05-04
 
 ## Handoff to website session
 
-When these drafts are ready to port:
+The plugin repo authors the source-of-truth markdown; a separate session opened in the Hugo repo does the port. Two handoff shapes, depending on what's being shipped.
+
+### Initial setup (one-time, complete)
 
 1. The website session reads each file from this directory verbatim — no rewriting.
 2. Adds Hugo frontmatter (title, date, layout, weight) per the Blowfish theme.
@@ -65,3 +67,28 @@ When these drafts are ready to port:
 6. Sets up monthly link-check CI via [lychee](https://github.com/lycheeverse/lychee).
 
 Voice corrections, copy improvements, structural reshaping all happen back in this directory, not in the Hugo repo. Keep the source-of-truth split clean.
+
+### Recurring port: version-bump callouts
+
+The most common handoff. Whenever a new plugin release ships, three callouts in this directory get bumped (here in `homepage.md` + `faq.md`); the website session ports the same three callouts to the Hugo repo verbatim.
+
+**The three callouts (locked pattern):**
+
+1. **Homepage Status opening line** — `The current release is **<v>** (<YYYY-MM-DD>).`
+2. **Homepage Status history paragraph** — append one sentence describing the new release after the prior-version sentence. Recast the previously-current version sentence to past tense (e.g., "0.5.3 is..." -> "0.5.3 was...").
+3. **FAQ "When can I install it?" install callout** — `The current release is **<v>** (<YYYY-MM-DD>);`
+
+**The handoff prompt itself** is drafted in chat per port (the gitignored `handoff-prompt.md` file is never actually committed — the prompt lives in conversation context). Each prompt should:
+
+- Name the version + date.
+- Point at the plugin-side commit hash that landed the drafts here.
+- Enumerate the three callouts above + their exact target locations in the Hugo site.
+- Specify a conventional-commit style for the website commit (e.g., `docs(homepage,faq): Bump current-release callouts to <v>`).
+- Ask the website session to return its commit hash so the plugin-side session-restore can record it.
+
+**Prior runs:**
+
+- **0.5.3 port (2026-05-12 AM):** plugin drafts in `5aaf982` + `65bba55`; website commit `dc7a69a`.
+- **0.5.4 port (2026-05-12 PM):** plugin drafts in `10d130a`; website commit `6930bf6`.
+
+If a release also introduces new functionality that warrants more than a one-line history sentence (a marquee 0.6.0 / 1.0 release, a brand-new feature page, a screenshot swap), expand the homepage Status section + add per-feature copy in the plugin-side drafts first, then enlarge the handoff prompt accordingly. The three-callout pattern is the minimum; everything above it is per-release.

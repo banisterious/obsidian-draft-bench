@@ -81,6 +81,9 @@ docs/planning/website-content/*-port-brief.md
 # Personal planning — audit master plan (per-phase deliverables get committed; this master stays private)
 docs/planning/archive/audit-implementation-plan.md
 
+# Personal planning — artifact-attestation workflow planning doc (internal-only; the workflow itself + CLAUDE.md notes are the shipped artifact)
+docs/planning/artifact-attestation-workflow.md
+
 # Audit measurement output (regenerable; raw metafile is large and noisy)
 scripts/audit/meta.json
 scripts/audit/bundle-report.txt

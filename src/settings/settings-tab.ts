@@ -681,7 +681,7 @@ export class DraftBenchSettingTab extends PluginSettingTab {
  * to the user's default browser.
  */
 function makeLinkFragment(url: string): DocumentFragment {
-	const fragment = document.createDocumentFragment();
+	const fragment = activeDocument.createDocumentFragment();
 	fragment.createEl('a', {
 		href: url,
 		text: url.replace(/^https?:\/\//, ''),

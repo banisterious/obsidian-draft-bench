@@ -40,9 +40,9 @@ export class FolderImportError extends Error {
  *  proxy for actual support). iOS WKWebView returns `false` for the
  *  property even when the attribute is set, so this rejects iOS. */
 export function supportsDirectoryInput(): boolean {
-	if (typeof document === 'undefined') return false;
+	if (typeof activeDocument === 'undefined') return false;
 	if (!('webkitdirectory' in HTMLInputElement.prototype)) return false;
-	const el = document.createElement('input');
+	const el = activeDocument.createElement('input');
 	el.type = 'file';
 	try {
 		el.webkitdirectory = true;

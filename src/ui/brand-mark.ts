@@ -16,19 +16,20 @@ export function appendBrandMark(
 	container: HTMLElement,
 	className: string
 ): void {
-	const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+	const doc = container.ownerDocument ?? activeDocument;
+	const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
 	svg.setAttribute('class', className);
 	svg.setAttribute('viewBox', '0 0 200 200');
 	svg.setAttribute('role', 'img');
 	svg.setAttribute('aria-label', 'Draft Bench');
 
-	const outer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+	const outer = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
 	outer.setAttribute('transform', 'translate(100 100)');
 
 	for (const rotation of [-18, 18, 0]) {
-		const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		const group = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
 		group.setAttribute('transform', `translate(0 40) rotate(${rotation})`);
-		const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+		const rect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
 		rect.setAttribute('x', '-25');
 		rect.setAttribute('y', '-80');
 		rect.setAttribute('width', '50');

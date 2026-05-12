@@ -77,7 +77,7 @@ function buildWordCountsView(
 	counts: ProjectWordCounts,
 	vocabulary: readonly string[]
 ): HTMLElement {
-	const wrapper = document.createElement('div');
+	const wrapper = activeDocument.createElement('div');
 
 	// Targeted project: the progress hero carries "1,553 / 5,000 words
 	// (31%)" + the fill bar, so the big-number total below it would
@@ -155,7 +155,7 @@ function buildWordCountsView(
 
 function buildProgressHero(count: number, target: number): HTMLElement {
 	const view = formatProgress(count, target);
-	const hero = document.createElement('div');
+	const hero = activeDocument.createElement('div');
 	hero.className = 'dbench-manuscript-view__progress-hero';
 	if (view.overage) {
 		hero.classList.add('dbench-manuscript-view__progress-hero--overage');

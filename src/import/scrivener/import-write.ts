@@ -18,6 +18,7 @@ import {
 	disambiguateFilename,
 } from './snapshot-filename';
 import { stampDraftEssentials } from '../../core/essentials';
+import { adaptProcessFrontMatter, readString } from '../../core/frontmatter-access';
 import {
 	autoDetectHierarchy,
 	effectiveTarget,
@@ -254,7 +255,8 @@ async function createProjectFromBundle(
 		result.filesCreated += 1;
 
 		// Project-level provenance: source bundle path.
-		await input.app.fileManager.processFrontMatter(file, (frontmatter) => {
+		await input.app.fileManager.processFrontMatter(file, (rawFm) => {
+			const frontmatter = adaptProcessFrontMatter(rawFm);
 			frontmatter['scrivener-source'] = input.bundleRootPath;
 		});
 
@@ -582,7 +584,8 @@ async function applyScrivenerFrontmatter(
 	const customFields = ctx.input.formData.metadataMapping?.customFields;
 	const projectFields = ctx.input.bundle.project.customMetaDataFields;
 
-	await ctx.input.app.fileManager.processFrontMatter(file, (frontmatter) => {
+	await ctx.input.app.fileManager.processFrontMatter(file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		if (synopsis !== null) frontmatter['dbench-synopsis'] = synopsis;
 		if (item.keywords.length > 0) frontmatter['tags'] = [...item.keywords];
 		if (labelKey && labelTitle !== null) {
@@ -813,10 +816,11 @@ async function writeSceneSnapshots(
 	let sceneId = '';
 	let projectId = '';
 	let projectWikilink = '';
-	await app.fileManager.processFrontMatter(sceneFile, (fm) => {
-		sceneId = String(fm['dbench-id'] ?? '');
-		projectId = String(fm['dbench-project-id'] ?? '');
-		projectWikilink = String(fm['dbench-project'] ?? '');
+	await app.fileManager.processFrontMatter(sceneFile, (rawFm) => {
+		const fm = adaptProcessFrontMatter(rawFm);
+		sceneId = readString(fm['dbench-id']);
+		projectId = readString(fm['dbench-project-id']);
+		projectWikilink = readString(fm['dbench-project']);
 	});
 	const sceneWikilink = `[[${sceneFile.basename}]]`;
 
@@ -868,7 +872,8 @@ async function writeSceneSnapshots(
 			ctx.result.filesCreated += 1;
 
 			let draftId = '';
-			await app.fileManager.processFrontMatter(draftFile, (fm) => {
+			await app.fileManager.processFrontMatter(draftFile, (rawFm) => {
+				const fm = adaptProcessFrontMatter(rawFm);
 				fm['dbench-project'] = projectWikilink;
 				fm['dbench-project-id'] = projectId;
 				fm['dbench-scene'] = sceneWikilink;
@@ -877,11 +882,12 @@ async function writeSceneSnapshots(
 				fm['dbench-created-at'] = isoDateFromScrivenerDate(snapshot.date);
 				fm['scrivener-snapshot-title'] = snapshot.title;
 				stampDraftEssentials(fm, { basename: draftFile.basename });
-				draftId = String(fm['dbench-id'] ?? '');
+				draftId = readString(fm['dbench-id']);
 			});
 
 			const draftWikilink = `[[${draftFile.basename}]]`;
-			await app.fileManager.processFrontMatter(sceneFile, (fm) => {
+			await app.fileManager.processFrontMatter(sceneFile, (rawFm) => {
+				const fm = adaptProcessFrontMatter(rawFm);
 				const drafts = readArray(fm['dbench-drafts']);
 				const draftIds = readArray(fm['dbench-draft-ids']);
 				if (!drafts.includes(draftWikilink)) drafts.push(draftWikilink);

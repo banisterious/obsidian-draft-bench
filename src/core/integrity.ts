@@ -12,6 +12,12 @@ import {
 	findSubScenesInScene,
 	type ProjectNote,
 } from './discovery';
+import {
+	adaptProcessFrontMatter,
+	readArray,
+	readString,
+	toGeneric,
+} from './frontmatter-access';
 import { sortReverseArraysByOrder } from './reverse-array-order';
 
 /**
@@ -439,7 +445,8 @@ export async function applyRepairs(
 	for (const [, payloads] of byParent) {
 		const parentFile = payloads[0].parent;
 		try {
-			await app.fileManager.processFrontMatter(parentFile, (fm) => {
+			await app.fileManager.processFrontMatter(parentFile, (rawFm) => {
+				const fm = adaptProcessFrontMatter(rawFm);
 				for (const p of payloads) {
 					if (p.kind === 'add-to-reverse') {
 						const warr = readArray(fm[p.wikilinkField]);
@@ -744,28 +751,8 @@ function resolveWikilinkToFile(
 	return null;
 }
 
-/**
- * Narrow typed discovery results (ProjectNote / SceneNote / DraftNote)
- * into the generic shape `scanRelationship` expects. The typed
- * frontmatters don't satisfy `Record<string, unknown>` directly (their
- * literal keys conflict with the index signature), so we go through
- * `unknown` to shed the specific type.
- */
-function toGeneric(note: {
-	file: TFile;
-	frontmatter: object;
-}): { file: TFile; frontmatter: Record<string, unknown> } {
-	return {
-		file: note.file,
-		frontmatter: note.frontmatter as unknown as Record<string, unknown>,
-	};
-}
-
-function readArray(value: unknown): string[] {
-	return Array.isArray(value) ? (value as string[]) : [];
-}
-
-function readString(value: unknown): string {
-	return typeof value === 'string' ? value : '';
-}
+// `toGeneric`, `readArray`, and `readString` previously lived here as
+// local helpers. As of 0.6.0 they migrated to `src/core/frontmatter-access.ts`
+// (the canonical module for the type-narrowing boundary). The imports
+// at the top of this file route to the new location.
 

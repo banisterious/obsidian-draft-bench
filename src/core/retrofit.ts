@@ -17,6 +17,7 @@ import {
 	type ProjectNote,
 	type SceneNote,
 } from './discovery';
+import { adaptProcessFrontMatter } from './frontmatter-access';
 
 /**
  * Property-retrofit actions: bring existing notes under plugin management
@@ -173,7 +174,8 @@ export async function setAsProject(
 		return { outcome: 'skipped', file, reason: `Already a ${existing}` };
 	}
 	try {
-		await app.fileManager.processFrontMatter(file, (fm) => {
+		await app.fileManager.processFrontMatter(file, (rawFm) => {
+			const fm = adaptProcessFrontMatter(rawFm);
 			stampProjectEssentials(fm, {
 				basename: file.basename,
 				defaultStatus: settings.statusVocabulary[0],
@@ -211,7 +213,8 @@ export async function setAsScene(
 	}
 	try {
 		const inferred = inferProjectForScene(app, file);
-		await app.fileManager.processFrontMatter(file, (fm) => {
+		await app.fileManager.processFrontMatter(file, (rawFm) => {
+			const fm = adaptProcessFrontMatter(rawFm);
 			if (inferred) {
 				fm['dbench-project'] = `[[${inferred.file.basename}]]`;
 				fm['dbench-project-id'] = inferred.frontmatter['dbench-id'];
@@ -287,7 +290,8 @@ export async function setAsChapter(
 			}
 		}
 
-		await app.fileManager.processFrontMatter(file, (fm) => {
+		await app.fileManager.processFrontMatter(file, (rawFm) => {
+			const fm = adaptProcessFrontMatter(rawFm);
 			if (inferred) {
 				fm['dbench-project'] = `[[${inferred.file.basename}]]`;
 				fm['dbench-project-id'] = inferred.frontmatter['dbench-id'];
@@ -342,7 +346,8 @@ export async function setAsSubScene(
 	}
 	try {
 		const inferredScene = inferSceneForSubScene(app, file);
-		await app.fileManager.processFrontMatter(file, (fm) => {
+		await app.fileManager.processFrontMatter(file, (rawFm) => {
+			const fm = adaptProcessFrontMatter(rawFm);
 			if (inferredScene) {
 				const sceneFm = inferredScene.frontmatter as unknown as Record<
 					string,
@@ -415,7 +420,8 @@ export async function setAsDraft(
 	}
 	try {
 		const inferred = inferProjectForDraft(app, file);
-		await app.fileManager.processFrontMatter(file, (fm) => {
+		await app.fileManager.processFrontMatter(file, (rawFm) => {
+			const fm = adaptProcessFrontMatter(rawFm);
 			if (inferred) {
 				fm['dbench-project'] = `[[${inferred.file.basename}]]`;
 				fm['dbench-project-id'] = inferred.frontmatter['dbench-id'];
@@ -492,7 +498,8 @@ export async function completeEssentials(
 	}
 
 	try {
-		await app.fileManager.processFrontMatter(file, (frontmatter) => {
+		await app.fileManager.processFrontMatter(file, (rawFm) => {
+			const frontmatter = adaptProcessFrontMatter(rawFm);
 			if (inferred) {
 				if (isEmpty(frontmatter['dbench-project'])) {
 					frontmatter['dbench-project'] = `[[${inferred.file.basename}]]`;
@@ -569,7 +576,8 @@ export async function addDbenchId(
 		};
 	}
 	try {
-		await app.fileManager.processFrontMatter(file, (fm) => {
+		await app.fileManager.processFrontMatter(file, (rawFm) => {
+			const fm = adaptProcessFrontMatter(rawFm);
 			stampDbenchId(fm);
 		});
 		return { outcome: 'updated', file };

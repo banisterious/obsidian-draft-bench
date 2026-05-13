@@ -1,5 +1,6 @@
 import type { App } from 'obsidian';
 import type { ChapterNote, SceneNote, SubSceneNote } from './discovery';
+import { adaptProcessFrontMatter } from './frontmatter-access';
 
 /**
  * Write sequential `dbench-order` values onto each scene in
@@ -29,7 +30,8 @@ export async function reorderScenes(
 		const desired = i + 1;
 		if (scene.frontmatter['dbench-order'] === desired) continue;
 
-		await app.fileManager.processFrontMatter(scene.file, (frontmatter) => {
+		await app.fileManager.processFrontMatter(scene.file, (rawFm) => {
+			const frontmatter = adaptProcessFrontMatter(rawFm);
 			frontmatter['dbench-order'] = desired;
 		});
 		changed++;
@@ -64,7 +66,8 @@ export async function reorderChapters(
 		const desired = i + 1;
 		if (chapter.frontmatter['dbench-order'] === desired) continue;
 
-		await app.fileManager.processFrontMatter(chapter.file, (frontmatter) => {
+		await app.fileManager.processFrontMatter(chapter.file, (rawFm) => {
+			const frontmatter = adaptProcessFrontMatter(rawFm);
 			frontmatter['dbench-order'] = desired;
 		});
 		changed++;
@@ -92,7 +95,8 @@ export async function reorderSubScenes(
 		const desired = i + 1;
 		if (subScene.frontmatter['dbench-order'] === desired) continue;
 
-		await app.fileManager.processFrontMatter(subScene.file, (frontmatter) => {
+		await app.fileManager.processFrontMatter(subScene.file, (rawFm) => {
+			const frontmatter = adaptProcessFrontMatter(rawFm);
 			frontmatter['dbench-order'] = desired;
 		});
 		changed++;

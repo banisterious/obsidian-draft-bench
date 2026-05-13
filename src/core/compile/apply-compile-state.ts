@@ -1,5 +1,6 @@
 import type { App } from 'obsidian';
 import type { CompilePresetNote } from '../discovery';
+import { adaptProcessFrontMatter } from '../frontmatter-access';
 
 /**
  * Compile-state persistence: write the three `dbench-last-*` fields
@@ -38,7 +39,8 @@ export async function applyCompileState(
 	update: CompileStateUpdate
 ): Promise<void> {
 	const compiledAt = (update.now ?? new Date()).toISOString();
-	await app.fileManager.processFrontMatter(preset.file, (fm) => {
+	await app.fileManager.processFrontMatter(preset.file, (rawFm) => {
+		const fm = adaptProcessFrontMatter(rawFm);
 		fm['dbench-last-compiled-at'] = compiledAt;
 		fm['dbench-last-output-path'] = update.outputPath;
 		fm['dbench-last-chapter-hashes'] = update.chapterHashes;

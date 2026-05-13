@@ -1,5 +1,6 @@
 import type { App } from 'obsidian';
 import type { ChapterNote, SceneNote } from './discovery';
+import { adaptProcessFrontMatter } from './frontmatter-access';
 
 /**
  * Reassign a scene's chapter parent.
@@ -29,7 +30,8 @@ export async function moveSceneToChapter(
 ): Promise<void> {
 	const chapterWikilink = `[[${chapter.file.basename}]]`;
 	const chapterId = chapter.frontmatter['dbench-id'];
-	await app.fileManager.processFrontMatter(scene.file, (fm) => {
+	await app.fileManager.processFrontMatter(scene.file, (rawFm) => {
+		const fm = adaptProcessFrontMatter(rawFm);
 		fm['dbench-chapter'] = chapterWikilink;
 		fm['dbench-chapter-id'] = chapterId;
 	});

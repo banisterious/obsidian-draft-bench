@@ -1,5 +1,6 @@
 import type { App } from 'obsidian';
 import type { SceneNote, SubSceneNote } from './discovery';
+import { adaptProcessFrontMatter } from './frontmatter-access';
 
 /**
  * Reassign a sub-scene's parent scene.
@@ -30,7 +31,8 @@ export async function moveSubSceneToScene(
 ): Promise<void> {
 	const sceneWikilink = `[[${scene.file.basename}]]`;
 	const sceneId = scene.frontmatter['dbench-id'];
-	await app.fileManager.processFrontMatter(subScene.file, (fm) => {
+	await app.fileManager.processFrontMatter(subScene.file, (rawFm) => {
+		const fm = adaptProcessFrontMatter(rawFm);
 		fm['dbench-scene'] = sceneWikilink;
 		fm['dbench-scene-id'] = sceneId;
 	});

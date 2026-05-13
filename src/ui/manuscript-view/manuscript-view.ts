@@ -693,7 +693,8 @@ export class ManuscriptView extends ItemView {
 		file: TAbstractFile,
 		prevCache: CachedMetadata | null
 	): void {
-		const id = prevCache?.frontmatter?.['dbench-id'];
+		const fm = prevCache?.frontmatter as Record<string, unknown> | undefined;
+		const id = fm?.['dbench-id'];
 		if (typeof id === 'string' && id === this.viewState.selectedProjectId) {
 			this.viewState.selectedProjectId = null;
 			if (this.plugin.selection.get() === id) {

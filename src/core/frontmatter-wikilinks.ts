@@ -61,7 +61,9 @@ export function parseWikilinkBasename(value: unknown): string {
 		return basenameFromLinkpath(m[1]);
 	}
 	if (Array.isArray(value) && value.length === 1) {
-		const inner = value[0];
+		// `Array.isArray(value)` narrows to `any[]` rather than `unknown[]`,
+		// so annotate explicitly to keep the read safe.
+		const inner: unknown = (value as unknown[])[0];
 		if (
 			Array.isArray(inner) &&
 			inner.length === 1 &&
@@ -114,7 +116,7 @@ export function readWikilinkBasename(
 export function canonicalizeWikilinkValue(value: unknown): unknown {
 	if (typeof value === 'string') return value;
 	if (Array.isArray(value) && value.length === 1) {
-		const inner = value[0];
+		const inner: unknown = (value as unknown[])[0];
 		if (
 			Array.isArray(inner) &&
 			inner.length === 1 &&

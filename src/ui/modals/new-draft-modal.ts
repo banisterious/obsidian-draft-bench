@@ -75,11 +75,12 @@ export class NewDraftModal extends Modal {
 				createDraft(this.app, this.settings, { scene: this.scene })
 			);
 
-			const number = this.app.metadataCache.getFileCache(file)?.frontmatter?.[
-				'dbench-draft-number'
-			];
+			const fm = this.app.metadataCache.getFileCache(file)?.frontmatter as
+				| Record<string, unknown>
+				| undefined;
+			const number = fm?.['dbench-draft-number'];
 			new Notice(
-				`\u2713 Created Draft ${number} of ${this.scene.file.basename}`
+				`\u2713 Created Draft ${typeof number === 'number' ? number : ''} of ${this.scene.file.basename}`
 			);
 			this.close();
 			await this.openDraftNote(file);

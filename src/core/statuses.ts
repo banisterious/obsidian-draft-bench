@@ -1,4 +1,5 @@
 import { TFile, type App } from 'obsidian';
+import { adaptProcessFrontMatter } from './frontmatter-access';
 
 /**
  * Vault-wide helpers for the configurable status vocabulary.
@@ -81,7 +82,8 @@ export async function renameStatus(
 		const file = app.vault.getAbstractFileByPath(path);
 		if (!(file instanceof TFile) || file.extension !== 'md') continue;
 		try {
-			await app.fileManager.processFrontMatter(file, (fm) => {
+			await app.fileManager.processFrontMatter(file, (rawFm) => {
+				const fm = adaptProcessFrontMatter(rawFm);
 				if (fm['dbench-status'] === fromStatus) {
 					fm['dbench-status'] = toStatus;
 				}

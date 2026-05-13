@@ -90,11 +90,12 @@ export class NewSubSceneDraftModal extends Modal {
 				})
 			);
 
-			const number = this.app.metadataCache.getFileCache(file)?.frontmatter?.[
-				'dbench-draft-number'
-			];
+			const fm = this.app.metadataCache.getFileCache(file)?.frontmatter as
+				| Record<string, unknown>
+				| undefined;
+			const number = fm?.['dbench-draft-number'];
 			new Notice(
-				`✓ Created Draft ${number} of ${this.subScene.file.basename}`
+				`✓ Created Draft ${typeof number === 'number' ? number : ''} of ${this.subScene.file.basename}`
 			);
 			this.close();
 			await this.openDraftNote(file);

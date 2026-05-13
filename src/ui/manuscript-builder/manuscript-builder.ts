@@ -170,8 +170,9 @@ export class ManuscriptBuilder {
 
 	private isFileInActiveProject(file: TFile): boolean {
 		if (!this.project) return false;
-		const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-		if (!fm) return false;
+		const rawFm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+		if (!rawFm) return false;
+		const fm = rawFm as Record<string, unknown>;
 		const type = fm['dbench-type'];
 		// Only manuscript-shape types count: project / chapter / scene
 		// / sub-scene. Drafts (archival snapshots) and compile presets

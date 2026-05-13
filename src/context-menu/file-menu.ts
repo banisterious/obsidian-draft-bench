@@ -20,6 +20,7 @@ import { findChaptersInProject } from '../core/discovery';
 import { isSceneFrontmatter } from '../model/scene';
 import { isSubSceneFrontmatter } from '../model/sub-scene';
 import { Notice } from 'obsidian';
+import { adaptProcessFrontMatter } from '../core/frontmatter-access';
 import { isHiddenStatus } from '../core/statuses';
 import { ManuscriptBuilderModal } from '../ui/manuscript-builder/manuscript-builder-modal';
 import { activateManuscriptView } from '../ui/manuscript-view/activate';
@@ -498,7 +499,8 @@ function archiveItemSpecs(
 			icon,
 			onClick: async () => {
 				try {
-					await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+					await plugin.app.fileManager.processFrontMatter(file, (rawFm) => {
+						const frontmatter = adaptProcessFrontMatter(rawFm);
 						frontmatter['dbench-status'] = targetStatus;
 					});
 					new Notice(`✓ ${label}: ${file.basename}`);

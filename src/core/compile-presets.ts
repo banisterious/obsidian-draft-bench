@@ -6,6 +6,7 @@ import {
 	type CompilePresetNote,
 	type ProjectNote,
 } from './discovery';
+import { adaptProcessFrontMatter } from './frontmatter-access';
 
 /**
  * Compile-preset creation and management.
@@ -173,7 +174,8 @@ export async function createCompilePreset(
 			.length > 0;
 
 	let presetId = '';
-	await app.fileManager.processFrontMatter(file, (frontmatter) => {
+	await app.fileManager.processFrontMatter(file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		stampCompilePresetEssentials(frontmatter, {
 			basename: file.basename,
 			projectWikilink: `[[${options.project.file.basename}]]`,
@@ -217,7 +219,8 @@ export async function duplicateCompilePreset(
 
 	const file = await app.vault.create(targetPath, '');
 
-	await app.fileManager.processFrontMatter(file, (frontmatter) => {
+	await app.fileManager.processFrontMatter(file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		// Copy every frontmatter field from the source preset except the
 		// plugin-managed identity + state fields.
 		const source = preset.frontmatter as unknown as Record<string, unknown>;
@@ -227,7 +230,12 @@ export async function duplicateCompilePreset(
 			if (key === 'dbench-last-output-path') continue;
 			if (key === 'dbench-last-chapter-hashes') continue;
 			// Clone arrays so the duplicate's mutations don't leak back.
-			frontmatter[key] = Array.isArray(value) ? [...value] : value;
+			// `Array.isArray` narrows `value` to `any[]` rather than
+			// `unknown[]`, so cast back through `unknown[]` to keep the
+			// spread typed safely.
+			frontmatter[key] = Array.isArray(value)
+				? [...(value as unknown[])]
+				: value;
 		}
 		// Stamping regenerates dbench-id (since it's now missing) and
 		// fills in the cleared state fields with their defaults.

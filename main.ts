@@ -87,8 +87,11 @@ export default class DraftBenchPlugin extends Plugin {
 		this.registerEvent(
 			this.app.workspace.on('file-open', (file) => {
 				if (!file) return;
-				const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-				if (!fm) return;
+				const rawFm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+				if (!rawFm) return;
+				// `FrontMatterCache` is typed `{[key: string]: any}` upstream.
+				// Cast to a stricter index signature so reads narrow as `unknown`.
+				const fm = rawFm as Record<string, unknown>;
 				const type = fm['dbench-type'];
 				if (
 					type !== 'project' &&

@@ -13,6 +13,7 @@ import {
 	SCENE_2_BODY,
 	SCENE_3_BODY,
 } from './example-project-content';
+import { adaptProcessFrontMatter } from './frontmatter-access';
 
 /**
  * Example-project generator. Orchestrates the same `createProject` /
@@ -122,7 +123,8 @@ export async function createExampleProject(
 			shape: 'folder',
 		});
 
-		await app.fileManager.processFrontMatter(file, (frontmatter) => {
+		await app.fileManager.processFrontMatter(file, (rawFm) => {
+			const frontmatter = adaptProcessFrontMatter(rawFm);
 			frontmatter['dbench-target-words'] = EXAMPLE_PROJECT_TARGET_WORDS;
 		});
 
@@ -161,7 +163,8 @@ export async function createExampleProject(
 			name: EXAMPLE_COMPILE_PRESET_NAME,
 			format: 'md',
 		});
-		await app.fileManager.processFrontMatter(presetFile, (frontmatter) => {
+		await app.fileManager.processFrontMatter(presetFile, (rawFm) => {
+			const frontmatter = adaptProcessFrontMatter(rawFm);
 			frontmatter['dbench-compile-title'] = EXAMPLE_COMPILE_TITLE;
 			frontmatter['dbench-compile-output'] = 'vault';
 		});

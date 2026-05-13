@@ -276,8 +276,9 @@ function isFileInProject(
 	project: ProjectNote,
 	file: TFile
 ): boolean {
-	const fm = app.metadataCache.getFileCache(file)?.frontmatter;
-	if (!fm) return false;
+	const rawFm = app.metadataCache.getFileCache(file)?.frontmatter;
+	if (!rawFm) return false;
+	const fm = rawFm as Record<string, unknown>;
 	const type = fm['dbench-type'];
 	if (
 		type !== 'project' &&

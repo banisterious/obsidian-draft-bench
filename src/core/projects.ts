@@ -2,6 +2,7 @@ import type { App, TFile } from 'obsidian';
 import type { ProjectShape } from '../model/types';
 import type { DraftBenchSettings } from '../model/settings';
 import { stampProjectEssentials } from './essentials';
+import { adaptProcessFrontMatter } from './frontmatter-access';
 
 /**
  * Project creation: resolves the target file path from settings and
@@ -146,7 +147,8 @@ export async function createProject(
 	const file = await app.vault.create(filePath, '');
 
 	let projectId = '';
-	await app.fileManager.processFrontMatter(file, (frontmatter) => {
+	await app.fileManager.processFrontMatter(file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		// Pre-set the shape so stampProjectEssentials' setIfMissing leaves
 		// it alone. Cleaner than overriding after stamping.
 		frontmatter['dbench-project-shape'] = options.shape;

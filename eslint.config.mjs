@@ -66,23 +66,26 @@ export default [
 			},
 		},
 		rules: {
-			// Type-checked TS rules — disabled here as a categorical
-			// posture. The bot's scope has expanded over time (0.1.9 ->
-			// 0.2.9 added these as warnings; 0.3.0 keeps them), but the
-			// flagged sites are legitimate any-from-API patterns:
-			// `metadataCache.getFileCache(file)?.frontmatter` returns
-			// `unknown` per Obsidian's typings, and the project narrows
-			// via `isProjectFrontmatter` / `isSceneFrontmatter` / the
-			// `toGeneric` helper before reading. Treating these as
-			// warnings would add ~120 inline disable comments without
-			// improving safety. Revisit only if a) the bot upgrades
-			// these to "error" severity in its scoring, or b) a real
-			// soundness gap surfaces in a frontmatter read site.
-			"@typescript-eslint/no-unsafe-member-access": "off",
-			"@typescript-eslint/no-unsafe-argument": "off",
-			"@typescript-eslint/no-unsafe-assignment": "off",
-			"@typescript-eslint/no-unsafe-call": "off",
-			"@typescript-eslint/no-unsafe-return": "off",
+			// Type-checked TS rules — enforced as errors. The 0.6.0
+			// frontmatter-access refactor routes every Obsidian-API
+			// `any` boundary through `src/core/frontmatter-access.ts`,
+			// so call sites read `Record<string, unknown>` and narrow
+			// via the module's typed helpers (`readString`, `readArray`,
+			// etc.) before use. Re-enabling these rules is the gate
+			// that keeps the boundary disciplined: new code that
+			// bypasses the helpers will fail the build.
+			//
+			// (Pre-refactor these were disabled because the codebase had
+			// ~195 legitimate `any`-from-API patterns across 29 files.
+			// The 0.6.0 refactor consolidated every site through the
+			// helper module. See the gitignored
+			// `docs/planning/frontmatter-type-narrowing.md` for the
+			// migration history.)
+			"@typescript-eslint/no-unsafe-member-access": "error",
+			"@typescript-eslint/no-unsafe-argument": "error",
+			"@typescript-eslint/no-unsafe-assignment": "error",
+			"@typescript-eslint/no-unsafe-call": "error",
+			"@typescript-eslint/no-unsafe-return": "error",
 
 			// `prefer-active-doc` — useful guidance for popout-window
 			// compatibility. Surface as warning. (`prefer-create-el` was

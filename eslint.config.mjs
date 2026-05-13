@@ -15,6 +15,13 @@ export default [
 			"dev-vault/**",
 			"capture-vault/**",
 			"tests/**",
+			// Ignore JSON config files. obsidianmd 0.3.0's recommended
+			// config tries to lint package.json but its typed rules
+			// (no-plugin-as-component etc.) aren't fully gated to TS
+			// files. Skip JSON linting locally — the community-store
+			// scanner doesn't flag anything in these files anyway.
+			"*.json",
+			"**/*.json",
 		],
 	},
 
@@ -24,6 +31,24 @@ export default [
 	// vault, ui/sentence-case, prefer-* rules, validate-manifest, etc.), and
 	// rule-custom-message wrapping no-console.
 	...obsidianmd.configs.recommended,
+
+	// Workaround for 0.3.0's recommended config bug: the typed obsidianmd
+	// rules (which call getParserServices()) are registered globally in
+	// `recommendedPluginRulesConfig` rather than scoped to **/*.ts. Loading
+	// them on a .js/.mjs/.cjs file throws "you have used a rule which
+	// requires type information." Explicitly disable them for non-TS files.
+	// Re-enabled implicitly for **/*.ts via the recommended config's
+	// TS-scoped block. (Refs upstream 0.3.0 release.)
+	{
+		files: ["**/*.{js,mjs,cjs,jsx}"],
+		rules: {
+			"obsidianmd/no-plugin-as-component": "off",
+			"obsidianmd/no-view-references-in-plugin": "off",
+			"obsidianmd/no-unsupported-api": "off",
+			"obsidianmd/prefer-file-manager-trash-file": "off",
+			"obsidianmd/prefer-instanceof": "off",
+		},
+	},
 
 	// Project-specific overrides on top of the recommended config.
 	{
@@ -41,20 +66,29 @@ export default [
 			},
 		},
 		rules: {
-			// Type-checked TS rules — disabled to match the review bot's
-			// actual scope. These flag legitimate any-from-API patterns
-			// throughout the codebase that the bot doesn't validate
-			// against. Revisit if the bot's scope expands.
+			// Type-checked TS rules — disabled here as a categorical
+			// posture. The bot's scope has expanded over time (0.1.9 ->
+			// 0.2.9 added these as warnings; 0.3.0 keeps them), but the
+			// flagged sites are legitimate any-from-API patterns:
+			// `metadataCache.getFileCache(file)?.frontmatter` returns
+			// `unknown` per Obsidian's typings, and the project narrows
+			// via `isProjectFrontmatter` / `isSceneFrontmatter` / the
+			// `toGeneric` helper before reading. Treating these as
+			// warnings would add ~120 inline disable comments without
+			// improving safety. Revisit only if a) the bot upgrades
+			// these to "error" severity in its scoring, or b) a real
+			// soundness gap surfaces in a frontmatter read site.
 			"@typescript-eslint/no-unsafe-member-access": "off",
 			"@typescript-eslint/no-unsafe-argument": "off",
 			"@typescript-eslint/no-unsafe-assignment": "off",
 			"@typescript-eslint/no-unsafe-call": "off",
 			"@typescript-eslint/no-unsafe-return": "off",
 
-			// prefer-create-el / prefer-active-doc — useful guidance but
-			// the bot doesn't enforce them. Surface as warnings so
-			// they're visible without failing the build.
-			"obsidianmd/prefer-create-el": "warn",
+			// `prefer-active-doc` — useful guidance for popout-window
+			// compatibility. Surface as warning. (`prefer-create-el` was
+			// removed in obsidianmd 0.3.0; the spiritual successor
+			// `no-static-styles-assignment` is on the 0.3.0 recommended
+			// preset already.)
 			"obsidianmd/prefer-active-doc": "warn",
 
 			// Custom brand / acronym lists. Providing these REPLACES the

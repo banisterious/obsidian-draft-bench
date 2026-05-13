@@ -15,7 +15,7 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
   </video>
 </p>
 
-> **Status:** 0.5.2 — current release. The full V1 feature set has shipped, plus the sub-scene note type (0.2.0), the Manuscript Builder Preview tab (0.3.0), the dockable Manuscript Builder leaf (0.3.1), mobile support (0.3.2; Android verified, iOS / iPadOS untested), the Builder-aligned Manuscript leaf restyle (0.3.3), the Manuscript view Continuous mode (0.4.0), and the Scrivener 3 project importer (0.5.0; snapshot + compile-preset toggles completed in 0.5.1; Android Source-step fixes in 0.5.2). API and data shape may still adjust between minor versions during the 0.x phase. See [VERSIONING.md](VERSIONING.md), the [CHANGELOG](CHANGELOG.md), or the [Release History wiki page](https://github.com/banisterious/obsidian-draft-bench/wiki/Release-History) for full detail.
+> **Status:** 0.6.1 — current release. The full V1 feature set has shipped, plus extensions: sub-scene note type (0.2.0); Manuscript Builder Preview tab (0.3.0), dockable Manuscript Builder leaf (0.3.1), mobile support (0.3.2; Android verified, iOS / iPadOS untested), Builder-aligned Manuscript leaf restyle (0.3.3); Manuscript view Continuous mode (0.4.0); Scrivener 3 project importer (0.5.0-0.5.2); five-phase architectural audit (0.5.3); status-based scene-archive workflow (0.5.4); build-provenance attestations on every release asset (0.5.5); frontmatter type-narrowing refactor (0.6.0); scanner-hygiene patch eliminating IE-era polyfill literals from transitive dependencies (0.6.1). API and data shape may still adjust between minor versions during the 0.x phase. See [VERSIONING.md](VERSIONING.md), the [CHANGELOG](CHANGELOG.md), or the [Release History wiki page](https://github.com/banisterious/obsidian-draft-bench/wiki/Release-History) for full detail.
 
 ## What it is
 
@@ -41,8 +41,8 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
 
 ## Install
 
-- **BRAT** (recommended for now): Install [BRAT](https://github.com/TfTHacker/obsidian42-brat), then add `banisterious/obsidian-draft-bench` as a beta plugin. Enable in **Settings -> Community plugins**.
-- **Community Plugins** (when approved): Settings -> Community plugins -> Browse -> "Draft Bench" -> Install -> Enable. Directory submission follows after the 0.x phase stabilizes.
+- **Community Plugins** (recommended): Settings -> Community plugins -> Browse -> "Draft Bench" -> Install -> Enable.
+- **BRAT** (for pre-release access): Install [BRAT](https://github.com/TfTHacker/obsidian42-brat), then add `banisterious/obsidian-draft-bench` as a beta plugin. Useful when you want early access to release-candidate builds before they reach the community-plugin directory.
 - **Manual**: Download `main.js`, `manifest.json`, `styles.css` from [GitHub Releases](https://github.com/banisterious/obsidian-draft-bench/releases) into `<vault>/.obsidian/plugins/draft-bench/`.
 
 See [Getting Started](https://github.com/banisterious/obsidian-draft-bench/wiki/Getting-Started) for the first-project walkthrough.

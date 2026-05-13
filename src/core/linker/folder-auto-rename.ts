@@ -1,7 +1,7 @@
 import { TFile, TFolder, type App } from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
 import { findNoteById, findScenes, findSubScenes } from '../discovery';
-import { readString } from './readers';
+import { readString } from '../frontmatter-access';
 
 /**
  * Folder-auto-rename helpers. When a scene or chapter file is renamed

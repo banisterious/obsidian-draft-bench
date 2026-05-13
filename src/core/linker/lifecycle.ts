@@ -1,7 +1,11 @@
 import { TFile, type App, type EventRef } from 'obsidian';
 import type { DraftBenchSettings } from '../../model/settings';
 import { findNoteById } from '../discovery';
-import { readArray, readString } from './readers';
+import {
+	adaptProcessFrontMatter,
+	readArray,
+	readString,
+} from '../frontmatter-access';
 import { reconcileChildInParent, RELATIONSHIPS } from './reconciliation';
 import {
 	renameChapterScenesFolderIfNeeded,
@@ -215,7 +219,8 @@ export class DraftBenchLinker {
 				);
 				if (!wikilinks.includes(wikilink)) continue;
 
-				await this.app.fileManager.processFrontMatter(parent.file, (fm) => {
+				await this.app.fileManager.processFrontMatter(parent.file, (rawFm) => {
+					const fm = adaptProcessFrontMatter(rawFm);
 					const warr = readArray(fm[config.parentWikilinkField]);
 					const iarr = readArray(fm[config.parentIdField]);
 					const i = warr.indexOf(wikilink);
@@ -254,7 +259,8 @@ export class DraftBenchLinker {
 			const parent = findNoteById(this.app, parentId);
 			if (!parent) continue;
 
-			await this.app.fileManager.processFrontMatter(parent.file, (pfm) => {
+			await this.app.fileManager.processFrontMatter(parent.file, (rawFm) => {
+				const pfm = adaptProcessFrontMatter(rawFm);
 				const wikilinks = readArray(pfm[config.parentWikilinkField]);
 				const idx = wikilinks.indexOf(oldWikilink);
 				if (idx >= 0) {

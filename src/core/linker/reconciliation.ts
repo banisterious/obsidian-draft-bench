@@ -5,8 +5,12 @@ import {
 	findScenes,
 	findSubScenes,
 } from '../discovery';
+import {
+	adaptProcessFrontMatter,
+	readArray,
+	readString,
+} from '../frontmatter-access';
 import { sortReverseArraysByOrder } from '../reverse-array-order';
-import { readArray, readString } from './readers';
 import { backfillCompanionId } from './wikilink-backfill';
 
 /**
@@ -304,7 +308,8 @@ async function ensureChildInReverse(
 	childOrder: number | undefined,
 	config: RelationshipConfig
 ): Promise<void> {
-	await app.fileManager.processFrontMatter(parent, (fm) => {
+	await app.fileManager.processFrontMatter(parent, (rawFm) => {
+		const fm = adaptProcessFrontMatter(rawFm);
 		const warr = readArray(fm[config.parentWikilinkField]);
 		const iarr = readArray(fm[config.parentIdField]);
 		const hasWikilink = warr.includes(childWikilink);
@@ -335,7 +340,8 @@ async function removeChildFromReverse(
 	childId: string,
 	config: RelationshipConfig
 ): Promise<void> {
-	await app.fileManager.processFrontMatter(parent, (fm) => {
+	await app.fileManager.processFrontMatter(parent, (rawFm) => {
+		const fm = adaptProcessFrontMatter(rawFm);
 		const warr = readArray(fm[config.parentWikilinkField]);
 		const iarr = readArray(fm[config.parentIdField]);
 		const filteredWikilinks = warr.filter((x) => x !== childWikilink);

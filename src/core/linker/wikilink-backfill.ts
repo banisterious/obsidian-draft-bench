@@ -1,10 +1,10 @@
 import { type App, type TFile } from 'obsidian';
+import { adaptProcessFrontMatter, readString } from '../frontmatter-access';
 import {
 	basenameFromLinkpath,
 	canonicalizeWikilinkValue,
 	parseWikilinkBasename,
 } from '../frontmatter-wikilinks';
-import { readString } from './readers';
 import type { RelationshipConfig } from './reconciliation';
 
 /**
@@ -57,7 +57,8 @@ export async function backfillCompanionId(
 	const matchedId = readString(matched.frontmatter['dbench-id']);
 	if (matchedId === '') return '';
 
-	await app.fileManager.processFrontMatter(childFile, (fm) => {
+	await app.fileManager.processFrontMatter(childFile, (rawFm) => {
+		const fm = adaptProcessFrontMatter(rawFm);
 		fm[config.childParentIdField] = matchedId;
 		// Re-canonicalize the wikilink field so the serializer writes
 		// a clean quoted string, not block-style nested-array YAML (#7).

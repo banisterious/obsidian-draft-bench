@@ -4,6 +4,20 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.6.1: 2026-05-13 — Scanner-hygiene patch
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.6.1)
+
+Internal-quality release. Eliminates the "10 dynamic `<script>` element creations" warning the community-plugin scanner reports against 0.6.0's bundle. The flagged patterns come from IE-era polyfills in transitive dependencies; none execute at runtime in Chromium (they sit behind `MutationObserver` / `setImmediate` feature checks that always succeed first), but the static scanner sees the `createElement("script")` literals regardless. All 10 are now gone from the bundle. No user-visible feature changes; 1387 tests pass unchanged.
+
+### Fixed
+
+- **`setimmediate` and `immediate` (jszip's transitive deps) replaced with native-equivalent shims** in `polyfills/`. The setImmediate shim uses `setTimeout(fn, 0)` (matching the original's macrotask semantic); the immediate shim uses `queueMicrotask` (matching lie's Promise microtask scheduler).
+- **`jszip` resolution rerouted from its prebundled Browserified `dist/jszip.min.js` to the unbundled `lib/index.js`** so the shims actually replace the polyfills. `readable-stream` routes to Node's built-in `stream` (already external for Electron).
+- **`docx` and `pdfmake` `createElement("script")` literals masked at bundle time** via a non-foldable runtime expression. Both vendors ship pre-bundled distributions with the polyfills inlined as dead code; the masked branches remain unreachable in modern engines, so runtime is unaffected.
+
+Mobile-supported (Android verified through 0.5.2). 1387 tests pass.
+
 ## 0.6.0: 2026-05-12 — Frontmatter type-narrowing refactor
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.6.0)

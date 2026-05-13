@@ -22,6 +22,12 @@ Now. Install from the Obsidian community-plugin directory (**Settings -> Communi
 
 Yes. Draft Bench is open-source and free to use. The plugin is available in the Obsidian community-plugin directory and via BRAT.
 
+### How do I switch from BRAT to the community-plugin install?
+
+Your manuscript notes are safe either way. Every Draft Bench artifact (projects, chapters, scenes, sub-scenes, drafts, compile presets) lives in your vault as a regular markdown file with `dbench-` frontmatter, not inside `.obsidian/plugins/`. Uninstalling the plugin doesn't touch them; reinstalling and re-enabling rediscovers them automatically and rebuilds the linker reverse arrays from properties already on each note.
+
+What does get lost is the plugin's settings file (`data.json` inside the plugin folder). If you've customized status / label vocabularies, folder paths, or the hidden-statuses list, those revert to defaults unless you back the file up first. To preserve everything: copy `<vault>/.obsidian/plugins/draft-bench/data.json` somewhere safe, remove Draft Bench from BRAT's beta-plugin list (Settings -> BRAT) so BRAT doesn't keep updating it later, uninstall from Community plugins, install from the Obsidian community-plugin directory, then restore your saved `data.json` and restart Obsidian.
+
 ## How it compares
 
 ### How is Draft Bench different from Longform?

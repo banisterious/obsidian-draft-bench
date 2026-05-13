@@ -15,6 +15,12 @@ export default [
 			"dev-vault/**",
 			"capture-vault/**",
 			"tests/**",
+			// Polyfill shims for setimmediate / immediate (jszip transitive
+			// deps). Plain JS, no tsconfig project — typed rules like
+			// @typescript-eslint/no-deprecated would throw "rule requires
+			// type information" when run against these. Two-file scope;
+			// not worth carving out parser options.
+			"polyfills/**",
 			// Ignore JSON config files. obsidianmd 0.3.0's recommended
 			// config tries to lint package.json but its typed rules
 			// (no-plugin-as-component etc.) aren't fully gated to TS

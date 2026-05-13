@@ -6,6 +6,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-12
+
+Internal-quality release. Consolidates the frontmatter type-narrowing boundary into a single canonical module (`src/core/frontmatter-access.ts`) and routes every Obsidian-API access through its typed helpers, eliminating 195 strict-typed-rule warnings the community.obsidian.md scanner reports without changing runtime behavior. Also upgrades `eslint-plugin-obsidianmd` from 0.2.9 to 0.3.0 to match the scanner's version, so local lint surfaces the same rule set the scan enforces. No user-visible feature changes; 1387 tests pass unchanged at every step.
+
+This is the first minor-version bump beyond 0.5.x. SemVer-wise the work is internal-quality, but the scope (eight commits, 195 warning sites cleared, six duplicate helpers consolidated, every `processFrontMatter` callback in the codebase reshaped) warranted a minor bump over a patch. The project-level full-manuscript snapshots feature originally penciled for 0.6.0 defers to 0.7.0; cleaner foundations land first.
+
+### Changed
+
+- **Frontmatter type-narrowing boundary consolidated.** New `src/core/frontmatter-access.ts` module exposes two layers:
+  - Layer 1 generic adapters (`adaptProcessFrontMatter`, `toGeneric`) reshape Obsidian's `any`-typed boundary values into `Record<string, unknown>` at the single point where Obsidian's API returns them.
+  - Layer 3 primitive narrowing helpers (`readString`, `readNumber`, `readBoolean`, `readArray`) consume `unknown` and narrow to a typed value with a documented default for non-conforming inputs.
+- **Every `processFrontMatter` callback in the codebase routes through `adaptProcessFrontMatter`.** 30+ callbacks across 13 files (integrity, retrofit, scenes, sub-scenes, chapters, drafts, chapter-drafts, sub-scene-drafts, projects, compile-presets, reorder, statuses, example-project, apply-compile-state, file-menu, scrivener import-write, linker/lifecycle, linker/reconciliation, linker/wikilink-backfill, move-to-chapter, move-to-scene). Bracket reads / writes on the callback parameter now operate on `Record<string, unknown>` instead of `any`.
+- **Six duplicate `readArray` helpers consolidated.** scenes / sub-scenes / chapters / drafts / chapter-drafts / sub-scene-drafts each carried their own three-line copy of the same defensive array reader; all now import from `frontmatter-access`. The `linker/readers.ts` shim module (Phase 4 vintage) is deleted; its consumers route through the canonical module.
+- **`eslint-plugin-obsidianmd` upgraded 0.2.9 -> 0.3.0** to match the community.obsidian.md scanner's version. `prefer-create-el` rule was removed upstream in 0.3.0; the project's eslint config drops the corresponding reference. New override block disables the obsidianmd typed rules for non-TS files (workaround for 0.3.0's recommended-config global registration bug). All four gates green at 0.3.0 + the refactor.
+- **Strict `@typescript-eslint/no-unsafe-*` rules enforced as errors.** The five rules (`no-unsafe-member-access`, `no-unsafe-argument`, `no-unsafe-assignment`, `no-unsafe-call`, `no-unsafe-return`) flip from `"off"` to `"error"` in `eslint.config.mjs`. New code that bypasses the frontmatter-access helpers will fail the build.
+
+### Fixed
+
+- **Four latent `no-base-to-string` bugs in `String(fm['dbench-X'] ?? '')` patterns.** The `any` typing previously hid the risk that a non-string cache value would render as `'[object Object]'` in `String()` coercion; the refactor surfaced them, and the migration switched every site to the typed `readString` helper which rejects non-string inputs cleanly. Affected paths: Scrivener snapshot import, new-draft / new-chapter-draft / new-sub-scene-draft modal success toasts.
+
+### Internal
+
+- **16 new unit tests** in `tests/core/frontmatter-access.test.ts` cover the helper module's boundary behavior (identity-cast semantics, mutation propagation, narrow-to-default for non-conforming inputs across all four primitive readers).
+
 ## [0.5.5] - 2026-05-12
 
 Release-hygiene release. Introduces a GitHub Actions release workflow that produces cryptographic provenance attestations for every release asset; addresses the "no artifact attestation" recommendations surfaced by the community.obsidian.md automated scan against 0.5.4. Also picks up the eight `document` -> `activeDocument` polish sites from the same scan. No user-visible feature changes.

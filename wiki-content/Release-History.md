@@ -4,6 +4,22 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.6.0: 2026-05-12 — Frontmatter type-narrowing refactor
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.6.0)
+
+Internal-quality release. Consolidates the frontmatter type-narrowing boundary into a single canonical module and routes every Obsidian-API access through its typed helpers, clearing 195 strict-typed-rule warnings the community.obsidian.md scanner reports without changing runtime behavior. Also upgrades `eslint-plugin-obsidianmd` from 0.2.9 to 0.3.0 to match the scanner's version. No user-visible feature changes; 1387 tests pass unchanged.
+
+This is the first minor-version bump beyond 0.5.x. SemVer-wise the work is internal-quality, but the scope (eight commits, 195 warning sites cleared, six duplicate helpers consolidated, every `processFrontMatter` callback in the codebase reshaped) warranted a minor bump over a patch. Project-level full-manuscript snapshots (originally penciled for 0.6.0) defer to 0.7.0.
+
+### Changed
+
+- **New `src/core/frontmatter-access.ts` module** is the single canonical home for the type-narrowing boundary. Layer 1 adapters reshape Obsidian's `any`-typed values into `Record<string, unknown>`; Layer 3 helpers (`readString`, `readNumber`, `readBoolean`, `readArray`) narrow `unknown` to typed values with documented defaults.
+- **Strict typed-rule enforcement.** The five `@typescript-eslint/no-unsafe-*` rules now run as `error` severity locally (matching the community.obsidian.md scanner). New code that bypasses the helpers fails the build.
+- **Cleanup:** six duplicate `readArray` definitions consolidated; the `linker/readers.ts` shim module deleted; latent `no-base-to-string` bugs (`String(any-typed-cache-value)` could render `'[object Object]'`) surfaced and fixed via the typed helpers.
+
+Mobile-supported (Android verified through 0.5.2). 1387 tests pass.
+
 ## 0.5.5: 2026-05-12 — Release-hygiene + popout polish
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.5.5)

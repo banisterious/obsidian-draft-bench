@@ -8,6 +8,11 @@ import {
 	findSubScenesInScene,
 } from './discovery';
 import { stampDraftEssentials } from './essentials';
+import {
+	adaptProcessFrontMatter,
+	readArray,
+	readString,
+} from './frontmatter-access';
 import { sortSubScenesByOrder } from './sort-scenes';
 
 /**
@@ -260,7 +265,8 @@ export async function createDraft(
 	// state and returns ''. The empty string then lands in the parent's
 	// dbench-X-ids array. Refs #15.
 	let draftId = '';
-	await app.fileManager.processFrontMatter(file, (frontmatter) => {
+	await app.fileManager.processFrontMatter(file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		// Pre-set draft-specific fields so stampDraftEssentials' setIfMissing
 		// leaves them alone. `dbench-project-id` isn't stamped by essentials
 		// (it's empty-by-default for retrofits); set it explicitly here.
@@ -270,12 +276,13 @@ export async function createDraft(
 		frontmatter['dbench-scene-id'] = sceneId;
 		frontmatter['dbench-draft-number'] = draftNumber;
 		stampDraftEssentials(frontmatter, { basename: file.basename });
-		draftId = String(frontmatter['dbench-id'] ?? '');
+		draftId = readString(frontmatter['dbench-id']);
 	});
 
 	const draftWikilink = `[[${file.basename}]]`;
 
-	await app.fileManager.processFrontMatter(scene.file, (frontmatter) => {
+	await app.fileManager.processFrontMatter(scene.file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		const drafts = readArray(frontmatter['dbench-drafts']);
 		const draftIds = readArray(frontmatter['dbench-draft-ids']);
 		if (!drafts.includes(draftWikilink)) drafts.push(draftWikilink);
@@ -327,11 +334,6 @@ function normalizeFolderName(raw: string): string {
 	return trimmed === '' ? DEFAULT_DRAFTS_FOLDER_NAME : trimmed;
 }
 
-/**
- * Defensive array reader: returns the array as-is, or `[]` if the value
- * isn't an array (covers null / undefined / corrupted entries).
- */
-function readArray(value: unknown): string[] {
-	if (Array.isArray(value)) return value as string[];
-	return [];
-}
+// `readArray` previously lived here as a local helper. As of 0.6.0 it
+// migrated to `src/core/frontmatter-access.ts`; the import at the top
+// of this file routes to the new location.

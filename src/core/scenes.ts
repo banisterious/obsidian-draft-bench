@@ -14,6 +14,11 @@ import {
 	isTemplaterEnabled,
 	renderTemplateThroughTemplater,
 } from './templater';
+import {
+	adaptProcessFrontMatter,
+	readArray,
+	readString,
+} from './frontmatter-access';
 
 /**
  * Scene creation: resolves the target file path, renders the scene
@@ -268,7 +273,8 @@ export async function createScene(
 
 	// Capture id inside the callback to avoid the cache-reparse race. Refs #15.
 	let sceneId = '';
-	await app.fileManager.processFrontMatter(file, (frontmatter) => {
+	await app.fileManager.processFrontMatter(file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		// Pre-set scene-specific fields so stampSceneEssentials' setIfMissing
 		// leaves them alone.
 		frontmatter['dbench-project'] = projectWikilink;
@@ -283,14 +289,15 @@ export async function createScene(
 			basename: file.basename,
 			defaultStatus,
 		});
-		sceneId = String(frontmatter['dbench-id'] ?? '');
+		sceneId = readString(frontmatter['dbench-id']);
 	});
 
 	const sceneWikilink = `[[${file.basename}]]`;
 
 	// Update reverse array on the *immediate* parent (chapter or project).
 	const parentFile = options.chapter?.file ?? options.project.file;
-	await app.fileManager.processFrontMatter(parentFile, (frontmatter) => {
+	await app.fileManager.processFrontMatter(parentFile, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		const scenes = readArray(frontmatter['dbench-scenes']);
 		const sceneIds = readArray(frontmatter['dbench-scene-ids']);
 		if (!scenes.includes(sceneWikilink)) scenes.push(sceneWikilink);
@@ -357,14 +364,9 @@ async function renderSceneBody(
 	return app.vault.create(filePath, body);
 }
 
-/**
- * Defensive array reader: returns the array as-is, or [] if the value
- * isn't an array (covers null / undefined / corrupted entries).
- */
-function readArray(value: unknown): string[] {
-	if (Array.isArray(value)) return value as string[];
-	return [];
-}
+// `readArray` previously lived here as a local helper. As of 0.6.0 it
+// migrated to `src/core/frontmatter-access.ts`; the import at the top
+// of this file routes to the new location.
 
 /**
  * Return the basename of the scene whose `dbench-order` is the largest

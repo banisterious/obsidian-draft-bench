@@ -14,6 +14,11 @@ import {
 	isTemplaterEnabled,
 	renderTemplateThroughTemplater,
 } from './templater';
+import {
+	adaptProcessFrontMatter,
+	readArray,
+	readString,
+} from './frontmatter-access';
 
 /**
  * Chapter creation: resolves the target file path, renders the chapter
@@ -214,7 +219,8 @@ export async function createChapter(
 
 	// Capture id inside the callback to avoid the cache-reparse race. Refs #15.
 	let chapterId = '';
-	await app.fileManager.processFrontMatter(file, (frontmatter) => {
+	await app.fileManager.processFrontMatter(file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		// Pre-set chapter-specific fields so stampChapterEssentials'
 		// setIfMissing leaves them alone.
 		frontmatter['dbench-project'] = projectWikilink;
@@ -225,12 +231,13 @@ export async function createChapter(
 			basename: file.basename,
 			defaultStatus,
 		});
-		chapterId = String(frontmatter['dbench-id'] ?? '');
+		chapterId = readString(frontmatter['dbench-id']);
 	});
 
 	const chapterWikilink = `[[${file.basename}]]`;
 
-	await app.fileManager.processFrontMatter(options.project.file, (frontmatter) => {
+	await app.fileManager.processFrontMatter(options.project.file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		const chapters = readArray(frontmatter['dbench-chapters']);
 		const chapterIds = readArray(frontmatter['dbench-chapter-ids']);
 		if (!chapters.includes(chapterWikilink)) chapters.push(chapterWikilink);
@@ -242,14 +249,9 @@ export async function createChapter(
 	return file;
 }
 
-/**
- * Defensive array reader: returns the array as-is, or [] if the value
- * isn't an array (covers null / undefined / corrupted entries).
- */
-function readArray(value: unknown): string[] {
-	if (Array.isArray(value)) return value as string[];
-	return [];
-}
+// `readArray` previously lived here as a local helper. As of 0.6.0 it
+// migrated to `src/core/frontmatter-access.ts`; the import at the top
+// of this file routes to the new location.
 
 /**
  * Produce the chapter file with its initial body. Mirrors

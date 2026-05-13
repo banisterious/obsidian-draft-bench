@@ -14,6 +14,11 @@ import {
 	isTemplaterEnabled,
 	renderTemplateThroughTemplater,
 } from './templater';
+import {
+	adaptProcessFrontMatter,
+	readArray,
+	readString,
+} from './frontmatter-access';
 
 /**
  * Sub-scene creation: resolves the target file path (default
@@ -216,7 +221,8 @@ export async function createSubScene(
 
 	// Capture id inside the callback to avoid the cache-reparse race. Refs #15.
 	let subSceneId = '';
-	await app.fileManager.processFrontMatter(file, (frontmatter) => {
+	await app.fileManager.processFrontMatter(file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		// Pre-set sub-scene-specific fields so stampSubSceneEssentials'
 		// setIfMissing leaves them alone.
 		frontmatter['dbench-project'] = projectWikilink;
@@ -229,13 +235,14 @@ export async function createSubScene(
 			basename: file.basename,
 			defaultStatus,
 		});
-		subSceneId = String(frontmatter['dbench-id'] ?? '');
+		subSceneId = readString(frontmatter['dbench-id']);
 	});
 
 	const subSceneWikilink = `[[${file.basename}]]`;
 
 	// Update reverse arrays on the parent scene.
-	await app.fileManager.processFrontMatter(options.scene.file, (frontmatter) => {
+	await app.fileManager.processFrontMatter(options.scene.file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		const subScenes = readArray(frontmatter['dbench-sub-scenes']);
 		const subSceneIds = readArray(frontmatter['dbench-sub-scene-ids']);
 		if (!subScenes.includes(subSceneWikilink)) subScenes.push(subSceneWikilink);
@@ -297,14 +304,9 @@ async function renderSubSceneBody(
 	return app.vault.create(filePath, body);
 }
 
-/**
- * Defensive array reader: returns the array as-is, or [] if the value
- * isn't an array (covers null / undefined / corrupted entries).
- */
-function readArray(value: unknown): string[] {
-	if (Array.isArray(value)) return value as string[];
-	return [];
-}
+// `readArray` previously lived here as a local helper. As of 0.6.0 it
+// migrated to `src/core/frontmatter-access.ts`; the import at the top
+// of this file routes to the new location.
 
 /**
  * Return the basename of the sub-scene whose `dbench-order` is the

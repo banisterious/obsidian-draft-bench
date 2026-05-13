@@ -8,6 +8,11 @@ import {
 	findScenesInChapter,
 } from './discovery';
 import { stampDraftEssentials } from './essentials';
+import {
+	adaptProcessFrontMatter,
+	readArray,
+	readString,
+} from './frontmatter-access';
 
 /**
  * Chapter-level draft creation: snapshots a chapter's body plus each
@@ -236,7 +241,8 @@ export async function createChapterDraft(
 
 	// Capture id inside the callback to avoid the cache-reparse race. Refs #15.
 	let draftId = '';
-	await app.fileManager.processFrontMatter(file, (frontmatter) => {
+	await app.fileManager.processFrontMatter(file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		// Pre-set draft-specific fields so stampDraftEssentials' setIfMissing
 		// leaves them alone. Per § 4, chapter drafts carry both project + chapter
 		// refs (parallel to scene drafts which carry project + scene refs).
@@ -246,12 +252,13 @@ export async function createChapterDraft(
 		frontmatter['dbench-chapter-id'] = chapterId;
 		frontmatter['dbench-draft-number'] = draftNumber;
 		stampDraftEssentials(frontmatter, { basename: file.basename });
-		draftId = String(frontmatter['dbench-id'] ?? '');
+		draftId = readString(frontmatter['dbench-id']);
 	});
 
 	const draftWikilink = `[[${file.basename}]]`;
 
-	await app.fileManager.processFrontMatter(chapter.file, (frontmatter) => {
+	await app.fileManager.processFrontMatter(chapter.file, (rawFm) => {
+		const frontmatter = adaptProcessFrontMatter(rawFm);
 		const drafts = readArray(frontmatter['dbench-drafts']);
 		const draftIds = readArray(frontmatter['dbench-draft-ids']);
 		if (!drafts.includes(draftWikilink)) drafts.push(draftWikilink);
@@ -295,7 +302,6 @@ function normalizeFolderName(raw: string): string {
 	return trimmed === '' ? DEFAULT_DRAFTS_FOLDER_NAME : trimmed;
 }
 
-function readArray(value: unknown): string[] {
-	if (Array.isArray(value)) return value as string[];
-	return [];
-}
+// `readArray` previously lived here as a local helper. As of 0.6.0 it
+// migrated to `src/core/frontmatter-access.ts`; the import at the top
+// of this file routes to the new location.

@@ -22,13 +22,15 @@ Draft Bench is an Obsidian plugin for writers. It manages projects, chapters (op
 
 ## Installation
 
-### Community Plugins (recommended once approved)
+### Community Plugins (recommended)
+
+[Install in Obsidian](obsidian://show-plugin?id=draft-bench), or:
 
 1. Open Obsidian **Settings -> Community plugins**.
 2. Click **Browse** and search for "Draft Bench."
 3. Click **Install**, then **Enable**.
 
-### BRAT (beta testing)
+### BRAT (for pre-release access)
 
 1. Install the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat).
 2. Add the beta plugin: `banisterious/obsidian-draft-bench`.

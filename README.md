@@ -41,7 +41,7 @@ Draft Bench is inspired by [Longform](https://github.com/kevboh/longform), with 
 
 ## Install
 
-- **Community Plugins** (recommended): Settings -> Community plugins -> Browse -> "Draft Bench" -> Install -> Enable.
+- **Community Plugins** (recommended): [Install in Obsidian](obsidian://show-plugin?id=draft-bench), or Settings -> Community plugins -> Browse -> "Draft Bench" -> Install -> Enable.
 - **BRAT** (for pre-release access): Install [BRAT](https://github.com/TfTHacker/obsidian42-brat), then add `banisterious/obsidian-draft-bench` as a beta plugin. Useful when you want early access to release-candidate builds before they reach the community-plugin directory.
 - **Manual**: Download `main.js`, `manifest.json`, `styles.css` from [GitHub Releases](https://github.com/banisterious/obsidian-draft-bench/releases) into `<vault>/.obsidian/plugins/draft-bench/`.
 

@@ -16,7 +16,11 @@ If you're looking for a plotting tool with character databases, plot grids, and 
 
 ### When can I install it?
 
-Now. Install from the Obsidian community-plugin directory (**Settings -> Community plugins -> Browse -> "Draft Bench"**), or via [BRAT](https://github.com/TfTHacker/obsidian42-brat) by adding `banisterious/obsidian-draft-bench` as a beta plugin for early access to pre-release builds. The current release is **0.6.1** (2026-05-13); the first BRAT-public release was 0.1.0 on 2026-04-29.
+[Install in Obsidian](obsidian://show-plugin?id=draft-bench), or search for "Draft Bench" in Obsidian's **Settings -> Community plugins**.
+
+For early access to releases before they reach the directory, use [BRAT](https://github.com/TfTHacker/obsidian42-brat) and add `banisterious/obsidian-draft-bench` as a beta plugin.
+
+The current release is **0.6.1** (2026-05-13); the first BRAT-public release was 0.1.0 on 2026-04-29.
 
 ### Is it free?
 
@@ -26,7 +30,7 @@ Yes. Draft Bench is open-source and free to use. The plugin is available in the 
 
 Your manuscript notes are safe either way. Every Draft Bench artifact (projects, chapters, scenes, sub-scenes, drafts, compile presets) lives in your vault as a regular markdown file with `dbench-` frontmatter, not inside `.obsidian/plugins/`. Uninstalling the plugin doesn't touch them; reinstalling and re-enabling rediscovers them automatically and rebuilds the linker reverse arrays from properties already on each note.
 
-What does get lost is the plugin's settings file (`data.json` inside the plugin folder). If you've customized status / label vocabularies, folder paths, or the hidden-statuses list, those revert to defaults unless you back the file up first. To preserve everything: copy `<vault>/.obsidian/plugins/draft-bench/data.json` somewhere safe, remove Draft Bench from BRAT's beta-plugin list (Settings -> BRAT) so BRAT doesn't keep updating it later, uninstall from Community plugins, install from the Obsidian community-plugin directory, then restore your saved `data.json` and restart Obsidian.
+What does get lost is the plugin's settings file (`data.json` inside the plugin folder). If you've customized status / label vocabularies, folder paths, or the hidden-statuses list, those revert to defaults unless you back the file up first. To preserve everything: copy `<vault>/.obsidian/plugins/draft-bench/data.json` somewhere safe, remove Draft Bench from BRAT's beta-plugin list (Settings -> BRAT) so BRAT doesn't keep updating it later, uninstall from Community plugins, [install from the Obsidian community-plugin directory](obsidian://show-plugin?id=draft-bench), then restore your saved `data.json` and restart Obsidian.
 
 ## How it compares
 

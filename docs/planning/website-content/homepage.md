@@ -1,7 +1,3 @@
-# Draft Bench
-
-> A writing workflow for Obsidian.
-
 Draft Bench is a writing plugin for novelists working in Obsidian. It manages the manuscript spine — projects, chapters, scenes, sub-scenes, drafts, and compile — as first-class note types in your vault, using the frontmatter conventions Obsidian writers already know.
 
 The plugin stays narrow on purpose. Plot grids, character databases, beat-sheet templates, and pacing analytics live elsewhere. Draft Bench handles the structural editing of a manuscript: organizing scenes into chapters, snapshotting drafts at any point, and compiling the finished work to Markdown, PDF, ODT, or DOCX.

@@ -14,13 +14,15 @@ Novelists and long-form-fiction writers who already use Obsidian (or want to) an
 
 If you're looking for a plotting tool with character databases, plot grids, and pacing analytics, Draft Bench isn't that plugin. [StoryLine](https://github.com/PixeroJan/obsidian-storyline) is.
 
-### When can I install it?
+### How do I install it?
 
-[Install in Obsidian](obsidian://show-plugin?id=draft-bench), or search for "Draft Bench" in Obsidian's **Settings -> Community plugins**.
+[Install in Obsidian](obsidian://show-plugin?id=draft-bench)
 
-For early access to releases before they reach the directory, use [BRAT](https://github.com/TfTHacker/obsidian42-brat) and add `banisterious/obsidian-draft-bench` as a beta plugin.
+No Obsidian yet? [Get it here](https://obsidian.md) — it's free.
 
-The current release is **0.6.1** (2026-05-13); the first BRAT-public release was 0.1.0 on 2026-04-29.
+Or open Obsidian's Community Plugins, search for **Draft Bench**, then click Install -> Enable.
+
+For early access to releases before they reach the directory, use [BRAT](https://github.com/TfTHacker/obsidian42-brat) and add `banisterious/obsidian-draft-bench` as a beta plugin. [Full install guide](https://github.com/banisterious/obsidian-draft-bench/wiki/Getting-Started) →
 
 ### Is it free?
 

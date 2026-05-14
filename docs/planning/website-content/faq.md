@@ -30,9 +30,18 @@ Yes. Draft Bench is open-source and free to use. The plugin is available in the 
 
 ### How do I switch from BRAT to the community-plugin install?
 
-Your manuscript notes are safe either way. Every Draft Bench artifact (projects, chapters, scenes, sub-scenes, drafts, compile presets) lives in your vault as a regular markdown file with `dbench-` frontmatter, not inside `.obsidian/plugins/`. Uninstalling the plugin doesn't touch them; reinstalling and re-enabling rediscovers them automatically and rebuilds the linker reverse arrays from properties already on each note.
+Yes, if you want simpler updates. The two channels deliver the same plugin different ways:
 
-What does get lost is the plugin's settings file (`data.json` inside the plugin folder). If you've customized status / label vocabularies, folder paths, or the hidden-statuses list, those revert to defaults unless you back the file up first. To preserve everything: copy `<vault>/.obsidian/plugins/draft-bench/data.json` somewhere safe, remove Draft Bench from BRAT's beta-plugin list (Settings -> BRAT) so BRAT doesn't keep updating it later, uninstall from Community plugins, [install from the Obsidian community-plugin directory](obsidian://show-plugin?id=draft-bench), then restore your saved `data.json` and restart Obsidian.
+- **Community Plugins** delivers tagged stable releases through Obsidian's directory. Updates appear in **Settings -> Community plugins** with a one-click Update.
+- **BRAT** delivers releases as soon as they're tagged on GitHub, including release-candidate tags. Useful for early-access testing; otherwise it's an extra moving piece.
+
+To switch:
+
+1. Open **Settings -> Community plugins -> Browse**, search for "Draft Bench", and click Install. Your settings and notes are preserved: installing over a BRAT-installed copy refreshes the plugin files (`main.js`, `manifest.json`, `styles.css`) without touching `data.json`, where status / label vocabularies, folder paths, and the hidden-statuses list live. Vault notes are never under `.obsidian/plugins/` in the first place, so they're untouched regardless.
+2. Open BRAT's settings, find the "Beta plugin list" entry for Draft Bench, and remove it so BRAT stops re-updating the plugin alongside the directory.
+3. Updates now arrive through the directory like any other community plugin.
+
+Keep BRAT installed if you want early access to release-candidate builds before they reach the directory, or if you use BRAT for other plugins. The BRAT plugin itself can stay in your vault after removing Draft Bench from its beta-plugin list.
 
 ## How it compares
 

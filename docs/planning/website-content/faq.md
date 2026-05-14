@@ -24,6 +24,8 @@ Or open Obsidian's Community Plugins, search for **Draft Bench**, then click Ins
 
 For early access to releases before they reach the directory, use [BRAT](https://github.com/TfTHacker/obsidian42-brat) and add `banisterious/obsidian-draft-bench` as a beta plugin. [Full install guide](https://github.com/banisterious/obsidian-draft-bench/wiki/Getting-Started) →
 
+Already installed via BRAT? See [How do I switch from BRAT to the community-plugin install?](#how-do-i-switch-from-brat-to-the-community-plugin-install) for the migration path.
+
 ### Is it free?
 
 Yes. Draft Bench is open-source and free to use. The plugin is available in the Obsidian community-plugin directory and via BRAT.

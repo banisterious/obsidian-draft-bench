@@ -6,6 +6,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-05-15
+
+Scanner-hygiene release. Replaces the Manuscript Builder status-chip filter's `:has()` selectors with equivalent sibling-combinator rules so the bundle no longer triggers the community-plugin scanner's "broad selector invalidation" performance advisory. UX is identical to before: hover lifts unchecked chips, clicks toggle without showing the keyboard focus ring, keyboard navigation cycles through chips with the focus ring transferring to each label.
+
+### Changed
+
+- **Status-chip markup restructured** in `src/ui/manuscript-builder/sections/inclusion.ts`. Inputs previously nested inside their labels (label-wraps-input affordance); they now sit as siblings paired via `for`/`id`. Click-to-toggle still works via the standard browser association. Input IDs are namespaced through a module-level counter so multiple concurrent Manuscript Builder instances (dock-leaf + popout window, etc.) don't collide.
+- **Eight `:has(input:...)` CSS rules rewritten as sibling combinators** (`.chip-input:checked + .chip`, `.chip-input:focus-visible + .chip`, etc.) in `styles/manuscript-builder.css`. Pure CSS, no JS state-sync, and the `:focus-visible` semantics survive intact — the combinator reads the real focused element, so mouse clicks don't trigger the ring (`:focus-visible` rejects pointer-induced focus).
+
+### Internal
+
+- **Visually-hidden checkbox rule scoped via wrapper + attribute** (`.dbench-manuscript-builder__status-chips input[type="checkbox"]`, specificity 0-2-1) to win against Obsidian's bare `input[type="radio"], input[type="checkbox"]` rule in `app.css` (0-1-1). A naive class-only selector loses on specificity and the checkboxes reappear at native size.
+- **No remaining `:has()` selectors in the bundle** (`grep -c ':has(' styles.css` returns 0). The scanner reported 16 advisory sites (8 source rules × 2 paths: source CSS + bundled `styles.css`); all gone after this release.
+
 ## [0.6.2] - 2026-05-15
 
 Scanner-hygiene release. Migrates the ODT writer from `jszip` to `fflate` through a thin JSZip-shaped adapter so the bundle no longer ships jszip's UMD module-detection code, which the community-plugin scanner escalated to an error severity 2026-05-15. Eliminates the polyfill-shim infrastructure 0.6.1 had to introduce (the `polyfills/` directory, the `polyfill-shims` esbuild plugin, the jszip `lib/` resolution rerouting) since the upstream cause is gone. No user-visible feature changes; 1387 tests pass unchanged.

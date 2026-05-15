@@ -29,7 +29,7 @@ import { type RenderVaultResult, writeCompiledFile } from './vault-output';
  *
  * Bundle impact: docx adds ~200KB to `main.js` once this module is
  * reachable from the plugin entry. Static import is consistent with
- * JSZip and pdfmake; lazy-loading is the post-V1 lever per the
+ * fflate and pdfmake; lazy-loading is the post-V1 lever per the
  * pdf-bundling-reference.
  */
 

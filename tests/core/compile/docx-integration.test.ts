@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import JSZip from 'jszip';
+import { ZipReader } from '../../../src/utils/zip';
 import { App, TFile } from 'obsidian';
 import { CompileService } from '../../../src/core/compile-service';
 import { buildDocxBytes } from '../../../src/core/compile/render-docx';
@@ -22,7 +22,7 @@ import type { DbenchStatus } from '../../../src/model/types';
  *     -> buildDocxBytes(markdown, fm)
  *       -> parseMarkdown + buildDocxDocument + Packer.toBuffer
  *     -> DOCX zip bytes
- *     -> JSZip.loadAsync + word/document.xml inspect
+ *     -> ZipReader.loadAsync + word/document.xml inspect
  *
  * Reuses the "Salt Road" fixture pattern from chapter-integration.test.ts
  * but locally — duplication is cheap; coupling tests to a shared
@@ -211,7 +211,7 @@ async function compileToDocumentXml(
 ): Promise<string> {
 	const result = await new CompileService(app).generate(preset);
 	const bytes = await buildDocxBytes(result.markdown, preset.frontmatter);
-	const zip = await JSZip.loadAsync(bytes);
+	const zip = await ZipReader.loadAsync(bytes);
 	const file = zip.file('word/document.xml');
 	if (!file) throw new Error('document.xml missing from packed docx');
 	return file.async('string');

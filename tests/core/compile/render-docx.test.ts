@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import JSZip from 'jszip';
+import { ZipReader } from '../../../src/utils/zip';
 import { TFile } from 'obsidian';
 import {
 	buildDocxBytes,
@@ -168,7 +168,7 @@ describe('buildDocxBytes', () => {
 			'# Chapter\n\nA *short* paragraph.',
 			preset.frontmatter
 		);
-		const zip = await JSZip.loadAsync(bytes);
+		const zip = await ZipReader.loadAsync(bytes);
 		const documentXml = await zip.file('word/document.xml')?.async('string');
 		expect(documentXml).toBeDefined();
 		expect(documentXml).toContain('Chapter');
@@ -182,7 +182,7 @@ describe('buildDocxBytes', () => {
 			'dbench-compile-page-size': 'a4',
 		});
 		const bytes = await buildDocxBytes('Body.', preset.frontmatter);
-		const zip = await JSZip.loadAsync(bytes);
+		const zip = await ZipReader.loadAsync(bytes);
 		const documentXml = await zip.file('word/document.xml')?.async('string');
 		expect(documentXml).toMatch(/<w:pgSz[^/]*w:w="11906"[^/]*w:h="16838"/);
 	});
@@ -190,7 +190,7 @@ describe('buildDocxBytes', () => {
 	it('defaults to LETTER when the page size is letter (or absent)', async () => {
 		const preset = makePreset('Compile Presets/Workshop.md');
 		const bytes = await buildDocxBytes('Body.', preset.frontmatter);
-		const zip = await JSZip.loadAsync(bytes);
+		const zip = await ZipReader.loadAsync(bytes);
 		const documentXml = await zip.file('word/document.xml')?.async('string');
 		expect(documentXml).toMatch(/<w:pgSz[^/]*w:w="12240"[^/]*w:h="15840"/);
 	});

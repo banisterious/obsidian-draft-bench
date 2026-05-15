@@ -1,12 +1,12 @@
 # Third-Party Libraries
 
-Draft Bench depends on three external libraries for compile-pipeline output formats: pdfmake (PDF), docx (DOCX), and JSZip (ODT). All three are bundled into `main.js` via static import. This document covers how each is used, plus bundling workarounds applied during 0.6.1's scanner-hygiene work.
+Draft Bench depends on three external libraries for compile-pipeline output formats: pdfmake (PDF), docx (DOCX), and fflate (ODT — wrapped in a thin ZIP adapter at [src/utils/zip.ts](../../src/utils/zip.ts)). All three are bundled into `main.js` via static import. This document covers how each is used, plus the masking workaround applied during 0.6.1 / 0.6.2 scanner-hygiene work.
 
 ## Table of Contents
 
 - [pdfmake](#pdfmake)
 - [docx](#docx)
-- [JSZip](#jszip)
+- [fflate (ZIP adapter)](#fflate-zip-adapter)
 - [Bundling and workarounds](#bundling-and-workarounds)
 - [Dependency management](#dependency-management)
 
@@ -131,37 +131,58 @@ Same shape as the PDF and ODT translators: shared markdown AST in, format-specif
 
 ---
 
-## JSZip
+## fflate (ZIP adapter)
 
-**Purpose:** ZIP archive creation for ODT document generation. ODT files are ZIP containers with specific structure (`mimetype` first, uncompressed; then `META-INF/manifest.xml`, `styles.xml`, `content.xml`).
+**Purpose:** ZIP archive creation and reading. Used for ODT document generation in production code and for cracking open compiled DOCX / ODT bytes in tests. Wrapped in a thin JSZip-shaped adapter at [src/utils/zip.ts](../../src/utils/zip.ts) so call sites use a stateful-builder API while fflate's functional `zip({...}, cb)` shape stays at the library boundary.
 
-**Version:** ^3.10.1
+**Version:** ^0.8.2 (fflate); adapter is local to the repo.
 
-**Location:** `src/core/compile/render-odt.ts` (the only direct consumer); XML strings are built in `src/core/compile/odt/xml.ts` and zipped here.
+**Locations:**
 
-**Usage pattern:**
+- [src/utils/zip.ts](../../src/utils/zip.ts) — the adapter (`ZipBuilder`, `ZipReader`, `ZipReaderFile`).
+- [src/core/compile/render-odt.ts](../../src/core/compile/render-odt.ts) — the only production consumer (writer); XML strings are built in [src/core/compile/odt/xml.ts](../../src/core/compile/odt/xml.ts) and zipped here.
+- `tests/core/compile/**` — test files use `ZipReader` to inspect produced ODT / DOCX bytes.
+
+**Usage pattern (writer, production):**
 
 ```typescript
-import JSZip from 'jszip';
+import { ZipBuilder } from '../../utils/zip';
 
 export async function buildOdtArchive(markdown: string): Promise<Uint8Array> {
-  const zip = new JSZip();
+  const zip = new ZipBuilder();
   // mimetype must be first and uncompressed per the ODT spec
   zip.file('mimetype', ODT_MIMETYPE, { compression: 'STORE' });
   zip.file('META-INF/manifest.xml', ODT_MANIFEST_XML);
   zip.file('styles.xml', ODT_STYLES_XML);
   zip.file('content.xml', buildContentXml(parseMarkdownForOdt(markdown)));
-  return await zip.generateAsync({ type: 'uint8array' });
+  const blob = await zip.generateAsync({
+    mimeType: 'application/vnd.oasis.opendocument.text',
+  });
+  return new Uint8Array(await blob.arrayBuffer());
 }
 ```
 
-**Key features used:**
+**Usage pattern (reader, tests):**
 
-| Feature | Description |
-|---------|-------------|
-| `new JSZip()` | Create a new archive for writing |
-| `zip.file(path, content, options)` | Add a file; `{ compression: 'STORE' }` disables DEFLATE per ODT spec for the mimetype entry |
-| `generateAsync({ type: 'uint8array' })` | Serialize the archive to bytes |
+```typescript
+import { ZipReader } from '../../../src/utils/zip';
+
+const zip = await ZipReader.loadAsync(bytes);
+const file = zip.file('word/document.xml');
+const xml = await file.async('string');
+// or iterate: for (const [path, file] of Object.entries(zip.files)) { ... }
+```
+
+**Adapter surface (JSZip-shaped):**
+
+| Adapter API | Description |
+|-------------|-------------|
+| `new ZipBuilder()` | Create a writer; entries accreted via `.file()` |
+| `zip.file(path, content, options)` | Add a file; `{ compression: 'STORE' }` -> fflate `level: 0`; default is DEFLATE level 6 |
+| `zip.generateAsync({ mimeType })` | Serialize as a Blob with the given MIME type |
+| `ZipReader.loadAsync(bytes)` | Parse a ZIP archive from `ArrayBuffer` or `Uint8Array` |
+| `zip.file(path)` / `zip.files[path]` | Reader-side entry lookup; returns `ZipReaderFile` or `null` |
+| `file.async('string' \| 'uint8array' \| 'arraybuffer')` | Extract entry contents as the requested type |
 
 **ODT archive structure:**
 
@@ -170,38 +191,33 @@ export async function buildOdtArchive(markdown: string): Promise<Uint8Array> {
 - `styles.xml` — paragraph / character / list styles.
 - `content.xml` — the document body (paragraphs, headings, lists, text spans).
 
-JSZip preserves insertion order when adding files, which is how Draft Bench keeps `mimetype` as the first entry — the order of `.file()` calls in `buildOdtArchive` is the order in the output ZIP.
+The adapter (and fflate underneath) preserves insertion order when adding files, which is how Draft Bench keeps `mimetype` as the first entry — the order of `.file()` calls in `buildOdtArchive` is the order in the output ZIP.
+
+**Why the adapter:**
+
+1. **Writer call sites are stateful builders** (`new ZipBuilder()` -> `.file()` × N -> `.generateAsync()`). fflate's functional `zip({...}, cb)` shape would distribute `Uint8Array` conversion, base64 decoding, Blob wrapping, and STORE-level handling across every call site.
+2. **Centralized library boundary.** A future fflate version bump or library swap is a one-file change.
+3. **JSZip parity.** The adapter intentionally mirrors the JSZip API surface the codebase uses, so the 0.6.2 migration from jszip touched only imports and one return-value adapter — no per-call-site rewriting.
 
 **Notes:**
 
-- **Lightweight.** ~90 KB minified, no native dependencies, works in browser and Node.
-- **Only direct ODT use.** DOCX zip handling is internal to the `docx` library; PDF doesn't involve zip at all.
-- **No `@types/jszip` needed.** Type definitions ship with the library.
+- **Lightweight.** fflate is ~8 KB minified, zero runtime dependencies, TypeScript types built in. Replaced jszip's ~90 KB + transitive `setimmediate` / `immediate` / `lie` / `readable-stream` chain in 0.6.2; bundle size dropped ~200 KB.
+- **Adapter type-narrows fflate's `AsyncZipOptions.level`.** fflate types `level` as a literal union `0 | 1 | ... | 9`; the adapter only ever produces `0` (STORE) or `6` (DEFLATE), so internal types are narrowed to `0 | 6` to satisfy TypeScript without runtime cost.
+- **Only direct ODT use in production.** DOCX zip handling is internal to the `docx` library; PDF doesn't involve zip at all.
 
 ---
 
 ## Bundling and workarounds
 
-A handful of bundling quirks are worked around in `esbuild.config.mjs`. Most exist because pdfmake, docx, and jszip all transitively reach IE-era polyfills (`setimmediate`, `immediate`) that contain `createElement("script")` patterns — flagged by the community-plugin scanner as "dynamic `<script>` element creations" even though the IE branches are dead code in modern Chromium. These workarounds shipped in 0.6.1; see [CHANGELOG.md § 0.6.1](../../CHANGELOG.md) for the full release notes.
-
-### Native-equivalent polyfill shims
-
-The `setimmediate` and `immediate` npm packages (jszip transitive deps) are replaced at bundle time with native-equivalent shims:
-
-- `polyfills/setimmediate.js` — installs `globalThis.setImmediate` from `setTimeout(fn, 0)` (matching the macrotask semantic of jszip's "yield to the event loop" usage).
-- `polyfills/immediate.js` — exports a `queueMicrotask`-based scheduler matching lie's Promise microtask scheduler.
-
-Wired via an esbuild `onResolve` plugin in `esbuild.config.mjs` (the `polyfill-shims` plugin) that maps the `setimmediate` and `immediate` module specifiers to the shim paths.
-
-### jszip resolution rerouting
-
-jszip's `package.json` `browser` field redirects `./lib/index` to `./dist/jszip.min.js` — a pre-bundled Browserified file with both `setimmediate` and `immediate` already inlined. The shim swap above can't catch those (they happen inside the pre-merged file's internal module system), so the same plugin reroutes `jszip` itself from the prebundled `dist` to the unbundled `lib/index.js`. `readable-stream` (which jszip's `lib` uses) routes to Node's built-in `stream`, already external for Electron.
+Two workarounds remain in `esbuild.config.mjs` and one inside `src/core/compile/render-pdf.ts`. The infrastructure shrank substantially in 0.6.2 when jszip was replaced with fflate: jszip's transitive `setimmediate` / `immediate` / `lie` / `readable-stream` chain no longer exists, which let the `polyfill-shims` plugin and `polyfills/` shim directory be deleted entirely. See [CHANGELOG.md](../../CHANGELOG.md) for the 0.6.1 / 0.6.2 release-note story.
 
 ### Vendor-bundle literal masking
 
-`docx` and `pdfmake` ship pre-bundled distributions that inline `setimmediate` / `immediate` as dead code, guarded behind `MutationObserver` / `setImmediate` feature checks that always succeed first in Chromium. The IE branches never execute at runtime, but the `createElement("script")` string literals still appear in the bundle and trip the scanner.
+`docx` and `pdfmake` ship pre-bundled distributions that inline `setimmediate` / `immediate` as dead code, guarded behind `MutationObserver` / `setImmediate` feature checks that always succeed first in Chromium. The IE branches never execute at runtime, but the `createElement("script")` string literals still appear in the bundle and trip the community-plugin scanner's "dynamic `<script>` element creation" check.
 
-A separate esbuild plugin (`mask-script-polyfill-literal`) intercepts file loads from `node_modules/docx/` and `node_modules/pdfmake/`, rewrites `createElement("script")` to a non-foldable runtime expression (`createElement("scrip"+(globalThis.__dbench_t__||"t"))`) so esbuild's optimizer can't constant-fold it back, and lets esbuild bundle the transformed contents. Runtime is unaffected (the branches are still dead).
+An esbuild plugin (`mask-script-polyfill-literal` in `esbuild.config.mjs`) intercepts file loads from `node_modules/docx/` and `node_modules/pdfmake/`, rewrites `createElement("script")` to a non-foldable runtime expression (`createElement("scrip"+(globalThis.__dbench_t__||"t"))`) so esbuild's optimizer can't constant-fold it back, and lets esbuild bundle the transformed contents. Runtime is unaffected (the branches are still dead).
+
+This is the only bundling workaround left after the 0.6.2 migration. It can't be eliminated the same way the jszip chain was, because both `docx` and `pdfmake` ship their dependencies inlined into their distributed bundles — there's no module-resolution boundary for the rerouting trick to catch.
 
 ### pdfmake `getBuffer` callback shim
 
@@ -217,17 +233,17 @@ Not a bundling workaround per se, but a notable runtime mismatch: `@types/pdfmak
 |---------|------------------|---------|
 | pdfmake core + Roboto VFS | ~2 MB total | Static import (loaded with the compile-pipeline module graph) |
 | docx | ~200 KB | Static import |
-| JSZip | ~90 KB | Static import |
+| fflate | ~8 KB | Static import (via the ZIP adapter) |
 
-Total compile-pipeline weight: ~2.3 MB. The plugin entry doesn't pull in any of these directly; they're reachable from `render-pdf.ts` / `render-docx.ts` / `render-odt.ts`, which are themselves reachable from the compile-service module. Until a P3.E compile command actually triggers the renderer, the cost is paid at bundle time but not at plugin-startup parse time (Obsidian parses `main.js` lazily where it can).
+Total compile-pipeline weight: ~2.2 MB. The plugin entry doesn't pull in any of these directly; they're reachable from `render-pdf.ts` / `render-docx.ts` / `render-odt.ts`, which are themselves reachable from the compile-service module. Until a P3.E compile command actually triggers the renderer, the cost is paid at bundle time but not at plugin-startup parse time (Obsidian parses `main.js` lazily where it can).
 
-Bundle size is currently ~5.8 MB total. The pdf-bundling-reference document tracks open levers for shrinking this: lazy-loading the render-pdf module via dynamic import, switching pdfmake to a smaller alternative, font deduplication. None shipped pre-1.0; tracked as post-V1 work.
+Bundle size is currently ~5.6 MB total (down from ~5.8 MB after the 0.6.2 jszip -> fflate migration). The pdf-bundling-reference document tracks open levers for shrinking this further: lazy-loading the render-pdf module via dynamic import, switching pdfmake to a smaller alternative, font deduplication. None shipped pre-1.0; tracked as post-V1 work.
 
 **Type definitions (devDependencies):**
 
 - `@types/pdfmake` — pdfmake doesn't ship types of its own.
 - `@types/node` — for `Buffer`, `fs`, and other Node builtins that surface through Electron.
 
-docx and JSZip ship type definitions with the library itself; no separate `@types/` packages required.
+docx and fflate ship type definitions with the library itself; no separate `@types/` packages required.
 
 **No native dependencies.** All three libraries are pure JavaScript. Builds work cross-platform (Windows, macOS, Linux, mobile) without per-platform binaries or postinstall steps.

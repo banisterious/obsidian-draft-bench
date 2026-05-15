@@ -1,7 +1,7 @@
-import JSZip from 'jszip';
 import type { App } from 'obsidian';
 import type { CompileResult } from '../compile-service';
 import type { CompilePresetNote, ProjectNote } from '../discovery';
+import { ZipBuilder } from '../../utils/zip';
 import { getElectron, getNodeFs } from './disk-deps';
 import { parseMarkdownForOdt } from './odt/parser';
 import {
@@ -36,10 +36,11 @@ import { type RenderVaultResult, writeCompiledFile } from './vault-output';
  * revisit when PDF needs it too and a shared scene-set plumbing
  * change becomes worth the churn.
  *
- * JSZip is statically imported (bundled into `main.js`). Dynamic
- * import would add ~1 MB saving only when ODT is never used, and
- * esbuild's default non-split configuration inlines dynamic imports
- * anyway. Revisit if bundle size becomes a real concern.
+ * The zip layer is fflate (via the thin `ZipBuilder` adapter at
+ * `src/utils/zip.ts`). Statically imported and bundled into `main.js`.
+ * fflate ships at ~8 KB minified with zero transitive deps, replacing
+ * jszip's ~90 KB + IE-era polyfill chain that 0.6.1 had to work around
+ * in `esbuild.config.mjs`. See `docs/developer/third-party-libraries.md`.
  */
 
 /**
@@ -92,17 +93,20 @@ export async function renderOdtToDisk(
  * returned bytes to a writer of choice (disk, vault adapter, etc.).
  *
  * The `mimetype` file must be first in the archive and stored
- * uncompressed per the ODT spec. JSZip preserves insertion order
- * when adding files; `{ compression: 'STORE' }` disables DEFLATE for
- * that entry.
+ * uncompressed per the ODT spec. `ZipBuilder` (fflate) preserves
+ * insertion order when adding files; `{ compression: 'STORE' }` maps
+ * to fflate's `level: 0` (no DEFLATE) for that entry.
  */
 export async function buildOdtArchive(markdown: string): Promise<Uint8Array> {
-	const zip = new JSZip();
+	const zip = new ZipBuilder();
 	zip.file('mimetype', ODT_MIMETYPE, { compression: 'STORE' });
 	zip.file('META-INF/manifest.xml', ODT_MANIFEST_XML);
 	zip.file('styles.xml', ODT_STYLES_XML);
 	zip.file('content.xml', buildContentXml(parseMarkdownForOdt(markdown)));
-	return await zip.generateAsync({ type: 'uint8array' });
+	const blob = await zip.generateAsync({
+		mimeType: 'application/vnd.oasis.opendocument.text',
+	});
+	return new Uint8Array(await blob.arrayBuffer());
 }
 
 /**

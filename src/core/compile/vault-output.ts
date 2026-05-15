@@ -110,7 +110,7 @@ export async function writeCompiledFile(
  * containing exactly the view's bytes. Pass-through for `ArrayBuffer`
  * input. Avoids handing Obsidian a buffer that includes unrelated
  * bytes when the caller's `Uint8Array` is a partial view (common with
- * Node `Buffer` outputs from pdfmake / docx Packer / JSZip).
+ * Node `Buffer` outputs from pdfmake / docx Packer / fflate).
  */
 function toArrayBuffer(content: ArrayBuffer | Uint8Array): ArrayBuffer {
 	if (content instanceof Uint8Array) {

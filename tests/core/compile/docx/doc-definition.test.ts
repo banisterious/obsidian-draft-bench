@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import JSZip from 'jszip';
+import { ZipReader } from '../../../../src/utils/zip';
 import { Document, Packer } from 'docx';
 import { buildDocxDocument } from '../../../../src/core/compile/docx/doc-definition';
 import type { MdBlock } from '../../../../src/core/compile/md-ast';
@@ -13,7 +13,7 @@ import type { MdBlock } from '../../../../src/core/compile/md-ast';
  */
 async function extractDocumentXml(doc: Document): Promise<string> {
 	const buffer = await Packer.toBuffer(doc);
-	const zip = await JSZip.loadAsync(buffer);
+	const zip = await ZipReader.loadAsync(buffer);
 	const file = zip.file('word/document.xml');
 	if (!file) throw new Error('document.xml missing from packed docx');
 	return file.async('string');
@@ -21,7 +21,7 @@ async function extractDocumentXml(doc: Document): Promise<string> {
 
 async function extractNumberingXml(doc: Document): Promise<string | null> {
 	const buffer = await Packer.toBuffer(doc);
-	const zip = await JSZip.loadAsync(buffer);
+	const zip = await ZipReader.loadAsync(buffer);
 	const file = zip.file('word/numbering.xml');
 	return file ? file.async('string') : null;
 }

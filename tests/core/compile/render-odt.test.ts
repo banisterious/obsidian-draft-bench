@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TFile } from 'obsidian';
-import JSZip from 'jszip';
+import { ZipReader } from '../../../src/utils/zip';
 import {
 	buildOdtArchive,
 	renderOdtToDisk,
@@ -71,7 +71,7 @@ describe('buildOdtArchive', () => {
 
 	it('builds a valid zip containing mimetype, manifest, styles, content', async () => {
 		const bytes = await buildOdtArchive('# Heading\n\nProse.');
-		const reopened = await JSZip.loadAsync(bytes);
+		const reopened = await ZipReader.loadAsync(bytes);
 
 		expect(reopened.file('mimetype')).not.toBeNull();
 		expect(reopened.file('META-INF/manifest.xml')).not.toBeNull();
@@ -81,7 +81,7 @@ describe('buildOdtArchive', () => {
 
 	it('stores the mimetype file with the correct media type string', async () => {
 		const bytes = await buildOdtArchive('any');
-		const reopened = await JSZip.loadAsync(bytes);
+		const reopened = await ZipReader.loadAsync(bytes);
 		const mime = await reopened.file('mimetype')!.async('string');
 		expect(mime).toBe('application/vnd.oasis.opendocument.text');
 	});
@@ -89,7 +89,7 @@ describe('buildOdtArchive', () => {
 	it("embeds the compile markdown's structure in content.xml", async () => {
 		const md = '# Chapter One\n\nThe prose starts here.\n\n## Scene Break\n\n- item A\n- item B';
 		const bytes = await buildOdtArchive(md);
-		const reopened = await JSZip.loadAsync(bytes);
+		const reopened = await ZipReader.loadAsync(bytes);
 		const content = await reopened.file('content.xml')!.async('string');
 
 		expect(content).toContain('Chapter One');
@@ -104,7 +104,7 @@ describe('buildOdtArchive', () => {
 
 	it('produces a well-formed archive even for empty markdown', async () => {
 		const bytes = await buildOdtArchive('');
-		const reopened = await JSZip.loadAsync(bytes);
+		const reopened = await ZipReader.loadAsync(bytes);
 		expect(reopened.file('content.xml')).not.toBeNull();
 	});
 });

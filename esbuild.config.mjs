@@ -1,11 +1,8 @@
 import esbuild from "esbuild";
 import process from "process";
 import { builtinModules as builtins } from "node:module";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve, sep } from "node:path";
+import { sep } from "node:path";
 import { readFile } from "node:fs/promises";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const banner =
 `/*
@@ -42,40 +39,20 @@ const context = await esbuild.context({
 	logLevel: "info",
 	sourcemap: prod ? false : 'inline',
 	treeShaking: true,
-	// jszip's package.json `browser` field redirects to a pre-bundled
-	// dist/jszip.min.js that inlines IE-era setimmediate/immediate polyfills
-	// (createElement("script") patterns that trip automated plugin scanners).
-	// We override the resolution to use the unbundled lib/ entry, then swap
-	// setimmediate/immediate with native-equivalent shims. readable-stream
-	// (jszip's lib uses it) routes to Node's built-in stream (already external).
-	// See polyfills/ for shim rationale.
+	// docx and pdfmake ship pre-bundled distributions with IE-era
+	// setImmediate/immediate polyfills inlined as dead code (guarded
+	// behind MutationObserver / setImmediate feature checks that always
+	// succeed in Chromium). The createElement("script") literals trip
+	// the community-store scanner's "dynamic <script> creation" check.
+	// Mask them by splitting the literal at load time; runtime behavior
+	// is unchanged since the branches are unreachable in modern engines.
+	//
+	// (Previously this section also carried a `polyfill-shims` plugin
+	// that rerouted setimmediate / immediate / jszip / readable-stream
+	// to native-equivalent shims and jszip's unbundled lib entry. The
+	// 0.6.2 migration from jszip to fflate eliminated every consumer of
+	// those rules, so the plugin was removed.)
 	plugins: [
-		{
-			name: 'polyfill-shims',
-			setup(build) {
-				const shims = {
-					setimmediate: resolve(__dirname, 'polyfills/setimmediate.js'),
-					immediate: resolve(__dirname, 'polyfills/immediate.js'),
-				};
-				build.onResolve({ filter: /^(setimmediate|immediate)$/ }, (args) => ({
-					path: shims[args.path],
-				}));
-				build.onResolve({ filter: /^jszip$/ }, () => ({
-					path: resolve(__dirname, 'node_modules/jszip/lib/index.js'),
-				}));
-				build.onResolve({ filter: /^readable-stream$/ }, () => ({
-					path: 'stream',
-					external: true,
-				}));
-			},
-		},
-		// docx and pdfmake ship pre-bundled distributions with IE-era
-		// setImmediate/immediate polyfills inlined as dead code (guarded
-		// behind MutationObserver / setImmediate feature checks that always
-		// succeed in Chromium). The createElement("script") literals trip
-		// the community-store scanner's "dynamic <script> creation" check.
-		// Mask them by splitting the literal at load time; runtime behavior
-		// is unchanged since the branches are unreachable in modern engines.
 		{
 			name: 'mask-script-polyfill-literal',
 			setup(build) {

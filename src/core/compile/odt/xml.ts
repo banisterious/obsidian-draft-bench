@@ -6,7 +6,7 @@ import type { OdtBlock, OdtRun } from './parser';
  * The ODT archive contains (at minimum) four files: `mimetype`,
  * `META-INF/manifest.xml`, `styles.xml`, `content.xml`. This module
  * builds the latter two plus the static `mimetype` / manifest
- * strings; `render-odt.ts` wires them into a JSZip archive and
+ * strings; `render-odt.ts` wires them into a ZipBuilder archive and
  * writes to disk.
  *
  * V1 keeps the XML surface tight: paragraph + heading + list

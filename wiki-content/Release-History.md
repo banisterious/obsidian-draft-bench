@@ -4,6 +4,42 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.6.3: 2026-05-15 — Scanner-hygiene patch (`:has()`)
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.6.3)
+
+Internal-quality release. Replaces the Manuscript Builder status-chip filter's `:has()` selectors with equivalent sibling-combinator rules so the bundle no longer triggers the community-plugin scanner's "broad selector invalidation" performance advisory. All 16 sites the scanner flagged (8 source rules × 2 paths: source CSS + bundled `styles.css`) are eliminated. UX is identical to 0.6.2.
+
+### Changed
+
+- **Status-chip markup restructured.** Inputs previously nested inside their labels (label-wraps-input affordance); they now sit as siblings paired via `for`/`id`. Click-to-toggle still works via the standard browser association. Input IDs are namespaced through a module-level counter so multiple concurrent Manuscript Builder instances (dock-leaf + popout window, etc.) don't collide.
+- **Eight `:has(input:...)` CSS rules rewritten as sibling combinators** (`.chip-input:checked + .chip`, `.chip-input:focus-visible + .chip`, etc.). Pure CSS, no JS state-sync. `:focus-visible` semantics survive intact — the combinator reads the real focused element, so mouse clicks toggle the chip *without* showing the keyboard focus ring (`:focus-visible` rejects pointer-induced focus), while tab navigation transfers the ring to each label correctly.
+
+### Internal
+
+- **Visually-hidden checkbox rule scoped via wrapper + attribute** (`.dbench-manuscript-builder__status-chips input[type="checkbox"]`, specificity 0-2-1) to win against Obsidian's bare `input[type="radio"], input[type="checkbox"]` rule in `app.css` (0-1-1). A naive class-only selector loses on specificity and the checkboxes reappear at native size.
+
+Mobile-supported (Android verified through 0.5.2). 1387 tests pass. Community-plugin scan score: 92/100.
+
+## 0.6.2: 2026-05-15 — jszip -> fflate migration
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.6.2)
+
+Scanner-hygiene release. Replaces `jszip` with `fflate` (through a thin JSZip-shaped adapter at `src/utils/zip.ts`) so the bundle no longer ships jszip's UMD module-detection code, which the community-plugin scanner escalated to an error severity on 2026-05-15. The IE-era polyfill workarounds 0.6.1 introduced to neutralize jszip's transitive `setimmediate` / `immediate` / `lie` / `readable-stream` chain are no longer needed and have been removed. Bundle shrinks from ~5.8 MB to ~5.6 MB; runtime behavior is unchanged.
+
+### Changed
+
+- **ODT archive creation now routes through `fflate` via `src/utils/zip.ts`.** `ZipBuilder` exposes the stateful builder API the codebase already used (`new ZipBuilder()` -> `.file()` -> `.generateAsync()`); `ZipReader` exposes the JSZip reader pattern (`loadAsync` + `zip.files` record + `zip.file(path)` lookup + `.async('string' | 'uint8array' | 'arraybuffer')`).
+- **`jszip` removed from dependencies**, replaced by `fflate@^0.8.2` (pure JavaScript, zero transitive deps, TypeScript types built in).
+- **Test files updated** to use the adapter's `ZipReader` for inspecting compiled DOCX / ODT bytes. The reader pattern API is unchanged from JSZip's surface; only the import line differs.
+
+### Internal
+
+- **Bundling infrastructure simplified.** Deleted the `polyfill-shims` esbuild plugin (which rerouted `setimmediate` / `immediate` / `jszip` / `readable-stream`), the `polyfills/setimmediate.js` and `polyfills/immediate.js` native-equivalent shims, the `polyfills/` directory, and the `polyfills/**` eslint ignore. The `mask-script-polyfill-literal` plugin remains for `docx` + `pdfmake`'s pre-bundled IE-era polyfill code.
+- **Bundle size dropped ~200 KB** (5.8 MB -> 5.6 MB) from removing jszip and its transitive chain.
+
+Mobile-supported (Android verified through 0.5.2). 1387 tests pass. Manual ODT round-trip verified against LibreOffice before tag-push.
+
 ## 0.6.1: 2026-05-13 — Scanner-hygiene patch
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.6.1)

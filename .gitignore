@@ -87,6 +87,9 @@ docs/planning/artifact-attestation-workflow.md
 # Personal planning — 0.6.0 frontmatter type-narrowing refactor planning doc (internal-only; the helper module + call-site changes are the shipped artifact)
 docs/planning/frontmatter-type-narrowing.md
 
+# Personal planning — post-0.6.3 runtime hygiene pass (internal-only; eventual code changes are the shipped artifact)
+docs/planning/runtime-hygiene-pass.md
+
 # Audit measurement output (regenerable; raw metafile is large and noisy)
 scripts/audit/meta.json
 scripts/audit/bundle-report.txt

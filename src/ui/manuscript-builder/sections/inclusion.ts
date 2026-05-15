@@ -4,6 +4,17 @@ import type { DraftBenchSettings } from '../../../model/settings';
 import { writeField } from './write-field';
 
 /**
+ * Monotonic counter used to produce unique `id`/`for` pairings for
+ * the status-chip checkboxes (see `renderStatusFilter`). Each render
+ * of the chip row claims the next integer so multiple Manuscript
+ * Builder instances (e.g. dock-leaf + popout window) can coexist
+ * without DOM-level id collisions. Counter is module-scoped because
+ * the Builder is a singleton plugin surface; if that ever changes,
+ * scope this per-plugin-instance.
+ */
+let statusChipGroupCounter = 0;
+
+/**
  * Inclusion section of the Compile tab form.
  *
  * Per [D-06 § Inclusion model](../../../../docs/planning/decisions/D-06-compile-preset-storage-and-content-rules.md),
@@ -75,19 +86,26 @@ export function renderInclusionSection(
  * row layout); only the control surface is custom because Obsidian's
  * Setting API has no built-in multi-select primitive.
  *
- * Chip visual: a `<label>` styled as a toggleable pill, wrapping a
- * visually-hidden `<input type="checkbox">` plus the status text.
- * Click anywhere on the pill toggles via the standard label-wraps-
- * input affordance. The `data-status` attribute carries the lowercased
- * status value so CSS selectors can theme the active state per
- * status via `[data-status="brainstorm"]` etc., mirroring the
- * Manuscript view's status-chip pattern.
+ * Chip visual: a visually-hidden `<input type="checkbox">` paired with
+ * a `<label for="...">` sibling that renders as the toggleable pill.
+ * The for/id association makes clicking the pill toggle the input via
+ * standard browser semantics; the sibling layout lets pure-CSS sibling
+ * selectors (`.chip-input:checked + .chip`, `.chip-input:focus-visible
+ * + .chip`) transfer state from the input to the visible chip without
+ * needing JS class-mirroring or the `:has()` selector. The
+ * `data-status` attribute carries the lowercased status value so CSS
+ * selectors can theme the active state per status via
+ * `[data-status="brainstorm"]` etc.
  *
  * Visual contract: outlined when unselected, color-mix-tinted with
  * the per-status `--dbench-status-<status>` variable when selected.
  * The hidden checkbox stays focusable for keyboard / screen-reader
- * accessibility; CSS `:has(input:focus-visible)` transfers the
+ * accessibility; CSS `.chip-input:focus-visible + .chip` transfers the
  * focus indicator to the chip.
+ *
+ * Input ids are namespaced with a per-render counter (see
+ * `statusChipGroupCounter` at the top of this file) so concurrent
+ * Manuscript Builder instances don't collide.
  */
 function renderStatusFilter(
 	parent: HTMLElement,
@@ -103,16 +121,21 @@ function renderStatusFilter(
 		preset.frontmatter['dbench-compile-scene-statuses']
 	);
 
+	const groupId = ++statusChipGroupCounter;
+
 	for (const status of settings.statusVocabulary) {
-		const label = wrapper.createEl('label', {
-			cls: 'dbench-manuscript-builder__status-chip',
-			attr: { 'data-status': status.toLowerCase() },
-		});
-		const checkbox = label.createEl('input', {
+		const statusLower = status.toLowerCase();
+		const inputId = `dbench-status-chip-${groupId}-${statusLower}`;
+		const checkbox = wrapper.createEl('input', {
 			type: 'checkbox',
-			attr: { 'aria-label': status },
+			cls: 'dbench-manuscript-builder__status-chip-input',
+			attr: { id: inputId, 'aria-label': status },
 		});
 		checkbox.checked = current.has(status);
+		const label = wrapper.createEl('label', {
+			cls: 'dbench-manuscript-builder__status-chip',
+			attr: { 'data-status': statusLower, for: inputId },
+		});
 		label.createSpan({
 			cls: 'dbench-manuscript-builder__status-chip-label',
 			text: status,

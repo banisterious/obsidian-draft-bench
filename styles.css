@@ -416,7 +416,7 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 /* End of notes.css */
 
 /* --------------------------------------------------------------------------
-   MANUSCRIPT-BUILDER.CSS  (436 lines, 13.11 KB)
+   MANUSCRIPT-BUILDER.CSS  (456 lines, 14.16 KB)
    -------------------------------------------------------------------------- */
 
 /*
@@ -796,8 +796,19 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 }
 
 /* Visually hide the checkbox while keeping it focusable for screen
-   readers and keyboard navigation. Standard sr-only pattern. */
-.dbench-manuscript-builder__status-chip input[type="checkbox"] {
+   readers and keyboard navigation. Sits as a sibling of its paired
+   `.dbench-manuscript-builder__status-chip` so sibling combinators
+   below can transfer state. Standard sr-only pattern.
+
+   Selector specificity matters here: Obsidian's app.css ships a bare
+   `input[type="radio"], input[type="checkbox"]` rule (specificity
+   0-1-1) that sets `width` / `height` / `appearance` / etc. on every
+   checkbox in the renderer. A plain `.dbench-manuscript-builder__
+   status-chip-input` class selector is only 0-1-0, so Obsidian's rule
+   wins on specificity and the checkbox reappears at native size.
+   Wrapping with the parent class (`.status-chips input[type="checkbox"]`,
+   0-2-1) clears Obsidian's rule outright. */
+.dbench-manuscript-builder__status-chips input[type="checkbox"] {
 	position: absolute;
 	width: 1px;
 	height: 1px;
@@ -810,13 +821,16 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
 }
 
 /* Hover: subtle text-color lift for unselected chips. */
-.dbench-manuscript-builder__status-chip:hover:not(:has(input:checked)) {
+.dbench-manuscript-builder__status-chip-input:not(:checked)
+	+ .dbench-manuscript-builder__status-chip:hover {
 	color: var(--text-normal);
 }
 
-/* Keyboard focus: hidden input takes focus; transfer the visual
-   indicator to the chip itself. */
-.dbench-manuscript-builder__status-chip:has(input:focus-visible) {
+/* Keyboard focus: input takes focus; sibling combinator transfers the
+   visual indicator to the chip. `:focus-visible` (not `:focus-within`
+   or plain `:focus`) preserves the keyboard-only outline. */
+.dbench-manuscript-builder__status-chip-input:focus-visible
+	+ .dbench-manuscript-builder__status-chip {
 	outline: 2px solid var(--interactive-accent);
 	outline-offset: 2px;
 }
@@ -827,26 +841,32 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
  * status that ends up with a `color` value (set or default) gets a
  * matching tinted background.
  */
-.dbench-manuscript-builder__status-chip:has(input:checked) {
+.dbench-manuscript-builder__status-chip-input:checked
+	+ .dbench-manuscript-builder__status-chip {
 	color: var(--dbench-status-default);
 	border-color: currentcolor;
 	background: color-mix(in srgb, currentcolor 22%, transparent);
 }
 
-.dbench-manuscript-builder__status-chip[data-status="brainstorm"]:has(input:checked),
-.dbench-manuscript-builder__status-chip[data-status="idea"]:has(input:checked) {
+.dbench-manuscript-builder__status-chip-input:checked
+	+ .dbench-manuscript-builder__status-chip[data-status="brainstorm"],
+.dbench-manuscript-builder__status-chip-input:checked
+	+ .dbench-manuscript-builder__status-chip[data-status="idea"] {
 	color: var(--dbench-status-brainstorm);
 }
 
-.dbench-manuscript-builder__status-chip[data-status="draft"]:has(input:checked) {
+.dbench-manuscript-builder__status-chip-input:checked
+	+ .dbench-manuscript-builder__status-chip[data-status="draft"] {
 	color: var(--dbench-status-draft);
 }
 
-.dbench-manuscript-builder__status-chip[data-status="revision"]:has(input:checked) {
+.dbench-manuscript-builder__status-chip-input:checked
+	+ .dbench-manuscript-builder__status-chip[data-status="revision"] {
 	color: var(--dbench-status-revision);
 }
 
-.dbench-manuscript-builder__status-chip[data-status="final"]:has(input:checked) {
+.dbench-manuscript-builder__status-chip-input:checked
+	+ .dbench-manuscript-builder__status-chip[data-status="final"] {
 	color: var(--dbench-status-final);
 }
 
@@ -3008,12 +3028,12 @@ body.is-readable-line-width .dbench-draft .markdown-preview-sizer {
    ==========================================================================
 
    Components: 11
-   Total:      2916 lines, 80.68 KB
+   Total:      2936 lines, 81.73 KB
    - variables.css: 109 lines, 3.92 KB
    - style-settings.css: 155 lines, 6.07 KB
    - base.css: 40 lines, 0.75 KB
    - notes.css: 73 lines, 2.38 KB
-   - manuscript-builder.css: 436 lines, 13.11 KB
+   - manuscript-builder.css: 456 lines, 14.16 KB
    - preview-toolbar.css: 94 lines, 2.54 KB
    - welcome-modal.css: 94 lines, 2.21 KB
    - import-wizard.css: 513 lines, 11.88 KB

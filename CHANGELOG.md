@@ -6,6 +6,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-05-15
+
+Scanner-hygiene release. Migrates the ODT writer from `jszip` to `fflate` through a thin JSZip-shaped adapter so the bundle no longer ships jszip's UMD module-detection code, which the community-plugin scanner escalated to an error severity 2026-05-15. Eliminates the polyfill-shim infrastructure 0.6.1 had to introduce (the `polyfills/` directory, the `polyfill-shims` esbuild plugin, the jszip `lib/` resolution rerouting) since the upstream cause is gone. No user-visible feature changes; 1387 tests pass unchanged.
+
+### Changed
+
+- **ODT archive creation routes through `fflate` via a thin adapter** at `src/utils/zip.ts`. `ZipBuilder` exposes a stateful builder API (`new ZipBuilder()` -> `.file()` -> `.generateAsync()`) and `ZipReader` exposes the JSZip-style reader pattern (`loadAsync` + `zip.files` record + `zip.file(path)` lookup + `.async('string' | 'uint8array' | 'arraybuffer')`). Centralizing the library boundary keeps call-site diffs minimal and makes future swaps a one-file change.
+- **`jszip` removed from dependencies.** Replaced by `fflate@^0.8.2`. Pure JavaScript, zero transitive dependencies, ~8 KB minified versus jszip's ~90 KB plus its `setimmediate` / `immediate` / `lie` / `readable-stream` chain.
+- **Test files updated to use the adapter** (`tests/core/compile/render-odt.test.ts`, `render-docx.test.ts`, `docx-integration.test.ts`, `docx/doc-definition.test.ts`). Import line swap plus `JSZip.loadAsync` -> `ZipReader.loadAsync`; reader pattern otherwise unchanged.
+
+### Internal
+
+- **Bundling infrastructure simplified.** With jszip gone, the upstream cause of three of 0.6.1's four bundling workarounds is eliminated. Deleted: the `polyfill-shims` esbuild plugin (rerouted `setimmediate` / `immediate` / `jszip` / `readable-stream`), the `polyfills/setimmediate.js` and `polyfills/immediate.js` native-equivalent shims, the `polyfills/` directory, the `polyfills/**` eslint ignore. The `mask-script-polyfill-literal` plugin remains for docx + pdfmake's pre-bundled IE-era polyfill code.
+- **Bundle size dropped ~200 KB** (5.8 MB -> 5.6 MB) from removing jszip and its transitive chain.
+- **Adapter diverges from the Charted Roots pattern in two places** so the migration compiles under Draft Bench's stricter tsconfig: internal `level` narrowed to `0 | 6` to satisfy fflate's `AsyncZipOptions.level` literal union, and the `async('string')` overload added with `TextDecoder` UTF-8 conversion (tests use string extraction; the rest of the Charted Roots migration table documents `'string'` as supported but the verbatim adapter omitted the overload declaration).
+- **`docs/developer/third-party-libraries.md` rewritten** to reflect the fflate-via-adapter architecture. JSZip section becomes "fflate (ZIP adapter)" with the adapter rationale and JSZip-shaped surface table; Bundling-and-workarounds section shrinks from three workarounds to one (vendor literal masking) plus the unrelated pdfmake `getBuffer` callback shim.
+
 ## [0.6.1] - 2026-05-13
 
 Scanner-hygiene patch. Eliminates the "10 dynamic `<script>` element creations" warning the community.obsidian.md automated scan reports against 0.6.0's bundle. The flagged patterns come from IE-era polyfills in transitive dependencies; none of the IE branches execute at runtime in Chromium (they sit behind `MutationObserver` / `setImmediate` feature checks that always succeed first), but the static scanner sees the `createElement("script")` literals regardless. All 10 are now gone from the bundle. No user-visible feature changes; 1387 tests pass unchanged.

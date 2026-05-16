@@ -9,6 +9,7 @@ export default [
 			"*.config.ts",
 			"build-css.js",
 			"version-bump.mjs",
+			"patch-*.js",
 			"node_modules/**",
 			"docs/**",
 			"external/**",

@@ -70,20 +70,21 @@ Voice corrections, copy improvements, structural reshaping all happen back in th
 
 ### Recurring port: version-bump callouts
 
-The most common handoff. Whenever a new plugin release ships, two callouts in this directory get bumped (both in `homepage.md`); the website session ports the same two callouts to the Hugo repo verbatim.
+The most common handoff. Whenever a new plugin release ships, one callout in this directory gets bumped (in `homepage.md`); the website session ports it to the Hugo repo verbatim.
 
-**The two callouts (locked pattern):**
+**The locked-pattern callout:**
 
-1. **Homepage Status opening line** — `The current release is **<v>** (<YYYY-MM-DD>).`
-2. **Homepage Status history paragraph** — append one sentence describing the new release after the prior-version sentence. Recast the previously-current version sentence to past tense (e.g., "0.5.3 is..." -> "0.5.3 was...").
+- **Homepage Status opening line** — `The current release is **<v>** (<YYYY-MM-DD>).`
 
-(The FAQ "How do I install it?" entry no longer carries a version callout. As of the Charted-Roots-aligned reshape on 2026-05-13, that entry uses a styled "Install in Obsidian" CTA without an embedded version line. Plugin version stays visible on the homepage Status section, the community plugin page at `community.obsidian.md/plugins/draft-bench`, and the GitHub Releases.)
+(The homepage Status history paragraph retired in favor of the `/changelog/` page after the 2026-05-16 trim. Per-release detail now lives in [changelog-refresh.md](changelog-refresh.md) and ports to draftbench.io's `/changelog/` page; this routine just bumps the opening-line "current release" fact.)
+
+(The FAQ "How do I install it?" entry no longer carries a version callout either. As of the Charted-Roots-aligned reshape on 2026-05-13, that entry uses a styled "Install in Obsidian" CTA without an embedded version line. Plugin version stays visible on the homepage Status section, the community plugin page at `community.obsidian.md/plugins/draft-bench`, and the GitHub Releases.)
 
 **The handoff prompt itself** is drafted in chat per port (the gitignored `handoff-prompt.md` file is never actually committed — the prompt lives in conversation context). Each prompt should:
 
 - Name the version + date.
 - Point at the plugin-side commit hash that landed the drafts here.
-- Enumerate the three callouts above + their exact target locations in the Hugo site.
+- Enumerate the locked-pattern callout above + its exact target location in the Hugo site.
 - Specify a conventional-commit style for the website commit (e.g., `docs(homepage,faq): Bump current-release callouts to <v>`).
 - Ask the website session to return its commit hash so the plugin-side session-restore can record it.
 
@@ -92,4 +93,4 @@ The most common handoff. Whenever a new plugin release ships, two callouts in th
 - **0.5.3 port (2026-05-12 AM):** plugin drafts in `5aaf982` + `65bba55`; website commit `dc7a69a`.
 - **0.5.4 port (2026-05-12 PM):** plugin drafts in `10d130a`; website commit `6930bf6`.
 
-If a release also introduces new functionality that warrants more than a one-line history sentence (a marquee 0.6.0 / 1.0 release, a brand-new feature page, a screenshot swap), expand the homepage Status section + add per-feature copy in the plugin-side drafts first, then enlarge the handoff prompt accordingly. The two-callout pattern is the minimum; everything above it is per-release.
+If a release also introduces new functionality that warrants more than a curated `/changelog/` highlight (a marquee 1.0 release, a brand-new feature page, a screenshot swap), expand the `/changelog/` entry in [changelog-refresh.md](changelog-refresh.md) first, add any per-feature copy in the plugin-side drafts, then enlarge the handoff prompt accordingly. The single opening-line bump is the minimum; everything above it is per-release.

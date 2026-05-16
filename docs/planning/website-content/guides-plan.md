@@ -7,7 +7,7 @@
 **Companion docs:**
 
 - [guides-authoring-reference.md](../guides-authoring-reference.md): the source pattern (CR's `/guides/` architecture). This file copies its skeleton verbatim where applicable; differences are flagged inline.
-- [website-content/README.md](README.md): broader website-content drafts conventions (voice, two-repo split, handoff-prompt pattern). Guides authoring extends those conventions; doesn't replace them.
+- [port-workflow.md](port-workflow.md): broader website-content drafts conventions (voice, two-repo split, handoff-prompt pattern). Guides authoring extends those conventions; doesn't replace them.
 - [website-strategy-reference.md](../website-strategy-reference.md): Hugo + Blowfish stack, deploy lessons, link-check CI.
 
 ---
@@ -210,7 +210,7 @@ For each guide, the steps from blank file to live page:
 3. **Screenshots.** Reuse `docs/images/` first. New captures only when no existing shot covers the moment.
 4. **Self-edit.** Read it cold; check every step is unambiguously executable; trim anything that reads like marketing.
 5. **Commit.** `docs(planning): Draft <slug> guide` (or batch wording for multi-guide commits).
-6. **Port brief** ([website-content/README.md](README.md) handoff convention). Gitignored, one-shot. Hand off to the parallel website session.
+6. **Port brief** ([port-workflow.md](port-workflow.md) handoff convention). Gitignored, one-shot. Hand off to the parallel website session.
 7. **Mark in this plan.** Flip the row's status from P0/P1/P2 to ✏️ after draft commit; to ✅ after port + deploy.
 
 ---

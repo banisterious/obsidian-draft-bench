@@ -39,6 +39,7 @@ const context = await esbuild.context({
 	logLevel: "info",
 	sourcemap: prod ? false : 'inline',
 	treeShaking: true,
+	minify: prod,
 	// docx and pdfmake ship pre-bundled distributions with IE-era
 	// setImmediate/immediate polyfills inlined as dead code (guarded
 	// behind MutationObserver / setImmediate feature checks that always

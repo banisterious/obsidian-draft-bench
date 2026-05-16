@@ -4,6 +4,26 @@ Version history for Draft Bench. For the canonical changelog with full detail, s
 
 ---
 
+## 0.6.4: 2026-05-16 — Scanner hygiene + Scrivener import fix
+
+[Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.6.4)
+
+Scanner-hygiene release with one user-visible bug fix. Postinstall patches strip three `new Function(...)` literals from pdfmake's and docx's bundled vendor code, clearing the community-plugin scanner's Dynamic Code Execution recommendation. Production minification enabled in `esbuild.config.mjs` drops `main.js` from 5.83 MB to 3.09 MB (47% reduction, ~2 MB under the 5,242,880-byte Sync Standard threshold), retiring the scanner's "main.js > 5 MB" warning. The Scrivener RTF importer now suppresses `\fldinst` field-instruction groups so `HYPERLINK "scrivcmt://..."` noise no longer leaks into imported scenes ([#37](https://github.com/banisterious/obsidian-draft-bench/issues/37)). No user-visible feature changes beyond the import fix; 1389 tests pass unchanged.
+
+### Fixed
+
+- **RTF field-instruction text no longer leaks into imported Scrivener scenes ([#37](https://github.com/banisterious/obsidian-draft-bench/issues/37)).** Scrivener wraps inline comments and hyperlinks as RTF fields (`{\field{\*\fldinst{HYPERLINK "..."}}{\fldrslt {visible text}}}`). The custom RTF parser's MVP scope had deferred hyperlink / comment rendering but never suppressed the `\fldinst` payload, so the instruction text (HYPERLINK + scrivcmt:// URI, or HYPERLINK + http URL) emitted into the markdown verbatim alongside the visible content. `fldinst` joins the existing `SKIPPED_GROUP_CONTROL_WORDS` set in `src/import/scrivener/rtf-to-markdown.ts`; the parser's suppress-depth mechanism drops the instruction group while `\fldrslt` content still emits. Real `http(s)` hyperlinks lose their URL with this change (the visible link text still renders as plain text); proper RTF-hyperlink-to-markdown rendering remains a separately deferred feature.
+- **Bundle no longer contains `new Function(...)` literals.** Three sites flagged by the community-plugin scanner at recommendation severity (Dynamic Code Execution) all sat inside dead-code branches: two `new Function("return this")()` calls in pdfmake's bundled core-js globalThis polyfill + webpack runtime (guarded by `typeof globalThis === "object"` early returns, which always fire in Electron), and one `new Function("" + e4)` string-callback shim in docx's bundled `setimmediate` polyfill (the string-callback path is unused; docx always passes functions). New postinstall scripts (`patch-pdfmake.js` + `patch-docx.js`) strip the branches from `node_modules/` during `npm install`. Same shape as the IE8 setImmediate `createElement('script')` patches the Charted Roots scan-cleanup arc landed earlier.
+- **Bundle no longer exceeds the 5 MB Sync Standard threshold.** Production minification enabled in `esbuild.config.mjs` (`minify: prod`) drops `main.js` from 5,825,743 bytes to 3,088,650 bytes (47% reduction, ~2 MB under the 5,242,880-byte limit). Source unchanged; no UX change. The scanner's "main.js > 5 MB" warning retires alongside the `new Function` recommendation.
+
+### Internal
+
+- **Postinstall patches are idempotent and vendor-update-safe.** Each substitution carries a marker comment (`draft-bench-postinstall-patch`) so re-running `npm install` is a no-op once applied. When an ORIGINAL string isn't found (vendor upgrade reshapes the targeted block), the patch logs a warning and skips that substitution rather than silently mis-editing; the next scan exposes any regression.
+- **Patches subsume the IE8 `createElement('script')` literals on the resolution path esbuild loads** (`pdfmake/build/pdfmake.js` and `docx/dist/index.mjs`). The pre-existing `mask-script-polyfill-literal` esbuild plugin stays in place as a no-op safety net: its regex matches nothing in the patched files but covers any future drift if esbuild's module resolution ever selects a different docx variant.
+- **Name-introspection grep clean.** Source contains no `Function.prototype.name`, `.constructor.name`, or function `.toString()` calls, so esbuild's identifier mangling can rename freely without `keepNames: true`. 1389 tests pass under minification.
+
+Mobile-supported (Android verified through 0.5.2). 1389 tests pass. Community-plugin scan score: 95/100.
+
 ## 0.6.3: 2026-05-15 — Scanner-hygiene patch (`:has()`)
 
 [Release on GitHub](https://github.com/banisterious/obsidian-draft-bench/releases/tag/0.6.3)

@@ -227,6 +227,7 @@ const SKIPPED_GROUP_CONTROL_WORDS = new Set([
 	'stylesheet',
 	'info',
 	'pict', // inline image; rendered as warning until corpus support lands
+	'fldinst', // RTF field instruction (HYPERLINK target, scrivcmt URI); visible \fldrslt content still emits
 	'header',
 	'footer',
 	'headerl',

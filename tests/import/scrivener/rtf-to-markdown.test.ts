@@ -230,6 +230,29 @@ describe('rtfToMarkdown — metadata group skipping', () => {
 	});
 });
 
+describe('rtfToMarkdown — field-instruction skipping (#37)', () => {
+	it('drops Scrivener comment field instructions (scrivcmt://) while keeping the visible text', () => {
+		// Scrivener wraps inline comments as RTF fields:
+		// {\field{\*\fldinst{HYPERLINK "scrivcmt://UUID"}}{\fldrslt {visible}}}
+		// The instruction text (HYPERLINK + URI) must be suppressed; the
+		// \fldrslt content emits normally.
+		const input =
+			'{\\rtf1\\ansi Before {\\field{\\*\\fldinst{HYPERLINK "scrivcmt://C22DA3B1-5EA9-4FFD-84D8-DDB36384E416"}}{\\fldrslt {commented}}} after.}';
+		const result = rtfToMarkdown(input);
+		expect(result.markdown).toBe('Before commented after.');
+	});
+
+	it('drops http(s) hyperlink field instructions while keeping the visible link text', () => {
+		// Real hyperlinks share the same RTF \field structure. The visible
+		// link text emits as plain markdown; URL preservation is deferred
+		// to a future hyperlink-rendering feature.
+		const input =
+			'{\\rtf1\\ansi See {\\field{\\*\\fldinst{HYPERLINK "https://example.com"}}{\\fldrslt {the docs}}}.}';
+		const result = rtfToMarkdown(input);
+		expect(result.markdown).toBe('See the docs.');
+	});
+});
+
 describe('rtfToMarkdown — realistic compositions', () => {
 	it('handles a small Scrivener-shaped scene fragment', () => {
 		const input =

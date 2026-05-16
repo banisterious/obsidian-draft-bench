@@ -4,7 +4,7 @@
 
 **Target page:** `/changelog/_index.md` on draftbench.io
 **Source material:** [wiki Release-History.md](../../../wiki-content/Release-History.md) (canonical longer-form), [CHANGELOG.md](../../../CHANGELOG.md) (per-release detail).
-**Last ported:** (none yet; this is the initial seed.)
+**Last ported:** 2026-05-16, commit `2f2cc39` on draftbench.io@main (initial port).
 **Pending port (next session):** full first-port covering all 11 curated entries (0.1.0 - 0.1.4 through 0.6.4).
 
 ---
@@ -133,4 +133,4 @@ Internal-quality releases (scanner hygiene, refactors, build-infrastructure work
 
 | Date | Port commit | Notes |
 |---|---|---|
-| (none yet) | | Initial seed pending |
+| 2026-05-16 | `2f2cc39` on draftbench.io@main | Initial port |

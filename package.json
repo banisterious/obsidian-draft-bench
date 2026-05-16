@@ -4,6 +4,7 @@
 	"description": "A full creative writing workflow: project creation, scene management, and manuscript compilation with frontmatter-native data and Bases compatibility.",
 	"main": "main.js",
 	"scripts": {
+		"postinstall": "node patch-pdfmake.js && node patch-docx.js",
 		"dev": "node build-css.js && node esbuild.config.mjs",
 		"build": "node build-css.js && node ./node_modules/typescript/bin/tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"build:css": "node build-css.js",
